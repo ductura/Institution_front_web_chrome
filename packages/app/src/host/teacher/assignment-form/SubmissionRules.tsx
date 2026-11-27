@@ -7,28 +7,44 @@ import type { RuleChoices } from "./rules";
 
 const sr = f.submitRules;
 
-/** The line "Student na koraku predaje vidi: …" (prototype), from the two switches that exist. */
-export function seesLine(choices: Pick<RuleChoices, "withdrawal" | "declarationRequired">): string {
-  const parts = [sr.seesWithdrawal[choices.withdrawal ? "on" : "off"], sr.seesDeclaration[choices.declarationRequired ? "on" : "off"]];
+type Shown = Pick<RuleChoices, "withdrawal" | "declarationRequired"> & { readonly lateAllowed?: boolean };
+
+/** The line "Student na koraku predaje vidi: …" (prototype), from the switches whose value is known here. */
+export function seesLine(choices: Shown): string {
+  const parts = [
+    ...(choices.lateAllowed === undefined ? [] : [sr.seesLate[choices.lateAllowed ? "on" : "off"]]),
+    sr.seesWithdrawal[choices.withdrawal ? "on" : "off"],
+    sr.seesDeclaration[choices.declarationRequired ? "on" : "off"],
+  ];
   return `${sr.seesIntro} ${parts.join("; ")}.`;
 }
 
 /**
  * Section zs-5 "Pravila predaje" (NZ-4): (a) late submission, (b) withdrawal, (c) declaration required.
- * (a) has no field on the server yet, so it is shown, disabled and honest, never as a working choice.
- * `ids` keeps the field names apart when the same block stands on the edit page.
+ * (a) is a working choice where its value is known (the new assignment, F4-NAS-R01); without `lateAllowed`
+ * (the edit page, where the teacher has no route to read it) it is shown disabled and honest.
+ * `prefix` keeps the field names apart when the same block stands on the edit page.
  */
 export function SubmissionRules({ value, onChange, disabled = false, prefix = "pr" }: {
-  value: Pick<RuleChoices, "withdrawal" | "declarationRequired">;
-  onChange: (next: Partial<Pick<RuleChoices, "withdrawal" | "declarationRequired">>) => void;
+  value: Shown;
+  onChange: (next: Partial<Pick<RuleChoices, "withdrawal" | "declarationRequired" | "lateAllowed">>) => void;
   disabled?: boolean;
   prefix?: string;
 }) {
+  const late = value.lateAllowed;
   return (
     <>
-      <OptionGroup legend={sr.lateLegend} name={`${prefix}-late`} value="" disabled
-        options={[{ value: "yes", label: sr.lateAllowed }, { value: "no", label: sr.lateDenied }]} />
-      <p className="meta">{sr.lateUnavailable}</p>
+      {late === undefined ? (
+        <>
+          <OptionGroup legend={sr.lateLegend} name={`${prefix}-late`} value="" disabled
+            options={[{ value: "yes", label: sr.lateAllowed }, { value: "no", label: sr.lateDenied }]} />
+          <p className="meta">{sr.lateUnavailable}</p>
+        </>
+      ) : (
+        <OptionGroup legend={sr.lateLegend} name={`${prefix}-late`} value={late ? "yes" : "no"} disabled={disabled}
+          options={[{ value: "yes", label: sr.lateAllowed }, { value: "no", label: sr.lateDenied }]}
+          onChange={(next) => onChange({ lateAllowed: next === "yes" })} />
+      )}
       <OptionGroup legend={sr.withdrawalLegend} name={`${prefix}-withdrawal`} value={value.withdrawal ? "on" : "off"} disabled={disabled}
         options={[{ value: "on", label: sr.withdrawalOn }, { value: "off", label: sr.withdrawalOff }]}
         onChange={(next) => onChange({ withdrawal: next === "on" })} />

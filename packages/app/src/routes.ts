@@ -11,7 +11,7 @@ import { messagesHr as workText } from "../../../src/lib/i18n/messages.hr.ts";
 
 import type { SessionRole } from "../../../src/client/api.ts";
 
-import type { Base } from "./bases";
+import { BASE, type Base } from "./bases";
 import { studentDataExportMessages } from "./host/institution/student-data-export/messages.hr";
 import { studentDataDownloadMessages } from "./host/public/student-data-download/messages.hr";
 import { publicVerificationHr } from "../../../src/components/public-verification/messages.hr.ts";
@@ -54,9 +54,9 @@ import { analysisPageMessages } from "./host/analysis/messages.hr";
 
 export { BASES, type Base } from "./bases";
 
-/** /app/chrome for a path under it, /app/web for every other path. */
-export function baseOf(pathname: string): Base {
-  return pathname === "/app/chrome" || pathname.startsWith("/app/chrome/") ? "/app/chrome" : "/app/web";
+/** The base of every path: /aplikacija is the only prefix the app is served under (D-318). */
+export function baseOf(_pathname: string): Base {
+  return BASE;
 }
 
 /** The app's own path: the pathname without its base and without a trailing slash; "/" for the base itself. */
@@ -64,6 +64,29 @@ export function routeOf(pathname: string, base: Base): string {
   const rest = pathname === base || pathname.startsWith(`${base}/`) ? pathname.slice(base.length) : pathname;
   const trimmed = rest.replace(/\/+$/, "");
   return trimmed === "" ? "/" : trimmed;
+}
+
+/**
+ * The route for an address the browser shows. The edge (D-318, Preloader deploy/edge/routes.ts)
+ * serves pages of the front at addresses of its own and the browser keeps them:
+ * "/" is /naslovnica, a public page ("/pomoc", "/stanje" …) keeps its path, and
+ * an address under the base is the front's own.
+ */
+export function browserRoute(pathname: string, base: Base): string {
+  return pathname === "/" ? "/naslovnica" : routeOf(pathname, base);
+}
+
+/**
+ * The host's route from Next's pathname (`usePathname()`, without the basePath)
+ * and the browser's address (`browserPathname`, null on the server). The server
+ * renders the path the edge rewrote to; in the browser, an edge address outside
+ * the base ("/", "/pomoc") is not under the basePath, so the route comes from the
+ * address itself. Without this, "/" rendered the landing page and hydrated as
+ * sign-in or "Stranica ne postoji".
+ */
+export function hostRoute(nextPathname: string, browserPathname: string | null, base: Base): string {
+  const underBase = browserPathname === null || browserPathname === base || browserPathname.startsWith(`${base}/`);
+  return underBase ? routeOf(`${base}${nextPathname}`, base) : browserRoute(browserPathname, base);
 }
 
 /** The shell's role for a session role; an account kind without a space of its own has none. */
@@ -75,7 +98,7 @@ export function shellRole(role: SessionRole | null): ShellRole | null {
 
 export type PageKind = "studentHome" | "studentCourses" | "teacherCourses" | "mentoredWorks" | "pending";
 export type Page = {
-  /** The route; a segment in brackets ("/zadatak/[id]") is any one segment, as in app/[base]/. */
+  /** The route; a segment in brackets ("/zadatak/[id]") is any one segment, as in app/(host)/. */
   readonly path: string;
   readonly label: string;
   readonly kind: PageKind;
@@ -287,7 +310,7 @@ export function crumbsOf(page: Page, role: ShellRole | null): readonly string[] 
  * The app path a link leads to when the app should open it itself, else null
  * (the browser follows it: another origin, the preloader's or the admin's
  * pages, the server). Links of the screens are written without the base
- * ("/zadaci"), the shell's with it ("/app/web/zadaci"); both open here.
+ * ("/zadaci"), the shell's with it ("/aplikacija/zadaci"); both open here.
  */
 export function internalRoute(href: string, base: Base): string | null {
   if (!href.startsWith("/") || href.startsWith("//")) return null;

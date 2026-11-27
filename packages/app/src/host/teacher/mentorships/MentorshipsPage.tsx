@@ -7,7 +7,7 @@ import { readMentorshipRequests } from "../../../../../../src/client/mentorship-
 import { type RequestsRead } from "../../../../../../src/components/teacher/MentorshipRequests";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { messagesHr as t } from "../../../../../../locales/hr";
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useHost } from "../../context";
 import { useTeacherRead } from "../../pages";
 import { teacherShellHr } from "../shell/messages.hr";
@@ -24,6 +24,7 @@ import { RoundReview } from "./RoundReview";
 import { MyStudents } from "./MyStudents";
 import type { OverviewCall } from "./overview-read";
 import { OpenMentorshipCard } from "./OpenMentorshipCard";
+import type { OpenCall } from "./open-mentorship";
 import { ThesisPanel } from "../../thesis/ThesisPanel";
 import { WorkPlan } from "./WorkPlan";
 import { MentorNotes } from "./MentorNotes";
@@ -37,6 +38,7 @@ const requestsCall = () => createApi() as unknown as MentorshipCall;
 const worksCall = () => createApi() as unknown as MentoredWorksCall;
 const keyDatesCall = () => createApi() as unknown as KeyDatesCall;
 const overviewCall = () => createApi() as unknown as OverviewCall;
+const openCall = () => createApi() as unknown as OpenCall;
 const notesCall = () => createApi() as unknown as NotesCall;
 
 /**
@@ -45,17 +47,18 @@ const notesCall = () => createApi() as unknown as NotesCall;
  * through the contract client (LOK-WEB-5); a failed read says "unavailable",
  * never "none". After a decision the page reads again. PIL-K-ROKOVI: each mentorship has its
  * key-dates card (mentorship.key-dates.get), read on its own; its failure never hides the page.
- * WEB-NF6-ETAPE (MK-5, MK-6, MK-7): "Novo mentorstvo" (not available yet), and per started work its stages,
+ * WEB-NF6-ETAPE (MK-5, MK-6, MK-7): "Novo mentorstvo" (F4-MEN-R01: mentorship.open.post), and per started work its stages,
  * plan writes and what was agreed at the latest consultation, each read on its own.
  * WEB-NF6-PREGLED (MK-11): "Moji studenti" under the works list, what waits on the mentor first.
  */
-export default function MentorshipsPage({ requests = requestsCall, works = worksCall, keyDates = keyDatesCall, overview = overviewCall, plan, records, notes = notesCall }:
+export default function MentorshipsPage({ requests = requestsCall, works = worksCall, keyDates = keyDatesCall, overview = overviewCall, open = openCall, plan, records, notes = notesCall }:
   { requests?: () => MentorshipCall; works?: () => MentoredWorksCall; keyDates?: () => KeyDatesCall; overview?: () => OverviewCall;
-    plan?: () => PlanCall; records?: RecordsRead; notes?: () => NotesCall }) {
+    open?: () => OpenCall; plan?: () => PlanCall; records?: RecordsRead; notes?: () => NotesCall }) {
   const { base } = useHost();
   const datesPort = useMemo(() => keyDatesPort(keyDates), [keyDates]);
   const here = appHref(base, HREF);
   const signedOut = () => goToSignIn(here);
+  const [justOpened, setJustOpened] = useState(false);
   const [read, retry] = useTeacherRead<{ asked: RequestsRead; works: MentoredWork[] }>(base, async () => {
     const [list, mentored] = await Promise.all([readMentorshipRequests(requests()), readMentoredWorks(works())]);
     if (mentored.kind === "signedOut") return { kind: "signedOut" };
@@ -86,7 +89,7 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
             <MentorNotes key={m.mentorshipId} mentorshipId={m.mentorshipId} name={m.name} call={notes} onSignedOut={signedOut} />
           ))}
           <RequestsCard read={value.asked} here={here} call={requests()} onDecided={retry} />
-          <OpenMentorshipCard />
+          <OpenMentorshipCard call={open} onOpened={() => { setJustOpened(true); retry(); }} onSignedOut={signedOut} justOpened={justOpened} />
           {startedWorks(value.works).map((work) => (
             <Fragment key={work.documentId}>
               <WorkPlan documentId={work.documentId} name={studentName(work)} title={work.title} base={base}

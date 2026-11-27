@@ -8,6 +8,8 @@ export const publishHr = {
   uncertainTitle: "Objava zadatka prekinuta je i ishod nije poznat.",
   uncertainBody: "Uneseni podaci ostaju u obrascu. Prije ponovne objave provjerite popis zadataka u kolegiju: ako je zadatak objavljen, pojavit će se ondje.",
   checkList: "Provjeri popis zadataka",
+  /** While the server has not answered yet (prototype `ucitavanje`, NAS-19). */
+  pending: "Objava zadatka u tijeku…",
   /** Shown after the server confirmed; no claim that a notice was sent (the server has no notice channel yet). */
   published: "Zadatak je objavljen. Upisani studenti vide ga u „Mojim zadacima”.",
   toCourses: "Na kolegije",

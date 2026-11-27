@@ -26,7 +26,7 @@ const withdrawnRow = {
   ...openRow, request_state: "withdrawn", request_row_seq: 2,
   closed_as: "withdrawn", closed_is_own: true, closed_window: "2026-11-05T12:00:00.000Z",
 };
-const work = `/app/web/nastavnik/rad/${encodeURIComponent(documentId)}`;
+const work = `/aplikacija/nastavnik/rad/${encodeURIComponent(documentId)}`;
 
 /** The work page's reads, with one open request until the withdraw is confirmed. */
 async function fakeServer(page: Page, withdrawStatus = 200) {

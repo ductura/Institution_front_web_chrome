@@ -15,11 +15,11 @@ import styles from "./WorkspaceTopBar.module.css";
 
 export type WorkspaceTopBarProps = {
   readonly assignmentId: string;
-  /** EDI-R02: the prefix the app is served under (/app/web or /app/chrome); "" when it is served at the root. */
+  /** EDI-R02: the prefix the app is served under (/aplikacija or /aplikacija); "" when it is served at the root. */
   readonly base?: string;
   /** The assignment's title, or null when the read could not give it. */
   readonly title: string | null;
-  /** The line under the title ("Kolegij · rok 8. 11. 2026., 23:59"), or null when it is not known. */
+  /** The line under the title ("Kolegij, vrsta, rok 30. studenoga 2026. u 23:59"), or null when it is not known. */
   readonly subtitle?: string | null;
   /** A work that is read only has no "Predaja rada" (the prototype hides it). */
   readonly readOnly?: boolean;

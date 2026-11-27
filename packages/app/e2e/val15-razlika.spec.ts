@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "./fixtures/test";
 
-const PAGE = "/app/web/analiza";
+const PAGE = "/aplikacija/analiza";
 const ME = { roles: ["student"], displayName: "Student A", institution: { slug: "izm", displayName: "Izmišljeni fakultet za testove" } };
 const CATALOGUE = {
   limits: { maxRows: 500, maxColumns: 12, maxCellLength: 64, maxBodyBytes: 131072 },

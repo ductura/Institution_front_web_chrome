@@ -1,4 +1,4 @@
-// ED-04 (NF2-P6): beside "n riječi · opseg min do max" the bar states where the text stands
+// ED-04 (NF2-P6): beside "n riječi, opseg min do max" (separate parts, S-07) the bar states where the text stands
 // ("još n do donje granice", "unutar opsega", "iznad gornje granice za n"), without colour; a
 // polite region says only the crossing of a limit, never the opening and never typing inside a
 // band. Invented assignment, invented server; the range comes from student.assignment-requirements.get.
@@ -10,7 +10,7 @@ const ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c5a";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0e1f";
 const SCOPE = "b".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0004";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 
 type Range = { min: number; max: number } | null;
 
@@ -63,7 +63,9 @@ test("below, within and over the range: the line states the fact, the region say
   range = { min: w + 2, max: w + 4 };
   await page.reload();
   await expect(page.locator('.ProseMirror[contenteditable="true"]').first()).toBeVisible({ timeout: 20_000 });
-  await expect(bar(page)).toContainText(`opseg ${w + 2} do ${w + 4} · još 2 do donje granice`);
+  // S-07: the parts of the line are separate elements, so each is asserted on its own.
+  await expect(bar(page)).toContainText(`opseg ${w + 2} do ${w + 4}`);
+  await expect(bar(page)).toContainText("još 2 do donje granice");
   // Opening the work says nothing.
   await expect(said(page)).toHaveText("");
 

@@ -28,9 +28,9 @@ describe("WorkspaceTopBarView", () => {
   it("leads the mark to Moji zadaci under the base the app is served under (EDI-R02)", () => {
     const under = (base?: string) =>
       renderToStaticMarkup(createElement(WorkspaceTopBarView, { assignmentId: ID, base, title: "Izmišljeni rad", online: true, theme: "dark", onTheme: () => {} }));
-    expect(under("/app/web")).toContain('href="/app/web/zadaci"');
-    expect(under("/app/chrome")).toContain('href="/app/chrome/zadaci"');
-    expect(under("/app/web")).not.toContain('href="/zadaci"');
+    expect(under("/aplikacija")).toContain('href="/aplikacija/zadaci"');
+    expect(under("/aplikacija")).toContain('href="/aplikacija/zadaci"');
+    expect(under("/aplikacija")).not.toContain('href="/zadaci"');
     expect(under()).toContain('href="/zadaci"');
   });
 
@@ -54,11 +54,11 @@ describe("WorkspaceTopBarView", () => {
   it("shows the course line and hides Predaja rada on a read only work", () => {
     const html = renderToStaticMarkup(
       createElement(WorkspaceTopBarView, {
-        assignmentId: ID, title: "Izmišljeni rad", subtitle: "Izmišljeni kolegij · rok 8. 11. 2026., 23:59",
+        assignmentId: ID, title: "Izmišljeni rad", subtitle: "Izmišljeni kolegij, Esej, rok 8. studenoga 2026. u 23:59",
         readOnly: true, online: true, theme: "dark", onTheme: () => {},
       }),
     );
-    expect(html).toContain("Izmišljeni kolegij · rok 8. 11. 2026., 23:59");
+    expect(html).toContain("Izmišljeni kolegij, Esej, rok 8. studenoga 2026. u 23:59");
     expect(html).not.toContain(t.workspace.submitWork);
   });
 });

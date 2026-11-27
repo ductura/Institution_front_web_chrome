@@ -7,6 +7,7 @@
  * Server operations (generated contract extract):
  *   work.consultation-slots.get   GET   .../works/{documentId}/consultation-slots
  *   work.consultation-slots.post  POST  .../consultation-slots {startsAt}
+ *   work.consultation-slot-requests.post POST .../consultation-slot-requests {startsAt, topic?, preparation?} (MEN-26)
  *   work.consultation-slots.patch PATCH .../consultation-slots/{slotId} {action, startsAt?}
  *   work.consultation-slot-details.get GET .../consultation-slot-details (closed slots too)
  *   work.consultation-slot-close.post  POST .../consultation-slots/{slotId}/close {action, reason?}
@@ -97,6 +98,20 @@ export function optionalText(text: string, max: number): string | undefined | nu
   return codePoints(trimmed) > max ? null : trimmed;
 }
 
+/** The preparation attached to a request: the text the mentor reads and the two counts it was composed from. */
+export type PreparationAttachment = { readonly text: string; readonly changedParagraphs: number; readonly resolvedComments: number };
+/** The longest attached text, in code points (work.consultation-slot-requests.post). */
+export const PREPARATION_MAX = patternMax(
+  (((contracts["work.consultation-slot-requests.post"].body as OpenSchema).properties.preparation) as OpenSchema).properties.text,
+);
+const COUNT_MAX = 100000;
+
+/** True when the attachment is what the contract takes: trimmed text of 1..PREPARATION_MAX code points, whole counts in range. */
+export function validPreparation(p: PreparationAttachment): boolean {
+  const count = (n: number) => Number.isInteger(n) && n >= 0 && n <= COUNT_MAX;
+  return optionalText(p.text, PREPARATION_MAX) === p.text && count(p.changedParagraphs) && count(p.resolvedComments);
+}
+
 /** POST: the student asks for a slot, with an optional topic. Saved only from a `requested` slot with the time (and topic) asked. */
 export async function requestConsultationSlot(client: SlotsApi, documentId: string, startsAt: string, topic?: string): Promise<SlotWrite> {
   if (!validStartsAt(startsAt)) return { kind: "greska", code: "invalid" };
@@ -106,6 +121,30 @@ export async function requestConsultationSlot(client: SlotsApi, documentId: stri
     const result = await client("work.consultation-slots.post", { params: { documentId }, query: undefined, body });
     if (!result.ok) return failure(result);
     const slot = result.body;
+    if (topic !== undefined && slot.topic !== topic) return UNKNOWN;
+    return slot.state === "requested" && Date.parse(slot.startsAt) === Date.parse(startsAt) ? { kind: "saved", slot } : UNKNOWN;
+  } catch {
+    return UNKNOWN;
+  }
+}
+
+/**
+ * POST with a preparation ("Priloži pripremu", MEN-26) through work.consultation-slot-requests.post. Saved only
+ * when the answer is a `requested` slot with the time (and topic) asked that carries the same preparation (B-6).
+ */
+export async function requestConsultationSlotWithPreparation(
+  client: SlotsApi, documentId: string, startsAt: string, topic: string | undefined, preparation: PreparationAttachment,
+): Promise<CloseWrite> {
+  if (!validStartsAt(startsAt) || !validPreparation(preparation)) return { kind: "greska", code: "invalid" };
+  if (topic !== undefined && optionalText(topic, TOPIC_MAX) !== topic) return { kind: "greska", code: "invalid" };
+  try {
+    const base = topic === undefined ? { startsAt } : { startsAt, topic };
+    const sent = { text: preparation.text, changedParagraphs: preparation.changedParagraphs, resolvedComments: preparation.resolvedComments };
+    const result = await client("work.consultation-slot-requests.post", { params: { documentId }, query: undefined, body: { ...base, preparation: sent } });
+    if (!result.ok) return failure(result);
+    const slot = result.body;
+    const kept = slot.preparation;
+    if (kept === null || kept.text !== sent.text || kept.changedParagraphs !== sent.changedParagraphs || kept.resolvedComments !== sent.resolvedComments) return UNKNOWN;
     if (topic !== undefined && slot.topic !== topic) return UNKNOWN;
     return slot.state === "requested" && Date.parse(slot.startsAt) === Date.parse(startsAt) ? { kind: "saved", slot } : UNKNOWN;
   } catch {

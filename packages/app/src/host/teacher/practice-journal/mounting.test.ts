@@ -18,7 +18,7 @@ describe("the mentor's journal is mounted", () => {
     expect(resolve(PATH, "student")).not.toMatchObject({ kind: "page" });
   });
   it("the Next page renders MentorJournalPage", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/nastavnik/mentorstva/dnevnik-prakse/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/nastavnik/mentorstva/dnevnik-prakse/page.tsx"), "utf8");
     expect(page).toContain("MentorJournalPage");
   });
 });

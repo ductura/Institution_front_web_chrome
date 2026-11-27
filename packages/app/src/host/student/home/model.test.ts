@@ -7,7 +7,7 @@ import type { MyCourse } from "../read/assignments";
 import { normalizeCode as enrollRule } from "../enrol/enroll";
 import { CODE_MAX, cleanCode } from "../enrol/code";
 import { codeFromQuery } from "../enrol/model";
-import { continueRow, coursesWithoutTask, deadlineTag, sections, enrollRoute, flatRows, kindOf, nearTag, normalizeCode, rowAction, rowRoute, startsWork, extensionLine, submittedText, type TaskRow } from "./model";
+import { continueRow, coursesWithoutTask, deadlineTag, sections, enrollRoute, flatRows, kindOf, nearTag, normalizeCode, rowAction, rowRoute, extensionLine, submittedText, type TaskRow } from "./model";
 
 const NOW = Date.parse("2026-11-20T10:00:00Z");
 const A = { id: "a1", title: "Esej o izmišljenoj temi", dueAt: "2026-11-23T10:00:00Z", noticeFirst: false };
@@ -53,7 +53,8 @@ describe("deadline tag", () => {
   it("names the days within a week, never past or far ahead", () => {
     expect(nearTag(A.dueAt, NOW)).toBe("Rok za 3 dana");
     expect(nearTag("2026-11-21T09:00:00Z", NOW)).toBe("Rok za 1 dan");
-    expect(nearTag("2026-11-20T11:00:00Z", NOW)).toBe("Rok za 1 dan");
+    // PAR2-A3: an hour ahead on the same Zagreb date is today, as on E-3.
+    expect(nearTag("2026-11-20T11:00:00Z", NOW)).toBe("Rok je danas");
     expect(nearTag("2026-11-20T09:00:00Z", NOW)).toBeNull();
     expect(nearTag("2026-12-30T10:00:00Z", NOW)).toBeNull();
     expect(nearTag("nije datum", NOW)).toBeNull();
@@ -174,25 +175,17 @@ describe("P-12 courses without a task", () => {
   });
 });
 
-describe("INT-31 start only where no work exists", () => {
-  it("offers \"Započni rad\" on a row with no work, never on a started, submitted or notice-first one", () => {
-    expect(startsWork("zadatak")).toBe(true);
-    expect(startsWork("rad")).toBe(false);
-    expect(startsWork("predano")).toBe(false);
-    expect(startsWork("obavijest")).toBe(false);
+describe("STU-R07 one primary button per row", () => {
+  it("a row without work offers only its link; \"Započni rad\" is not drawn on the home", () => {
+    const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "HomePage.tsx"), "utf8");
+    expect(page).not.toMatch(/startWorkAction|StartWork/);
+    expect(rowAction("zadatak")).toEqual({ label: "Otvori zadatak", primary: true });
   });
 
   it("a started work keeps its own \"Otvori rad\"", () => {
     const rows = flatRows(COURSES, new Map([["a1", "in_progress"]]));
-    const kind = rows.find((row) => row.id === "a1")?.kind;
-    expect(kind).toBe("rad");
-    expect(startsWork("rad")).toBe(false);
+    expect(rows.find((row) => row.id === "a1")?.kind).toBe("rad");
     expect(rowAction("rad").label).toBe("Otvori rad");
-  });
-
-  it("the home page draws the start only through startsWork", () => {
-    const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "HomePage.tsx"), "utf8");
-    expect(page).toMatch(/action=\{startsWork\(row\.kind\) \? startWorkAction\(/);
   });
 });
 

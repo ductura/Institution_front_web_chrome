@@ -15,7 +15,7 @@ import { createTocStore, EMPTY_TOC, goToHeading } from "../../../../../editor-co
 import { requestPanel } from "../../../../../../src/components/editor/layout-prefs/open-panel.ts";
 import { useLocalEditor } from "../../../../../../src/components/editor/LocalDocument.tsx";
 import {
-  allObservations, assistHr, BalancePanel, distribute, holesOf, EMPTY_NOTES, loadNotes, nextSteps, NextStepCard, notesKey, parseNotes, QuickJump, ResumeCard,
+  allObservations, assistHr, BalancePanel, distribute, holesOf, EMPTY_NOTES, loadNotes, nextSteps, NextStepCard, notesKey, parseNotes, QuickJump, ResumeCard, loadSeen, saveSeen, whatsNew, WhatsNewCard, type Change, type Seen,
   StartWizard, ThreadPanel, withLast, withSelfNote, withTargets, workStatus, type JumpKind, type JumpPlace, type NextStepInput,
   type StepTarget, type WorkNotes, type WorkRange,
 } from "../assist";
@@ -336,8 +336,17 @@ function useHelpState() {
 const wizardEvent = "ductura:open-start-wizard";
 
 /** "Započnite rad": the three-step wizard puts a skeleton into an empty work; the question stays on this device with the thread. */
-function StartWork({ workId, open, onClose }: Props & { open: boolean; onClose: () => void }) {
+function StartWork({ workId }: Props) {
   const { editor, help, live } = useHelpState();
+  // EDI-R16: the wizard is mounted outside the collapsible sections of the left panel (see `StartWorkHost`), so its dialog is
+  // always on a visible page; the cards inside the sections only ask for it with `wizardEvent`.
+  const [open, setOpen] = useState(false);
+  const onClose = () => setOpen(false);
+  useEffect(() => {
+    const ask = () => setOpen(true);
+    window.addEventListener(wizardEvent, ask);
+    return () => window.removeEventListener(wizardEvent, ask);
+  }, []);
   const [thread, setThread] = useDeviceValue("thread", workId, parseThread, EMPTY_THREAD);
   return (
     <StartWizard open={open} chapterCount={help.chapters.length} profileLabel={null} onClose={onClose}
@@ -361,33 +370,46 @@ function StartWork({ workId, open, onClose }: Props & { open: boolean; onClose: 
   );
 }
 
+/** MEN-24: per work, for this page visit: the chapters as last left and what differed on first load. */
+const sinceSession = new Map<string, { leftAs: Seen | null; since: Change[] | null }>();
+
 /** EDI-R16: "Sljedeći korak", "Nastavi gdje ste stali", "Brzi skok" and "Ravnoteža poglavlja" over the work as it is now. */
 function WritingHelp({ workId, range = null }: Props & { range?: WorkRange | null }) {
   const { editor, help, live, current } = useHelpState();
   const snap = useWorkSnapshot();
   const [notes, change] = useWritingNotes(workId);
-  const [wizard, setWizard] = useState(false);
   // Where the person stopped last time, kept for this visit; moving on only updates the place saved for the next one.
   const [resumeAt] = useState(() => readNotes(workId).lastChapterId);
   const [thread] = useDeviceValue("thread", workId, parseThread, EMPTY_THREAD);
   const { chapters } = help;
+  // MEN-24: the words of each chapter as they were left last time. The panel is unmounted when it is closed, so the starting point and
+  // the comparison live per work for the whole page visit (sinceSession), not in this component: closing and reopening the panel
+  // keeps what was shown, and the comparison is fixed on the first load of the chapters so this visit's own typing is not "new".
+  const [session] = useState(() => {
+    let kept = sinceSession.get(workId);
+    if (!kept) { kept = { leftAs: loadSeen(noteStorage(), workId), since: null }; sinceSession.set(workId, kept); }
+    return kept;
+  });
+  const [since, setSince] = useState<Change[] | null>(session.since);
+  useEffect(() => {
+    if (since !== null || chapters.length === 0) return;
+    const fixed = session.since ?? whatsNew(session.leftAs, chapters);
+    session.since = fixed;
+    setSince(fixed);
+  }, [since, chapters, session]);
+  useEffect(() => { if (live && chapters.length > 0) saveSeen(noteStorage(), workId, chapters); }, [live, chapters, workId]);
   const wholeRange: WorkRange = range ?? { min: null, max: null };
   // The chapter the person stopped at is kept as they move on, so "Nastavi gdje ste stali" has somewhere to go back to.
   useEffect(() => { if (current !== null && current !== notes.lastChapterId) change((n) => withLast(n, current)); },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [current]);
-  useEffect(() => {
-    const open = () => setWizard(true);
-    window.addEventListener(wizardEvent, open);
-    return () => window.removeEventListener(wizardEvent, open);
-  }, []);
   const input = { chapters, thesis: thread.question, roles: notes.roles };
   const todos = chapters.flatMap((c) => (notes.todos[c.id] ?? []).filter((x) => !x.done).slice(0, 1).map((x) => ({ chapterId: c.id, text: x.text })));
   const stepInput: NextStepInput = { ...input, submitted: false, teacherView: false, range: wholeRange, todos };
   const go = (id: string) => { if (editor && !editor.isDestroyed) goToHeading(editor, id); };
   const onGo = (target: StepTarget) => {
     if (target.kind === "chapter") go(target.id);
-    else if (target.kind === "wizard") setWizard(true);
+    else if (target.kind === "wizard") window.dispatchEvent(new Event(wizardEvent));
     else if (target.tab === "work" || target.tab === "comments" || target.tab === "sources") requestPanel(target.tab);
   };
   const places: Partial<Record<JumpKind, JumpPlace[]>> = {
@@ -399,6 +421,7 @@ function WritingHelp({ workId, range = null }: Props & { range?: WorkRange | nul
   return (
     <div className={styles.stack} data-writing-help="">
       <NextStepCard steps={nextSteps(stepInput)} onGo={onGo} />
+      <WhatsNewCard changes={since ?? []} onGo={go} />
       <ResumeCard chapter={resume} selfNote={notes.selfNote} editable={live} onGo={go} onSaveNote={(text) => change((n) => withSelfNote(n, text))} />
       <QuickJump chapters={chapters} places={places} onJump={go} />
       <BalancePanel chapters={chapters} targets={notes.targets} status={workStatus(snap.total, wholeRange)} onJump={go}
@@ -409,7 +432,6 @@ function WritingHelp({ workId, range = null }: Props & { range?: WorkRange | nul
           change((n) => withTargets(n, targets));
           return Object.keys(targets).length;
         }} />
-      <StartWork workId={workId} open={wizard} onClose={() => setWizard(false)} />
     </div>
   );
 }
@@ -438,6 +460,11 @@ export function leftSectionsFor(workId: string, documentId?: string, dueAt?: str
     thread: <><Thread workId={workId} /><ThreadHelp workId={workId} /></>,
     ...(documentId ? { history: <HistorySection documentId={documentId} /> } : {}),
   };
+}
+
+/** The "Započnite rad" wizard, mounted once beside the editor (not in a section of the left panel), so it opens visible and focused. */
+export function StartWorkHost({ workId }: Props) {
+  return <StartWork workId={workId} />;
 }
 
 export { Deadlines, dueLine, Figures, MentorDatesView, Progress, RailFooter, railFootLine, Requirements, Stash, Thread, ThreadHelp, WritingHelp };

@@ -20,7 +20,7 @@ for (const screen of SCREENS) {
     await otvori(page, screen, "puno");
 
     await test.step("title of its own (WCAG 2.4.2)", async () => {
-      await expect(page).toHaveTitle(/^.+ · Ductura$/);
+      await expect(page).toHaveTitle(/^.+, Ductura$/);
     });
     await test.step("headings never skip a level (WCAG 1.3.1)", async () => {
       const skips = await page.evaluate(() => {

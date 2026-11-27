@@ -43,7 +43,7 @@ for (const width of [390, 1280]) {
         { assignmentId: FAR, workState: "in_progress" }, { assignmentId: NEAR, workState: "in_progress" },
         { assignmentId: DONE, workState: "submitted" },
       ]);
-      await page.goto("/app/web/zadaci");
+      await page.goto("/aplikacija/zadaci");
       const next = page.getByRole("region", { name: "Sažetak o bliskom roku" });
       await expect(next).toBeVisible();
       await expect(page.getByRole("region", { name: "Esej o dalekom roku" })).toHaveCount(0);
@@ -64,7 +64,7 @@ test("P-12: with several courses and no task, every course is shown with the cod
     { id: COURSE_A, name: "Izmišljeni kolegij A", assignments: [] },
     { id: COURSE_B, name: "Izmišljeni kolegij B", assignments: [] },
   ]);
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   await expect(page.getByRole("heading", { name: "Izmišljeni kolegij A" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Izmišljeni kolegij B" })).toBeVisible();
   await expect(page.getByText("U ovom kolegiju zasad nema zadatka.")).toHaveCount(2);
@@ -77,10 +77,10 @@ test("P-2: a reminder in the bell names the assignment and its deadline; an unkn
     { id: REMINDER, kind: "deadline_reminder", targetId: NEAR, createdAt: "2026-11-20T08:00:00.000Z", readAt: null },
     { id: "00000000-0000-4000-8000-00000000f202", kind: "deadline_reminder", targetId: FAR, createdAt: "2026-11-20T07:00:00.000Z", readAt: null },
   ]);
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   await page.getByRole("button", { name: "Obavijesti, nepročitanih: 2" }).click();
   const list = page.getByRole("dialog", { name: "Popis obavijesti" });
-  await expect(list.getByRole("link", { name: /Rok za zadatak Sažetak o bliskom roku: 15\. 12\. 2099\./ })).toHaveAttribute("href", `/app/web/zadatak/${NEAR}`);
+  await expect(list.getByRole("link", { name: /Rok za zadatak Sažetak o bliskom roku: 15\. 12\. 2099\./ })).toHaveAttribute("href", `/aplikacija/zadatak/${NEAR}`);
   await expect(list.getByRole("link", { name: /Podsjetnik na rok zadatka/ })).toBeVisible();
   await axe(page);
 });

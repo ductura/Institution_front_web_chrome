@@ -12,7 +12,7 @@ const MILESTONES = { milestones: [
   { id: "00000000-0000-4000-8000-0000000000b2", title: "Izmišljena etapa: prvo poglavlje", description: "", dueAt: "2026-11-09T10:00:00.000Z", state: "open" },
 ] };
 
-type Answers = { requests?: unknown; failMessages?: boolean };
+type Answers = { requests?: unknown; failMessages?: boolean; consent?: "none" | "given" };
 
 async function student(page: Page, answers: Answers = {}) {
   const server = generatedServer("puno");
@@ -26,6 +26,10 @@ async function student(page: Page, answers: Answers = {}) {
     }
     if (req.method() === "GET" && path.endsWith("/milestones")) return route.fulfill({ json: MILESTONES });
     if (req.method() === "GET" && path.endsWith("/consultation-slots")) return route.fulfill({ json: { slots: [] } });
+    if (req.method() === "GET" && path.endsWith("/mentor-consent")) {
+      const given = answers.consent === "given";
+      return route.fulfill({ json: { state: given ? "given" : "none", changedBy: null, changedAt: given ? "2026-11-20T09:00:00.000Z" : null, comment: null, requiredForSubmission: false, history: [] } });
+    }
     const result = server.answer("student", req.method(), path);
     if (result === "hang") return undefined;
     return route.fulfill(result);
@@ -56,7 +60,7 @@ for (const width of [390, 1280]) {
     test(`MK-1: the whole Mentor card in the editor's Mentor tab (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page);
-      await page.goto(`/app/web/rad/${T1}`);
+      await page.goto(`/aplikacija/rad/${T1}`);
       await setTheme(page, theme);
       await skipGuide(page);
       const card = await openMentor(page, width);
@@ -86,7 +90,7 @@ test("MK-1: an open revision request says dorada with the mentor's instruction",
   };
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, { requests: { requests: [row] } });
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const card = await openMentor(page, 1280);
   await expect(card.getByText("Rad je kod Vas: dorada", { exact: true })).toBeVisible();
@@ -97,7 +101,7 @@ test("MK-1: an open revision request says dorada with the mentor's instruction",
 test("MK-1: a revision list the client cannot read says the state is unavailable, never a guess", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, { requests: { requests: [{ request_id: "nije-ispravno" }] } });
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const card = await openMentor(page, 1280);
   await expect(card.getByText("Stanje rada trenutačno nije dostupno.", { exact: true })).toBeVisible();
@@ -106,9 +110,19 @@ test("MK-1: a revision list the client cannot read says the state is unavailable
 test("MK-1: a message read that fails leaves no badge and keeps the rest of the card", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, { failMessages: true });
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const card = await openMentor(page, 1280);
   await expect(card.getByText("Rad je kod Vas", { exact: true })).toBeVisible();
   await expect(card.getByText(/^Mentor: \d+ novo$/)).toHaveCount(0);
+});
+
+test("MEN-R08: the mentor's consent in force shows the work as accepted", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await student(page, { consent: "given" });
+  await page.goto(`/aplikacija/rad/${T1}`);
+  await skipGuide(page);
+  const card = await openMentor(page, 1280);
+  await expect(card.getByText("Mentor je prihvatio rad", { exact: true })).toBeVisible();
+  await expect(card.getByText("Rad je kod Vas", { exact: true })).toHaveCount(0);
 });
