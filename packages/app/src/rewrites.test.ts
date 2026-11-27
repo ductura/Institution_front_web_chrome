@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_INSTITUTION_SERVER, institutionRewrites, institutionServerUrl } from "./rewrites";
+import { DEFAULT_INSTITUTION_SERVER, institutionRedirects, institutionRewrites, institutionServerUrl } from "./rewrites";
 
 const SERVER = "http://127.0.0.1:4010";
 
@@ -36,5 +36,13 @@ describe("institutionRewrites", () => {
   it("has no role switch route in a production build", () => {
     const sources = institutionRewrites(SERVER, "production").map((rule) => rule.source);
     expect(sources).toEqual(["/api/v1/:path*"]);
+  });
+});
+
+describe("institutionRedirects (F4-STU-R01)", () => {
+  it("sends the root /prijava of the server's failed sign-in to the app's own /prijava, not permanently", () => {
+    expect(institutionRedirects()).toEqual([
+      { source: "/prijava", destination: "/aplikacija/prijava", basePath: false, permanent: false },
+    ]);
   });
 });

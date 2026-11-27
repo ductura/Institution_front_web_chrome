@@ -75,7 +75,7 @@ describe("N-10 SummaryPage", () => {
   });
 
   it("says plainly what the server does not give", async () => {
-    const host = await show(fakeN10Port(FAKE_COMPLETE, { kind: "unavailable" }, { kind: "unavailable" }));
+    const host = await show(fakeN10Port(FAKE_COMPLETE, { kind: "unavailable" }, { kind: "unavailable" }, undefined, { kind: "unavailable" }));
     expect(host.querySelectorAll("p.meta").length).toBeGreaterThan(0);
     expect((host.textContent ?? "").match(/Trenutačno nije dostupno\./g)?.length).toBe(4);
     expect(host.textContent).toContain("Zapis nema praznina.");

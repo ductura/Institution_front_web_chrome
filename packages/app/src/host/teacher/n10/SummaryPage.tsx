@@ -8,7 +8,7 @@ import { Kv, WorkPage, WorkPanel, workPageStyles as styles } from "../n07/WorkPa
 import { useTaskCrumb, type WorkContext } from "../n06/task-context";
 import {
   assistantAnchor, assistantTransfers, at, characters, charactersGenitive, duration, loadSummary, minutesGenitive, pasteAnchor,
-  period, segmentLine, sessionLine, sessionsCount, sessionsGenitive, versionLines, type N10Port, type N10Read, type ThresholdRow,
+  period, segmentLine, sessionLine, sessionsCount, sessionsGenitive, versionLines, type N10Note, type N10Port, type N10Read, type ThresholdRow,
   type ThresholdState,
 } from "./model";
 import { originText } from "../provenance/origin-messages.hr";
@@ -46,6 +46,21 @@ function Section({ title, observed = true, children }: { title: string; observed
 /** A listed item (`.item`): the line with its tag on the `.sb-ev` row, then the notes and the jump link. */
 function Entry({ line, children }: { line: string; children: ReactNode }) {
   return <li className="item"><div className={styles.ev}><span>{line}</span><Observed /></div>{children}</li>;
+}
+
+function NotesSection({ notes }: { notes: readonly N10Note[] | undefined }) {
+  return (
+    <Section title={text.notesTitle} observed={false}>
+      {notes === undefined ? <Unavailable /> : notes.length === 0 ? <p>{text.notesEmpty}</p> : (
+        <>
+          <ul className="list">{notes.map((note) => (
+            <li key={note.id} className="item"><span className="meta">{at(note.createdAt)}</span><p>{note.text}</p></li>
+          ))}</ul>
+          <p className="meta">{text.notesNote}</p>
+        </>
+      )}
+    </Section>
+  );
 }
 
 const KIND_LABEL: Record<OriginKind, string> = {
@@ -131,9 +146,7 @@ function Sections({ read, anchors }: { read: Extract<N10Read, { kind: "ready" }>
         {hasGaps ? <ul className="facts">{gaps.items.map((g, i) => <li key={i}>{text.gap(at(g.previousEndedAt), at(g.nextStartedAt))}</li>)}</ul>
           : <p>{text.gapsNone}</p>}
       </Section>
-      <Section title={text.notesTitle} observed={false}>
-        <Unavailable />
-      </Section>
+      <NotesSection notes={read.notes} />
       {read.thresholds === undefined ? null : <FacultyRules rows={read.thresholds} />}
       <Section title={text.stateTitle}>
         <p>{hasGaps ? text.stateGaps : text.stateComplete}</p>
@@ -179,7 +192,14 @@ export default function SummaryPage({ port, documentId, workHref, signInHref, ma
       </WorkPanel>
     );
   } else if (read.kind === "notFound") body = <WorkPanel id="pg-h" title={text.title}><p className="note" role="alert">{text.notFound}</p></WorkPanel>;
-  else if (read.kind === "empty") body = <WorkPanel id="pg-h" title={text.title}><p className="note">{text.empty}</p></WorkPanel>;
+  else if (read.kind === "empty") {
+    body = (
+      <WorkPanel id="pg-h" title={text.title}>
+        <p className="note">{text.empty}</p>
+        {read.notes === undefined || read.notes.length === 0 ? null : <NotesSection notes={read.notes} />}
+      </WorkPanel>
+    );
+  }
   else {
     two = true;
     body = (

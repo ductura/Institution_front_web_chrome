@@ -14,6 +14,7 @@ import { createApi } from "../../../../../src/client/api.ts";
 import { readDeadlineExtensions, readExtensionStudents, recordDeadlineExtension } from "../../../../../src/client/deadline-extensions.ts";
 import { readAssignmentOverview, type TeacherCall } from "../../../../../src/client/teacher-reads.ts";
 import { createTeachingTeam } from "../../../../../src/client/teaching-team.ts";
+import { readStudentAccommodations, type AccommodationCall } from "../../../../../src/client/work-accommodation.ts";
 
 import { roleOf, type CardRole } from "./assignment-card/model";
 import { followUp } from "./assignment-facts/read";
@@ -85,16 +86,22 @@ export function overviewPort(scope: OverviewScope = { course: null, task: null }
           const [overview, byTask, submissions, extensions, cardRole, follow] = await Promise.all([
             readAssignmentOverview(call as unknown as TeacherCall, a.id), works, submissionsOf(call, a.id), readDeadlineExtensions(call, a.id), role, followUp(call, a.id),
           ]);
+          // F4-PM2-R08 (D-50): the accommodation mark of each student's work, after the rows say who is there.
+          const accommodations = overview.kind === "ready" && overview.rows.length > 0
+            ? await readStudentAccommodations(call as unknown as AccommodationCall, a.id, overview.rows.map((r) => r.studentId))
+            : null;
           const join: RowJoin = {
             dueAt: a.dueAt,
             works: byTask === null ? null : byTask.get(a.id) ?? new Map(),
             submissions,
             extensions: extensions.kind === "ready" ? extensions.extensions : null,
             followUp: follow,
+            accommodations,
           };
           return {
             assignmentId: a.id, title: a.title, courseName: course.name, courseId: course.id, dueAt: a.dueAt, role: cardRole,
             rows: overview.kind === "ready" ? joinRows(overview.rows, join, now) : null,
+            ...(overview.kind === "ready" && overview.rows.length > 0 && accommodations === null ? { accommodationsUnavailable: true } : {}),
           };
         });
       }));

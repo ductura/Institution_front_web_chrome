@@ -82,6 +82,8 @@ export const studentHostHr = {
       chain: "Svaki korak spremanja dobiva digitalni otisak povezan s prethodnim, pa se svaka kasnija izmjena zapisa vidi.",
       versions: "Verzije, predaja i napomene koje dodate.",
     },
+    // ASIST-S1: shown only when the Assistant works in this assignment (assistantState); not part of `recorded`.
+    recordedAssistant: "Razgovori s Asistentom: Vaši upiti i njegovi odgovori. Možete ih priložiti izjavi; nastavnik vidi samo priložene razgovore.",
     notRecordedHeading: "Što se ne bilježi",
     notRecorded: {
       inputs: "Koja je tipka pritisnuta i koliko je držana. Iz vremena promjena ne računaju se brzina, ritam ni bilo kakva mjera, osim sesija: sesije se određuju prekidom dužim od praga P-01. Reprodukcija neće preskakati ni isticati stanke.",

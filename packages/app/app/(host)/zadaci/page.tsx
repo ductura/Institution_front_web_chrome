@@ -1,6 +1,6 @@
-import { StudentPage } from "../../../src/host/pages";
+import { HomePage } from "../../../src/host/student/home/HomePage";
 
-/** S01 "Vaš studentski prostor" (student.assignments.get). */
+/** S01 "Vaš studentski prostor" (E-2, WEB-2102; student.assignments.get). */
 export default function Page() {
-  return <StudentPage view="home" />;
+  return <HomePage />;
 }
