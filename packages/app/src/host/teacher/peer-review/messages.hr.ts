@@ -1,16 +1,17 @@
 // WEB-V19-RECENZIJA-NASTAVNIK: the texts of the teacher's peer-review screens. Invented examples only. A review
 // has no number, no mark and no rank, and nothing here sorts or scores by quality (val19-razlika V19-10, V19-11).
 export const teacherPeerReviewText = {
-  title: "Recenzija među studentima",
+  title: "Recenzija radova",
   lead: "Postavite krug anonimne recenzije za ovaj zadatak, dodijelite recenzije i pratite tko je što predao. Studenti ne vide tko koga recenzira, a Vi vidite oba kraja. Recenzija ne ulazi u ocjenu.",
-  back: "Natrag na kolegije",
+  back: "Natrag na zadatak",
   loading: "Učitavanje…",
   unavailable: "Podaci trenutačno nisu dostupni. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",
   gone: "Ovaj zadatak nije dostupan.",
-  link: "Recenzija među studentima",
+  link: "Recenzija radova",
   round: {
     title: "Postavka kruga",
+    lead: "Krug je razdoblje u kojem studenti recenziraju dodijeljene radove.",
     loading: "Učitavanje postavke…",
     unavailable: "Postavka trenutačno nije dostupna. Pokušajte ponovno.",
     state: {
@@ -46,7 +47,7 @@ export const teacherPeerReviewText = {
     already: "Recenzije su već dodijeljene pa postavka nije promijenjena. Stanje je osvježeno.",
     notFound: "Zadatak više nije dostupan. Stanje je osvježeno.",
     invalid: "Postavka nije ispravna. Provjerite polja.",
-    unknown: "Nije poznato je li postavka spremljena. Osvježite stanje prije novog pokušaja.",
+    unknown: "Nije poznato je li postavka spremljena. Osvježite stranicu prije novog pokušaja.",
   },
   allocate: {
     button: "Dodijeli recenzije",
@@ -59,7 +60,7 @@ export const teacherPeerReviewText = {
     tooFew: "Predano je premalo radova za dodjelu. Pričekajte još predaja.",
     already: "Recenzije su već dodijeljene. Stanje je osvježeno.",
     notFound: "Zadatak više nije dostupan. Stanje je osvježeno.",
-    unknown: "Nije poznato je li dodjela izvršena. Osvježite stanje prije novog pokušaja.",
+    unknown: "Nije poznato je li dodjela izvršena. Osvježite stranicu prije novog pokušaja.",
     needRound: "Prvo spremite postavku kruga.",
     unsaved: "Spremite izmjene postavke prije dodjele: dodjela koristi spremljenu postavku.",
   },
@@ -67,13 +68,13 @@ export const teacherPeerReviewText = {
     title: "Dodjele",
     lead: "Vidite recenzenta i autora svake dodjele. Popis je po prezimenu recenzenta, ne po ničemu drugom.",
     none: "Recenzije još nisu dodijeljene.",
+    assigned: "Dodijeljeno recenzija: {n}.",
     reviewer: "Recenzent",
     author: "Autor",
-    stateHeading: "Stanje",
     state: { pending: "čeka recenziju", submitted: "recenzija poslana", withdrawn: "povučena" },
     withdraw: "Povuci recenziju",
     withdrawAria: "Povuci recenziju koju piše {reviewer} o radu autora {author}",
-    unreadable: "Tekst recenzije za sada nije dostupan nastavniku: poslužitelj ga još ne daje.",
+    unreadable: "Tekst recenzije za sada nije dostupan nastavniku.",
   },
   withdraw: {
     title: "Povući recenziju?",
@@ -85,7 +86,7 @@ export const teacherPeerReviewText = {
     done: "Recenzija je povučena.",
     conflict: "Recenzija je već povučena ili se više ne može povući. Stanje je osvježeno.",
     notFound: "Recenzija više nije dostupna. Stanje je osvježeno.",
-    unknown: "Nije poznato je li recenzija povučena. Osvježite stanje prije novog pokušaja.",
+    unknown: "Nije poznato je li recenzija povučena. Osvježite stranicu prije novog pokušaja.",
     errors: {
       empty: "Upišite razlog povlačenja.",
       tooLong: "Najviše 600 znakova.",
