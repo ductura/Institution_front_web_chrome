@@ -77,6 +77,8 @@ export type HostSections = {
   assistant?: (ctx: HostSectionContext) => ReactNode;
   /** ED-09 (NF2-P9): the assignment's instructions in "Prvi redak"; none without it. */
   instructions?: (ctx: HostSectionContext) => ReactNode;
+  /** ED-77: the row at the foot of the right panel (the writing session); none without it. */
+  footer?: (ctx: HostSectionContext) => ReactNode;
 };
 
 export type OpenRead =
@@ -294,7 +296,8 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       rightSections={{ sources: <>{literature?.({ documentId })}<EditorSourceProofs assignmentId={assignmentId} documentId={documentId} /></>,
         comments: hostSections?.comments ? hostSections.comments(ctx) : <CommentPanel documentId={documentId} session={session} />,
         review: hostSections?.review?.(ctx),
-        assistant: hostSections?.assistant ? hostSections.assistant(ctx) : <AssistantComingSoonCard /> }}
+        assistant: hostSections?.assistant ? hostSections.assistant(ctx) : <AssistantComingSoonCard />,
+        footer: hostSections?.footer?.(ctx) }}
       renderWork={(closeDrawer) => <>
         {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
           sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer}

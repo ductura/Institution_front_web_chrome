@@ -49,6 +49,7 @@ import { courseIdOf } from "../editor/sources-mention/required-literature";
 import { MarksHost } from "../editor/marks/MarksHost";
 import { ReadAloudHost } from "../editor/read-aloud/ReadAloudHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
+import { WritingSessionHost } from "../editor/writing-session/WritingSessionHost";
 import { ChapterMarks } from "../editor/left/ChapterMarks";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
@@ -172,6 +173,9 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
                 <AssistantRules assignmentId={assignmentId} base={base} />
               </>,
               instructions: () => <><NoticeInstructions assignmentId={assignmentId} /><RubricCard assignmentId={assignmentId} here={here} /></>,
+              // ED-77: "Sesija pisanja" at the foot of the right panel, kept on this device under the person's scope.
+              footer: ({ editor, scope, submitted, signedOut }) => submitted || signedOut ? null
+                : <WritingSessionHost editor={editor} scope={scope} workId={assignmentId} readOnly={false} />,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId, read.dueAt), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></>,
               footer: <RailFooter range={frame.range} dueAt={read.dueAt} />,
