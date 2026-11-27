@@ -1,10 +1,11 @@
 "use client";
 
 import { Button, Card, DataTable, ToastRegion, useToasts, type DataTableColumn } from "@ductura/ui";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { AnalysisResponse, AnalysisRunState } from "../api/run";
-import { correlationMatrix, correlationVariables, formatNumber, formatShare, groupDigest, isDigest, type MatrixRow } from "./format";
+import { LoadAlert } from "../../states/States";
+import { correlationMatrix, correlationVariables, formatNumber, formatShare, isDigest, type MatrixRow } from "./format";
 import { resultMessages as t } from "./messages.hr";
 
 type Result = AnalysisResponse["result"];
@@ -33,8 +34,7 @@ function FingerprintRow({ label, value, buttonLabel, onCopy, busy }: {
     <div>
       <dt>{label}</dt>
       <dd>
-        <code>{groupDigest(value)}</code>{" "}
-        <Button tone="quiet" busy={busy} aria-label={buttonLabel} onClick={() => onCopy(value)}>{t.copyFingerprint}</Button>
+        <Button tone="secondary" busy={busy} aria-label={buttonLabel} onClick={() => onCopy(value)}>{t.copyFingerprint}</Button>
       </dd>
     </div>
   );
@@ -125,8 +125,13 @@ function ResultTables({ result }: { result: Result }) {
 /** A result with nothing to show (no column, no pair) is empty; a failure or a loading state is never this. */
 export const isEmptyResult = (result: Result): boolean => (result.kind === "correlation" ? result.pairs.length === 0 : result.columns.length === 0);
 
-function ReadyView({ data }: { data: AnalysisResponse }) {
+function ReadyView({ data, onToastOpen }: { data: AnalysisResponse; onToastOpen?: (open: boolean) => void }) {
   const { toasts, show, dismiss } = useToasts();
+  const toastOpen = toasts.length > 0;
+  useEffect(() => {
+    onToastOpen?.(toastOpen);
+    return () => onToastOpen?.(false);
+  }, [toastOpen, onToastOpen]);
   const [copying, setCopying] = useState<string | null>(null);
   async function copy(value: string) {
     setCopying(value);
@@ -158,13 +163,10 @@ const ERRORS = { off: t.off, unavailable: t.unavailable, tooLarge: t.tooLarge, i
  * the function being off are each their own state and never the empty one (a 503 is not "no data"). Numbers use the
  * decimal comma, `null` reads "nije definirano" and never 0. Nothing here ranks, grades or compares people.
  */
-export function ResultView({ state, onRetry }: { state: AnalysisRunState; onRetry?: () => void }) {
+export function ResultView({ state, onRetry, onToastOpen }: { state: AnalysisRunState; onRetry?: () => void; onToastOpen?: (open: boolean) => void }) {
   if (state.kind === "loading") return <Card title={t.title} level={2} busy />;
-  if (state.kind === "ready") return <ReadyView data={state.data} />;
-  return (
-    <>
-      <Card title={t.title} level={2} error={ERRORS[state.kind]} />
-      {state.kind === "unavailable" && onRetry !== undefined && <Button onClick={onRetry}>{t.retry}</Button>}
-    </>
-  );
+  if (state.kind === "ready") return <ReadyView data={state.data} onToastOpen={onToastOpen} />;
+  // D7: only "unavailable" can be asked again; D8: the other failures are the same frame without the link.
+  const retry = state.kind === "unavailable" && onRetry !== undefined ? { label: t.retry, onRetry } : undefined;
+  return <LoadAlert body={ERRORS[state.kind]} retry={retry} />;
 }

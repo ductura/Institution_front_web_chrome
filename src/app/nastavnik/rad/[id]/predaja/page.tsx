@@ -3,7 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { signInHref } from "../../../../../client/api";
 import { screenProvenance } from "../../../../../client/provenance-fake";
 import type { TeacherCall } from "../../../../../client/teacher-reads";
-import { ProvenancePanel, readProvenance } from "../../../../../components/predaja/ProvenancePanel";
+import { readProvenance } from "../../../../../components/predaja/ProvenancePanel";
+import { ProvenancePanelRetry } from "../../../../../components/predaja/ProvenancePanelRetry";
 import { ReceiptPanel } from "../../../../../components/predaja/ReceiptPanel";
 import { liveWorkHref, submissionHref, SUMMARY_ANCHOR } from "../../../../../components/teacher/LiveWorkFrame";
 import { messagesHr as t } from "../../../../../lib/i18n/messages.hr";
@@ -11,7 +12,7 @@ import { messagesHr as t } from "../../../../../lib/i18n/messages.hr";
 import { loadTeacherReceipt, type WorkCall } from "./teacher-receipt";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${t.receipt.title} · ${t.app.name}` };
+export const metadata = { title: `${t.receipt.title}, ${t.app.name}` };
 
 /**
  * TODO(ugovor): teacher.work.get and teacher.submission-receipt.get are not
@@ -23,6 +24,11 @@ const WORK: WorkCall | undefined = undefined;
 const RECEIPT: TeacherCall | undefined = undefined;
 /** TODO(ugovor): the same fake as the student's step 5 until SRV-1220 is approved (WEB-1220). */
 const PROVENANCE = screenProvenance;
+/**
+ * The match mark is the faculty's switch (D-268 O6): off in the pilot, so the fake record on this
+ * page never carries it. The percentages of „Način unosa teksta” are shown either way.
+ */
+const MATCH_MARK_ENABLED = false;
 
 /**
  * `/nastavnik/rad/[id]/predaja` (WEB-35, N-07): the receipt of a submitted
@@ -33,6 +39,11 @@ const PROVENANCE = screenProvenance;
  * teacher's or unknown → 404. Not built here: the declaration block
  * (`declPanel`), QR and the link to /provjera (wave 9).
  */
+/** "Rad uživo: {ime studenta}", or "Rad uživo" when the name is not known. */
+function backLabel(name: string | null | undefined): string {
+  return name ? t.teacherLiveWork.untitledFor.replace("{name}", () => name) : t.teacherLiveWork.untitled;
+}
+
 export default async function TeacherReceiptPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const live = liveWorkHref(id);
@@ -50,11 +61,11 @@ export default async function TeacherReceiptPage({ params }: { params: Promise<{
   if (view.kind === "notFound") notFound();
   return (
     <div className="page receipt-page">
-      <p><a href={live}>{t.teacherLiveWork.untitled}</a></p>
+      <p><a href={live}>{backLabel(view.work?.studentName)}</a></p>
       <h1>{t.receipt.title}</h1>
       {view.work?.studentName ? <p>{view.work.studentName}</p> : null}
       <ReceiptPanel read={view.read} retryHref={here} summaryHref={`${live}#${SUMMARY_ANCHOR}`} />
-      <ProvenancePanel read={provenance} />
+      <ProvenancePanelRetry read={provenance} showMatch={MATCH_MARK_ENABLED} />
     </div>
   );
 }

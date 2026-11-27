@@ -18,9 +18,11 @@ import { oneAtATime, whileShown, type WorkRead } from "../work-read";
 import { SERVER_PREFIX } from "../../../../../../../src/client/api";
 import { appHref } from "../../../../../../../src/components/index";
 import { useHost } from "../../../context";
+import { LoadAlert } from "../../../states/States";
 import { submitText as t } from "./messages.hr";
+import outcome from "./Outcome.module.css";
 import { clockOf, dayOf } from "../steps/time";
-import { atOf, fill, nextOf, thousands, wordCount, type Answer, type Known, type Next, type SubmitStage } from "./model";
+import { atOf, fill, isErrorLine, nextOf, thousands, wordCount, type Answer, type Known, type Next, type SubmitStage } from "./model";
 import OutcomePanel, { OUTCOME_ID } from "./OutcomePanel";
 import { dialogLateLine, isLate, lateLine, timingOf, timingTag, type Timing } from "./timing";
 import { useRecheck } from "./use-recheck";
@@ -246,7 +248,8 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
       {work.kind === "loading" && <StepPanel title={t.panelTitle} busy><StepLoading message={t.loading} /></StepPanel>}
       {work.kind === "unavailable" && (
         <StepPanel title={t.panelTitle}>
-          <p className="note" role="alert">{t.loadError}</p>
+          {/* S-08 D3: the frame in the error colour; "Učitaj ponovno" stays a button under it, so no extra link. */}
+          <LoadAlert body={t.loadError} />
           <StepActions><Button tone="secondary" onClick={() => void load()}>{t.retry}</Button></StepActions>
         </StepPanel>
       )}
@@ -285,12 +288,13 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
               <StepKv label={t.words}>{thousands(words)}</StepKv>
               {gate.kind === "not_required" && <StepKv label={t.declarationRow}>{declarationWhy}</StepKv>}
               {conversationsRow(attached) !== null && <StepKv label={t.conversationsRow}>{conversationsRow(attached)}</StepKv>}
-              {stage.kind === "unavailable" && <p className="note" role="note">{t.stageUnavailable}</p>}
+              {/* S-08 D13: the deadline could not be read; a role=alert frame, not a note. */}
+              {stage.kind === "unavailable" && <LoadAlert body={t.stageUnavailable} />}
               <p className="note">{t.timeNote}</p>
             </>
           )}
           {next !== null && next.retry && lines.map((line, i) => (
-            <p key={line} className="note" id={i === 0 ? OUTCOME_ID : undefined} tabIndex={i === 0 ? -1 : undefined} role={i === lines.length - 1 ? "alert" : undefined}>{line}</p>
+            <p key={line} className={next !== null && isErrorLine(next) ? `note ${outcome.error}` : "note"} id={i === 0 ? OUTCOME_ID : undefined} tabIndex={i === 0 ? -1 : undefined} role={i === lines.length - 1 ? "alert" : undefined}>{line}</p>
           ))}
           {!offline && !confirmed && ready !== null && next?.offer !== "declaration" && (
             <p className="note" id={WHY_ID}>{declarationWhy}{" "}

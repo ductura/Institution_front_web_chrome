@@ -19,10 +19,12 @@ import type { Stage } from "../../../../../../../src/components/predaja/stage.ts
 import { readWork } from "../../../../../../../src/components/student/Submission.tsx";
 
 import FormatCheck from "../../../editor/format-check/FormatCheck";
+import { LoadAlert } from "../../../states/States";
 import SheetSummary from "../sheet/SheetSummary";
 import StepLink from "../steps/StepLink";
 import { stepsText } from "../steps/messages.hr";
 import { checksText as c } from "./messages.hr";
+import styles from "./BeforeSubmitStep.module.css";
 import SummaryPanel from "./SummaryPanel";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "./declaration-gate";
 import { conversationsLine, serverAttachedCount, type AttachedCount, type AttachedCountRead } from "../declaration/attached-count";
@@ -168,7 +170,8 @@ export default function BeforeSubmitStep({
         <StepNav current={3} />
         <p className="note">{stepsText.intro}</p>
         {late !== null && <p className="note" id="sb-late">{late}</p>}
-        {stage.kind === "unavailable" && <p className="note" role="alert">{c.unavailable}</p>}
+        {/* S-08 R8: the frame in the error colour, with no link under it. */}
+        {stage.kind === "unavailable" && <LoadAlert body={c.unavailable} />}
         {!online && <p className="note" role="status" id="sb-off">{c.offline}</p>}
         <StepSection label={c.missingTitle}>
           <span>{gate.kind === "loading" ? c.declarationChecking : missing.count === 0 ? c.missingNothing : missing.items.map((item) => item.text).join(" ")}</span>
@@ -203,7 +206,7 @@ export default function BeforeSubmitStep({
         </StepSection>
         <StepSection label={c.pasted}>
           {summary.kind === "loading" ? <span>{c.pastedLoading}</span>
-            : pastes === null ? <span>{c.pastedUnknown}</span>
+            : pastes === null ? <span className={styles.error}>{c.pastedUnknown}</span>
             : <>
               {pastes.listed.length === 0 ? <span>{c.pastedNone}</span>
                 : <StepPlaces>{pastes.listed.map((paste, i) => <li key={`${paste.at.from}-${i}`}><a href={workHref}>{pasteWhen(paste.at)}</a></li>)}</StepPlaces>}

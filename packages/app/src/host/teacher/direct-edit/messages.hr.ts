@@ -11,5 +11,6 @@ export const directEditMessages = {
   unknown: "Nije poznato je li izmjena zabilježena. Osvježite stranicu pa provjerite tekst.",
   signedOut: "Sesija je istekla. Prijavite se ponovno.",
   mark: "Nastavnikov tekst",
+  noRoute: "Spremanje izravnih izmjena još nije dostupno. Tekst nije moguće izmijeniti.",
   retry: "Pokušaj ponovno",
 } as const;

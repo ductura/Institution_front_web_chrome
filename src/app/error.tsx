@@ -9,7 +9,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 export default function RouteError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <>
-      <title>{`${t.errorPage.errorTitle} · ${t.app.name}`}</title>
+      <title>{`${t.errorPage.errorTitle}, ${t.app.name}`}</title>
       <AppHeader />
       <ErrorScreen title={t.errorPage.errorTitle} body={t.errorPage.errorBody} onRetry={reset} />
     </>

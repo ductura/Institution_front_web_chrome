@@ -23,10 +23,10 @@ describe("readExport", () => {
     expect((await readExport(apiOf(ok({ ...BODY, questionnaireId: "22222222-2222-4222-8222-222222222222" })), ID, false)).kind).toBe("unavailable");
     expect((await readExport(apiOf(ok({ ...BODY, schema: "other" })), ID, false)).kind).toBe("unavailable");
   });
-  it("tells too few (409), not found (404 and 403 alike), signed out and unavailable apart", async () => {
+  it("tells too few (409), not found (404), denied (403), signed out and unavailable apart", async () => {
     expect((await readExport(apiOf(fail(409, "conflict")), ID, false)).kind).toBe("tooFew");
     expect((await readExport(apiOf(fail(404, "not_found")), ID, false)).kind).toBe("notFound");
-    expect((await readExport(apiOf(fail(403, "forbidden")), ID, false)).kind).toBe("notFound");
+    expect((await readExport(apiOf(fail(403, "forbidden")), ID, false)).kind).toBe("denied");
     expect((await readExport(apiOf(fail(401, "unauthorized")), ID, false)).kind).toBe("signedOut");
     expect((await readExport(apiOf(fail(503, "unavailable")), ID, false)).kind).toBe("unavailable");
     expect((await readExport(apiOf(fail(0, "client_rejected")), ID, false)).kind).toBe("unavailable");

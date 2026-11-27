@@ -1,0 +1,18 @@
+/* ED-72: „Obrnuti nacrt” (prototip editor.css .ro, .rpm, .rpnh, .tag.warn). */
+.list { list-style: none; margin: 0; padding: 0; }
+.heading { display: block; margin: 12px 0 2px; font-size: 12.5px; font-weight: 600; color: var(--ink-soft, var(--ink)); }
+.row {
+  display: block; inline-size: 100%; margin: 4px 0; padding: 3px 6px; border: 0; border-radius: 4px;
+  background: none; text-align: start; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer;
+}
+.row:hover { background: var(--hover, rgba(0, 0, 0, 0.04)); }
+.row:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 1px; }
+.tag {
+  display: inline-block; margin-inline-start: 6px; padding: 0 6px; border: 1px solid var(--warn, currentColor);
+  border-radius: 10px; font-size: 11.5px; color: var(--warn, currentColor); vertical-align: 1px;
+}
+.meta {
+  display: flex; flex-wrap: wrap; gap: 4px 12px; margin-block-start: 1px;
+  font-size: 11.5px; color: var(--ink-soft, var(--ink)); font-variant-numeric: tabular-nums;
+}
+.flag { color: var(--warn, currentColor); }

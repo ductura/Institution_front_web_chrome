@@ -6,7 +6,10 @@ import { useState, type SyntheticEvent } from "react";
 import { editorPanelLayoutsHr as t } from "@/lib/i18n/messages.hr";
 
 import { DEFAULT_SETTINGS, type PanelSize } from "../layout/layout-settings";
-import { DEFAULT_PREFERENCES, LAYOUTS, ROW_PARTS, rowShows, withRowPart, type LayoutPreferences, type Side } from "./preferences";
+import {
+  DEFAULT_PREFERENCES, LAYOUTS, partOrder, ROW_PARTS, rowShows, SUB_MODES, withPartMoved, withPartShown, withRowPart, withSubs,
+  type LayoutPreferences, type Side,
+} from "./preferences";
 import styles from "../SidePanels.module.css";
 
 const WIDTHS = ["narrow", "medium", "wide"] as const satisfies readonly PanelSize[];
@@ -67,6 +70,24 @@ export function PanelSettings({ side, value, onChange, width, onWidth }: {
           <legend>{t.row}</legend>
           {ROW_PARTS.map((part) => <Checkbox key={part} label={t.rowParts[part]} checked={rowShows(value)[part]}
             onChange={(event) => onChange(withRowPart(value, part, event.currentTarget.checked))} />)}
+        </fieldset>}
+        {side === "left" && <fieldset className={styles.mobileChoices}>
+          <legend>{t.subchapters}</legend>
+          {SUB_MODES.map((subs) => <Button key={subs} tone="quiet" aria-pressed={subs === (value.subs ?? "open")}
+            onClick={() => onChange(withSubs(value, subs))}>
+            {t.subModes[subs]}
+          </Button>)}
+        </fieldset>}
+        {side === "left" && <fieldset className={styles.mobileChoices}>
+          <legend>{t.parts}</legend>
+          {partOrder(value).map((part, index, order) => <div key={part} className={styles.partRow}>
+            <Checkbox label={t.leftSections[part]} checked={!(value.hideParts?.includes(part) ?? false)}
+              onChange={(event) => onChange(withPartShown(value, part, event.currentTarget.checked))} />
+            <Button tone="quiet" aria-label={t.moveUp(t.leftSections[part])} disabled={index === 0}
+              onClick={() => onChange(withPartMoved(value, part, -1))}><span aria-hidden="true">↑</span></Button>
+            <Button tone="quiet" aria-label={t.moveDown(t.leftSections[part])} disabled={index === order.length - 1}
+              onClick={() => onChange(withPartMoved(value, part, 1))}><span aria-hidden="true">↓</span></Button>
+          </div>)}
         </fieldset>}
         {width && onWidth && <fieldset className={styles.mobileChoices}>
           <legend>{t.width}</legend>

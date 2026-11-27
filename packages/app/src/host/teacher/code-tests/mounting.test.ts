@@ -18,4 +18,10 @@ describe("the teacher's code-test page is mounted", () => {
     expect(page).toContain("notFound()");
     expect(readFileSync(join(import.meta.dirname, "CodeTestsPage.tsx"), "utf8")).toContain("<CodeTestsForm");
   });
+  it("the task's card links to it and the page returns to the task", () => {
+    const card = readFileSync(join(import.meta.dirname, "../assignment-facts/AssignmentFacts.tsx"), "utf8");
+    expect(card).toContain("/testovi");
+    expect(card).toContain("code-tests-link");
+    expect(readFileSync(join(import.meta.dirname, "CodeTestsPage.tsx"), "utf8")).toContain("taskPath(assignmentId)");
+  });
 });

@@ -33,16 +33,16 @@ let host: HTMLElement | null = null;
 afterEach(() => { act(() => root?.unmount()); host?.remove(); root = host = null; });
 
 async function open() {
-  const { WorkPage } = await import("./work.tsx");
+  const { WorkEditorPage } = await import("./WorkEditorPage.tsx");
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => root!.render(createElement(WorkPage, { assignmentId: ID })));
+  await act(async () => root!.render(createElement(WorkEditorPage, { assignmentId: ID })));
   for (let n = 0; n < 100 && !host.querySelector("footer"); n += 1) await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
   return host;
 }
 
-describe("WorkPage, a submitted work", { timeout: 30000 }, () => {
+describe("WorkEditorPage, a submitted work", { timeout: 30000 }, () => {
   it("the footer says when it was submitted", async () => {
     const el = await open();
     expect(el.querySelector("footer")?.textContent).toContain("Predano 8. 11. 2026., 22:30");

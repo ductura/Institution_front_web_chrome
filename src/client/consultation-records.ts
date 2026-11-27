@@ -16,10 +16,32 @@ async function readBody<T>(request: () => Promise<{ ok: true; body: T } | { ok: 
 }
 
 export async function readConsultations(documentId: string, options?: ApiOptions) {
-  const answer = await readBody(() => createApi(options)("work.consultation-records.get", {
-    params: { documentId }, query: undefined, body: undefined,
-  }));
-  return answer?.records ?? null;
+  const answer = await readConsultationList(documentId, options);
+  return answer.kind === "ready" ? answer.records : null;
+}
+
+/**
+ * Design alignment 27. 11. 2026. (N-11): the list with the status that decides the
+ * page: 401 leads to sign-in, 403 and 404 have their own states, the rest is a
+ * read that can be tried again.
+ */
+export type ConsultationListRead =
+  | { kind: "ready"; records: Body<ApiResult<"work.consultation-records.get">>["records"] }
+  | { kind: "unauthorized" | "forbidden" | "not-found" | "unavailable" };
+
+export async function readConsultationList(documentId: string, options?: ApiOptions): Promise<ConsultationListRead> {
+  try {
+    const answer = await createApi(options)("work.consultation-records.get", {
+      params: { documentId }, query: undefined, body: undefined,
+    });
+    if (answer.ok) return Array.isArray(answer.body?.records) ? { kind: "ready", records: answer.body.records } : { kind: "unavailable" };
+    if (answer.status === 401) return { kind: "unauthorized" };
+    if (answer.status === 403) return { kind: "forbidden" };
+    if (answer.status === 404) return { kind: "not-found" };
+    return { kind: "unavailable" };
+  } catch {
+    return { kind: "unavailable" };
+  }
 }
 
 export async function readConsultationVersions(documentId: string, beforeRevision: number | null, options: ApiOptions = {}) {

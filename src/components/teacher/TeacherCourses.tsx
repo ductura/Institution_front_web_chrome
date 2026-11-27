@@ -16,7 +16,7 @@ const workTypes: Record<string, string> = messagesHr.teacher.assignment.workType
 const years: Record<string, string> = messagesHr.teacher.course.years;
 
 /** `2026/2027` as `2026./2027.`, the form the course form shows. */
-function yearHr(year: string): string {
+export function yearHr(year: string): string {
   return years[year] ?? year.replace(/^(\d{4})\/(\d{4})$/, "$1./$2.");
 }
 
@@ -66,11 +66,11 @@ function Works({ assignmentId, works, marked }: {
   if (listed.length === 0) return h("p", { className: styles.works }, t.noWorks);
   const list = h("ul", { className: styles.works, "aria-label": t.worksLabel },
     listed.map(({ row, documentId }, i) =>
-      h("li", { key: documentId },
+      h("li", { key: documentId, className: styles.work },
         h("a", { href: `/nastavnik/rad/${encodeURIComponent(documentId)}` }, `${t.work} ${i + 1}`),
-        h("span", { className: styles.submission }, ` · ${submissionHr(row)}`),
+        h("span", { className: styles.submission }, submissionHr(row)),
         marked?.includes(row.studentId) === true
-          ? h("span", { className: styles.accommodation }, ` · ${t.accommodation}`)
+          ? h("span", { className: styles.accommodation }, t.accommodation)
           : null,
         languageLink(assignmentId, documentId, i))));
   if (marked !== null) return list;
@@ -82,7 +82,7 @@ function languageLink(assignmentId: string, documentId: string, i: number) {
   const href = workLanguageExceptionHref(assignmentId, documentId);
   if (href === null) return null;
   const label = messagesHr.teacher.workLanguageException.link;
-  return h("span", { className: styles.submission }, " · ",
+  return h("span", { className: styles.submission },
     h("a", { href, "aria-label": `${t.work} ${i + 1}: ${label}` }, label));
 }
 
@@ -102,11 +102,13 @@ export default function TeacherCourses({ courses, works = {}, accommodations = {
   accommodations?: Readonly<Record<string, readonly string[] | null>>;
   courseDetails?: (course: TeacherCourse) => ReactNode;
 }) {
+  // Design alignment 27. 11. 2026.: the faculty administrator creates a course,
+  // so the empty state says so and offers no course of the teacher's own.
   if (courses.length === 0) {
     return h("section", { className: styles.empty, "aria-labelledby": "bez-kolegija" },
       h("h2", { id: "bez-kolegija" }, t.empty),
-      h("p", null, t.emptyLead),
-      h("a", { className: "btn", href: "/nastavnik/zadatak/novi" }, t.newCourse));
+      h("p", null, t.emptyBody),
+      h("p", null, t.emptyNext));
   }
   return h(Fragment, null,
     // DAN-1082 (Z-01): "Novi kolegij i zadatak" is the button on this screen, not
@@ -128,8 +130,8 @@ export default function TeacherCourses({ courses, works = {}, accommodations = {
               h("li", { key: assignment.id, className: styles.assignment },
                 h("span", { className: styles.title }, assignment.title),
                 h("span", { className: styles.meta },
-                  workTypes[assignment.workType] ? `${workTypes[assignment.workType]} · ` : null,
-                  `${t.due} ${dueHr(assignment.dueAt)}`),
+                  workTypes[assignment.workType] ? h("span", null, workTypes[assignment.workType]) : null,
+                  h("span", null, `${t.due} ${dueHr(assignment.dueAt)}`)),
                 h("span", { className: styles.count },
                   countHr(assignment.enrolledStudents, t.students.one, t.students.few, t.students.many)),
                 h("a", { className: styles.open, href: `/nastavnik/brz-put?zadatak=${encodeURIComponent(assignment.id)}` },

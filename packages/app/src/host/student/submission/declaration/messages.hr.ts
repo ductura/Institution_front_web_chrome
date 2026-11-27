@@ -7,7 +7,7 @@ export const declarationStepText = {
   recordedTag: "zabilježeno",
   // NF-3 PR-4 (Q-10): only "Asistent", never a provider or a model.
   transferLine: "Prijenos iz Asistenta, {at}",
-  transferWho: "Asistent · {target}",
+  transferWho: "Asistent, {target}",
   chatLine: "Razgovor s Asistentom bez prijenosa, {date}",
   chatWho: "Asistent",
   // NF-3 PR-4 (E-9a): what the block holds and where outside tools go.
@@ -78,7 +78,7 @@ export const declarationStepText = {
 } as const;
 
 export const chatDialogText = {
-  title: "Razgovor {n} · {date}",
+  title: "Razgovor {n}, {date}",
   meta: "Točno kako je zabilježen i kako će ga vidjeti nastavnik.",
   you: "Vi",
   ai: "Asistent",

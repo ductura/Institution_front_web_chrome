@@ -25,11 +25,17 @@
 }
 
 .alert {
-  color: var(--danger, inherit);
+  color: var(--error);
 }
 
 .listTitle {
   margin-top: 0;
+}
+
+/* Design alignment 27. 11. 2026. (5a): nothing sticks out of the card; the table scrolls sideways. */
+.scroll {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .table {

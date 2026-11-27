@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { signInHref } from "@/client/api";
 import { serverApi } from "@/client/server";
+import LoadAlert from "@/components/shell/LoadAlert";
 import MentoredWorks from "@/components/teacher/MentoredWorks";
 import MentorshipRequests, { type RequestsRead } from "@/components/teacher/MentorshipRequests";
 import { readMentoredWorks } from "@/components/teacher/mentored-works-read";
@@ -14,7 +15,7 @@ const t = messagesHr.mentoredWorks;
 const HREF = "/nastavnik/mentorstva";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
+export const metadata = { title: `${t.title}, ${messagesHr.app.name}` };
 
 /**
  * TODO(ugovor): teacher.mentorship-requests.get comes with @ductura/contracts
@@ -34,12 +35,9 @@ const REQUESTS: RequestsRead = { kind: "unavailable" };
 export default async function MentoredWorksPage() {
   const read = await readMentoredWorks(serverApi((await cookies()).toString()));
   if (read.kind === "signedOut") redirect(signInHref(HREF));
-  const works = read.kind === "ready" ? <MentoredWorks works={read.works} /> : (
-    <>
-      <p role="alert" className={styles.alert}>{t.unavailable}</p>
-      <p><a className={styles.retry} href={HREF}>{t.retry}</a></p>
-    </>
-  );
+  const works = read.kind === "ready"
+    ? <MentoredWorks works={read.works} />
+    : <LoadAlert retry={{ label: t.retry, href: HREF }}>{t.unavailable}</LoadAlert>;
   return (
     <div className={`page ${styles.page}`}>
       <div className={styles.head}>

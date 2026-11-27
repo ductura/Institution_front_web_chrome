@@ -142,6 +142,8 @@ export default function N07ReceiptPage({ documentId, workHref, current, loadPdf 
     try { downloadBlob(outcome.blob, outcome.filename); toasts.show(text.pdfSaved); } catch { toasts.show(text.pdfFailed, "error"); }
   };
   const submitted = isSubmittedRead(input);
+  const submission = input?.kind === "ready" ? input.submission : null;
+  const submittedRevision = submission?.kind === "potvrdeno" ? submission.receipt.payload.revision : submission?.kind === "ceka" ? submission.revision : undefined;
   const summary = useProcessSummary(documentId, current, submitted);
   const view = receiptView(input);
   // N-10 (WEB-2157): the process summary is its own page under the work.
@@ -166,7 +168,7 @@ export default function N07ReceiptPage({ documentId, workHref, current, loadPdf 
       )}
       {full && rev.banner}
       {practice && <PracticeNotice />}
-      {submitted && <PreSubmitPanel outcome={summary.outcome} summaryHref={summaryHref} onReload={() => void summary.load()} />}
+      {submitted && <PreSubmitPanel outcome={summary.outcome} summaryHref={summaryHref} onReload={() => void summary.load()} documentId={documentId} revision={submittedRevision} />}
       <ReceiptPanel view={view} onRetry={retry} onCopy={copy} verifyHref={(path) => appHref(base, path)} />
       {submitted && showFallback(fallbackKey(view)) && <FallbackPanel fallback={{ kind: "unavailable" }} />}
       {input?.kind === "ready" && <AiDeclarationSection submissionId={documentId} />}

@@ -96,6 +96,26 @@ describe("stranica", () => {
     expect(out.querySelector("input[type=file]")).not.toBeNull();
   });
 
+  it("403: „Nemate pristup ovom prikazu” i „Natrag na moj prostor”, bez teksta greške; 401 ne prikazuje grešku", async () => {
+    const denied = await mount({ read: async () => ({ kind: "denied" }) });
+    expect(denied.querySelector("h1")?.textContent).toBe("Nemate pristup ovom prikazu");
+    expect(denied.querySelector("a")?.textContent).toBe("Natrag na moj prostor");
+    expect(denied.querySelector("[role=alert]")).toBeNull();
+    expect(denied.textContent).not.toContain(analysisPageMessages.off);
+    act(() => root?.unmount());
+    denied.remove();
+    const signedOut = await mount({ read: async () => ({ kind: "signedOut" }) });
+    expect(signedOut.querySelector("[role=alert]")).toBeNull();
+    expect(signedOut.textContent).not.toContain(analysisPageMessages.failed);
+  });
+
+  it("nedostupan popis je okvir role=alert s poveznicom, ne gumb u kartici", async () => {
+    const out = await mount({ read: async () => ({ kind: "unavailable" }) });
+    expect(out.querySelector("[role=alert]")?.textContent).toContain(analysisPageMessages.unavailable);
+    expect(out.querySelector("[role=alert] button")).toBeNull();
+    expect(button(out, "Pokušaj ponovno")).not.toBeUndefined();
+  });
+
   it("bez skupa „Dalje” je onemogućeno; nakon primjera je moguće i vodi na odabir analize", async () => {
     const out = await mount({ read: async () => ({ kind: "ready", data: CATALOGUE }) });
     expect(out.textContent).toContain(analysisPageMessages.needDataset);

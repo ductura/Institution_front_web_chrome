@@ -32,7 +32,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
-        <title>{`${t.errorPage.errorTitle} · ${t.app.name}`}</title>
+        <title>{`${t.errorPage.errorTitle}, ${t.app.name}`}</title>
         <AppHeader />
         <ErrorScreen title={t.errorPage.errorTitle} body={t.errorPage.errorBody} onRetry={reset} />
       </body>

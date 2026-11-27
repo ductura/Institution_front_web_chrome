@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import CourseStudents from "@/components/teacher/CourseStudents";
 import { courseStudentsHr as t, messagesHr } from "@/lib/i18n/messages.hr";
 
-export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
+export const metadata = { title: `${t.title}, ${messagesHr.app.name}` };
 
 type Props = { params: Promise<{ courseId: string }> };
 

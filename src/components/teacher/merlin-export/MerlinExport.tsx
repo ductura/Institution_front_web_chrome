@@ -11,6 +11,7 @@ import {
 } from "../../../client/merlin-export.ts";
 import { formatDateTimeHr } from "../../../lib/i18n/hr.ts";
 import { messagesHr } from "../../../lib/i18n/messages.hr.ts";
+import LoadAlert from "../../shell/LoadAlert.tsx";
 
 import { merlinHref } from "./links.ts";
 import styles from "./MerlinExport.module.css";
@@ -41,19 +42,20 @@ function yesNo(value: boolean | null): string {
   return value === null ? t.none : value ? t.yes : t.no;
 }
 
-/** The preview columns, in the order of the CSV (D-286); null cells read as "nema". */
+/**
+ * The preview columns, in the order of the CSV (D-286); null cells read as "nema", a missing name in words.
+ * Design alignment 27. 11. 2026. (A5): the file fingerprints stay in the CSV and the package, not on screen.
+ */
 export function rosterColumns(): DataTableColumn<MerlinRow>[] {
   const mono = (value: string | null) => (value === null ? t.none : <span className={styles.mono}>{value}</span>);
   return [
     { id: "familyName", header: t.columns.familyName, rowHeader: true, cell: (r) => r.familyName ?? t.unnamed },
-    { id: "givenName", header: t.columns.givenName, cell: (r) => r.givenName ?? t.none },
+    { id: "givenName", header: t.columns.givenName, cell: (r) => r.givenName ?? t.unnamed },
     { id: "submitted", header: t.columns.submitted, cell: (r) => yesNo(r.submitted) },
     { id: "submittedMinute", header: t.columns.submittedMinute, cell: (r) => (r.submittedMinute === null ? t.none : formatDateTimeHr(r.submittedMinute)) },
     { id: "afterDeadline", header: t.columns.afterDeadline, cell: (r) => yesNo(r.afterDeadline) },
     { id: "pdfName", header: t.columns.pdfName, cell: (r) => mono(r.pdfName) },
-    { id: "pdfSha256", header: t.columns.pdfSha256, cell: (r) => mono(r.pdfSha256) },
     { id: "docxName", header: t.columns.docxName, cell: (r) => mono(r.docxName) },
-    { id: "docxSha256", header: t.columns.docxSha256, cell: (r) => mono(r.docxSha256) },
   ];
 }
 
@@ -173,7 +175,12 @@ export default function MerlinExport({
   }
 
   if (roster.kind === "unavailable") {
-    return <Card title={t.rosterTitle} error={t.unavailable} />;
+    // Design alignment 27. 11. 2026. (A2, D3): the alert box, with the way to try again under it.
+    return (
+      <Card title={t.rosterTitle}>
+        <LoadAlert retry={{ label: t.retry, href: back }}>{t.unavailable}</LoadAlert>
+      </Card>
+    );
   }
 
   const submitted = hasSubmissions(roster.rows);
@@ -196,7 +203,8 @@ export default function MerlinExport({
           {canDownload(status) ? (
             <div className={styles.fingerprint}>
               <span className={styles.label}>{t.packageFingerprint}</span>
-              <Fingerprint value={status.view.sha256} />
+              {/* Design alignment 27. 11. 2026. (A5): no digest for people; the copy button stays. */}
+              <Fingerprint value={status.view.sha256} showDigest={false} />
               <p className={styles.meta}>{t.packageFingerprintNote}</p>
               <div className={styles.actions}>
                 <Button onClick={download} busy={busy}>{t.download}</Button>

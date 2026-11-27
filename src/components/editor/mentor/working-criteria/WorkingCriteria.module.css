@@ -4,6 +4,7 @@
 .seg { display: flex; flex-wrap: wrap; gap: 4px; }
 .noteText { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .muted { margin: 0; color: var(--ink-muted, inherit); font-size: 0.875rem; }
-.error { margin: 0; color: var(--danger, inherit); }
+/* Design alignment 27. 11. 2026. (A2): a 1 px frame in the error colour, no fill. */
+.error { margin: 0; padding: 10px 12px; color: var(--error); border: 1px solid var(--error); border-radius: var(--radius-sm, 4px); }
 .field { width: 100%; box-sizing: border-box; min-height: 5rem; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; }

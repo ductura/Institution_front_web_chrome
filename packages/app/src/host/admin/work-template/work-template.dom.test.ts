@@ -118,7 +118,9 @@ describe("Predložak rada", () => {
   it("403 pokazuje da predložak vidi samo administrator, bez obrasca", async () => {
     stub({ get: () => Response.json({ error: "forbidden" }, { status: 403 }) });
     await mount();
-    expect(text()).toContain("samo administrator ustanove");
+    expect(text()).toContain("Nemate pristup ovom prikazu");
+    expect(text()).not.toContain("samo administrator");
+    expect([...host!.querySelectorAll("a")].map((a) => a.textContent)).toContain("Natrag na moj prostor");
     expect(button("Spremi novu verziju")).toBeUndefined();
   });
 
