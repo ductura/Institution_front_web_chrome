@@ -3,7 +3,7 @@
 export const teacherPeerReviewText = {
   title: "Recenzija radova",
   lead: "Postavite krug anonimne recenzije za ovaj zadatak, dodijelite recenzije i pratite tko je što predao. Studenti ne vide tko koga recenzira, a Vi vidite oba kraja. Recenzija ne ulazi u ocjenu.",
-  back: "Natrag na zadatak",
+  back: "Natrag na kolegije",
   loading: "Učitavanje…",
   unavailable: "Podaci trenutačno nisu dostupni. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",

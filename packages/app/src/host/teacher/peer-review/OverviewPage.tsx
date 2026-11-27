@@ -31,7 +31,7 @@ export default function OverviewPage({ assignmentId, call = defaultCall }: { ass
   if (denied) return <DeniedState title={shell.access.deniedTitle} backLabel={shell.access.backToOwn} backHref={appHref(base, "/nastavnik")} />;
   return (
     <div className="page">
-      <p><a href={appHref(base, `/nastavnik/zadatak/${encodeURIComponent(assignmentId)}`)}><span aria-hidden="true">← </span>{t.back}</a></p>
+      <p><a href={appHref(base, "/nastavnik")}><span aria-hidden="true">← </span>{t.back}</a></p>
       <header><h1>{t.title}</h1><p>{t.lead}</p></header>
       <RoundPanel assignmentId={assignmentId} call={call} onSignedOut={signedOut} onDenied={onDenied} onChanged={changed} />
       <OverviewPanel assignmentId={assignmentId} call={call} version={version} onSignedOut={signedOut} onDenied={onDenied} />
