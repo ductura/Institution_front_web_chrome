@@ -229,7 +229,8 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
   await test.step('Potvrda predaje ne prikazuje otisak, ali ga nudi za kopiranje, i nakon osvježavanja', async () => {
     await expect(page).toHaveURL((url) => url.pathname === `${submissionPath}/potvrda`);
     // S-08 K1, K2 (Ductus#2059): the SHA-256 string is no longer shown, in groups or whole; the note and the
-    // button that copies it stay. The receipt's artifactSha256 itself is checked above and in the stored receipt below.
+    // button stay, and the button hands over the receipt's own fingerprint as 64 characters without spaces.
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: webOrigin });
     const sha = receipt.payload.artifactSha256;
     const grouped = sha.match(/.{4}/g).join(' ');
     const copy = page.getByRole('button', { name: 'Otisak u međuspremnik' });
@@ -240,6 +241,8 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
       await expect(note, `Napomena o otisku: ${when}`).toBeVisible();
       await expect(page.getByText(grouped, { exact: true }), `Otisak u skupinama: ${when}`).toHaveCount(0);
       await expect(page.getByText(sha, { exact: true }), `Otisak u cijelosti: ${when}`).toHaveCount(0);
+      await copy.click();
+      expect(await page.evaluate(() => navigator.clipboard.readText()), `Kopirani otisak: ${when}`).toBe(sha);
     };
     await hidden('nakon predaje');
     await page.reload();

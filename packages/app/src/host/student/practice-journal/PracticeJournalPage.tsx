@@ -7,6 +7,7 @@ import { createApi, goToSignIn } from "@/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { formatDateHr, formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
 import { useHost } from "../../context";
+import { LoadAlert } from "../../states/States";
 import { hostText } from "../../../text";
 import { practiceJournalText as t } from "./messages.hr";
 import {
@@ -64,8 +65,7 @@ export default function PracticeJournalPage({ call = defaultCall, now = () => ne
     return (
       <div className="page">{back}{head}
         <Card level={2} title={t.title}>
-          <p role="alert">{t.unavailable}</p>
-          <p><Button tone="quiet" onClick={reload}>{t.retry}</Button></p>
+          <LoadAlert body={t.unavailable} retry={{ label: t.retry, onRetry: reload }} />
         </Card>
       </div>
     );
@@ -164,12 +164,11 @@ function Journal({ placement, today, call, here, onChanged }: { placement: Place
 
   let body;
   if (read === null || read.kind === "signedOut") body = <RouteLoading label={t.loadingEntries} />;
-  else if (read.kind === "notFound") body = <Card level={2} title={t.entriesTitle}><p role="alert">{t.placementGone}</p></Card>;
+  else if (read.kind === "notFound") body = <Card level={2} title={t.entriesTitle}><LoadAlert body={t.placementGone} /></Card>;
   else if (read.kind === "unavailable") {
     body = (
       <Card level={2} title={t.entriesTitle}>
-        <p role="alert">{t.entriesUnavailable}</p>
-        <p><Button tone="quiet" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button></p>
+        <LoadAlert body={t.entriesUnavailable} retry={{ label: t.retry, onRetry: () => setAttempt((n) => n + 1) }} />
       </Card>
     );
   } else {
@@ -186,7 +185,7 @@ function Journal({ placement, today, call, here, onChanged }: { placement: Place
                 {day.entries.map((entry) => (
                   <li key={entry.entryId} data-testid="entry">
                     <strong>{t.hours.replace("{h}", String(entry.hours).replace(".", ","))}</strong>{" "}
-                    {isSigned(entry, read.signoffs) && <Tag tone="accent">{t.signedMark}</Tag>}{" "}
+                    <Tag tone={isSigned(entry, read.signoffs) ? "accent" : "neutral"}>{isSigned(entry, read.signoffs) ? t.signedMark : t.unsignedMark}</Tag>{" "}
                     {corrected.has(entry.entryId) && <Tag tone="warn">{t.corrected}</Tag>}
                     {entry.correctsEntryId !== null && (
                       <><br /><em>{t.correction.replace("{date}", formatDateHr(read.entries.find((e) => e.entryId === entry.correctsEntryId)?.date ?? entry.date))}</em></>
@@ -209,7 +208,8 @@ function Journal({ placement, today, call, here, onChanged }: { placement: Place
                 <li key={s.signoffId} data-testid="signoff">
                   {t.signoffLine
                     .replace("{mentor}", `${s.mentor.givenName} ${s.mentor.familyName}`.trim() || t.mentorUnnamed)
-                    .replace("{date}", formatDateHr(s.throughDate)).replace("{n}", String(s.entryCount)).replace("{signedAt}", formatDateTimeHr(s.signedAt))}
+                    .replace("{date}", formatDateHr(s.throughDate)).replace("{signedAt}", formatDateTimeHr(s.signedAt))}
+                  <br /><span>{t.signoffCount.replace("{n}", String(s.entryCount))}</span>
                   {s.comment !== null && <><br /><span>{t.signoffComment.replace("{comment}", s.comment)}</span></>}
                 </li>
               ))}
@@ -223,6 +223,7 @@ function Journal({ placement, today, call, here, onChanged }: { placement: Place
   return (
     <>
       {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
+      {read?.kind === "ok" && placementState(placement, today) === "ended" && <p role="status">{t.endedNote}</p>}
       {open && (
         <Card level={2} title={correcting === null ? t.formTitle : t.formTitleCorrection.replace("{date}", formatDateHr(correcting.date))}>
           <form ref={formRef} onSubmit={(event) => void send(event)} noValidate>

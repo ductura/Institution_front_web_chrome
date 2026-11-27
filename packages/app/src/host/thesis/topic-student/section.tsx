@@ -5,7 +5,7 @@
 // the history of versions. After approval the form is locked. The mentor's side is another task.
 import { useRef, useState } from "react";
 
-import { Button, Notice, TextArea, TextField } from "@ductura/ui";
+import { Button, Notice, TextArea, TextField, formatDate } from "@ductura/ui";
 
 import { createApi } from "../../../../../../src/client/api";
 import type { SectionViewProps, ThesisSectionDef } from "../model";
@@ -13,7 +13,7 @@ import { canPropose, draftProblem, length, proposeTopic, SUMMARY_MAX, TITLE_MAX,
 import { topicStudentHr as t } from "./messages.hr";
 import { readTopic, type Call, type Topic } from "./read";
 
-const when = (iso: string) => new Date(iso).toLocaleDateString("hr-HR");
+const when = (iso: string) => formatDate(iso, "hr");
 export const say = (o: Outcome) => (o === "saved" ? t.saved : t[o]);
 
 export function TopicStudentView({ documentId, role, value: first, reload, call = createApi() }: SectionViewProps<Topic> & { call?: Call }) {

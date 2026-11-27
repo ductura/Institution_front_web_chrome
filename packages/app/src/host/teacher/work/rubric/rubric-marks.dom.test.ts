@@ -34,6 +34,23 @@ describe("RubricMarks", () => {
     return host;
   };
 
+  it("a mark of a criterion that no longer exists shows the sentence, never the identifier", async () => {
+    const call = client({ "teacher.work-rubric.get": () => ok({ rubricVersion: 1, marks: [{ criterionId: "k-obrisan-77", level: null, note: null }] }) });
+    const host = await mount(call);
+    expect(host.textContent).toContain("Kriterij više ne postoji.");
+    expect(host.textContent).not.toContain("k-obrisan-77");
+  });
+
+  it("an unavailable read is one alert frame with a retry that reads again", async () => {
+    let calls = 0;
+    const call = client({ "teacher.work-rubric.get": () => (calls++ === 0 ? { ok: false, status: 503, code: "unavailable" } : ok({ rubricVersion: 1, marks: [] })) });
+    const host = await mount(call);
+    expect(host.querySelector("[role=alert]")?.textContent).toBe("Kriteriji trenutačno nisu dostupni.");
+    await act(async () => { [...host.querySelectorAll("button")].find((x) => x.textContent === "Pokušaj ponovno")!.click(); });
+    await settle();
+    expect(host.querySelector("[role=alert]")).toBeNull();
+  });
+
   it("marks a level and saves it; the save button waits for a change", async () => {
     const call = client();
     const host = await mount(call);

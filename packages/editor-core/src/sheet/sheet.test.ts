@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import vectors from "./golden-vectors.json";
+import { readFileSync } from "node:fs";
 import {
   MAX_SHEET_COLUMNS,
+  MAX_SHEET_ID_LENGTH,
   MAX_SHEET_ROWS,
   addColumn,
   addRow,
@@ -19,40 +20,146 @@ import {
 } from "./index.ts";
 import * as core from "../index.ts";
 
-type Vector = {
-  name: string;
-  valid: boolean;
-  input: unknown;
-  canonical?: string;
-  sha256?: string;
-  code?: string;
+// Golden vectors (SRV-V14-SHEET-MODEL, val 14 decision 2). golden-vectors.json is a byte-for-byte
+// copy of server/domain/sheet/golden-vectors.json in the server repository (ductura/Institution_server).
+// It is derived outside any repository code; never regenerate it from this code, copy it again.
+// The server reports every error of a rejected document as [path, SHEET_*/CELL_* code]; this
+// validator returns the first problem with its own code, so only the first path and the mapped code
+// are compared.
+type Accepted = { name: string; value: unknown; utf8Hex: string; sha256: string };
+type Rejected = { name: string; value: unknown; errors: [string, string][] };
+
+const VECTOR_BYTES = readFileSync(new URL("./golden-vectors.json", import.meta.url));
+const VECTORS = JSON.parse(VECTOR_BYTES.toString("latin1")) as {
+  sheetDocuments: Accepted[];
+  rejectedSheetDocuments: Rejected[];
 };
 
-describe("golden vectors", () => {
-  for (const v of vectors.vectors as Vector[]) {
-    it(v.name, () => {
-      const result = validateSheetDocument(v.input);
-      if (v.valid) {
-        expect(result.ok).toBe(true);
-        const text = canonicalSheetDocument(v.input as SheetDocument);
-        expect(text).toBe(v.canonical);
-        expect(createHash("sha256").update(text, "utf8").digest("hex")).toBe(v.sha256);
-      } else {
-        expect(result.ok).toBe(false);
-        if (!result.ok) expect(result.code).toBe(v.code);
-      }
-    });
-  }
+/** Server error code -> codes this validator may report for the same fault. */
+const CODE_MAP: Record<string, string[]> = {
+  SHEET_NOT_OBJECT: ["not_object"],
+  SHEET_FIELD_UNKNOWN: ["unknown_field"],
+  SHEET_VERSION_INVALID: ["bad_schema_version"],
+  SHEET_KIND_INVALID: ["bad_kind"],
+  SHEET_LIST_INVALID: ["bad_sheets", "too_many_sheets"],
+  SHEET_ID_INVALID: ["bad_sheet_id"],
+  SHEET_ID_DUPLICATE: ["duplicate_sheet_id"],
+  SHEET_NAME_INVALID: ["bad_sheet_name"],
+  SHEET_NAME_DUPLICATE: ["duplicate_sheet_name"],
+  SHEET_ROWS_INVALID: ["bad_dimension"],
+  SHEET_COLUMNS_INVALID: ["bad_dimension"],
+  SHEET_CELLS_INVALID: ["bad_cell"],
+  CELL_REF_INVALID: ["bad_cell_ref", "cell_out_of_bounds"],
+  CELL_OUT_OF_GRID: ["cell_out_of_bounds"],
+  CELL_NOT_OBJECT: ["bad_cell"],
+  CELL_EMPTY: ["empty_cell_stored"],
+  CELL_FIELD_UNKNOWN: ["unknown_field"],
+  CELL_VALUE_INVALID: ["bad_cell_value", "missing_field", "empty_cell_stored"],
+  CELL_FORMULA_INVALID: ["bad_formula"],
+};
 
-  it("covers every validation code: vectors hold all but too_many_cells (built in code below)", () => {
+/**
+ * Documents the server refuses and this validator still accepts (found by this parity test).
+ * Closing them changes validate.ts, outside this task's paths; they are tracked in the PR as open.
+ * `it.fails` keeps them honest: when validate.ts is fixed these cases turn red and must be moved
+ * into the normal list.
+ */
+const WEB_ACCEPTS_BUT_SERVER_REFUSES = new Set([
+  "uppercase-sheet-id",
+  "cell-text-with-nul",
+  "cell-text-with-zero-width-space",
+  "formula-with-line-break",
+  "formula-with-stored-result",
+]);
+
+describe("golden vectors: file parity with the server", () => {
+  it("is the server file: ASCII, LF only, the agreed vectors and no web-only fields", () => {
+    expect(VECTOR_BYTES.some((byte) => byte > 0x7e || byte === 0x0d)).toBe(false);
+    expect(Object.keys(JSON.parse(VECTOR_BYTES.toString("latin1"))).sort()).toEqual([
+      "about",
+      "rejectedSheetDocuments",
+      "sheetDocuments",
+      "vectorSchema",
+    ]);
+    expect(VECTORS.sheetDocuments).toHaveLength(4);
+    expect(VECTORS.rejectedSheetDocuments).toHaveLength(41);
+  });
+  it("every server error code has a mapping here", () => {
+    const seen = new Set(VECTORS.rejectedSheetDocuments.flatMap((v) => v.errors.map((e) => e[1])));
+    expect([...seen].filter((c) => !(c in CODE_MAP))).toEqual([]);
+  });
+});
+
+describe("golden vectors: accepted documents", () => {
+  it.each(VECTORS.sheetDocuments)("$name has the same bytes and hash as the server", (v) => {
+    const bytes = Buffer.from(v.utf8Hex, "hex");
+    expect(createHash("sha256").update(bytes).digest("hex")).toBe(v.sha256);
+    expect(validateSheetDocument(v.value).ok).toBe(true);
+    const text = canonicalSheetDocument(v.value as SheetDocument);
+    expect(Buffer.from(text, "utf8").toString("hex")).toBe(v.utf8Hex);
+    expect(createHash("sha256").update(text, "utf8").digest("hex")).toBe(v.sha256);
+    const reparsed = JSON.parse(bytes.toString("utf8")) as SheetDocument;
+    expect(validateSheetDocument(reparsed).ok).toBe(true);
+    expect(sheetDocumentsEqual(v.value as SheetDocument, reparsed)).toBe(true);
+  });
+});
+
+describe("golden vectors: rejected documents", () => {
+  const refused = VECTORS.rejectedSheetDocuments.filter((v) => !WEB_ACCEPTS_BUT_SERVER_REFUSES.has(v.name));
+  const gaps = VECTORS.rejectedSheetDocuments.filter((v) => WEB_ACCEPTS_BUT_SERVER_REFUSES.has(v.name));
+
+  it.each(refused)("$name is refused with the code and place the server reports", (v) => {
+    const r = validateSheetDocument(v.value);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    const [firstPath, firstCode] = v.errors[0]!;
+    expect(CODE_MAP[firstCode]).toContain(r.code);
+    // A cell fault is reported on the cell or on one of its fields; everything else on the same path.
+    expect(r.path.startsWith(firstPath.split(".").slice(0, 4).join(".")), r.path).toBe(true);
+  });
+
+  it.fails.each(gaps)("$name: still accepted here although the server refuses it (open gap)", (v) => {
+    expect(validateSheetDocument(v.value).ok).toBe(false);
+  });
+
+  it("the open-gap list names only vectors that exist", () => {
+    const names = new Set(VECTORS.rejectedSheetDocuments.map((v) => v.name));
+    expect([...WEB_ACCEPTS_BUT_SERVER_REFUSES].filter((n) => !names.has(n))).toEqual([]);
+  });
+
+  it("covers every validation code but too_many_cells (built in code below) and bad_sheet_id (below)", () => {
     const all = [
       "bad_cell", "bad_cell_ref", "bad_cell_value", "bad_dimension", "bad_formula",
-      "bad_kind", "bad_schema_version", "bad_sheet_id", "bad_sheet_name", "bad_sheets",
+      "bad_kind", "bad_schema_version", "bad_sheet_name", "bad_sheets",
       "cell_out_of_bounds", "duplicate_sheet_id", "duplicate_sheet_name", "empty_cell_stored",
-      "missing_field", "not_object", "too_many_cells", "too_many_sheets", "unknown_field",
+      "missing_field", "not_object", "too_many_sheets", "unknown_field",
     ];
-    const inVectors = new Set((vectors.vectors as Vector[]).filter((v) => !v.valid).map((v) => v.code));
-    expect([...inVectors].sort()).toEqual(all.filter((c) => c !== "too_many_cells"));
+    const seen = new Set(
+      refused.map((v) => {
+        const r = validateSheetDocument(v.value);
+        return r.ok ? "" : r.code;
+      }),
+    );
+    expect([...seen].sort()).toEqual(all);
+  });
+});
+
+describe("validation codes the server vectors do not reach", () => {
+  it("rejects an empty sheet id and an id longer than the limit", () => {
+    for (const id of ["", "a".repeat(MAX_SHEET_ID_LENGTH + 1)]) {
+      const r = validateSheetDocument(createSheetDocument({ id, name: "List1" }));
+      expect(r.ok === false && r.code, id.length.toString()).toBe("bad_sheet_id");
+    }
+  });
+  it("rejects a root array, a zero row count and a missing sheets field", () => {
+    const a = validateSheetDocument([]);
+    expect(a.ok === false && a.code).toBe("not_object");
+    const d = createSheetDocument();
+    d.sheets[0] = { ...d.sheets[0]!, rows: 0 };
+    const b = validateSheetDocument(d);
+    expect(b.ok === false && b.code).toBe("bad_dimension");
+    const c = validateSheetDocument({ schemaVersion: 1, kind: "spreadsheet" });
+    expect(c.ok === false && c.code).toBe("missing_field");
   });
 });
 

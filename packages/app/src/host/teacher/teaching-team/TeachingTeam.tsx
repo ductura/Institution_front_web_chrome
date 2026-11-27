@@ -1,10 +1,10 @@
 "use client";
 
-import { Button, Checkbox, DataTable, Select, type DataTableColumn } from "@ductura/ui";
+import { Button, Checkbox, DataTable, Select, TextField, type DataTableColumn } from "@ductura/ui";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { goToSignIn } from "../../../../../../src/client/api";
-import { createTeachingTeam, type TeachingTeamPort, type TeachingTeamView } from "../../../../../../src/client/teaching-team";
+import { createTeachingTeam, groupName, MAX_GROUP_NAME, type TeachingTeamPort, type TeachingTeamView } from "../../../../../../src/client/teaching-team";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
 import { teachingTeamHr as text } from "./messages.hr";
@@ -35,15 +35,50 @@ function sameMembers(a: string[], b: string[]) {
   return a.length === b.length && a.every((id) => b.includes(id));
 }
 
+/** institution.course-groups.post: the holder and a collaborator may add a seminar group. */
+function NewGroup({ port, save, busy }: { port: TeachingTeamPort; save: Save; busy: boolean }) {
+  const [name, setName] = useState("");
+  return (
+    <div className={styles.actions}>
+      <TextField label={text.newGroupName} hint={text.newGroupHint} maxLength={MAX_GROUP_NAME} value={name} disabled={busy}
+        onChange={(event) => setName(event.currentTarget.value)} />
+      <Button type="button" disabled={busy || groupName(name) === null}
+        onClick={() => void save(async () => { const result = await port.createGroup(name); if (result.kind === "saved") setName(""); return result; }, text.groupCreated)}>{text.createGroup}</Button>
+    </div>
+  );
+}
+
+/** institution.course-group-teachers.post: the holder puts a teacher who is not yet in the group into it. */
+function GroupTeacher({ port, save, busy, groupId, taken, teachers }: {
+  port: TeachingTeamPort; save: Save; busy: boolean; groupId: string; taken: string[]; teachers: Person[];
+}) {
+  const options = teachers.filter(({ id }) => !taken.includes(id));
+  const [teacherId, setTeacherId] = useState("");
+  const chosen = options.some(({ id }) => id === teacherId) ? teacherId : (options[0]?.id ?? "");
+  if (options.length === 0) return <p>{text.noTeacherToAdd}</p>;
+  return (
+    <div className={styles.actions}>
+      <Select label={text.groupTeacher} value={chosen} disabled={busy}
+        options={options.map(({ id, name }) => ({ value: id, label: name }))}
+        onChange={(event) => setTeacherId(event.currentTarget.value)} />
+      <Button type="button" disabled={busy || chosen === ""}
+        onClick={() => void save(() => port.assignGroupTeacher(groupId, chosen), text.groupTeacherAdded)}>{text.addGroupTeacher}</Button>
+    </div>
+  );
+}
+
 export function TeachingTeamContent({ view, port, save, busy, groupId, setGroupId }: {
   view: TeachingTeamView; port: TeachingTeamPort; save: Save; busy: boolean;
   groupId: string; setGroupId: (id: string) => void;
 }) {
   if (view.role === "assistant") {
-    return view.groups.length === 0 ? <p>{text.noAssignedGroups}</p> : view.groups.map((group) => (
-      <DataTable key={group.id} caption={text.groupStudents(group.name)} columns={[studentColumn]}
-        rows={group.students} rowKey={rowKey} empty={text.noStudents} />
-    ));
+    return <>
+      {view.groups.length === 0 ? <p>{text.noAssignedGroups}</p> : view.groups.map((group) => (
+        <DataTable key={group.id} caption={text.groupStudents(group.name)} columns={[studentColumn]}
+          rows={group.students} rowKey={rowKey} empty={text.noStudents} />
+      ))}
+      <NewGroup port={port} save={save} busy={busy} />
+    </>;
   }
   return <HolderEditor view={view} port={port} save={save} busy={busy} groupId={groupId} setGroupId={setGroupId} />;
 }
@@ -73,7 +108,10 @@ function HolderEditor({ view, port, save, busy, groupId, setGroupId }: {
         {teamChanged && <Button type="button" tone="quiet" disabled={busy}
           onClick={() => setAssistants(view.assistantIds)}>{text.discard}</Button>}
       </div>
+      <NewGroup port={port} save={save} busy={busy || teamChanged || groupChanged} />
       {group ? <>
+        <GroupTeacher key={group.id} port={port} save={save} busy={busy || teamChanged || groupChanged} groupId={group.id}
+          taken={group.assistantIds} teachers={view.assistants} />
         <Select label={text.group} value={group.id} disabled={busy || groupChanged}
           options={view.groups.map(({ id, name }) => ({ value: id, label: name }))}
           onChange={(event) => { setGroupDraft(null); setGroupId(event.currentTarget.value); }} />

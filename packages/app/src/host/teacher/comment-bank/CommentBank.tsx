@@ -3,12 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Select, TextArea, TextField } from "@ductura/ui";
 
+import { LoadAlert } from "../../states/States";
+
 import {
   BANK_KINDS, BANK_LABEL_MAX, draftMessage, draftsAfterPublish, normalizeBankInput, publishDraftGroup, publishMessage, removeBankEntry,
   removeMessage, saveBankEntry, saveDraftComment, saveEntryMessage, searchBank, updateBankEntry, updateMessage,
   type BankEntry, type BankKind, type CommentBankPort, type DraftAnchor, type DraftCommentsPort, type WorkComment,
 } from "./model";
 import { commentBankMessages as text } from "./messages.hr";
+
+/** Outcomes that went through; any other note is a refusal or an unknown outcome and is shown in the error frame. */
+const SUCCESS: ReadonlySet<string> = new Set([text.draftSaved, text.published, text.entrySaved, text.entryUpdated, text.removed]);
 
 /** The form of one bank entry (new or edited); it sends nothing the server would refuse and shows why. */
 function EntryForm({ initial, busy, onSubmit, onCancel }: {
@@ -62,6 +67,8 @@ export default function CommentBank(
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  // The bank is "loading" until the first answer; a failed read is not an empty bank.
+  const [bankFailed, setBankFailed] = useState(false);
   // Set synchronously, so a second click before the button re-renders as disabled sends nothing.
   const publishing = useRef(false);
 
@@ -71,8 +78,8 @@ export default function CommentBank(
       .then((read) => { if (active && read.kind === "ready") setDrafts(read.drafts); })
       .catch(() => undefined);
     void bankPort.read()
-      .then((read) => { if (active) setEntries(read.kind === "ready" ? read.entries : null); })
-      .catch(() => { if (active) setEntries(null); });
+      .then((read) => { if (!active) return; setEntries(read.kind === "ready" ? read.entries : null); setBankFailed(read.kind !== "ready"); })
+      .catch(() => { if (active) { setEntries(null); setBankFailed(true); } });
     return () => { active = false; };
   }, [assignmentId, draftsPort, bankPort, attempt]);
 
@@ -141,10 +148,9 @@ export default function CommentBank(
       <h2>{text.title}</h2>
       <h3>{text.bankTitle}</h3>
       {entries === null ? (
-        <>
-          <p>{text.bankUnavailable}</p>
-          <Button onClick={() => setAttempt((n) => n + 1)}>{text.retry}</Button>
-        </>
+        bankFailed
+          ? <LoadAlert body={text.bankUnavailable} retry={{ label: text.retry, onRetry: () => { setBankFailed(false); setAttempt((n) => n + 1); } }} />
+          : <p role="status">{text.bankLoading}</p>
       ) : (
         <>
           <label>{text.search}<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
@@ -186,7 +192,9 @@ export default function CommentBank(
         </ul>
       )}
       <Button disabled={busy || drafts.length === 0} onClick={() => void publish()}>{text.publish}</Button>
-      <p role="status" aria-live="polite">{note}</p>
+      {note !== null && !SUCCESS.has(note)
+        ? <LoadAlert body={note} />
+        : <p role="status" aria-live="polite">{note}</p>}
     </section>
   );
 }
