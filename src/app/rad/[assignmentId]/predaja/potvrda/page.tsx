@@ -63,7 +63,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ assign
     readSubmissionState(submissionCall(server), assignmentId),
     readProvenance(PROVENANCE, assignmentId),
   ]);
-  const read = editorWorkRead(assignmentId, assignments, work);
+  const read = editorWorkRead(assignmentId, assignments, work, { refusals: true });
   if (read.kind === "signedOut" || submission.kind === "session-expired") redirect(signInHref(here));
   if (read.kind === "noticeFirst") redirect(`/zadatak/${assignmentId}`);
   if (read.kind === "notFound") notFound();

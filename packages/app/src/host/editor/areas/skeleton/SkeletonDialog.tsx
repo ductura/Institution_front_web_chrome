@@ -29,7 +29,7 @@ export function SkeletonDialog({ editor, profile, onClose }: { editor: Editor; p
     </>}>
       <p>{open.length === 0 ? t.none : t.intro}</p>
       {initial.titles.map((title) => initial.present.has(title)
-        ? <Checkbox key={title} label={`${title} (${t.present})`} checked disabled onChange={() => undefined} />
+        ? <Checkbox key={title} label={t.presentLabel(title)} checked disabled onChange={() => undefined} />
         : <Checkbox key={title} label={title} checked={picked.includes(title)}
             onChange={(e) => { setError(undefined); setPicked((p) => e.target.checked ? [...p, title] : p.filter((x) => x !== title)); }} />)}
     </Dialog>

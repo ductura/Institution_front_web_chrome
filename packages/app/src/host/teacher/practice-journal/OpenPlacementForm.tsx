@@ -55,7 +55,7 @@ export function OpenPlacementForm({ mentorships, open, onChanged }: {
       {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
       <form onSubmit={(event) => void send(event)} noValidate>
         <Select label={t.fieldMentorship} disabled={busy} error={fieldError("mentorshipId")} value={draft.mentorshipId}
-          options={[{ value: "", label: "" }, ...mentorships.map((m) => ({ value: m.mentorshipId, label: m.name }))]}
+          options={[{ value: "", label: t.chooseMentorship }, ...mentorships.map((m) => ({ value: m.mentorshipId, label: m.name }))]}
           onChange={(e) => setDraft({ ...draft, mentorshipId: e.target.value })} />
         <TextField label={t.fieldOrganisation} hint={t.fieldOrganisationHint} busy={busy} value={draft.organisationName} error={fieldError("organisationName")}
           onChange={(e) => setDraft({ ...draft, organisationName: e.target.value })} />

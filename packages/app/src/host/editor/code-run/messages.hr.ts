@@ -11,7 +11,9 @@ export const codeRunHr = {
   missingSolve: "Kod nema funkciju solve. Dodajte funkciju solve(ulaz) koja vraća rezultat.",
   summary: (passed: number, total: number) => `Prošlo ${passed} od ${total} testova.`,
   status: { passed: "prošao", failed: "pao", timeout: "vrijeme isteklo", error: "greška" },
+  input: "Ulaz",
   expected: "Očekivano",
   actual: "Dobiveno",
+  errorIn: "Greška u kodu:",
   timedOut: (seconds: number) => `Izvršavanje je prekinuto nakon ${seconds} s.`,
 } as const;

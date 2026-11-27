@@ -8,6 +8,7 @@
 // "no data"), ready, and ready read-only for a submitted work.
 import { useCallback, useRef, useState, type KeyboardEvent } from "react";
 import { Button, Card } from "@ductura/ui";
+import { LoadAlert } from "../../states/States";
 import type { SlideLayout, SlideSlot, SlideStep, SlidesDocument } from "../../../../../editor-core/src/slides/index.ts";
 import {
   addSlide, createEditorState, moveSlide, redo, removeSlide, selectSlide, selectedSlide, setBlockText, setLayout, setListItem, setNotes, undo,
@@ -40,9 +41,9 @@ export function SlideEditor({ source, onSteps, newId = freshId, unsavedNote = tr
   if (source.kind === "loading") return <Card title={t.region} busy />;
   if (source.kind === "error") {
     return (
-      // Card's own `error` slot has no room for the retry button, so the alert is written here.
+      // Card's own `error` slot has no room for the retry button, so the frame (A2, U7) is written here.
       <Card title={t.errorTitle}>
-        <p role="alert">{t.errorBody}</p>
+        <LoadAlert body={t.errorBody} />
         <Button tone="secondary" onClick={source.onRetry}>{t.retry}</Button>
       </Card>
     );

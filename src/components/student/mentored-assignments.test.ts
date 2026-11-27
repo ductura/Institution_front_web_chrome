@@ -67,7 +67,6 @@ describe("withMentored", () => {
       title: thesis.title,
       dueAt: thesis.dueAt,
       workState: "in_progress",
-      // Design alignment 27. 11. 2026. (S-07): the kind of work for the line under the title.
       workType: "master_thesis",
     });
   });

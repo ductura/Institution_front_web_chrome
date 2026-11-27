@@ -39,6 +39,8 @@ async function server(page: Page, replies: Reply[]) {
   await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({
     json: { assignments: [{ assignmentId: ID, workState: "in_progress" }] },
   }));
+  // F4-V17-R01: this spec types into an empty work, so the assignment has no template skeleton here.
+  await page.route(`**/api/v1/student/assignments/${ID}/template`, (route) => route.fulfill({ status: 404, json: { code: "not_found" } }));
   await page.route(`**/api/v1/student/assignments/${ID}/notice`, (route) => route.fulfill({ json: notice }));
   await page.route("**/api/v1/sources/lookup", async (route) => {
     bodies.push(route.request().postDataJSON());

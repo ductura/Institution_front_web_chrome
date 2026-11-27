@@ -46,7 +46,7 @@ export default async function DeclarationPage({ params }: { params: Promise<{ as
     readAssignmentsWithMentored(call),
     call("student.assignment-work.get", NONE).catch(() => UNREACHED),
   ]);
-  const read = editorWorkRead(assignmentId, assignments, work);
+  const read = editorWorkRead(assignmentId, assignments, work, { refusals: true });
   if (read.kind === "signedOut") redirect(signInHref(here));
   if (read.kind === "noticeFirst") redirect(`/zadatak/${assignmentId}`);
   if (read.kind === "notFound") notFound();

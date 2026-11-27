@@ -75,7 +75,7 @@ describe("AiDeclarationSection", () => {
     HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) { this.removeAttribute("open"); };
     await act(async () => { open.click(); });
     const dialog = el.querySelector("dialog")!;
-    expect(dialog.textContent).toContain("Razgovor 1 · 28. 10. 2026.");
+    expect(dialog.textContent).toContain("Razgovor 1, 28. 10. 2026.");
     expect(dialog.textContent).toContain("Točno kako je zabilježen; isti razgovor vidi i student.");
     expect(dialog.textContent).toContain("Počni konkretnom tvrdnjom.");
     expect(dialog.textContent).not.toContain("Poslije potvrde.");

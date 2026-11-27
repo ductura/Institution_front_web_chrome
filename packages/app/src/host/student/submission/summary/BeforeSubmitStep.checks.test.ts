@@ -89,3 +89,23 @@ describe("step 3 deadline (PR-17)", () => {
     expect(section(host, c.placeholders)).toBeDefined();
   });
 });
+
+describe("S-08 R8: what could not be read is written in the error colour", () => {
+  it("the deadline that could not be read is a role=alert frame with no link under it", async () => {
+    work.mockResolvedValue({ kind: "unavailable" });
+    summary.mockResolvedValue({ kind: "ok", summary: SUMMARY });
+    const host = await mount({ stage: { kind: "unavailable" } });
+    const frame = [...host.querySelectorAll('[role="alert"]')].find((a) => a.textContent === c.unavailable);
+    expect(frame?.tagName).toBe("DIV");
+    expect(frame?.className).toMatch(/alert/);
+    expect([...host.querySelectorAll("a, button")].some((e) => e.textContent === "Pokušaj ponovno" && frame?.parentElement?.contains(e))).toBe(false);
+  });
+
+  it("the number of pastes that could not be read is red, and says it does not stop the submission", async () => {
+    work.mockResolvedValue({ kind: "ready", documentId: "izmisljeni-dokument-1", revision: 2, nodes: [p("Tekst bez oznaka.")] });
+    summary.mockResolvedValue({ kind: "unavailable" });
+    const host = await mount();
+    const value = [...host.querySelectorAll("span")].find((e) => e.textContent === c.pastedUnknown);
+    expect(value?.className).toMatch(/error/);
+  });
+});
