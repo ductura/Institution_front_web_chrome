@@ -219,6 +219,57 @@ describe("OriginReporter (PM1-R01)", () => {
     }
   });
 
+  it("keeps the server's ranges when they arrive after the student started typing (Codex c.4716836076)", async () => {
+    const s = sheet();
+    const loaded = s.confirmedDoc();
+    let answer: (value: OriginStoredAnswer) => void = () => {};
+    const record = vi.fn(async (_documentId: string, _revision: number, _segments: readonly OriginSegment[]): Promise<OriginRecordAnswer> => ({ kind: "recorded", revision: 9, recorded: 3 }));
+    const port: OriginSegmentsPort = { record, stored: () => new Promise((resolve) => { answer = resolve; }) };
+    const reporter = new OriginReporter(port, DOCUMENT);
+    const seeding = reporter.seed(8, loaded);
+    // Typed in front of the stored range before the read answers: the range moves with its text.
+    reporter.note(s.insertAt(1, "Novo "), "editor");
+    reporter.note(s.insertAt(s.endOf(B), " više"), "editor");
+    const sent = reporter.confirmed(9, s.confirmedDoc());
+    answer({ kind: "ready", revision: 8, segments: [{ blockId: A, start: 0, end: 10, kind: "pasted_known" }, { blockId: B, start: 0, end: 5, kind: "imported_file" }] });
+    await seeding;
+    await sent;
+    expect(record.mock.calls[0]![2]).toEqual([
+      { blockId: A, start: 0, end: 5, kind: "typed" },
+      { blockId: A, start: 5, end: 15, kind: "pasted_known" },
+      { blockId: B, start: 0, end: 5, kind: "imported_file" },
+      { blockId: B, start: points(TEXT_B), end: points(TEXT_B) + 5, kind: "typed" },
+    ]);
+  });
+
+  it("sends a confirmed revision with its ranges as they were at the confirmation, not after later typing (Codex c.4716836083)", async () => {
+    const s = sheet();
+    let release: () => void = () => {};
+    const record = vi.fn(async (_documentId: string, revision: number, _segments: readonly OriginSegment[]): Promise<OriginRecordAnswer> => {
+      if (revision === 2) await new Promise<void>((resolve) => { release = resolve; });
+      return { kind: "recorded", revision, recorded: 1 };
+    });
+    const reporter = new OriginReporter({ record, stored: vi.fn(async () => ({ kind: "unavailable" }) as const) }, DOCUMENT);
+    const start = s.endOf(A);
+    reporter.note(s.insertAt(start, "a"), "editor");
+    const first = reporter.confirmed(2, s.confirmedDoc());
+    reporter.note(s.insertAt(start + 1, "xyz"), "paste");
+    const second = reporter.confirmed(3, s.confirmedDoc());
+    await vi.waitFor(() => { expect(record).toHaveBeenCalledTimes(1); });
+    // While revision 2 is on its way, the pasted text is deleted and the same letters typed.
+    reporter.note(s.change((current) => current.tr.delete(start + 1, start + 4)), null);
+    reporter.note(s.insertAt(start + 1, "xyz"), "editor");
+    release();
+    await first;
+    await second;
+    const base = points(TEXT_A);
+    expect(record.mock.calls[1]![1]).toBe(3);
+    expect(record.mock.calls[1]![2]).toEqual([
+      { blockId: A, start: base, end: base + 1, kind: "typed" },
+      { blockId: A, start: base + 1, end: base + 4, kind: "pasted_unknown" },
+    ]);
+  });
+
   it("forgets every range when a change went by without passing here, rather than misplace them", async () => {
     const s = sheet();
     const { port, record } = fakePort();

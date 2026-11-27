@@ -17,6 +17,7 @@
 
 import type { Node as PmNode } from "@tiptap/pm/model";
 import type { Transaction } from "@tiptap/pm/state";
+import { Mapping } from "@tiptap/pm/transform";
 
 import { BLOCK_ID, MAX_ORIGIN_SEGMENTS, type OriginSegment } from "@/client/origin-segments";
 import type { OriginKind } from "@/client/input-rhythm";
@@ -144,19 +145,42 @@ export function segmentsOf(doc: PmNode, ranges: readonly Range[], confirmed: Rea
   return out.slice(0, MAX_ORIGIN_SEGMENTS);
 }
 
+/** The ranges as they were at one moment: what a confirmed revision is sent with, whatever is typed later. */
+export type FrozenOrigins = {
+  readonly doc: PmNode | null;
+  readonly ranges: readonly Range[];
+  /** Steps of the mapping since the load at that moment; null when the seed can no longer be placed. */
+  readonly steps: number | null;
+};
+
 /** The origin ranges of one open sheet. */
 export class OriginTracker {
   private ranges: Range[] = [];
   private doc: PmNode | null = null;
+  /** The document of the load (before the first change) and every step since, for placing a seed late. */
+  private loaded: PmNode | null = null;
+  private sinceLoad: Mapping | null = null;
   private seed: Seed | null = null;
+  private seedDone = false;
 
   /**
    * The ranges the server keeps for the revision the sheet was loaded at,
-   * with the text of that revision's blocks; placed on the first change, and
-   * only on a block whose text there is still that text.
+   * with the text of that revision's blocks. They are placed on the loaded
+   * document and mapped through every change since, so a seed that arrives
+   * after the student started typing still counts; a newer insert keeps its
+   * own kind over them, and only a block whose loaded text is still that
+   * revision's text takes them.
    */
   seedWith(blocks: ReadonlyMap<string, string>, segments: readonly OriginSegment[]): void {
-    if (this.doc === null) this.seed = { blocks, segments };
+    if (this.seedDone) return;
+    this.seedDone = true;
+    this.seed = { blocks, segments };
+  }
+
+  /** No seed is coming: the mapping kept for it is let go. */
+  dropSeed(): void {
+    this.seedDone = true;
+    if (this.seed === null) this.sinceLoad = null;
   }
 
   /** One editor change: every transaction of it, in order, with the kind of its source. */
@@ -165,10 +189,12 @@ export class OriginTracker {
     const first = changing[0];
     if (first === undefined) return;
     if (this.doc === null) {
-      this.placeSeed(first.before);
+      this.loaded = first.before;
+      this.sinceLoad = this.seedDone && this.seed === null ? null : new Mapping();
     } else if (!first.before.eq(this.doc)) {
       // A change went by without passing here: the positions no longer fit.
       this.ranges = [];
+      this.sinceLoad = null;
     }
     for (const tr of changing) {
       const inserted: { from: number; to: number }[] = [];
@@ -181,41 +207,72 @@ export class OriginTracker {
           if (to > from) inserted.push({ from, to });
         });
       });
+      this.sinceLoad?.appendMapping(tr.mapping);
       this.ranges = this.ranges
         .map((range) => ({ ...range, from: tr.mapping.map(range.from, 1), to: tr.mapping.map(range.to, -1) }))
         .filter((range) => range.to > range.from);
-      for (const { from, to } of inserted) this.paint(from, to, kind);
+      for (const { from, to } of inserted) this.ranges = paint(this.ranges, from, to, kind);
     }
     this.doc = changing[changing.length - 1]!.doc;
   }
 
+  /** The ranges now, kept as they are for a revision confirmed now. */
+  freeze(): FrozenOrigins {
+    return { doc: this.doc, ranges: [...this.ranges], steps: this.sinceLoad?.maps.length ?? null };
+  }
+
+  /** The ranges of `frozen` with the seed under them, laid over the blocks of the confirmed revision. */
+  segmentsFrom(frozen: FrozenOrigins, confirmed: ReadonlyMap<string, string>): OriginSegment[] {
+    if (frozen.doc === null) return [];
+    return segmentsOf(frozen.doc, this.withSeed(frozen.ranges, frozen.steps), confirmed);
+  }
+
   /** The ranges of the last change's document, laid over the blocks of the confirmed revision. */
   segmentsFor(confirmed: ReadonlyMap<string, string>): OriginSegment[] {
-    return this.doc === null ? [] : segmentsOf(this.doc, this.ranges, confirmed);
+    return this.segmentsFrom(this.freeze(), confirmed);
   }
 
-  private paint(from: number, to: number, kind: OriginKind | null): void {
-    const next: Range[] = [];
-    for (const range of this.ranges) {
-      if (range.to <= from || range.from >= to) { next.push(range); continue; }
-      if (range.from < from) next.push({ ...range, to: from });
-      if (range.to > to) next.push({ ...range, from: to });
-    }
-    if (kind !== null) next.push({ from, to, kind });
-    this.ranges = next.sort((a, b) => a.from - b.from);
-  }
-
-  private placeSeed(loaded: PmNode): void {
-    const seed = this.seed;
-    this.seed = null;
-    if (seed === null) return;
+  private withSeed(ranges: readonly Range[], steps: number | null): readonly Range[] {
+    const { seed, loaded, sinceLoad } = this;
+    if (seed === null || loaded === null || sinceLoad === null || steps === null || steps > sinceLoad.maps.length) return ranges;
+    const mapping = sinceLoad.slice(0, steps);
     const blocks = new Map(liveBlocks(loaded).map((block) => [block.id, block]));
+    let out = [...ranges];
     for (const segment of seed.segments) {
       const block = blocks.get(segment.blockId);
       if (!block || seed.blocks.get(segment.blockId) !== block.text) continue;
-      const from = positionIn(block, segment.start);
-      const to = positionIn(block, segment.end);
-      if (from !== null && to !== null && to > from) this.paint(from, to, segment.kind);
+      const start = positionIn(block, segment.start);
+      const end = positionIn(block, segment.end);
+      if (start === null || end === null || end <= start) continue;
+      const from = mapping.map(start, 1);
+      const to = mapping.map(end, -1);
+      if (to > from) out = under(out, from, to, segment.kind);
     }
+    return out;
   }
+}
+
+/** `ranges` with `[from, to)` taking `kind` (or no kind) over whatever was there. */
+function paint(ranges: readonly Range[], from: number, to: number, kind: OriginKind | null): Range[] {
+  const next: Range[] = [];
+  for (const range of ranges) {
+    if (range.to <= from || range.from >= to) { next.push(range); continue; }
+    if (range.from < from) next.push({ ...range, to: from });
+    if (range.to > to) next.push({ ...range, from: to });
+  }
+  if (kind !== null) next.push({ from, to, kind });
+  return next.sort((a, b) => a.from - b.from);
+}
+
+/** `ranges` with `[from, to)` taking `kind` only where no range is: a newer insert keeps its own kind. */
+function under(ranges: readonly Range[], from: number, to: number, kind: OriginKind): Range[] {
+  const gaps: Range[] = [];
+  let at = from;
+  for (const range of [...ranges].sort((a, b) => a.from - b.from)) {
+    if (range.to <= at || range.from >= to) continue;
+    if (range.from > at) gaps.push({ from: at, to: range.from, kind });
+    at = Math.max(at, range.to);
+  }
+  if (at < to) gaps.push({ from: at, to, kind });
+  return [...ranges, ...gaps].sort((a, b) => a.from - b.from);
 }
