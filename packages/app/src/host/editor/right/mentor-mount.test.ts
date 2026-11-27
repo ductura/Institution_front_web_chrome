@@ -122,7 +122,7 @@ describe("MentorMount", () => {
     const work = readFileSync(join(import.meta.dirname, "..", "..", "student", "WorkEditorPage.tsx"), "utf8");
     expect(work).toMatch(/import \{ MentorMount \} from "\.\.\/editor\/right\/MentorMount"/);
     // ED-60 (Ductus#2058 c.7185479035): the teacher's direct-edit setting sits between the card and the round's actions.
-    expect(work).toMatch(/work: \(\{ editor, assignmentId: id, documentId, submitted \}\) => <>\s*<MentorMount editor=\{editor\} assignmentId=\{id\} documentId=\{documentId\} submitted=\{submitted\} \/>\s*(?:\{\/\*[^]*?\*\/\}\s*)?<DirectEditSettingHost [^>]*\/>\s*<RevisionActionsHost /);
+    expect(work).toMatch(/work: \(\{ editor, assignmentId: id, documentId, submitted \}\) => <>\s*<MentorMount editor=\{editor\} assignmentId=\{id\} documentId=\{documentId\} submitted=\{submitted\} title=\{title\} \/>\s*(?:\{\/\*[^]*?\*\/\}\s*)?<DirectEditSettingHost [^>]*\/>\s*<RevisionActionsHost /);
   });
 });
 

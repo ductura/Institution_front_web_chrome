@@ -20,9 +20,16 @@ import { placeOf, positionOf, type PlaceEditor } from "../mentor/own-place";
 import { ThesisPanel } from "../../thesis/ThesisPanel";
 import { ConsultPanel } from "../work/consult/ConsultPanel";
 import { docWords } from "../mentor/prep-model";
+import { DefensePanel } from "../mentor/DefensePanel";
+import { defenseInputOf, defenseText, type OutlineDoc } from "../mentor/defense-model";
+import { loadNotes, type NoteStorage } from "../assist/work-notes";
 import { latestReturn } from "../mentor/round-feedback";
 import { readRubric } from "../../student/rubric/read";
 import { abstractWords, consentOf, reportSeen, seenAtOf, thesisShownOf, unreportedSeen, workStateOf, type ConsentRead, type MentoredRead } from "./mentor-mount";
+
+function noteStorage(): NoteStorage | null {
+  try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
+}
 
 /** The clipboard, when the browser gives it. */
 const copyText = (text: string): Promise<boolean> =>
@@ -121,9 +128,11 @@ async function readAll(documentId: string): Promise<Reads> {
   };
 }
 
-export function MentorMount({ assignmentId, documentId, submitted, editor }: {
+export function MentorMount({ assignmentId, documentId, submitted, editor, title = null }: {
   /** The assignment of the work; its rubric, when there is one, replaces the working criteria. */
   assignmentId?: string;
+  /** ED-121: the work's title, the first line of "Kostur za obranu". */
+  title?: string | null;
   documentId: string; submitted: boolean;
   /** The open editor; the abstract's length is counted from its text. */
   editor: { readonly state: { readonly doc: Doc }; on(event: "update", fn: () => void): unknown; off(event: "update", fn: () => void): unknown } | null;
@@ -184,6 +193,8 @@ export function MentorMount({ assignmentId, documentId, submitted, editor }: {
   }, [documentId]);
   const prep = useMemo(() => prepPort(documentId, readTasks), [documentId]);
   const mark = useMemo(() => readingPort(documentId), [documentId]);
+  // The writing help keeps the question of the work under the assignment (as ChapterMarks reads it).
+  const notesWork = assignmentId ?? documentId;
   const placeEditor = editor as unknown as (PlaceEditor & { commands?: { focus(pos?: number): boolean } }) | null;
   return (
     <>
@@ -192,6 +203,8 @@ export function MentorMount({ assignmentId, documentId, submitted, editor }: {
         howText={null} words={words} prep={null}
         said={<SaidPanel read={said} now={new Date()} onShown={onShown} onRetry={() => setAttempt((n) => n + 1)} />}
         prepPanel={<PrepPanel port={prep} words={allWords} editable={!submitted} onCopy={copyText} />}
+        defense={editor ? <DefensePanel key={notesWork} workId={notesWork} storage={noteStorage()} onCopy={copyText}
+          compose={() => defenseText(defenseInputOf(editor.state.doc as unknown as OutlineDoc, title, loadNotes(noteStorage(), notesWork).thesis))} /> : undefined}
         consult={<ConsultPanel documentId={documentId} role="student" revision={1} slotsCall={slotsCall} criteriaCall={null} studentCriteriaCall={studentCriteriaCall} byRubric={byRubric} />} />
       {/* WEB-NF6-RUNDA (MK-9): only in the student's own editor, only before submission. */}
       {!submitted && <OwnPanel documentId={documentId} reading={reads.reading} mark={mark}

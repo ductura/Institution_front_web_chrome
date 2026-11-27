@@ -75,6 +75,28 @@ export const mentorCardHr = {
     copyFailed: "Priprema nije stavljena u međuspremnik. Označite tekst i prenesite ga ručno.",
     note: "Priprema je zapis o unosu u tekst, ne o autorstvu.",
   },
+  /** ED-121 (prototype tools.js obrana): the outline for the defence, composed from the work. */
+  defense: {
+    title: "Kostur za obranu",
+    intro: "Složeno iz naslova, pitanja rada i prvih rečenica poglavlja. To je polazište: uredite ga svojim riječima. Ductura ovdje ne piše ništa novo.",
+    stays: "Kostur ostaje samo na ovom uređaju i ne ulazi u rad ni u predaju.",
+    edit: "Kostur za obranu",
+    redo: "Složi ponovno iz rada",
+    copy: "Kopiraj",
+    copied: "Kostur je u međuspremniku.",
+    copyFailed: "Kostur nije stavljen u međuspremnik. Označite tekst i prenesite ga ručno.",
+    titleHead: "Naslov i tema",
+    titleEmpty: "(upišite naslov rada)",
+    thesisHead: "Pitanje rada",
+    thesisEmpty: "(upišite pitanje ili tezu rada)",
+    untitled: "Poglavlje bez naslova",
+    chapterEmpty: "(još nema teksta)",
+    hypothesesHead: "Hipoteze",
+    hypothesesAsk: "za svaku recite je li potvrđena i čime.",
+    limitsHead: "Ograničenja rada i što bi se dalje moglo istražiti",
+    fillIn: "(upišite)",
+    closingHead: "Zahvala i pitanja",
+  },
   /** MK-8: the mentor's word on the revision, in one place. */
   said: {
     title: "Što je mentor rekao",

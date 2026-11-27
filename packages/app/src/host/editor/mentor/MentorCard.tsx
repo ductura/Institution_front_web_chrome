@@ -36,6 +36,8 @@ export type MentorCardProps = {
   said?: ReactNode;
   /** MK-10: the composing preparation (PrepPanel); without it the card shows the given `prep` read-only. */
   prepPanel?: ReactNode;
+  /** ED-121: "Kostur za obranu" (DefensePanel), mounted by the caller under the preparation. */
+  defense?: ReactNode;
   onAction?: (action: ActionId) => void;
   onOpenAbstract?: () => void;
   onCopyPrep?: (text: string) => Promise<boolean>;
@@ -86,6 +88,7 @@ export function MentorCard(p: MentorCardProps) {
           </>
         )}
       </Details>
+      {p.defense !== undefined && <Details className={styles.rpd} summary={t.defense.title}>{p.defense}</Details>}
       <Details className={styles.rpd} summary={t.how.title}>
         <p>{p.howText === undefined ? t.stateLoading : p.howText === null ? t.how.unavailable : p.howText.trim() === "" ? t.how.empty : p.howText}</p>
       </Details>

@@ -182,7 +182,7 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
               work: ({ editor, assignmentId: id, documentId, submitted }) => <>
-                <MentorMount editor={editor} assignmentId={id} documentId={documentId} submitted={submitted} />
+                <MentorMount editor={editor} assignmentId={id} documentId={documentId} submitted={submitted} title={title} />
                 {/* ED-60 (Daniel, Ductus#2058 c.7185479035): the teacher's direct edits are set here, above the round's actions. */}
                 <DirectEditSettingHost documentId={documentId} here={here} submitted={submitted} />
                 <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />
