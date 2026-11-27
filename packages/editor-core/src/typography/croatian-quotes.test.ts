@@ -10,6 +10,7 @@ import { SourceObserver, sourceOfChange } from "../editor/source";
 import type { EvidenceSource } from "../document/forensics/evidence-segment-v2";
 
 import { croatianQuote, CroatianQuotes, HIGH_DOUBLE, HIGH_SINGLE, LOW_DOUBLE, LOW_SINGLE } from "./croatian-quotes";
+import { resetTypingTypographyForTest, setTypingTypography } from "./typing-switch";
 
 /**
  * WEB-1605 part 1: Croatian quotation marks while typing. The pure rule
@@ -123,6 +124,18 @@ describe("CroatianQuotes in the editor", () => {
     t.select(1);
     t.type(`Rekla je "znam 'tako' i to" pa ode.`);
     expect(t.text()).toBe("Rekla je „znam ‚tako’ i to” pa ode.");
+  });
+
+  it("with Tipografija dok tipkam switched off, every quote stays straight (ED-99)", () => {
+    setTypingTypography(false, () => undefined);
+    try {
+      const t = setup(paragraph(""));
+      t.select(1);
+      t.type(`Rekla je "znam 'tako' i to" pa ode.`);
+      expect(t.text()).toBe(`Rekla je "znam 'tako' i to" pa ode.`);
+    } finally {
+      resetTypingTypographyForTest();
+    }
   });
 
   it("an apostrophe and the inch sign after a letter or digit stay straight", () => {

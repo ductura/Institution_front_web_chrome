@@ -98,6 +98,10 @@ export const toolbarBehaviourHr = {
   viewDiff: "Promjene od predaje mentoru",
   viewHistory: "Povijest rada",
   viewFirstLines: "Prvi redovi",
+  // ED-99: prototype acad.js `acTypo`.
+  viewTypo: "Tipografija dok tipkam",
+  typoOn: "Navodnici, crtica i tri točke ispravljaju se dok tipkate. Ctrl+Z vraća upisani znak.",
+  typoOff: "Automatska tipografija je isključena.",
   tipShortcut: "Prečac",
   commentNeedsSelection: "Označite dio teksta unutar jednog odlomka.",
 } as const;
