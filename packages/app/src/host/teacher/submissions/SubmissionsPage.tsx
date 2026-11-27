@@ -18,6 +18,8 @@ import TeacherSubmissions from "./TeacherSubmissions";
 import { submissionsMessages as text } from "./messages.hr";
 import styles from "./SubmissionsPage.module.css";
 import { clientSubmissionsPort, signInReturn } from "./port";
+import { useStudentNames } from "./names";
+import type { TeacherCall } from "../../../../../../src/client/teacher-reads.ts";
 import { clientHistoryCall, type HistoryTransport } from "./history/port";
 
 export function TeacherSubmissionsPage({ assignmentId }: { assignmentId: string }) {
@@ -28,6 +30,7 @@ export function TeacherSubmissionsPage({ assignmentId }: { assignmentId: string 
   const call = useMemo(() => createApi(), []);
   const port = useMemo(() => clientSubmissionsPort(call as unknown as SubmissionsCall, signIn), [call, signIn]);
   const history = useMemo(() => clientHistoryCall(call as unknown as HistoryTransport), [call]);
+  const names = useStudentNames(call as unknown as TeacherCall, assignmentId, signIn);
   const grade = useGradeRead(call as unknown as GradeCall, assignmentId, signIn);
   return (
     <div className={`page ${styles.page}`}>
@@ -38,7 +41,7 @@ export function TeacherSubmissionsPage({ assignmentId }: { assignmentId: string 
       <GradeGate read={grade.read} onRetry={grade.retry}>
         <BulkDownload call={call as unknown as BulkCall} assignmentId={assignmentId} onSignedOut={signIn} />
       </GradeGate>
-      <TeacherSubmissions port={port} assignmentId={assignmentId} history={history} onSignedOut={signIn} />
+      <TeacherSubmissions port={port} assignmentId={assignmentId} names={names} history={history} onSignedOut={signIn} />
     </div>
   );
 }
