@@ -1,9 +1,9 @@
-// PENDING (not run by Playwright: the name does not end in .spec.ts). WEB-V14-SHEET-PAGE mounts the grid and renames this
-// file to sheet-grid.spec.ts in the same PR, then adjusts the page set-up below. Review of #713: no red test before then.
-// WEB-V14-SHEET-GRID: keyboard use and accessibility of the spreadsheet grid at 1250 and 400 px.
-// ASSUMPTION (see the PR, "Otvoreno"): the grid is mounted by WEB-V14-SHEET-PAGE on the work page of a task whose
-// documentKind is "spreadsheet", so this spec opens that page; until that task is merged the page shows the text editor
-// and the first expectation (the grid is there) fails instead of passing vacuously. Invented assignment and ids.
+// WEB-V14-SHEET-GRID / F4-V14-R03: keyboard use and accessibility of the spreadsheet grid at 1250 and 400 px, on the real
+// work page. The page opens the grid for a task whose kind is a table (`workKind: "spreadsheet"` beside
+// `documentKind: "text"`, SRV-V14-KIND-ENUM v2); the opening is revision 0 of a table. The receipt keys are the
+// contract's own invented test keys; people, courses and ids are invented.
+import { readFileSync } from "node:fs";
+
 import { axe, hiddenFocus, setTheme } from "./a11y/check";
 
 import { expect, test, type Page } from "./fixtures/test";
@@ -13,6 +13,14 @@ const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d5a";
 const SCOPE = "d".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-1409";
 const PATH = `/aplikacija/rad/${ID}`;
+const DOCUMENT_ID = "dokument-izmisljena-tablica-1";
+// packages/editor-core/src/sheet/steps.ts: sheetRevisionZeroDocument() as JCS and SHEET_REVISION_ZERO_SHA256.
+const ZERO_JCS = '{"kind":"spreadsheet","schemaVersion":1,"sheets":[{"cells":{},"columns":10,"id":"00000000-0000-4000-8000-000000000000","name":"List1","rows":100}]}';
+const ZERO_SHA256 = "70f7ffa27faf9f771316120c2b2f94e351aed32af3b94177d4c85ff56b0066e4";
+
+type Vector = { route: string; name: string; response?: { body?: { receiptKeys?: unknown } } };
+const vectors = JSON.parse(readFileSync(new URL("../../../src/client/migration-contract-vectors.generated.json", import.meta.url), "utf8")) as Vector[];
+const receiptKeys = vectors.find((v) => v.route === "evidence.open.post" && v.name === "opened")?.response?.body?.receiptKeys;
 
 async function openSheet(page: Page) {
   await page.route("**/api/v1/me", (route) => route.fulfill({
@@ -20,12 +28,21 @@ async function openSheet(page: Page) {
   }));
   await page.route("**/api/v1/student/assignments", (route) => route.fulfill({
     json: { courses: [{ id: COURSE, name: "Izmišljeni kolegij", assignments: [
-      { id: ID, title: "Izmišljena tablica troškova", dueAt: "2099-12-15T22:59:00.000Z", noticeFirst: false, documentKind: "spreadsheet" },
+      { id: ID, title: "Izmišljena tablica troškova", dueAt: "2099-12-15T22:59:00.000Z", noticeFirst: false, documentKind: "text", workKind: "spreadsheet" },
     ] }] },
   }));
   await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({
     json: { assignments: [{ assignmentId: ID, workState: "in_progress" }] },
   }));
+  await page.route("**/api/v1/evidence/open", (route) => route.fulfill({
+    json: {
+      status: "opened", documentId: DOCUMENT_ID, evidenceProfileId: "standard-v1", currentRevision: 0, documentHash: ZERO_SHA256,
+      headSegmentHash: null, lastSequenceTo: 0, document: Buffer.from(ZERO_JCS, "utf8").toString("base64"), receiptKeys,
+      submitted: false, lastSignedAt: null, documentKind: "text", workKind: "spreadsheet",
+    },
+  }));
+  // Nothing is confirmed in these tests; a commit, if one left, waits unanswered on this device.
+  await page.route("**/api/v1/evidence/commit", () => { /* never answered */ });
   await page.goto(PATH);
   const grid = page.getByRole("grid", { name: /Tablica/ });
   await expect(grid).toBeVisible({ timeout: 20_000 });
