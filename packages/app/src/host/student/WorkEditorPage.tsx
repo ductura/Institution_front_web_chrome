@@ -33,6 +33,7 @@ import { usePageTitle, workTitle } from "../page-title";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { AssistantMatchNoticeHost } from "../editor/assistant-match-notice/AssistantMatchNoticeHost";
 import { PasteSourceHost } from "../editor/paste-source/PasteSourceHost";
+import { SelectionBubbleHost } from "../editor/selection-bubble/SelectionBubbleHost";
 import { ImportHost } from "../editor/import/ImportHost";
 import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
@@ -170,7 +171,10 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
           node: <EditorPageWork assignmentId={assignmentId} base={base} course={read.course} title={read.title} topBar={topBar} length={length}
             startContent={startContentFor(readTemplate, startWorkText.titleFields)}
             statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost}
-            toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
+            toolbar={(ctx) => <><StudentToolbar {...ctx} />
+              {/* ED-109: the bubble beside a selection (prototype #selBub): Navod, U blok-citat, U fusnotu, Odloži. */}
+              <SelectionBubbleHost workId={assignmentId} confirmedWorkSchemaVersion={ctx.confirmedWorkSchemaVersion} />
+              <CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
             triggers={({ documentId }) => <SourcesMention documentId={documentId}
               openOrigin={() => router.push(nextPath(base, `/rad/${encodeURIComponent(assignmentId)}/podrijetlo`))} />}
             literature={({ documentId }) => <><LiteratureList courseId={courseIdOf(assignments, assignmentId)} /><BibliographyMount documentId={documentId} assignmentId={assignmentId} courseId={courseIdOf(assignments, assignmentId)} /></>}

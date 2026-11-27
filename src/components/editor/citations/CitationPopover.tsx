@@ -6,6 +6,7 @@ import { useEditorState, type Editor } from "@tiptap/react";
 
 import { citationRange, insertCitation, validCitationPage } from "./citation-document";
 import { citationMessagesHr as t } from "./messages.hr";
+import { onCiteOpen } from "./open-cite";
 
 export type CitationSource = { id: string; label: string; description?: string };
 type Range = NonNullable<ReturnType<typeof citationRange>>;
@@ -17,6 +18,12 @@ export function CitationPopover({ editor, sources, pending, error }: {
   const [range, setRange] = useState<Range | null>(null);
   const canInsert = useEditorState({ editor, selector: ({ editor }) =>
     Boolean(editor?.isEditable && !editor.isDestroyed && citationRange(editor.state)) }) ?? false;
+  // ED-109: "Navod" in the selection bubble opens this popover at the caret it left.
+  useEffect(() => onCiteOpen(() => {
+    if (!editor || editor.isDestroyed || !editor.isEditable) return;
+    const next = citationRange(editor.state);
+    if (next) setRange(next);
+  }), [editor]);
 
   return <>
     <Button ref={anchor} tone="quiet" disabled={!canInsert} aria-haspopup="dialog" aria-expanded={range !== null}

@@ -1,0 +1,16 @@
+/* ED-109: the bubble beside a selection (prototype #selBub: 30px buttons, 38px on a phone, z-index 38). */
+.bubble {
+  position: fixed; z-index: 38; transform: translateX(-50%);
+  display: flex; gap: 2px; padding: 4px;
+  background: var(--raised, var(--well)); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+  font-family: var(--ff-ui); font-size: 13px;
+}
+.bubble button {
+  min-height: 30px; padding: 0 10px; border: 0; border-radius: calc(var(--radius) - 2px);
+  background: transparent; color: inherit; font: inherit; cursor: pointer; white-space: nowrap;
+}
+.bubble button:hover:not(:disabled), .bubble button:focus-visible { background: var(--well); }
+.bubble button:disabled { color: var(--ink-3); cursor: default; }
+@media (max-width: 640px) { .bubble button { min-height: 38px; } }
