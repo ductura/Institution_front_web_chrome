@@ -30,6 +30,23 @@ describe("editorWorkRead", () => {
     expect(editorWorkRead(ID, courses(), { ok: false, status: 401 })).toEqual({ kind: "signedOut" });
   });
 
+  it("keeps a 403 and a 404 an unavailable read unless the page asks for the refusals", () => {
+    expect(editorWorkRead(ID, { ok: false, status: 403 }, works("in_progress"))).toEqual({ kind: "unavailable" });
+    expect(editorWorkRead(ID, courses(), { ok: false, status: 404 })).toEqual({ kind: "unavailable" });
+  });
+
+  it("S-08 X1, X2: with the refusals a 403 is denied and a 404 not found, from either read; 401 stays signed out", () => {
+    const refusals = { refusals: true } as const;
+    expect(editorWorkRead(ID, { ok: false, status: 403 }, works("in_progress"), refusals)).toEqual({ kind: "denied" });
+    expect(editorWorkRead(ID, courses(), { ok: false, status: 403 }, refusals)).toEqual({ kind: "denied" });
+    expect(editorWorkRead(ID, { ok: false, status: 404 }, works("in_progress"), refusals)).toEqual({ kind: "notFound" });
+    expect(editorWorkRead(ID, courses(), { ok: false, status: 404 }, refusals)).toEqual({ kind: "notFound" });
+    expect(editorWorkRead(ID, { ok: false, status: 401 }, { ok: false, status: 403 }, refusals)).toEqual({ kind: "signedOut" });
+    // Every other failure is still unavailable, and no answer at all is the network.
+    expect(editorWorkRead(ID, { ok: false, status: 500 }, works("in_progress"), refusals)).toEqual({ kind: "unavailable" });
+    expect(editorWorkRead(ID, { ok: false, status: 0 }, works("in_progress"), refusals)).toEqual({ kind: "unavailable" });
+  });
+
   it("opens the notice first when it is not acknowledged", () => {
     expect(editorWorkRead(ID, courses({ ...assignment, noticeFirst: true }), works("in_progress"))).toEqual({ kind: "noticeFirst" });
   });
