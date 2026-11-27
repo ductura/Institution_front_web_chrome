@@ -99,6 +99,12 @@ describe("Predaja rada in the top bar (PR-1, P-17)", () => {
     expect(html).toContain(">2 stvari prije predaje<");
   });
 
+  it("links under the base the app is served from", () => {
+    const html = bar({ base: "/app/web" });
+    expect(html).toContain(`href="/app/web/rad/${ID}/predaja"`);
+    expect(html).toContain('href="/app/web/zadaci"');
+  });
+
   it("has the short name for narrow screens and no count when nothing is left or it is not known", () => {
     for (const before of [0, null, undefined]) {
       const html = bar({ before });

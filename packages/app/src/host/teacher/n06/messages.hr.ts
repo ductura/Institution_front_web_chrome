@@ -39,4 +39,15 @@ export const workFrameMessages = {
   gapsLink: "Otvori sažetak procesa",
   notSubmittedBanner: "Rad nije predan do roka. Rok možete produljiti; produljenje se bilježi.",
   extensionLink: "Produljenje roka",
+  // Otisak verzije (ODLUKE naslovnice, 25. 11. 2026.): oznaka stanja bez ispisanog SHA; puni SHA-256 je samo u opisu.
+  fingerprint: {
+    checking: "Provjeravam otisak…",
+    match: "Otisak se podudara",
+    mismatch: "Otisak se ne podudara",
+    unavailable: "Otisak nije moguće provjeriti",
+    version: (revision: number): string => `verzija ${revision}`,
+    recheck: "Kliknite za ponovnu provjeru.",
+    recorded: (revision: number, sha256: string): string => `SHA-256 zabilježene verzije ${revision}: ${sha256}`,
+    shown: (sha256: string): string => `SHA-256 prikazanog teksta: ${sha256}`,
+  },
 } as const;

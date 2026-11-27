@@ -170,6 +170,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   return (
     <MobileReview>
       <WorkFrame documentId={documentId} current={current} gaps={gaps}
+        shownSubmitted={!stopped && view.submitted ? view.document : null}
         text={<>
           {elementsState.elements !== null
             ? <div ref={textRef}><TextElementsView elements={elementsState.elements} /></div>
@@ -197,11 +198,11 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
             {/* WEB-1704 (M6.7): deferred comments and the bank; a draft is anchored to the text selected in the work. */}
-            <CommentBank key={documentId} assignmentId={documentId} drafts={draftCommentsPort} bank={commentBankPort}
+            <CommentBank key={`bank-${documentId}`} assignmentId={documentId} drafts={draftCommentsPort} bank={commentBankPort}
               anchor={placeAnchor(view.document, draft) ? draft : null} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
             {/* WEB-1704 (M6.7): changes since the last review, read from the server; marking only with a route. */}
-            <ChangesSinceReview key={documentId} documentId={documentId} port={changesPort} />
+            <ChangesSinceReview key={`changes-${documentId}`} documentId={documentId} port={changesPort} />
             <TeacherBibliographyHost documentId={documentId} submitted={view.submitted} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
             <ProvenanceMap documentId={documentId} />

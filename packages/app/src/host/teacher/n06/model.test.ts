@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { extensionPath, gapsBanner, heading, links, sequence, showNotSubmittedBanner, stateLine, type Facts } from "./model";
 import { workFrameMessages as text } from "./messages.hr";
 
-const receipt = { submittedAt: "2026-11-02T08:50:00.000Z", dueAt: "2026-11-02T22:59:00.000Z", afterDeadline: false, version: 2, record: "continuous" as const };
+const receipt = { submittedAt: "2026-11-02T08:50:00.000Z", dueAt: "2026-11-02T22:59:00.000Z", afterDeadline: false, version: 2, record: "continuous" as const, sha256: "a".repeat(64) };
 const base: Facts = { studentName: "Student A", assignmentId: "a1", state: "predano", previousId: null, nextId: "d2", receipt };
 
 describe("N-06 frame model", () => {

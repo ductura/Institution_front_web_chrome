@@ -21,7 +21,7 @@ export async function readFrame(documentId: string, options?: ApiOptions): Promi
       );
       if (sub.kind === "potvrdeno" && sub.receipt.payload.documentId === documentId) {
         const p = sub.receipt.payload;
-        receipt = { submittedAt: p.requestedAt, dueAt: p.dueAt, afterDeadline: p.afterDeadline, version: p.revision, record: p.evidenceRecord };
+        receipt = { submittedAt: p.requestedAt, dueAt: p.dueAt, afterDeadline: p.afterDeadline, version: p.revision, record: p.evidenceRecord, sha256: p.artifactSha256 };
       }
     }
     return { kind: "ready", facts: {

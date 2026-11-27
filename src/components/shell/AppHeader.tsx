@@ -31,7 +31,6 @@ export default function AppHeader({ context, end }: AppHeaderProps) {
           {context ? <span className="app-header__context">{context}</span> : null}
         </div>
         <div className="app-header__end">
-          <span className="demo-badge">{t.shell.demoBadge}</span>
           {end}
         </div>
       </div>

@@ -3,7 +3,9 @@
 import { Skeleton } from "@ductura/ui";
 import { useEffect, useState, type ReactNode } from "react";
 
+import type { LiveDocument } from "@/client/live-publisher";
 import { WorkPage } from "../n07/WorkPage";
+import Fingerprint from "./Fingerprint";
 import { RevisionSection } from "../revision";
 import styles from "./frame.module.css";
 import { appHref } from "@/components/shell/nav";
@@ -17,8 +19,10 @@ import { workFrameMessages as text } from "./messages.hr";
  * N-06 frame around the work (WEB-2150): back link, heading, state line, "Slijed rada", links, previous/next work
  * and the banners. The text and the aside stay the page's (LiveText, comments, summary); nothing here writes.
  */
-export default function WorkFrame({ documentId, current = () => true, gaps, deadlinePassed = null, started = true, text: body, aside }: {
+export default function WorkFrame({ documentId, current = () => true, gaps, deadlinePassed = null, started = true, shownSubmitted = null, text: body, aside }: {
   documentId: string; current?: () => boolean; gaps: readonly ProcessGap[]; deadlinePassed?: boolean | null; started?: boolean;
+  /** Dokument na zaslonu kad je to predana verzija (live route ga je označio kao `submitted`); inače null. */
+  shownSubmitted?: LiveDocument | null;
   text: ReactNode; aside: ReactNode;
 }) {
   const { base } = useHost();
@@ -50,6 +54,10 @@ export default function WorkFrame({ documentId, current = () => true, gaps, dead
   const facts: Facts = read.facts;
   const items = sequence(facts);
   const gapText = isSubmitted(facts) ? gapsBanner(gaps) : null;
+  // Otisak samo za predanu verziju s potpisanom potvrdom: jedino za nju poslužitelj daje zabilježeni SHA-256.
+  const fingerprint = shownSubmitted !== null && facts.receipt !== null && isSubmitted(facts)
+    ? <Fingerprint document={shownSubmitted} recorded={{ sha256: facts.receipt.sha256, revision: facts.receipt.version }} />
+    : undefined;
   const step = (id: string | null, label: string, rel: "prev" | "next") => {
     const href = liveWorkHref(id);
     return href === null ? <span aria-disabled="true" className="btn secondary">{label}</span>
@@ -58,7 +66,7 @@ export default function WorkFrame({ documentId, current = () => true, gaps, dead
   return (
     <RevisionSection documentId={documentId} current={current} compareHref={isSubmitted(facts) && workPath !== "" ? appHref(base, `${workPath}/usporedba`) : undefined}>
       {(rev) => (
-        <WorkPage back={backHref} backLabel={text.backToCourses} crumb={heading(facts)} wide>
+        <WorkPage back={backHref} backLabel={text.backToCourses} crumb={heading(facts)} wide status={fingerprint}>
           <section className={`panel ${styles.head}`}>
             <h1>{heading(facts)}</h1>
             <p>{stateLine(facts)}</p>

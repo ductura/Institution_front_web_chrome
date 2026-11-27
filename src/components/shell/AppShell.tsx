@@ -212,10 +212,6 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
             {t.shell.accessibilityStatement}
           </a>
           {help !== undefined ? help(styles.infoLink ?? "") : null}
-          <p className={styles.note}>
-            <strong>{t.shell.demoBadge}</strong>
-            {t.shell.demoNote}
-          </p>
           {drawer ? null : accountBlock}
         </div>
       </aside>
@@ -251,7 +247,6 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
           </nav>
           <div className={styles.actions}>
             {institution !== null ? <span className={styles.institution}>{institution}</span> : null}
-            <span className={styles.demo}>{t.shell.demoBadge}</span>
             <ThemeToggle label={t.shell.theme} />
             {drawer ? accountBlock : null}
           </div>

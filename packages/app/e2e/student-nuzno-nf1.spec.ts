@@ -122,7 +122,7 @@ test("P-15: a refused sign-in has its own text, names the faculty administrator 
   await page.route("**/api/v1/me", (route) => route.fulfill({ status: 401, json: { code: "unauthorized" } }));
   await page.goto("/app/web/prijava?greska=login_refused");
   const alert = page.getByRole("main").getByRole("alert");
-  await expect(alert.getByRole("heading", { level: 2 })).toHaveText("Prijava je odbijena");
+  await expect(alert.getByRole("heading", { level: 1 })).toHaveText("Prijava je odbijena");
   await expect(alert).toContainText("To nije kvar prijave i ponovni pokušaj ga neće promijeniti.");
   await expect(alert).toContainText("Javite se koordinatoru (administratoru fakulteta) na svojoj ustanovi.");
   await expect(alert.getByRole("link", { name: "Pokušaj ponovno" })).toHaveCount(0);
@@ -130,7 +130,7 @@ test("P-15: a refused sign-in has its own text, names the faculty administrator 
   await axe(page);
 
   await page.goto("/app/web/prijava?greska=provider_unavailable");
-  await expect(page.getByRole("main").getByRole("alert").getByRole("heading", { level: 2 })).toHaveText("AAI@EduHr trenutačno ne odgovara");
+  await expect(page.getByRole("main").getByRole("alert").getByRole("heading", { level: 1 })).toHaveText("AAI@EduHr trenutačno ne odgovara");
 
   await page.goto("/app/web/prijava?stanje=bezuloge");
   const card = page.getByRole("status").filter({ hasText: "Prijava je uspjela" });

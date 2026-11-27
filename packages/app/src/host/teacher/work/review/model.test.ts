@@ -30,7 +30,7 @@ describe("WEB-NUZ-PG PG-1: header with the context of the work", () => {
 
   it("marks a practice assignment and keeps the receipt line of a submitted work", () => {
     expect(contextLine(header({ grade: "practice" }))).toBe("Kolegij A · zadatak „Lokalni mediji” · probni zadatak");
-    const receipt = { submittedAt: "2026-11-20T10:00:00.000Z", dueAt: "2026-11-30T22:59:00.000Z", afterDeadline: false, version: 2, record: "continuous" } as const;
+    const receipt = { submittedAt: "2026-11-20T10:00:00.000Z", dueAt: "2026-11-30T22:59:00.000Z", afterDeadline: false, version: 2, record: "continuous", sha256: "a".repeat(64) } as const;
     const line = stateOf(header({ facts: { ...FACTS, state: "predano", receipt } }));
     expect(line).toBe("Predano 20. studenoga 2026. u 11:00 · rok 30. studenoga 2026. u 23:59 · verzija 2 · zapis je cjelovit");
   });

@@ -16,6 +16,8 @@ export type Facts = {
   readonly receipt: {
     readonly submittedAt: string; readonly dueAt: string; readonly afterDeadline: boolean;
     readonly version: number; readonly record: "continuous" | "with_gaps";
+    /** Otisak predane verzije iz potpisane potvrde (`artifactSha256`), 64 heksadecimalna znaka. */
+    readonly sha256: string;
   } | null;
 };
 

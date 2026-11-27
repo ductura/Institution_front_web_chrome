@@ -6,6 +6,7 @@ import { Button } from "@ductura/ui";
 import { useOnline } from "../../client/online-status";
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
 import type { SheetTheme } from "../../lib/ui/sheet-theme";
+import { appHref } from "../shell/nav";
 import { setSheetTheme, useSheetTheme } from "../shell/useSheetTheme";
 import { beforeCountText } from "./submission-rehearsal/declaration-gate";
 import { rehearsalMessagesHr as rehearsal } from "./submission-rehearsal/messages.hr";
@@ -22,6 +23,8 @@ export type WorkspaceTopBarProps = {
   readonly readOnly?: boolean;
   /** The work cannot be opened (greška, učitavanje): "Predaja rada" stays but does nothing. */
   readonly inert?: boolean;
+  /** The prefix the app is served under (/app/web, /app/chrome); empty on the Next.js pages. */
+  readonly base?: string;
   /**
    * WEB-NUZ-PREDAJA-1 (P-17): a hook of the host that counts what is left before the submission
    * (the rehearsal's "Što još fali"); null while it cannot say. Constant for the bar's life.
@@ -54,6 +57,7 @@ export function WorkspaceTopBarView({
   subtitle = null,
   readOnly = false,
   inert = false,
+  base = "",
   online,
   theme,
   onTheme,
@@ -67,7 +71,7 @@ export function WorkspaceTopBarView({
   const slot = useContext(TopBarSlot);
   return (
     <header className={styles.bar} aria-label={t.workspace.barLabel}>
-      <a className={styles.mark} href="/zadaci" title={t.workspace.backToAssignments} aria-label={`Ductura: ${t.workspace.backToAssignments.replace("← ", "")}`}>
+      <a className={styles.mark} href={appHref(base, "/zadaci")} title={t.workspace.backToAssignments} aria-label={`Ductura: ${t.workspace.backToAssignments.replace("← ", "")}`}>
         Ductu<b>ra</b>
       </a>
       <span className={styles.crumb}>
@@ -85,7 +89,7 @@ export function WorkspaceTopBarView({
           <Button size="small" className={styles.primary} aria-disabled="true" aria-label={t.workspace.submitWork}>{label}</Button>
         ) : online ? (
           <span className={styles.submit}>
-            <a className={styles.link} href={`/rad/${encodeURIComponent(assignmentId)}/predaja`}
+            <a className={styles.link} href={appHref(base, `/rad/${encodeURIComponent(assignmentId)}/predaja`)}
               aria-label={things === null ? t.workspace.submitWork : `${t.workspace.submitWork}: ${things}`}>
               {label}
               {count === null ? null : <b className={styles.count} aria-hidden="true">{count}</b>}

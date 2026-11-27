@@ -188,7 +188,7 @@ test("a 403 from /me shows the no-role card with Odjava, not the retry screen (E
   const seen = await fakeServer(page, { status: 403, body: { code: "forbidden" } });
   await page.goto("/app/web/zadaci");
   const card = page.getByRole("status").filter({ hasText: "Prijava je uspjela" });
-  await expect(card.getByRole("heading", { level: 2 })).toHaveText("Prijava je uspjela");
+  await expect(card.getByRole("heading", { level: 1 })).toHaveText("Prijava je uspjela");
   await expect(card).toContainText("Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti.");
   await expect(card).toContainText("Javite se koordinatoru (administratoru fakulteta) na svojoj ustanovi.");
   await axe(page);
@@ -203,8 +203,8 @@ test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the
   const seen = await fakeServer(page, { status: 401 });
   const errors = errorsOf(page);
   await page.goto("/app/web/prijava");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Dobro došli");
-  await expect(page.getByRole("heading", { level: 2 })).toContainText("Vaš akademski identitet.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Prijava");
+  await expect(page.getByRole("link", { name: "Prijava sustavom AAI@EduHr" })).toContainText("AAI@EduHr");
   await expect(page.getByText("Lozinku upisujete samo kod AAI@EduHr.")).toBeVisible();
   await expect(page.getByText("Ne možete se prijaviti računom AAI@EduHr?")).toBeHidden();
   await expect(page.locator("details", { hasText: "Prvi dolazak ili imate kod zadatka?" })).toHaveAttribute("open", "");
@@ -220,7 +220,7 @@ test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the
   for (const query of ["stanje=greska", "greska=login_failed"]) {
     await page.goto(`/app/web/prijava?${query}`);
     const alert = page.getByRole("main").getByRole("alert");
-    await expect(alert.getByRole("heading", { level: 2 })).toHaveText("Prijava nije dovršena");
+    await expect(alert.getByRole("heading", { level: 1 })).toHaveText("Prijava nije dovršena");
     await expect(alert).toContainText("Pokušajte ponovno; ako se ponovi, javite se koordinatoru");
     await expect(alert.getByRole("link", { name: "Na početnu" })).toHaveAttribute("href", "/");
     await axe(page);
