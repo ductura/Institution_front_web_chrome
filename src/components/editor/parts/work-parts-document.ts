@@ -94,13 +94,22 @@ export function readWorkPartsDisplay(storageKey: string): WorkPartsDisplay {
   };
 }
 
+// ED-79: what is drawn from the display parts on the sheet (the "Popis kratica" box) hears a change at once.
+const displayListeners = new Set<() => void>();
+
+export function subscribeWorkPartsDisplay(listener: () => void): () => void {
+  displayListeners.add(listener);
+  return () => { displayListeners.delete(listener); };
+}
+
 export function writeWorkPartsDisplay(storageKey: string, current: WorkPartsDisplay, next: WorkPartsDisplay): boolean {
   if (DISPLAY_PARTS.every((key) => next[key] === current[key])) return true;
   const display = Object.fromEntries(DISPLAY_PARTS.map((key) => [key, next[key]]));
   try {
     localStorage.setItem(storageKey, JSON.stringify(display));
-    return true;
   } catch {
     return false;
   }
+  for (const listener of displayListeners) listener();
+  return true;
 }

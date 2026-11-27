@@ -15,6 +15,7 @@ const fits = (id: string, r: Result) => expect(matchesSchema(schema(id), body(r)
 const SENT = JSON.stringify({ documentId: DOKUMENT_T1, revision: REVIZIJA_T1 });
 const paths = {
   declaration: `/api/v1/student/assignments/${T1}/declaration`,
+  declarationV2: `/api/v1/student/assignments/${T1}/declaration-v2`,
   state: `/api/v1/student/assignments/${T1}/submission`,
   withdrawal: `/api/v1/student/assignments/${T1}/submission/withdrawal`,
   history: `/api/v1/student/assignments/${T1}/submission/history`,
@@ -26,6 +27,9 @@ describe("PR-19: the puno student submits T1 on the fake server", () => {
     const opened = body(s.answer("student", "POST", "/api/v1/evidence/open", JSON.stringify({ assignmentId: T1 })));
     const declaration = s.answer("student", "GET", paths.declaration);
     fits("student.declaration.get", declaration);
+    const second = s.answer("student", "GET", paths.declarationV2);
+    fits("student.declaration-second.get", second);
+    expect(body(second)).toMatchObject({ state: "confirmed" });
     expect(body(declaration)).toMatchObject({ state: "confirmed", currentRevision: opened.currentRevision, payload: { documentId: opened.documentId, revision: opened.currentRevision, assignmentId: T1 } });
     expect(opened).toMatchObject({ documentId: DOKUMENT_T1, currentRevision: REVIZIJA_T1, submitted: false });
     expect(body(s.answer("student", "GET", paths.state))).toEqual({ state: "none" });

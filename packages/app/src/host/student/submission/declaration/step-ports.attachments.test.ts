@@ -6,8 +6,7 @@ import { attachedCountReader } from "./attached-count";
 import { createStepPorts, type StepRead } from "./step-ports";
 
 // F4-PRE-R02: Asistent conversations attached to the declaration on declaration-v2, against a recorded
-// transport. Invented data only. The v2 operations are not in the extract yet (TODO(ugovor)), so the fake
-// answers them by operation id, as the client will once it knows them.
+// transport. Invented data only. The v2 operations are in the extract, so the fake answers them by operation id.
 const ASSIGNMENT = "00000000-0000-4000-8000-0000000000a1";
 const C1 = "00000000-0000-4000-8000-0000000000c1";
 const C2 = "00000000-0000-4000-8000-0000000000c2";
@@ -151,10 +150,10 @@ describe("conversations on the declaration (F4-PRE-R02, declaration-v2)", () => 
   });
 });
 
-describe("before the extract has declaration-v2 (TODO(ugovor))", () => {
+describe("over the real client (the extract has declaration-v2)", () => {
   const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
 
-  it("stays on declaration-v1, lists the conversations, offers no attaching and counts nothing", async () => {
+  it("reads declaration-v2, lists the conversations, attaches nothing yet and counts them", async () => {
     const urls: string[] = [];
     const fetchImpl: typeof fetch = async (input) => {
       urls.push(String(input));
@@ -164,9 +163,17 @@ describe("before the extract has declaration-v2 (TODO(ugovor))", () => {
     const call = createApi({ baseUrl: "https://ductura.example.invalid", fetchImpl });
     const ports = createStepPorts(call);
     const view = shown(await ports.read(ASSIGNMENT));
-    expect(view.chats.map((c) => [c.n, c.conversationId, c.attached])).toEqual([[1, C1, null], [2, C2, null]]);
-    expect(urls.some((u) => u.includes("declaration-v2"))).toBe(false);
-    expect(await ports.attach!(ASSIGNMENT, C1, true)).toBe("unavailable");
+    expect(view.chats.map((c) => [c.n, c.conversationId, c.attached])).toEqual([[1, C1, false], [2, C2, false]]);
+    expect(urls.some((u) => u.includes("declaration-v2"))).toBe(true);
+    expect(urls.some((u) => u.endsWith("/declaration"))).toBe(false);
+    expect(await attachedCountReader(call)(ASSIGNMENT)).toEqual({ total: 2, attached: 0 });
+  });
+
+  it("a v2 read that fails is said so (attached unknown), never shown as none attached", async () => {
+    const fetchImpl: typeof fetch = async (input) => String(input).includes("/assistant-conversations")
+      ? json({ assignmentId: ASSIGNMENT, conversations: CONVERSATIONS })
+      : new Response(JSON.stringify({ code: "unavailable" }), { status: 503, headers: { "content-type": "application/json" } });
+    const call = createApi({ baseUrl: "https://ductura.example.invalid", fetchImpl });
     expect(await attachedCountReader(call)(ASSIGNMENT)).toBeNull();
   });
 });

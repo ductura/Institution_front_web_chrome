@@ -34,7 +34,7 @@ async function student(page: Page, start = DRAFT_STATE) {
   await page.route("**/api/v1/**", async (route) => {
     const req = route.request();
     const path = new URL(req.url()).pathname;
-    if (path.endsWith("/declaration")) {
+    if (/\/declaration(-v2)?$/.test(path)) {
       if (req.method() === "PUT") {
         const put = req.postDataJSON() as Record<string, unknown> & { questionAnswer?: { questionId: string; text: string } | null };
         puts.push(put);
