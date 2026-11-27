@@ -336,7 +336,11 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
   TeacherCourses: {
     prazno: async (c) => {
       await expect(c.getByRole("heading", { level: 2 })).toHaveText(t.teacherCourses.empty);
-      await expect(c.getByRole("link", { name: t.teacherCourses.newCourse })).toHaveAttribute("href", "/nastavnik/zadatak/novi");
+      // Design alignment 27. 11. 2026.: the faculty administrator creates a course, so the
+      // empty state explains that and offers no new-course link of the teacher's own.
+      await expect(c.getByText(t.teacherCourses.emptyBody)).toBeVisible();
+      await expect(c.getByText(t.teacherCourses.emptyNext)).toBeVisible();
+      await expect(c.getByRole("link", { name: t.teacherCourses.newCourse })).toHaveCount(0);
       await expect(c.getByText(t.teacherCourses.countNote)).toHaveCount(0);
     },
     učitavanje: loading(t.workspace.panelLoading),
