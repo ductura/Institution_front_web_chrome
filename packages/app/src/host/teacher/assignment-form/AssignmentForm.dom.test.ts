@@ -11,7 +11,7 @@ import { publishHr } from "../publish/messages.hr";
 import { takePublished } from "../publish/published-handoff";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const course = { id: "c1", name: "Izmišljeni kolegij", academicYear: "2026./2027.", aiPolicy: "partially_allowed" } as const;
 const groups = { kind: "ready", groups: [{ id: "g1", name: "Grupa A" }, { id: "g2", name: "Grupa B" }] } as const;
 
@@ -140,7 +140,7 @@ describe("AssignmentForm publish outcome (F4-NAS-R13, NAS-19)", () => {
     let answer: (v: { kind: "available"; id: string }) => void = () => {};
     const publish = () => new Promise<{ kind: "available"; id: string }>((r) => { answer = r; });
     const navigate = vi.fn();
-    await toReview({ publish, navigate, doneHref: "/app/web/nastavnik" });
+    await toReview({ publish, navigate, doneHref: "/aplikacija/nastavnik" });
     await click(button(f.publish));
     const busy = document.querySelector('[aria-busy="true"] [role="status"]');
     expect(busy?.textContent).toBe(publishHr.pending);
@@ -150,9 +150,9 @@ describe("AssignmentForm publish outcome (F4-NAS-R13, NAS-19)", () => {
 
   it("goes back to /nastavnik with the mark for the toast only after the server confirmed", async () => {
     const navigate = vi.fn();
-    await toReview({ publish: async () => ({ kind: "available" as const, id: "a-new" }), navigate, doneHref: "/app/web/nastavnik" });
+    await toReview({ publish: async () => ({ kind: "available" as const, id: "a-new" }), navigate, doneHref: "/aplikacija/nastavnik" });
     await click(button(f.publish));
-    expect(navigate).toHaveBeenCalledWith("/app/web/nastavnik");
+    expect(navigate).toHaveBeenCalledWith("/aplikacija/nastavnik");
     expect(takePublished()).toBe(true);
   });
 

@@ -12,7 +12,7 @@ import type { HistoryCall } from "./contract";
 
 const saved = vi.fn();
 vi.mock("../../../../../../../src/components/editor/EarlierDraft", () => ({ downloadBlob: (...args: unknown[]) => saved(...args) }));
-vi.mock("../../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 const signIn = vi.fn();
 vi.mock("../../../../../../../src/client/api", async (actual) => ({ ...(await actual<object>()), goToSignIn: (...args: unknown[]) => signIn(...args) }));
 
@@ -33,8 +33,8 @@ async function render(props: Partial<Parameters<typeof AfterSubmission>[0]>) {
   document.body.append(host);
   root = createRoot(host);
   await act(async () => root!.render(createElement(AfterSubmission, {
-    assignmentId: ASSIGNMENT, deadline: "2099-12-20T22:59:00.000Z", workHref: "/app/web/rad/a1", receiptHref: "/app/web/rad/a1/predaja/potvrda",
-    here: "/app/web/rad/a1/predaja/potvrda", historyCall: () => history(NO_EVENTS), ...props,
+    assignmentId: ASSIGNMENT, deadline: "2099-12-20T22:59:00.000Z", workHref: "/aplikacija/rad/a1", receiptHref: "/aplikacija/rad/a1/predaja/potvrda",
+    here: "/aplikacija/rad/a1/predaja/potvrda", historyCall: () => history(NO_EVENTS), ...props,
   })));
   await settle();
   return host;
@@ -76,7 +76,7 @@ describe("Povlačenje predaje with its reason (PR-13)", () => {
     expect(host!.querySelector("h2, h3")?.textContent).toBe("Predaja je povučena");
     expect(text()).toContain("Rad možete ponovno mijenjati do 20. 12. 2099. u 23:59. Zatim ga predajte iznova.");
     expect(text()).toContain("Nastavnik u povijesti vidi i predaju i povlačenje.");
-    expect(link("Otvori radni prostor")?.getAttribute("href")).toBe("/app/web/rad/a1");
+    expect(link("Otvori radni prostor")?.getAttribute("href")).toBe("/aplikacija/rad/a1");
     expect(host!.querySelector("[role=status]")?.textContent).toBe("Predaja je povučena. Potvrdu povlačenja možete preuzeti.");
   });
 });
@@ -88,7 +88,7 @@ describe("Moje predaje (PR-15)", () => {
     const items = [...host!.querySelectorAll("[data-testid=my-submissions] > li")];
     expect(items.map((li) => li.querySelector("p")?.textContent)).toEqual(["Predaja 2 · 20. 12. 2026. u 23:05", "Predaja 1 · 20. 12. 2026. u 22:14"]);
     expect(items[0]!.textContent).toContain("Trenutno važeća predaja.");
-    expect(items[0]!.querySelector("a")?.getAttribute("href")).toBe("/app/web/rad/a1/predaja/potvrda");
+    expect(items[0]!.querySelector("a")?.getAttribute("href")).toBe("/aplikacija/rad/a1/predaja/potvrda");
     expect(items[1]!.textContent).toContain("Povučena 20. 12. 2026. u 22:40.");
     const download = items[1]!.querySelector("button")!;
     expect(download.getAttribute("aria-label")).toBe("Preuzmi potvrdu povlačenja predaje 1");

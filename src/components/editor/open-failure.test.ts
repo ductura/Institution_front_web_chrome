@@ -44,17 +44,17 @@ describe("openFailureExit", () => {
   });
 
   it("signed out: sign in, and come back to this work under the host's base", () => {
-    const exit = openFailureExit("signedOut", { assignmentId: ID, base: "/app/web" });
+    const exit = openFailureExit("signedOut", { assignmentId: ID, base: "/aplikacija" });
     expect(exit).toMatchObject({ kind: "link", label: "Prijavi se" });
     if (exit.kind !== "link") throw new Error("a link");
-    expect(new URL(exit.href, "https://primjer.invalid").searchParams.get("returnTo")).toBe(`/app/web/rad/${ID}`);
+    expect(new URL(exit.href, "https://primjer.invalid").searchParams.get("returnTo")).toBe(`/aplikacija/rad/${ID}`);
   });
 
   it("missing: back to the assignments; closed: the notice of this assignment", () => {
-    expect(openFailureExit("missing", { assignmentId: ID, base: "/app/web" }))
-      .toEqual({ kind: "link", label: t.openBackToTasks, href: "/app/web/zadaci" });
-    expect(openFailureExit("closed", { assignmentId: ID, base: "/app/web" }))
-      .toEqual({ kind: "link", label: t.openNoticeLink, href: `/app/web/zadatak/${ID}` });
+    expect(openFailureExit("missing", { assignmentId: ID, base: "/aplikacija" }))
+      .toEqual({ kind: "link", label: t.openBackToTasks, href: "/aplikacija/zadaci" });
+    expect(openFailureExit("closed", { assignmentId: ID, base: "/aplikacija" }))
+      .toEqual({ kind: "link", label: t.openNoticeLink, href: `/aplikacija/zadatak/${ID}` });
     expect(openFailureExit("closed", { assignmentId: ID })).toMatchObject({ href: `/zadatak/${ID}` });
   });
 });

@@ -12,7 +12,7 @@ const fixtures = JSON.parse(readFileSync(new URL("./fixtures/teacher.json", impo
   "teacher.courses.get": { courses: TeacherCourse[] };
 };
 const course = fixtures["teacher.courses.get"].courses[0]!;
-const formPath = `/app/web/nastavnik/zadatak/novi?kolegij=${course.id}`;
+const formPath = `/aplikacija/nastavnik/zadatak/novi?kolegij=${course.id}`;
 
 async function teacherWithCourses(page: Page) {
   await page.route("**/api/v1/me", (route) => route.fulfill({ json: { roles: ["teacher"], institutionName: "Izmišljeni fakultet" } }));
@@ -50,7 +50,7 @@ test("confirmed publish: loading text, then back to /nastavnik with a toast that
     confirm();
   }
 
-  await expect(page).toHaveURL("/app/web/nastavnik");
+  await expect(page).toHaveURL("/aplikacija/nastavnik");
   await expect(toast).toBeVisible();
   await axe(page, info, "nas-r13-toast");
   // TEACHER_TOAST_MS: the neutral toast leaves by itself.
@@ -73,7 +73,7 @@ test("refused publish stays on the review with the alert and leaves no toast for
   await expect(page).toHaveURL(formPath);
   await axe(page, info, "nas-r13-odbijeno");
 
-  await page.goto("/app/web/nastavnik");
+  await page.goto("/aplikacija/nastavnik");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(page.getByText(publishHr.published)).toHaveCount(0);
 });

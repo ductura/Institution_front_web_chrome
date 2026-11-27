@@ -13,7 +13,7 @@ const work = vi.hoisted(() => ({ current: null as unknown }));
 const missing = vi.hoisted(() => vi.fn(() => { throw new Error("NEXT_NOT_FOUND"); }));
 vi.mock("next/navigation", () => ({ notFound: missing, useRouter: () => ({ replace: vi.fn() }) }));
 vi.mock("../other", () => ({ useWorkDocument: () => work.current }));
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 const { default: StudentInterviewPage } = await import("./StudentInterviewPage");
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

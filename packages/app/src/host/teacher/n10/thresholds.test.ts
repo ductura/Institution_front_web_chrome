@@ -32,7 +32,7 @@ async function show(port: N10Port) {
   document.body.append(host);
   root = createRoot(host);
   await act(async () => {
-    root!.render(h(SummaryPage, { port, documentId: "d1", workHref: "/app/web/nastavnik/rad/d1", signInHref: "/x", map: h("div") }));
+    root!.render(h(SummaryPage, { port, documentId: "d1", workHref: "/aplikacija/nastavnik/rad/d1", signInHref: "/x", map: h("div") }));
   });
   return host;
 }

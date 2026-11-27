@@ -38,7 +38,7 @@ export default function ProblemReportHelp({ triggerClass }: { triggerClass?: str
   sender.current ??= createSender((body) => sendProblemReport(call, body, Date.now()));
 
   const view = useMemo(() => formView(state, now), [state, now]);
-  const context = { appVersion: APP_VERSION, pathname: `/app${pathname}`.replace(/^\/app\/(web|chrome)/, ""), syncState: null, userAgent: navigator.userAgent };
+  const context = { appVersion: APP_VERSION, pathname, syncState: null, userAgent: navigator.userAgent };
 
   const submit = async () => {
     const next = await sender.current!(state, Date.now(), context, setState);

@@ -2,7 +2,7 @@
 // DAN-887) with the system tests: the "Prihvaćanje" steps of WEB-14 (the
 // editor page) and WEB-15 (the static toolbar), clicked in what is shipped.
 // The student enters through the Preloader on `/` and writes in the
-// production build of packages/app under /app/web/ (e2e/sistem/stog.ts), not
+// production build of packages/app under /aplikacija/ (e2e/sistem/stog.ts), not
 // in the frozen Next app of src/app. axe runs at 1250 and 400 px. Only
 // made-up data from the server's seed (demo-student, „Seminarski rad: kućno
 // kompostiranje”).

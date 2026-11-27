@@ -65,7 +65,7 @@ for (const width of [390, 1280]) {
       const seen = await fakeServer(page, ["network_engineer"]);
       await answer(page, LOG, 200, ACTIONS);
       await answer(page, REPORTS, 200, { truncated: false, reports: [report(1), report(2, { status: "resolved" })] });
-      await page.goto("/app/web/operater/mjerila-pilota");
+      await page.goto("/aplikacija/operater/mjerila-pilota");
       await page.getByRole("link", { name: "Dnevnik radnji" }).click();
       await expect(page).toHaveURL(/\/operater\/dnevnik-radnji$/);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText("Dnevnik radnji");
@@ -74,7 +74,7 @@ for (const width of [390, 1280]) {
       await expect(log.getByRole("row").nth(1)).toContainText("Uloga potvrđena");
       expect(await serious(page)).toEqual([]);
 
-      await page.goto("/app/web/operater/mjerila-pilota");
+      await page.goto("/aplikacija/operater/mjerila-pilota");
       await page.getByRole("link", { name: "Prijave problema" }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText("Prijave problema");
       const reports = page.getByRole("table", { name: "Prijave problema" });
@@ -92,23 +92,23 @@ for (const width of [390, 1280]) {
 test("OA-3, OA-7: empty, error with a retry, and no authority are each said in words", async ({ page }) => {
   await fakeServer(page, ["network_engineer"]);
   await answer(page, LOG, 200, { entries: [], truncated: false });
-  await page.goto("/app/web/operater/dnevnik-radnji");
+  await page.goto("/aplikacija/operater/dnevnik-radnji");
   await expect(page.getByText("Još nema zabilježenih radnji")).toBeVisible();
 
   await page.unroute(`**${LOG}`);
   let attempts = 0;
   await page.route(`**${LOG}`, (route) => (attempts++ === 0 ? route.fulfill({ status: 503, json: { error: "unavailable" } }) : route.fulfill({ json: ACTIONS })));
-  await page.goto("/app/web/operater/dnevnik-radnji");
+  await page.goto("/aplikacija/operater/dnevnik-radnji");
   await expect(page.getByText("Dnevnik radnji trenutačno nije moguće učitati. Pokušajte ponovno.")).toBeVisible();
   await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
   await expect(page.getByRole("table", { name: "Radnje administratora i operatera" })).toBeVisible();
 
   await answer(page, REPORTS, 403, { error: "forbidden" });
-  await page.goto("/app/web/operater/prijave-problema");
+  await page.goto("/aplikacija/operater/prijave-problema");
   await expect(page.getByText("Nemate ovlasti za prijave problema.")).toBeVisible();
   await page.unroute(`**${REPORTS}`);
   await answer(page, REPORTS, 200, { reports: [], truncated: false });
-  await page.goto("/app/web/operater/prijave-problema");
+  await page.goto("/aplikacija/operater/prijave-problema");
   await expect(page.getByText("Nema prijava")).toBeVisible();
 });
 
@@ -123,7 +123,7 @@ test("OA-7: a report's state changes only after the server confirms it; a refusa
       ? route.fulfill({ json: { reference: "PR-00000000A1", status: "resolved", statusChangedAt: "2026-11-24T08:00:00.000Z" } })
       : route.fulfill({ status, json: { error: "forbidden" } });
   });
-  await page.goto("/app/web/operater/prijave-problema");
+  await page.goto("/aplikacija/operater/prijave-problema");
   const row = page.getByRole("table", { name: "Prijave problema" }).getByRole("row").nth(1);
   await expect(row).toContainText("zaprimljeno");
   status = 403;
@@ -144,16 +144,16 @@ test("OA-3, OA-7: the administrator opens both pages and sees its own category; 
   await fakeServer(page, ["institution_admin"]);
   await answer(page, LOG, 200, ACTIONS);
   await answer(page, REPORTS, 200, { reports: [report(1, { category: "account", routedTo: "institution_admin" })], truncated: false });
-  await page.goto("/app/web/operater/prijave-problema");
+  await page.goto("/aplikacija/operater/prijave-problema");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Prijave problema");
   await expect(page.getByRole("table", { name: "Usmjeravanje prijava po kategoriji" }).getByRole("row", { name: /Račun i uloge/ }))
     .toContainText("administrator fakulteta vaša");
-  await page.goto("/app/web/operater/dnevnik-radnji");
+  await page.goto("/aplikacija/operater/dnevnik-radnji");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Dnevnik radnji");
 
   await page.unrouteAll();
   const seen = await fakeServer(page, ["teacher"]);
-  await page.goto("/app/web/operater/dnevnik-radnji");
+  await page.goto("/aplikacija/operater/dnevnik-radnji");
   await expect(page).toHaveURL(/nema-ovlasti/);
   expect(seen.filter((call) => /admin-actions|problem-reports/.test(call))).toEqual([]);
 });
@@ -196,7 +196,7 @@ for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme });
       const seen = await fakeExports(page, ["institution_admin"], [201]);
-      await page.goto("/app/web/ustanova/izvoz-podataka");
+      await page.goto("/aplikacija/ustanova/izvoz-podataka");
       for (const state of ["Čeka odobrenje", "Odobren", "Preuzet", "Istekao"]) await expect(page.getByText(state, { exact: true })).toBeVisible();
       await expect(page.getByText("Preuzet ili istekao: zahtjev je zatvoren", { exact: false })).toBeVisible();
       // One person records a request (the registry office), another approves it (the administrator).
@@ -209,7 +209,7 @@ for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme });
       const seen = await fakeExports(page, ["teacher"], [201]);
-      await page.goto("/app/web/ustanova/izvoz-podataka");
+      await page.goto("/aplikacija/ustanova/izvoz-podataka");
       await expect(page.getByRole("region", { name: REQUEST_FORM })).toBeVisible();
       expect(await serious(page)).toEqual([]);
 
@@ -230,7 +230,7 @@ for (const width of [390, 1280]) {
 test("OA-6: the server's 409 is the same warning, and the student is then refused on the page", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
   const seen = await fakeExports(page, ["teacher"], [409]);
-  await page.goto("/app/web/ustanova/izvoz-podataka");
+  await page.goto("/aplikacija/ustanova/izvoz-podataka");
   await requestFor(page, STUDENT);
   await expect(page.locator("main").getByRole("alert")).toHaveText(WARNING);
   await requestFor(page, STUDENT);

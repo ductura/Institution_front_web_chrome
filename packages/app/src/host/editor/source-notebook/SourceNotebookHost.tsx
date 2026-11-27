@@ -139,7 +139,7 @@ function NotebookNotes({ documentId, editor, sources, canInsert }: Props) {
             {entry.note && <p>{entry.note}</p>}
             {citation.kind === "ready"
               ? <Button tone="quiet" disabled={!canInsert}
-                  onClick={(event) => { if (event.nativeEvent.isTrusted) insert(entry); }}>
+                  onClick={() => insert(entry)}>
                   {citation.text ? t.insertQuote : t.insertReference}
                 </Button>
               : <small>{t[citation.kind]}</small>}

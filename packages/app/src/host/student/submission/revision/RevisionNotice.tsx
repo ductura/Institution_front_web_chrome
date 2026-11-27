@@ -1,13 +1,14 @@
 "use client";
 
 // NF-3 PR-16 (E-7b, G-24): on steps 2 to 4, the teacher's request for revision as one whole: the
-// deadline beside the title, the comment, and "Pošalji doradu", which stays unavailable while the
-// contract has no such operation (`send: null`, PO-40). A work without a request, or a request that
+// deadline beside the title, the comment, and "Pošalji doradu", which calls
+// `collaboration.revision-send.post` (PRE-R03) and shows the confirmed or failed outcome. A work without a request, or a request that
 // cannot be read, shows nothing here: the steps themselves do not change.
 import { Button, StepKv, StepPanel } from "@ductura/ui";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { createApi } from "../../../../../../../src/client/api";
+import { sendRevisionStatus } from "../../../../../../../src/client/revision-send";
 import { atOf } from "../steps/time";
 import { readRevisionRequest, type RevisionCall, type RevisionRead } from "./contract";
 import { revisionText as t } from "./messages.hr";
@@ -19,11 +20,13 @@ export type RevisionNoticeProps = {
   /** On the declaration step the block also asks to look at the declaration again (PR-14, option c). */
   readonly onDeclaration?: boolean;
   readonly call?: () => RevisionCall;
+  /** The send of the revision; the HTTP status it reads (200 only for a confirmed round), null when unknown. */
+  readonly send?: (documentId: string) => Promise<number | null>;
 };
 
-export default function RevisionNotice({ assignmentId, onDeclaration = false, call = defaultCall }: RevisionNoticeProps) {
+export default function RevisionNotice({ assignmentId, onDeclaration = false, call = defaultCall, send = (documentId) => sendRevisionStatus(documentId, "") }: RevisionNoticeProps) {
   const [read, setRead] = useState<RevisionRead | null>(null);
-  const why = useId();
+  const [sending, setSending] = useState<"idle" | "sending" | number | null>("idle");
   useEffect(() => {
     let live = true;
     void readRevisionRequest(call(), assignmentId).then((next) => { if (live) setRead(next); });
@@ -32,7 +35,20 @@ export default function RevisionNotice({ assignmentId, onDeclaration = false, ca
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignmentId]);
   if (read === null || read.kind !== "ready" || read.request === null) return null;
-  const { comment, dueAt } = read.request;
+  const { comment, dueAt, documentId } = read.request;
+  const outcome = sending === "idle" || sending === "sending" ? null : sending;
+  const sendNow = () => {
+    if (sending === "sending" || sending === 200) return;
+    setSending("sending");
+    void send(documentId).then((status) => setSending(status), () => setSending(null));
+  };
+  const notice = sending === "sending" ? t.sending
+    : sending === "idle" ? null
+    : outcome === 200 ? t.sent
+    : outcome === 401 ? t.sendSessionExpired
+    : outcome === 403 ? t.sendForbidden
+    : outcome === 409 ? t.sendConflict
+    : t.sendUnknown;
   const due = dueAt === null ? null : atOf(dueAt);
   return (
     <StepPanel id="sb-revision-h" level={2} title={t.title} tag={due === null ? t.tag : t.dueTag.replace("{due}", due)}>
@@ -41,9 +57,9 @@ export default function RevisionNotice({ assignmentId, onDeclaration = false, ca
       <StepKv label={t.due}>{due ?? t.dueMissing}</StepKv>
       {onDeclaration && <p className="note">{t.declaration}</p>}
       <p>
-        <Button tone="secondary" aria-disabled aria-describedby={why}>{t.send}</Button>
+        <Button tone="secondary" onClick={sendNow} aria-disabled={sending === "sending" || sending === 200 ? true : undefined}>{t.send}</Button>
       </p>
-      <p className="meta" id={why}>{t.sendUnavailable}</p>
+      <p className="meta" role="status" aria-live="polite">{notice}</p>
     </StepPanel>
   );
 }
