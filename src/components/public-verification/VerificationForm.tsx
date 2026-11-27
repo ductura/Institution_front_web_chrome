@@ -3,7 +3,7 @@
 import { Button, TextField } from "@ductura/ui";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import { formatDateTimeHr } from "@/lib/i18n/hr";
+import { formatDateTimeHr } from "../../lib/i18n/hr";
 
 import LoadAlert from "../shell/LoadAlert";
 
