@@ -13,6 +13,12 @@ import { pasteWhatHr as t } from "./messages.hr";
 import { PasteWhat } from "./PasteWhatHost";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+// jsdom lays nothing out: the editor's focus() scrolls the selection into view a frame later, and without
+// these the scroll throws outside the test (CI, an unhandled error after the stash test). As code-host.test.ts.
+const rects = () => ({ length: 0, item: () => null, [Symbol.iterator]: function* () {} });
+Range.prototype.getClientRects = rects as never;
+Range.prototype.getBoundingClientRect = (() => ({ top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 })) as never;
+Element.prototype.getClientRects = rects as never;
 
 const SOURCE = "00000000-0000-4000-8000-00000000c0a1";
 const PASTE = "Kišni vrt zadržava vodu s krova.";
