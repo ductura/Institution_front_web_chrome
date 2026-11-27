@@ -22,6 +22,11 @@ on:
       preloader_ref:
         type: string
         default: migracija/nextjs
+      # CI-WEB-NOGE: ci.yml passes true and the job takes the build of its
+      # job `app-build` instead of building the host again (about 55 s).
+      build_artifact:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       server_ref:
@@ -99,6 +104,27 @@ jobs:
           curl -fsS http://127.0.0.1:4000/api/v1/health || { echo "::error::server se nije podigao"; tail -n 200 "$RUNNER_TEMP/stog.log"; exit 1; }
       # INT-10: isporučeni host je packages/app (`pnpm build` i `pnpm start` u
       # korijenu idu na @ductura/app), ne Next u src/app.
+      # app-build builds with the fake server URL of the e2e (http://127.0.0.1:9),
+      # which `next build` bakes into the rewrites of three files in .next. The
+      # stack's server is :4000, so the URL is replaced there; the step fails if
+      # the marker is missing or still present. OIDC_ISSUER is read when
+      # `next start` runs (src/middleware.ts), so it needs no patch.
+      - name: Front build from app-build
+        if: ${{ inputs.build_artifact }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: app-build
+          path: Institution_front_web_chrome/packages/app/.next
+      - name: Point the downloaded build at the stack server
+        if: ${{ inputs.build_artifact }}
+        working-directory: Institution_front_web_chrome/packages/app/.next
+        run: |
+          set -euo pipefail
+          for f in routes-manifest.json required-server-files.json required-server-files.js; do
+            grep -q 'http://127.0.0.1:9\b' "$f" || { echo "::error::$f has no fake server URL"; exit 1; }
+            sed -i 's#http://127.0.0.1:9\b#http://127.0.0.1:4000#g' "$f"
+          done
+          if grep -rIq 'http://127.0.0.1:9\b' .; then echo "::error::fake server URL left in the build"; exit 1; fi
       - name: "Front: packages/app (pnpm build + pnpm start)"
         working-directory: Institution_front_web_chrome
         env:
@@ -106,8 +132,9 @@ jobs:
           # CSP form-action pušta 303 odjave na end_session lažnog OIDC-a (INT-20).
           OIDC_ISSUER: http://localhost:8090
           NEXT_TELEMETRY_DISABLED: "1"
+          BUILD_ARTIFACT: ${{ inputs.build_artifact }}
         run: |
-          pnpm build
+          if [ "$BUILD_ARTIFACT" != "true" ]; then pnpm build; fi
           nohup pnpm start > "$RUNNER_TEMP/front.log" 2>&1 &
           for i in $(seq 1 40); do curl -fsS -o /dev/null http://127.0.0.1:5173/aplikacija/stanje && break; sleep 3; done
           curl -fsS -o /dev/null http://127.0.0.1:5173/aplikacija/stanje || { tail -n 100 "$RUNNER_TEMP/front.log"; exit 1; }
