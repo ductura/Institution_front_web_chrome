@@ -7,7 +7,7 @@ export const topicMentorHr = {
   versionLabel: "Verzija",
   summaryLabel: "Sažetak",
   noSummary: "Sažetak nije naveden.",
-  proposedOn: "Predloženo",
+  proposedOn: "predloženo",
   decisionHeading: "Odluka mentora",
   decisionApproved: "Odobreno",
   decisionReturned: "Vraćeno na doradu",

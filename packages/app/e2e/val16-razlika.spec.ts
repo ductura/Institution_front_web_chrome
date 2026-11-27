@@ -348,7 +348,7 @@ test("the whole flow of a thesis: topic, stage, forms and consent, committee, de
   expect(w.sent.filter((s) => s.path.endsWith("/thesis-stage")).map((s) => s.body)).toEqual([{ stage: "defense_scheduled", defenseAt: DEFENSE_ISO }]);
   await studentPanel(page, w);
   const sStage = card(page, tg.title);
-  await expect(sStage.getByTestId("defense-at")).toContainText("15. 12. 2026.");
+  await expect(sStage.getByTestId("defense-at")).toContainText("15. prosinca 2026.");
   await expect(sStage.getByRole("button", { name: tg.save })).toHaveCount(0);
   await expect(sStage.getByText(tg.studentNote)).toBeVisible();
 
