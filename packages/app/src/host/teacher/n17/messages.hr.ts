@@ -25,6 +25,17 @@ export const n17Messages = {
   // F4-PM2-R08 (D-50): the mark only, never a reason; the same words as teacher.accommodation in src/lib/i18n.
   accommodation: "(odobrena prilagodba)",
   accommodationsUnavailable: "Oznake odobrene prilagodbe trenutačno nisu dostupne. Pokušajte ponovno.",
+  // NAS-R15 (NZ-11)
+  filters: {
+    label: "Prikaz",
+    stateLabel: "Stanje",
+    groupLabel: "Grupa",
+    allStates: "Sva stanja",
+    allGroups: "Sve grupe",
+    state: { notStarted: "Nije započelo", writing: "Piše", submitted: "Predano", late: "Nakon roka", revision: "Dorada" } as Readonly<Record<"notStarted" | "writing" | "submitted" | "late" | "revision", string>>,
+    noMatch: "Nijedan student ne odgovara odabranom prikazu.",
+    clear: "Očisti filtre",
+  },
   state: {
     submitted: "predano",
     writing: "u pisanju",

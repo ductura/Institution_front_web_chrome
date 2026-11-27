@@ -16,7 +16,7 @@ async function show(port: N10Port, anchors?: ReadonlySet<string>) {
   document.body.append(host);
   root = createRoot(host);
   await act(async () => {
-    root!.render(h(SummaryPage, { port, documentId: "d1", workHref: "/app/web/nastavnik/rad/d1", signInHref: "/x", anchors }));
+    root!.render(h(SummaryPage, { port, documentId: "d1", workHref: "/aplikacija/nastavnik/rad/d1", signInHref: "/x", anchors }));
   });
   return host;
 }
@@ -33,7 +33,7 @@ describe("N-10 SummaryPage", () => {
     const host = await show({ summary: never, details: never, versions: never });
     expect(host.querySelector("h1")?.textContent).toBe("Sažetak procesa");
     expect(host.querySelector('[role="status"]')?.textContent).toContain("Učitavam sažetak procesa…");
-    expect(host.querySelector("a")?.getAttribute("href")).toBe("/app/web/nastavnik/rad/d1");
+    expect(host.querySelector("a")?.getAttribute("href")).toBe("/aplikacija/nastavnik/rad/d1");
   });
 
   it("shows the error with a retry that reads again", async () => {

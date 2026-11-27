@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { joinRows, type N17Card, type N17Port, type N17Row } from "./model";
 import { n17Messages as text } from "./messages.hr";
+import N17Overview from "./Overview";
 
 vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 
@@ -25,7 +26,6 @@ let host: HTMLElement | null = null;
 afterEach(() => { act(() => root?.unmount()); host?.remove(); root = null; host = null; });
 
 async function show(cards: readonly N17Card[]): Promise<HTMLElement> {
-  const { default: N17Overview } = await import("./Overview");
   const port: N17Port = { read: async () => ({ kind: "ready", cards }) };
   host = document.createElement("div");
   document.body.append(host);
