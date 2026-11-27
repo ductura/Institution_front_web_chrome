@@ -19,7 +19,7 @@ const documentId = "rad-izmisljeni-pregled";
 const previousId = "rad-izmisljeni-prethodni";
 const assignmentId = "00000000-0000-4000-8000-0000000000a1";
 const studentId = "00000000-0000-4000-8000-0000000000e1";
-const review = `/app/web/nastavnik/rad/${documentId}/pregled`;
+const review = `/aplikacija/nastavnik/rad/${documentId}/pregled`;
 const SUMMARY = {
   summaryFormat: "ductus-process-summary-v1",
   sessions: { evidenceKind: "observed", breakAboveMinutes: 30, count: 0, items: [] },
@@ -96,7 +96,7 @@ test("PG-5: the important places list, with no automatic playback; without the d
   await expect(section.getByText(p.placesNone)).toHaveCount(0);
   await expect(section.getByText("Lijepljenje, 420 znakova")).toBeVisible();
   await expect(section.locator("[aria-live]")).toHaveCount(0);
-  await expect(section.getByRole("link", { name: p.placesJump })).toHaveAttribute("href", `/app/web/nastavnik/rad/${documentId}/reprodukcija`);
+  await expect(section.getByRole("link", { name: p.placesJump })).toHaveAttribute("href", `/aplikacija/nastavnik/rad/${documentId}/reprodukcija`);
 });
 
 test("PG-5: with the details the transfer from the Asistent is listed too", async ({ page }) => {
@@ -106,13 +106,14 @@ test("PG-5: with the details the transfer from the Asistent is listed too", asyn
   await expect(page.locator('[data-nf5="PG-5"]').getByText(p.transfer)).toBeVisible();
 });
 
-test("PG-7: the student's explanation is read before any conclusion, with the finding read said to be missing", async ({ page }) => {
+test("PG-7: the student's explanation is read before any conclusion, and the finding explanation counted in Karta podrijetla", async ({ page }) => {
   await fakeServer(page);
   await page.goto(`${review}?kartica=podrijetlo`);
   const section = page.locator('[data-nf5="PG-7"]');
   await expect(section.getByText("Izmišljeno objašnjenje studenta.")).toBeVisible();
   await expect(section.getByText(p.eventOrdinal(1))).toBeVisible();
-  await expect(section.locator('[data-missing="finding-explanation"]')).toBeVisible();
+  await expect(section.locator('[data-missing="finding-explanation"]')).toHaveCount(0);
+  await expect(page.locator("[data-assistant-match-explained]")).toHaveText("Objašnjeno 0 od 1");
 });
 
 test("PG-9: published comments and drafts marked „nije objavljeno”, read only", async ({ page }) => {

@@ -4,6 +4,7 @@ import { findForbiddenTerms } from "../../../../../../scripts/forbidden-terms/te
 import { PAGES, resolve } from "../../../routes";
 import { myRightsMessages } from "../../public/my-rights/messages.hr";
 import { facultySettingsMessages as t } from "./messages.hr";
+import { parseThesisForms, parseThesisSettings, summariseThesisForms } from "./thesis-read";
 import { WORK_TYPES, assistantRows, summariseRetention, summariseRules, summariseThresholds } from "./read";
 
 const v = (versionNo: number, publishedAt: string, over = {}) => ({
@@ -35,6 +36,22 @@ describe("Postavke fakulteta: sažeci", () => {
     expect(rows.map((r) => r.workType)).toEqual([...WORK_TYPES]);
     expect(rows.find((r) => r.workType === "essay")?.version?.aiPolicy).toBe("encouraged");
     expect(rows.find((r) => r.workType === "master_thesis")?.version).toBeNull();
+  });
+});
+
+describe("Postavke fakulteta: obrasci i postavka završnih radova", () => {
+  const form = { code: "izjava-mentora", version: 1, title: "Izjava", workTypes: ["bachelor_thesis"], active: true, publishedAt: "2026-10-01T10:00:00.000Z" };
+  it("obrasci: ispravan oblik prolazi, svaki krivi oblik je null (nikad prazan popis)", () => {
+    expect(parseThesisForms({ forms: [form] })).toEqual([form]);
+    expect(parseThesisForms({ forms: [] })).toEqual([]);
+    for (const bad of [null, {}, { forms: "x" }, { forms: [{ ...form, workTypes: [] }] }, { forms: [{ ...form, workTypes: ["essay"] }] }, { forms: [{ ...form, active: "da" }] }, { forms: [{ ...form, version: 1.5 }] }])
+      expect(parseThesisForms(bad)).toBeNull();
+    expect(summariseThesisForms([form as never, { ...form, active: false } as never])).toEqual({ active: 1, total: 2 });
+  });
+  it("postavka: false i null su valjani odgovori, drugi oblik nije", () => {
+    expect(parseThesisSettings({ mentorConsentRequired: false, changedAt: null })).toEqual({ mentorConsentRequired: false, changedAt: null });
+    for (const bad of [null, {}, { mentorConsentRequired: "da", changedAt: null }, { mentorConsentRequired: true }, { mentorConsentRequired: true, changedAt: 5 }])
+      expect(parseThesisSettings(bad)).toBeNull();
   });
 });
 

@@ -14,6 +14,7 @@ export const FAKE_DATA: N13Data = {
     { studentId: "s-1", name: "Ana Horvat" }, { studentId: "s-2", name: "Marko Babić" },
     { studentId: "s-3", name: null }, { studentId: "s-4", name: "Dora Matić" },
   ],
+  submissions: [{ studentId: "s-2", requestedMinute: "2026-11-08T21:15:00.000Z" }],
 };
 
 export function fakeN13Port(answer: N13Read = { kind: "ready", data: FAKE_DATA }, record?: (draft: ExtensionDraft) => RecordOutcome): N13Port {

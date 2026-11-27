@@ -74,6 +74,8 @@ import {
   createDocumentSaver, evidenceNotice, saveAnnouncement, snapshotSpeaks, stoppedSaved, submittedOf, unconfirmedOf, writingClosed, type DocumentSaver,
   type DocumentSnapshot,
 } from "./document-saver";
+import { ConflictDialog } from "./ConflictDialog";
+import { applyKeptDocument, type ConflictChoice, type ConflictOffer, type ConflictOutcome } from "./conflict-resolution";
 import type { EvidenceSession, SheetDocument } from "./evidence-session";
 import LogoutDialog from "./LogoutDialog";
 import { blockedLastSavedText } from "./blocked-notice";
@@ -126,6 +128,11 @@ type LocalDocumentValue = {
    * differs (3d-2c2 §3).
    */
   stickyLoad: boolean;
+  /**
+   * F4-EDI-R05: while the work is in CONFLICT, the way to decide between the
+   * server's version and the text of this device; null otherwise.
+   */
+  conflict: ConflictOffer | null;
   /**
    * Stops writing and says what a sign-out would leave behind (FE-D7), or
    * "leave" when the page's session has ended.
@@ -253,8 +260,19 @@ function wordsOf(doc: SheetDocument, sheet: SheetSchemaVersion): number {
   return sheet === 3 ? documentWordCount(doc) : countWords(doc as CanonicalDocument);
 }
 
+/**
+ * F4-V17-R01: the faculty template's skeleton (title lines, headings, hint paragraphs) as editor
+ * blocks, put into a work that has nothing yet. Only an empty, writable sheet takes it, and
+ * only once: text the author typed meanwhile is never overwritten. It is one ordinary edit,
+ * so it is saved and recorded like any other; false when nothing was put in.
+ */
+export function seedStartContent(editor: Editor, blocks: readonly unknown[] | null | undefined): boolean {
+  if (!blocks || blocks.length === 0 || !editor.isEditable || !editor.isEmpty) return false;
+  return editor.commands.setContent({ type: "doc", content: blocks as never[] });
+}
+
 export function LocalDocumentProvider({
-  scope, documentId, assignmentId = null, session = null, livePublish = false, publishHeld = false, schemaVersion, children,
+  scope, documentId, assignmentId = null, session = null, livePublish = false, publishHeld = false, schemaVersion, startContent, children,
 }: {
   scope: string;
   documentId: string;
@@ -284,8 +302,15 @@ export function LocalDocumentProvider({
    * unknown or other version keeps the v1 sheet, journal and evidence.
    */
   schemaVersion?: number;
+  /**
+   * F4-V17-R01: the blocks a work with no stored text starts with (the faculty template's
+   * skeleton), or null for none. Asked once per opened journal; only an empty sheet takes it, so stored text is never touched.
+   */
+  startContent?: () => Promise<readonly unknown[] | null>;
   children: ReactNode;
 }) {
+  const startContentRef = useRef(startContent);
+  useLayoutEffect(() => { startContentRef.current = startContent; });
   const sheet: SheetSchemaVersion = assignmentId ? sheetSchemaVersion(schemaVersion) : 1;
   // Read by the save flush, which is made once.
   const sheetRef = useRef(sheet);
@@ -307,6 +332,9 @@ export function LocalDocumentProvider({
   const [words, setWords] = useState(0);
   const [invalid, setInvalid] = useState(false);
   const [stickyLoad, setStickyLoad] = useState(false);
+  // F4-EDI-R05: bumped after a decision, so the lock run reads the journal again; the kept text waits in the ref.
+  const [reloadKey, setReloadKey] = useState(0);
+  const keepRef = useRef<SheetDocument | null>(null);
   // Set while this tab holds the lock with an editable document.
   const logoutRef = useRef<LockedLogout | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -542,6 +570,9 @@ export function LocalDocumentProvider({
       try {
         const result = await saver.load();
         if (disposed) return;
+        // The text to type onto the server's version after a "keep this device"; used once.
+        const keep = keepRef.current;
+        keepRef.current = null;
         // Undo never reaches past this load: not into an earlier person's
         // or document's sheet, nor into the one emptied when a session ended.
         startFreshHistory(editor.view, "keep");
@@ -562,8 +593,17 @@ export function LocalDocumentProvider({
         if (result.kind !== "ready") {
           // Only the evidence session's own sticky state; the local saver's
           // keeps its recovery notice as before (D8).
-          setStickyLoad(evidence !== null && result.kind === "recovery" && result.reason === "sticky");
+          const sticky = evidence !== null && result.kind === "recovery" && result.reason === "sticky";
+          setStickyLoad(sticky);
           setPhase(result.kind);
+          // F4-EDI-R05: a sticky load keeps the lock, the journal and the evidence session until the
+          // run ends, since the conflict dialog reads and takes the server's version through them.
+          if (sticky) {
+            await new Promise<void>((resolve) => {
+              release = resolve;
+              if (disposed) resolve();
+            });
+          }
           return;
         }
         if (!writingClosed(saver.snapshot())) {
@@ -571,6 +611,24 @@ export function LocalDocumentProvider({
           editor.setEditable(true, false);
         }
         setPhase("ready");
+        // F4-EDI-R05: the text of this device goes in as one change on the server's version, so the
+        // saver journals it, the recorder records it and the drain sends it as a new commit.
+        if (keep && readyRef.current && applyKeptDocument(editor, keep, sheet)) {
+          // The replacement raises no update itself: the change goes on as the author's own would.
+          editsRef.current += 1;
+          saver.edit();
+          dirtyRef.current = true;
+          flushRef.current();
+        }
+        // F4-V17-R01: a work whose loaded text is empty starts with the faculty template's skeleton.
+        // The evidence session always returns a document (the server's opening one, empty for a new
+        // work), so "fresh" is read from the sheet itself: seedStartContent takes only an empty sheet.
+        // A failed read leaves the sheet empty, as before; the author can always start typing.
+        if (readyRef.current && startContentRef.current) {
+          void startContentRef.current().catch(() => null).then((blocks) => {
+            if (!disposed && readyRef.current && !editor.isDestroyed) seedStartContent(editor, blocks);
+          });
+        }
         // Only a signed-in person who acknowledged the notice publishes; the
         // local demo journal never does, nor a submitted work (O2, #756). A v3
         // sheet publishes under exactly these rules (INT-26): the gate does not
@@ -681,7 +739,7 @@ export function LocalDocumentProvider({
       window.removeEventListener("storage", recheck);
       window.removeEventListener("pageshow", recheck);
     };
-  }, [editor, scope, documentId, assignmentId, markTag, markAt, livePublish, sheet]);
+  }, [editor, scope, documentId, assignmentId, markTag, markAt, livePublish, sheet, reloadKey]);
 
   // A change between writing and the teacher view (#882): the run's own
   // publisher stops at once, an answer in flight included, and starts again
@@ -751,8 +809,28 @@ export function LocalDocumentProvider({
     return false;
   };
 
+  const conflict: ConflictOffer | null = snapshotSpeaks(phase, stickyLoad) && evidenceNotice(snapshot) === "conflict" ? {
+    serverVersion: async () => evidenceRef.current?.serverVersion() ?? null,
+    local: () => {
+      const current = editorRef.current;
+      return current && !current.isDestroyed ? sheetCandidate(current, sheetRef.current)?.doc ?? null : null;
+    },
+    resolve: async (choice: ConflictChoice): Promise<ConflictOutcome> => {
+      const evidence = evidenceRef.current;
+      const current = editorRef.current;
+      if (!evidence || !current || current.isDestroyed) return "unavailable";
+      // The text of this device is read before the take, and only a take that happened keeps it.
+      const local = choice === "mine" ? sheetCandidate(current, sheetRef.current)?.doc ?? null : null;
+      if (choice === "mine" && !local) return "unavailable";
+      const result = await evidence.adoptServer(true);
+      if (result.kind !== "adopted") return result.kind === "refused" ? "refused" : "unavailable";
+      keepRef.current = local;
+      setReloadKey((key) => key + 1);
+      return "done";
+    },
+  } : null;
   const value: LocalDocumentValue = {
-    editor, phase, snapshot, words, invalid, stickyLoad, prepareSignOut, staySignedIn, signOut, discardAfterSubmission,
+    editor, phase, snapshot, words, invalid, stickyLoad, conflict, prepareSignOut, staySignedIn, signOut, discardAfterSubmission,
     unconfirmedNow, editsNow, pendingNow,
   };
   return <LocalDocumentContext.Provider value={value}>{children}</LocalDocumentContext.Provider>;
@@ -857,6 +935,8 @@ export function LocalEditor({ lang = null, lastSignedAt }: {
           : phase === "ready" && value.snapshot?.closedBy === "submission" ? <p>{t.editor.submittedReadOnly}</p>
           : null}
       </div>
+      {/* F4-EDI-R05: the decision between the server's version and the text of this device. */}
+      {value.conflict && notice === "conflict" ? <ConflictDialog offer={value.conflict} /> : null}
       {canExport ? (
         <button type="button" className="btn editor-export" onClick={() => exportText(editor)}>
           {t.editor.exportText}

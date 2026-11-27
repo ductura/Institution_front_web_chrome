@@ -13,7 +13,7 @@ import { assignmentFactsMessages as text } from "./messages.hr";
 // jsdom has no modal dialog: opening only sets the attribute.
 HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) { this.setAttribute("open", ""); };
 HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) { this.removeAttribute("open"); };
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const NOW = Date.parse("2027-02-01T10:00:00Z");
 
 describe("LateException (NZ-5)", () => {
@@ -57,11 +57,11 @@ describe("LateException (NZ-5)", () => {
 
   it("reports a recorded exception to the parent only after the server's answer", async () => {
     const results: LateResult[] = [];
-    const record = vi.fn(async () => ({ kind: "zabiljezeno", extension: { dueAt: "2027-02-10T11:00:00.000Z" }, existingSubmissionsUnchanged: false }));
+    const record = vi.fn(async () => ({ kind: "zabiljezeno", exception: { untilAt: "2027-02-10T11:00:00.000Z" } }));
     await mount(record, results);
     await fill("justified", "2027-02-10T12:00");
     await send();
-    expect(record).toHaveBeenCalledWith(expect.anything(), "a1", { scope: "one", studentId: "s1", dueAt: "2027-02-10T11:00:00.000Z", reasonId: "justified" });
+    expect(record).toHaveBeenCalledWith(expect.anything(), "a1", { studentId: "s1", untilAt: "2027-02-10T11:00:00.000Z", reasonId: "justified" });
     expect(results).toHaveLength(1);
     expect(results[0]).toMatchObject({ tone: "status", assignmentId: null });
     expect(results[0]!.text).toContain("Zabilježeno");

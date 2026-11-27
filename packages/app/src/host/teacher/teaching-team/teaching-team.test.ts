@@ -115,11 +115,11 @@ describe("WEB-1405 teaching team", () => {
 
 describe("NZ-14 roles on the course", () => {
   it("names the three roles, the caller's own, and links the mentored works under the app's base", () => {
-    const html = renderToStaticMarkup(createElement(TeamRoles, { role: "holder", mentorHref: "/app/web/nastavnik/mentorstva" }));
+    const html = renderToStaticMarkup(createElement(TeamRoles, { role: "holder", mentorHref: "/aplikacija/nastavnik/mentorstva" }));
     expect(html).toContain("Vaša uloga: nositelj.");
     for (const name of ["Nositelj", "Suradnik", "Mentor"]) expect(html).toContain(`<strong>${name}</strong>`);
     expect(html).toContain("samo čita i komentira");
-    expect(html).toContain('href="/app/web/nastavnik/mentorstva"');
+    expect(html).toContain('href="/aplikacija/nastavnik/mentorstva"');
     expect(html).toContain("administrator ustanove");
   });
   it("tells a collaborator they read and comment only, without the note on adding teachers", () => {

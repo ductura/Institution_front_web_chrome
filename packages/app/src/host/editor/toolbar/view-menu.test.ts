@@ -54,3 +54,28 @@ describe("Prikaz: what the host cannot show yet", () => {
     for (const item of items) expect(item).toMatchObject({ disabled: true, hint: "nedostupno" });
   });
 });
+
+describe("Prikaz: Struktura rada i Čisti tekst (EDI-R17)", () => {
+  it("lists both as live items, not pending", async () => {
+    const { viewItems } = await import("./view-menu");
+    expect(viewItems(false).map((i) => [i.id, i.label, i.disabled])).toEqual([
+      ["structure", "Struktura rada", undefined], ["cleanText", "Čisti tekst (bez savjeta)", undefined],
+    ]);
+    expect(viewItems(true)[1]?.label).toBe("✓ Čisti tekst (bez savjeta)");
+  });
+
+  it("keeps Čisti tekst on <html> and in the browser; blocked storage still changes the page", async () => {
+    const { readClean, setClean, CLEAN_KEY } = await import("./view-menu");
+    const root = rootWith(null);
+    const store = memory();
+    expect(readClean(root, () => store)).toBe(false);
+    expect(setClean(root, () => store, true)).toBe(true);
+    expect(root.getAttribute("data-clean-text")).toBe("on");
+    expect(store.kept.get(CLEAN_KEY)).toBe("on");
+    expect(readClean(rootWith(null), () => store)).toBe(true);
+    const blocked = () => { throw new Error("blocked"); };
+    setClean(root, blocked, false);
+    expect(root.getAttribute("data-clean-text")).toBe("off");
+    expect(readClean(rootWith(null), blocked)).toBe(false);
+  });
+});

@@ -17,6 +17,8 @@ export const assignmentCardMessages = {
   noTasks: "nijedan objavljen",
   noDeadline: "nema budućeg roka",
   unavailableValue: "nedostupno",
+  // NAS-12 (teacher.assignment-follow-up.get): the open revision requests of the assignment.
+  openRevisions: (n: number | null): string => (n === null ? "Dorada: nedostupno" : `Dorada: ${n} otvorenih`),
   roleHolder: "nositelj (Vi)",
   roleCollaborator: "suradnik",
   at: "u",

@@ -25,6 +25,7 @@ import { stepsText } from "../steps/messages.hr";
 import { checksText as c } from "./messages.hr";
 import SummaryPanel from "./SummaryPanel";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "./declaration-gate";
+import { conversationsLine, serverAttachedCount, type AttachedCount, type AttachedCountRead } from "../declaration/attached-count";
 import { beforeSubmission, declarationText as declarationWords } from "./declaration-gate";
 import { readStepChecks, type SummaryPorts } from "./model";
 import { NOTES } from "./notes-port";
@@ -61,11 +62,15 @@ export type BeforeSubmitStepProps = {
   readonly timing?: Timing;
   /** NF-3 PR-10 (INT-16): whether this device holds text the server has not confirmed; the journal by default. */
   readonly hasNewer?: (documentId: string) => Promise<boolean>;
+  /** F4-PRE-R02: the conversations that go with the declaration; the server's by default. */
+  readonly attachedConversations?: AttachedCountRead;
 };
 
 export default function BeforeSubmitStep({
   assignmentId, stage, kind, hrefOf, workHref, onSignIn, declarationGate = serverGate, timing: given, hasNewer = deviceHasNewer,
+  attachedConversations = serverAttachedCount,
 }: BeforeSubmitStepProps) {
+  const [attached, setAttached] = useState<AttachedCount | null | "loading">("loading");
   const router = useRouter();
   const online = useOnline();
   const hint = useId();
@@ -86,6 +91,12 @@ export default function BeforeSubmitStep({
   // The declaration as the server holds it for the current revision (PIL-K-IZJAVA-VRATA).
   const { gate, reload: readGate } = useDeclarationGate(assignmentId, declarationGate);
   const confirmed = opensSending(gate);
+  // F4-PRE-R02: read again with the gate, so a change made in PD-10 shows here too.
+  useEffect(() => {
+    let live = true;
+    void attachedConversations(assignmentId).then((n) => { if (live) setAttached(n); }, () => { if (live) setAttached(null); });
+    return () => { live = false; };
+  }, [assignmentId, attachedConversations, gate]);
   // The latest sign-in callback, so a new one from the page does not read the summary again.
   const signIn = useRef(onSignIn);
   useEffect(() => { signIn.current = onSignIn; });
@@ -180,7 +191,7 @@ export default function BeforeSubmitStep({
             <span className="meta">{c.newerMeta}</span>
           </StepSection>
         )}
-        <StepSection label={c.conversations}><span>{c.conversationsUnavailable}</span></StepSection>
+        <StepSection label={c.conversations}><span>{conversationsLine(attached)}</span></StepSection>
         <StepSection label={c.placeholders}>
           {places === "loading" ? <span>{c.placesLoading}</span>
             : places === null ? <span>{c.placeholdersUnknown}</span>
@@ -214,7 +225,7 @@ export default function BeforeSubmitStep({
         onClose={() => { setDeclaring(false); readGate(); }} />
       <SummaryPanel summary={summary} notes={notes} submitted={submitted} confirmed={confirmed} kind={kind}
         online={online} workHref={workHref} onRetry={retry}
-        disputes={documentId === null ? undefined : { port: DISPUTES, documentId }} noteOpen={noteOpen} onNoteOpen={setNoteOpen}
+        assignmentId={assignmentId} declarationKey={gate} disputes={documentId === null ? undefined : { port: DISPUTES, documentId }} noteOpen={noteOpen} onNoteOpen={setNoteOpen}
         onAddNote={(text) => saveNote(NOTES, assignmentId, text)}
         onNoteAdded={(note) => setNotes((now) => now.kind === "ready" ? { kind: "ready", notes: [...now.notes, note] } : now)} />
     </>

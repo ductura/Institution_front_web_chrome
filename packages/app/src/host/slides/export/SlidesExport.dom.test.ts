@@ -9,7 +9,7 @@ import { slidesExportText as t } from "./messages.hr.ts";
 
 const signIn = vi.hoisted(() => vi.fn());
 const download = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("../../../../../../src/client/api", () => ({ goToSignIn: signIn, SERVER_PREFIX: "/api/v1/", browserTransport: vi.fn() }));
 vi.mock("../../../../../../src/components/editor/EarlierDraft", () => ({ downloadBlob: download }));
 const { default: SlidesExport } = await import("./SlidesExport.tsx");

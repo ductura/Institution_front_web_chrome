@@ -15,6 +15,7 @@ import {
   placeExcerpt, unsourcedCitationPlaces, removeSourceTransaction, sourceDraftOf,
 } from "./mention-model";
 import { sourcesMentionHr as t } from "./messages.hr";
+import { RequiredLiterature } from "./RequiredLiterature";
 
 type Doc = NonNullable<ReturnType<typeof useLocalEditor>>["state"]["doc"];
 type Open = { kind: "link" | "add"; pos: number } | { kind: "edit"; id: string; draft: SourceDraft } | null;
@@ -43,7 +44,7 @@ function useDoc(): Doc | null {
  * "Poveži s izvorom" and "Dodaj izvor", then the sources of the work, cited or not yet, with "Citiraj",
  * "Uredi" and "Ukloni". Only the author of a work that is still open edits; others only read.
  */
-export function LiteratureList() {
+export function LiteratureList({ courseId = null }: { courseId?: string | null } = {}) {
   // ED-14: "Brzi izvor" asks the server (`sources.lookup.post`); only the identifier is sent.
   const lookup = useMemo(() => createSourceLookup(), []);
   const editor = useLocalEditor();
@@ -70,18 +71,18 @@ export function LiteratureList() {
     return true;
   };
   const close = () => setOpen(null);
-  const trusted = (run: () => void) => (event: { isTrusted: boolean }) => { if (event.isTrusted) run(); };
 
   return <div ref={anchor}>
+    {courseId !== null && <RequiredLiterature courseId={courseId} />}
     {places.length > 0 && <section aria-label={t.plainHeading(places.length)}>
       <h3>{t.plainHeading(places.length)}</h3>
       <ul>
         {places.map(({ pos, marker }) => <li key={pos}>
           <p>{placeExcerpt(doc, pos)}</p>
-          <Button tone="quiet" onClick={trusted(() => { editor.view.dispatch(jumpTo(editor.state, pos)); editor.commands.focus(); })}>{t.show}</Button>
+          <Button tone="quiet" onClick={() => { editor.view.dispatch(jumpTo(editor.state, pos)); editor.commands.focus(); }}>{t.show}</Button>
           {editable && marker && <>
-            <Button tone="quiet" disabled={choices.length === 0} onClick={trusted(() => setOpen({ kind: "link", pos }))}>{t.link}</Button>
-            <Button tone="quiet" onClick={trusted(() => setOpen({ kind: "add", pos }))}>{t.add}</Button>
+            <Button tone="quiet" disabled={choices.length === 0} onClick={() => setOpen({ kind: "link", pos })}>{t.link}</Button>
+            <Button tone="quiet" onClick={() => setOpen({ kind: "add", pos })}>{t.add}</Button>
           </>}
         </li>)}
       </ul>
@@ -94,17 +95,17 @@ export function LiteratureList() {
         if (tr) { editor.view.dispatch(tr); editor.commands.focus(); }
       }}
       rowActions={(item) => editable && <>
-        <Button tone="quiet" aria-label={`${t.edit}: ${item.entry}`} onClick={trusted(() => {
+        <Button tone="quiet" aria-label={`${t.edit}: ${item.entry}`} onClick={() => {
           const draft = sourceDraftOf(editor.state.doc.attrs.sources, item.id);
           if (draft) setOpen({ kind: "edit", id: item.id, draft });
           else setNotice({ alert: true, text: t.editUnavailable });
-        })}>{t.edit}</Button>
-        <Button tone="quiet" aria-label={`${t.remove}: ${item.entry}`} onClick={trusted(() => {
+        }}>{t.edit}</Button>
+        <Button tone="quiet" aria-label={`${t.remove}: ${item.entry}`} onClick={() => {
           const count = citationCount(editor.state.doc, item.id);
           if (count > 0 && confirm !== item.id) { setConfirm(item.id); return setNotice({ alert: false, text: t.removeConfirm(count) }); }
           setConfirm(null);
           apply(() => removeSourceTransaction(editor.state, item.id), count > 0 ? t.removedCited : t.removed);
-        })}>{t.remove}</Button>
+        }}>{t.remove}</Button>
       </>} />}
     <p role={notice?.alert ? "alert" : "status"}>{notice?.text ?? ""}</p>
 

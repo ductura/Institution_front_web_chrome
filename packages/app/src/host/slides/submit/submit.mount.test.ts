@@ -24,7 +24,7 @@ vi.mock("../../../../../../src/client/api.ts", async (importOriginal) => ({
 }));
 vi.mock("../../student/submission/submit/SubmitStep", () => ({ default: () => createElement("p", null, "TEKSTNA-PREDAJA") }));
 vi.mock("./SlidesSubmit", () => ({ default: (p: { assignmentId: string }) => createElement("p", null, `SLAJD-PREDAJA ${p.assignmentId}`) }));
-vi.mock("../../student/submission/submit/exception", () => ({ readException: async () => null }));
+vi.mock("../../student/submission/submit/exception", async (importOriginal) => ({ ...(await importOriginal<object>()), readException: async () => null }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 let root: Root | null = null;

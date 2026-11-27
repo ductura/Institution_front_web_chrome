@@ -10,7 +10,7 @@ import { courseStudentsMessages as t } from "./messages.hr";
 import type { CourseStudentsPort, RosterStudent } from "./model";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const w = (status: "submitted" | "writing" | "not_submitted", extra = {}) => ({ assignmentId: "a", title: "T", workType: "essay", status, ...extra });
 const STUDENTS: RosterStudent[] = [
   { studentId: "1", name: "Ana Šarić", group: null, works: [w("submitted", { afterDeadline: true })] },

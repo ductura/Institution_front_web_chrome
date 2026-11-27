@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
+import { SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH, ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
 
 describe("baseOf and routeOf", () => {
-  it("serves the same app under /app/web and /app/chrome", () => {
-    expect(baseOf("/app/web/")).toBe("/app/web");
-    expect(baseOf("/app/chrome/zadaci")).toBe("/app/chrome");
-    expect(baseOf("/app/chrome")).toBe("/app/chrome");
-    expect(baseOf("/app/chromex/zadaci")).toBe("/app/web");
+  it("serves the app under /aplikacija only (D-318)", () => {
+    expect(baseOf("/aplikacija/")).toBe("/aplikacija");
+    expect(baseOf("/aplikacija/zadaci")).toBe("/aplikacija");
+    expect(baseOf("/aplikacija")).toBe("/aplikacija");
+    expect(baseOf("/aplikacijax/zadaci")).toBe("/aplikacija");
   });
 
   it("reads the app's own path without the base or a trailing slash", () => {
-    expect(routeOf("/app/web/", "/app/web")).toBe("/");
-    expect(routeOf("/app/web", "/app/web")).toBe("/");
-    expect(routeOf("/app/web/zadaci/kolegiji/", "/app/web")).toBe("/zadaci/kolegiji");
-    expect(routeOf("/app/chrome/ustanova", "/app/chrome")).toBe("/ustanova");
+    expect(routeOf("/aplikacija/", "/aplikacija")).toBe("/");
+    expect(routeOf("/aplikacija", "/aplikacija")).toBe("/");
+    expect(routeOf("/aplikacija/zadaci/kolegiji/", "/aplikacija")).toBe("/zadaci/kolegiji");
+    expect(routeOf("/aplikacija/ustanova", "/aplikacija")).toBe("/ustanova");
   });
 });
 
@@ -76,13 +76,13 @@ describe("the student's pages of Ductus app/", () => {
   it("open for a student under any id, with their own label", () => {
     expect(resolve("/zadatak/izm-1", "student")).toMatchObject({ kind: "page", page: { label: "Zadatak" } });
     expect(resolve("/rad/a1/predaja", "student")).toMatchObject({ kind: "page", page: { label: "Predaja rada" } });
-    expect(resolve("/zadaci/dnevnik-prakse", "student")).toMatchObject({ kind: "page", page: { label: "Dnevnik prakse", current: "/zadaci" } });
+    expect(resolve("/zadaci/dnevnik-prakse", "student")).toMatchObject({ kind: "page", page: { label: "Dnevnik prakse", current: "/zadaci/dnevnik-prakse" } });
     expect(resolve("/zadaci/dnevnik-prakse", "teacher")).not.toMatchObject({ kind: "page" });
-    expect(resolve("/zadaci/gradivo-kodiranja", "student")).toMatchObject({ kind: "page", page: { label: "Gradivo za kodiranje", current: "/zadaci" } });
+    expect(resolve("/zadaci/gradivo-kodiranja", "student")).toMatchObject({ kind: "page", page: { label: "Gradivo za kodiranje", current: "/zadaci/gradivo-kodiranja" } });
     expect(resolve("/zadaci/gradivo-kodiranja", "teacher")).not.toMatchObject({ kind: "page" });
-    expect(resolve("/zadaci/upitnici", "student")).toMatchObject({ kind: "page", page: { label: "Upitnici", current: "/zadaci" } });
+    expect(resolve("/zadaci/upitnici", "student")).toMatchObject({ kind: "page", page: { label: "Upitnici", current: "/zadaci/upitnici" } });
     expect(resolve("/zadaci/upitnici", "teacher")).not.toMatchObject({ kind: "page" });
-    expect(resolve("/zadaci/kodiranje-izvoz", "student")).toMatchObject({ kind: "page", page: { label: "Izvoz kodiranja", current: "/zadaci" } });
+    expect(resolve("/zadaci/kodiranje-izvoz", "student")).toMatchObject({ kind: "page", page: { label: "Izvoz kodiranja", current: "/zadaci/kodiranje-izvoz" } });
     expect(resolve("/zadaci/kodiranje-izvoz", "teacher")).not.toMatchObject({ kind: "page" });
     expect(resolve("/zadaci/kodiranje", "student")).toMatchObject({ kind: "page", page: { label: "Kodiranje", current: "/zadaci" } });
     expect(resolve("/zadaci/kodiranje", "teacher")).not.toMatchObject({ kind: "page" });
@@ -105,8 +105,8 @@ describe("the student's pages of Ductus app/", () => {
   });
 
   it("open in the app from a screen's link", () => {
-    expect(internalRoute("/zadatak/izm-1", "/app/web")).toBe("/zadatak/izm-1");
-    expect(internalRoute("/app/chrome/rad/a1/predaja", "/app/chrome")).toBe("/rad/a1/predaja");
+    expect(internalRoute("/zadatak/izm-1", "/aplikacija")).toBe("/zadatak/izm-1");
+    expect(internalRoute("/aplikacija/rad/a1/predaja", "/aplikacija")).toBe("/rad/a1/predaja");
   });
 });
 
@@ -128,7 +128,7 @@ describe("the teacher's pages of Ductus app/", () => {
     expect(resolve("/nastavnik/zadatak/z1/predaje", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
     expect(resolve("/nastavnik/zadatak/z1/predaje", "admin")).toEqual({ kind: "redirect", to: "/ustanova" });
     expect(resolve("/nastavnik/zadatak/z1/predaje", null)).toEqual({ kind: "redirect", to: "/" });
-    expect(internalRoute("/app/web/nastavnik/zadatak/z1/predaje", "/app/web")).toBe("/nastavnik/zadatak/z1/predaje");
+    expect(internalRoute("/aplikacija/nastavnik/zadatak/z1/predaje", "/aplikacija")).toBe("/nastavnik/zadatak/z1/predaje");
   });
 });
 
@@ -138,7 +138,7 @@ describe("the course aggregate (PIL-K-ZBIRNO)", () => {
     expect(resolve("/nastavnik/kolegiji/k1/zbirno", "teacher")).toMatchObject({ kind: "page", page: { label: "Zbirni pregled kolegija", current: "/nastavnik" } });
     expect(resolve("/nastavnik/kolegiji/k1/zbirno", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
     expect(resolve("/nastavnik/kolegiji/k1/zbirno", null)).toEqual({ kind: "redirect", to: "/" });
-    expect(internalRoute("/app/web/nastavnik/kolegiji/k1/zbirno", "/app/web")).toBe("/nastavnik/kolegiji/k1/zbirno");
+    expect(internalRoute("/aplikacija/nastavnik/kolegiji/k1/zbirno", "/aplikacija")).toBe("/nastavnik/kolegiji/k1/zbirno");
   });
 });
 
@@ -192,9 +192,9 @@ describe("the operator's page (WEB-NUZ-OPERATER, NF-7 OA-1)", () => {
 
   it("is a page of the host, opened in the app, not a public page", () => {
     expect(publicPage(OPERATOR_HOME)).toBeNull();
-    expect(internalRoute(`/app/web${OPERATOR_HOME}`, "/app/web")).toBe(OPERATOR_HOME);
+    expect(internalRoute(`/aplikacija${OPERATOR_HOME}`, "/aplikacija")).toBe(OPERATOR_HOME);
     // NF-7 OA-3, OA-7 added the two pages shared with the administrator; nothing else is kept by account kind.
-    expect(PAGES.filter((p) => p.accounts !== undefined).map((p) => p.path)).toEqual([OPERATOR_HOME, ACTION_LOG, PROBLEM_REPORTS]);
+    expect(PAGES.filter((p) => p.accounts !== undefined).map((p) => p.path)).toEqual([OPERATOR_HOME, ACTION_LOG, PROBLEM_REPORTS, SYSTEM_HEALTH, SYSTEM_EVENTS, SECURITY_KEY]);
   });
 });
 
@@ -247,21 +247,22 @@ describe("crumbsOf", () => {
 
 describe("internalRoute", () => {
   it("opens the shell's links and the screens' links in the app", () => {
-    expect(internalRoute("/app/web/zadaci", "/app/web")).toBe("/zadaci");
-    expect(internalRoute("/app/web/", "/app/web")).toBe("/");
-    expect(internalRoute("/zadaci/kolegiji", "/app/chrome")).toBe("/zadaci/kolegiji");
+    expect(internalRoute("/aplikacija/zadaci", "/aplikacija")).toBe("/zadaci");
+    expect(internalRoute("/aplikacija/", "/aplikacija")).toBe("/");
+    expect(internalRoute("/zadaci/kolegiji", "/aplikacija")).toBe("/zadaci/kolegiji");
     // WEB-2111: the receipt's link to the check keeps the QR fragment.
-    expect(internalRoute("/app/web/provjera#r=a&o=b", "/app/web")).toBe("/provjera#r=a&o=b");
-    expect(internalRoute("/upis?kod=1#x", "/app/web")).toBe("/upis");
-    expect(internalRoute("/", "/app/web")).toBe("/");
+    expect(internalRoute("/aplikacija/provjera#r=a&o=b", "/aplikacija")).toBe("/provjera#r=a&o=b");
+    expect(internalRoute("/upis?kod=1#x", "/aplikacija")).toBe("/upis");
+    expect(internalRoute("/", "/aplikacija")).toBe("/");
   });
 
   it("leaves other origins, the admin and the server to the browser", () => {
-    expect(internalRoute("https://example.org/zadaci", "/app/web")).toBeNull();
-    expect(internalRoute("//example.org/zadaci", "/app/web")).toBeNull();
-    expect(internalRoute("/admin/prijava", "/app/web")).toBeNull();
-    expect(internalRoute("/app/chrome/zadaci", "/app/web")).toBeNull();
-    expect(internalRoute("#sadrzaj", "/app/web")).toBeNull();
+    expect(internalRoute("https://example.org/zadaci", "/aplikacija")).toBeNull();
+    expect(internalRoute("//example.org/zadaci", "/aplikacija")).toBeNull();
+    expect(internalRoute("/admin/prijava", "/aplikacija")).toBeNull();
+    expect(internalRoute("/app/web/zadaci", "/aplikacija")).toBeNull();
+    expect(internalRoute("/app/chrome/zadaci", "/aplikacija")).toBeNull();
+    expect(internalRoute("#sadrzaj", "/aplikacija")).toBeNull();
   });
 });
 
@@ -271,7 +272,7 @@ describe("the ISVU routes (WEB-V22-RUTE)", () => {
   const grades = `/nastavnik/kolegiji/${course}/isvu-ocjene`;
 
   it("opens the import for the administrator only, leading other roles home", () => {
-    expect(resolve("/ustanova/isvu", "admin")).toMatchObject({ kind: "page", page: { path: "/ustanova/isvu", current: "/ustanova" } });
+    expect(resolve("/ustanova/isvu", "admin")).toMatchObject({ kind: "page", page: { path: "/ustanova/isvu", current: "/ustanova/isvu" } });
     expect(resolve("/ustanova/isvu", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
     expect(resolve("/ustanova/isvu", "teacher")).toEqual({ kind: "redirect", to: "/nastavnik" });
     expect(resolve("/ustanova/isvu", null)).toEqual({ kind: "redirect", to: "/" });
@@ -294,7 +295,7 @@ describe("the ISVU routes (WEB-V22-RUTE)", () => {
   });
 
   it("leaves the route as an app link, so the host opens it without a reload", () => {
-    expect(internalRoute("/app/web/ulaz/studomat", "/app/web")).toBe("/ulaz/studomat");
-    expect(internalRoute("/ustanova/isvu", "/app/web")).toBe("/ustanova/isvu");
+    expect(internalRoute("/aplikacija/ulaz/studomat", "/aplikacija")).toBe("/ulaz/studomat");
+    expect(internalRoute("/ustanova/isvu", "/aplikacija")).toBe("/ustanova/isvu");
   });
 });
