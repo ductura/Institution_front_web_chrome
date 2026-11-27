@@ -29,7 +29,7 @@ export const questionnaireMessages = {
   published: "Upitnik je objavljen.",
   closed: "Upitnik je zatvoren.",
   stateConflict: "Stanje upitnika već je promijenjeno. Popis je ponovno učitan.",
-  saved: "Upitnik je spremljen.",
+  saved: "Upitnik je spremljen na poslužitelju.",
   saveUnavailable: "Spremanje nije uspjelo. Pokušajte ponovno.",
   saveInvalid: "Poslužitelj je odbio upitnik. Provjerite pitanja i pokušajte ponovno.",
   savedUnreadable: "Promjena je poslana, ali popis se nije mogao ponovno učitati.",
@@ -66,7 +66,7 @@ export const questionnaireMessages = {
   manualNote: "Za izmišljene ili papirnate odgovore. Unosi se bez imena osobe i ne može se povezati ni s kim.",
   manualOpen: "Ručni unos je moguć tek kad je upitnik objavljen.",
   manualSubmit: "Spremi odgovore",
-  manualSaved: "Odgovori su spremljeni.",
+  manualSaved: "Odgovori su spremljeni na poslužitelju.",
   manualAnother: "Unesi sljedeći list",
   manualProblem: {
     none: "Odgovorite barem na jedno pitanje.",

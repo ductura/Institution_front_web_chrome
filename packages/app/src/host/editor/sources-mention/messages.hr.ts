@@ -21,7 +21,7 @@ export const sourcesMentionHr = {
   edit: "Uredi",
   editTitle: "Uredi izvor",
   editUnavailable: "Ovaj izvor nije moguće urediti u obrascu.",
-  saved: "Izvor je spremljen.",
+  saved: "Izvor je spremljen na poslužitelju.",
   remove: "Ukloni",
   removeConfirm: (n: number) => `Izvor je citiran ${n}×. Kliknite Ukloni još jednom za potvrdu.`,
   removed: "Izvor je obrisan.",

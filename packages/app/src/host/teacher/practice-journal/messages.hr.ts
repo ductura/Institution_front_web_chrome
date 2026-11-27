@@ -73,7 +73,7 @@ export const mentorJournalText = {
   nothingToSign: "Nema zapisa za potpis do tog datuma. Popis je osvježen.",
   signNotFound: "Praksa više nije dostupna. Popis je osvježen.",
   signInvalid: "Potpis nije prihvaćen: provjerite datum i komentar.",
-  signUnknown: "Nije poznato je li potpis spremljen. Osvježite popis prije novog pokušaja.",
+  signUnknown: "Nije poznato je li potpis spremljen na poslužitelju. Osvježite popis prije novog pokušaja.",
   signErrors: {
     throughRequired: "Unesite datum.",
     throughInvalid: "Datum nije ispravan.",

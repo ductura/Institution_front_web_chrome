@@ -189,9 +189,9 @@ test("NZ-13: the holder sees the code's deadline, revokes it and issues a new on
   await expect(card).toContainText("Poslužitelj čuva samo sažetak koda, pa ga kasnije ne može ponovno prikazati.");
   await expect(card).toContainText("Studentima recite: upišite kod na stranici Upis.");
   await expect(card).toContainText("Vrijedi do");
-  await card.getByRole("button", { name: "Kopiraj kod" }).focus();
+  await card.getByRole("button", { name: "Stavi kod u međuspremnik" }).focus();
   await page.keyboard.press("Enter");
-  await expect(card.getByText("Kod je kopiran.")).toBeVisible();
+  await expect(card.getByText("Kod: kopirano u međuspremnik.")).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(CODE);
   await expect(card.getByRole("button", { name: `Opozovi kod: ${COURSE_NAME}` })).toBeVisible();
   // The code is never read back: after a reload only its state is said.

@@ -122,6 +122,20 @@ describe("repository scan of UI text modules", () => {
     ]);
   });
 
+  it("lets through only the negation \"nije dokaz autorstva\" (Ustav C-6)", () => {
+    root = mkdtempSync(path.join(tmpdir(), "ductura-terms-"));
+    write(
+      "src/lib/i18n/messages.hr.ts",
+      'export const t = { a: "Ovaj prikaz nije dokaz autorstva.", b: "Ovo je dokaz autorstva.", c: "Nije dokaz autorstva, ali je dokaz autorstva." };\n',
+    );
+    write("packages/x/src/other.ts", "export {};\n");
+    const { findings } = scanUiTextModules(root);
+    expect(findings.map((f) => [f.text, f.terms.map((t) => t.entry)])).toEqual([
+      ["Ovo je dokaz autorstva.", ["dokaz autorstva"]],
+      ["Nije dokaz autorstva, ali je dokaz autorstva.", ["dokaz autorstva"]],
+    ]);
+  });
+
   it("reads the copied Ductus catalogue of this repository", () => {
     const files = findUiTextModules(REPO);
     for (const file of ["src/lib/i18n/messages.hr.ts", "src/lib/i18n/messages.en.ts", "src/lib/i18n/demo-work.hr.ts", "src/lib/i18n/demo-fast-path.hr.ts"]) {

@@ -1,7 +1,7 @@
 // Interface text of "Predložak rada" (WEB-V17-TEMPLATE-ADMIN): the faculty's template of a work (title page, sections, citation style) per type of work.
 export const workTemplateMessages = {
   title: "Predložak rada",
-  lead: "Predložak određuje naslovnu stranicu i kostur odjeljaka rada po vrsti rada. Spremljena verzija ostaje samo za čitanje; promjena se sprema kao nova verzija.",
+  lead: "Predložak određuje naslovnu stranicu i kostur odjeljaka rada po vrsti rada. Verzija na poslužitelju ostaje samo za čitanje; promjena se sprema kao nova verzija.",
   workTypeLabel: "Vrsta rada",
   workTypes: {
     short_paper: "Kratki rad", essay: "Esej", seminar_paper: "Seminarski rad", bachelor_thesis: "Završni rad",
@@ -12,7 +12,7 @@ export const workTemplateMessages = {
   backToOwn: "Natrag na moj prostor",
   unavailable: "Predložak rada trenutačno nije dostupan. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",
-  noVersion: "Predložak za ovu vrstu rada još nije spremljen.",
+  noVersion: "Predložak za ovu vrstu rada još nije spremljen na poslužitelju.",
   currentHeading: "Predložak na snazi",
   versionOf: "Verzija {n}, na snazi od {date}",
   titlePageHeading: "Naslovna stranica",
@@ -36,12 +36,12 @@ export const workTemplateMessages = {
   save: "Spremi novu verziju",
   saving: "Spremam…",
   reset: "Vrati na verziju na snazi",
-  saved: "Predložak je spremljen kao verzija {n}.",
+  saved: "Predložak je spremljen na poslužitelju kao verzija {n}.",
   noChange: "Nema promjena u odnosu na verziju na snazi.",
   stale: "Predložak je u međuvremenu promijenjen. Prikazana je nova verzija; provjerite je i ponovite promjenu.",
   invalid: "Predložak nije prihvaćen. Provjerite polja i pokušajte ponovno.",
-  formUnavailable: "Predložak nije spremljen jer trenutačno nije dostupan. Pokušajte ponovno.",
-  errorSummary: "Predložak nije spremljen. Ispravite sljedeće:",
+  formUnavailable: "Predložak nije spremljen na poslužitelju jer trenutačno nije dostupan. Pokušajte ponovno.",
+  errorSummary: "Predložak nije spremljen na poslužitelju. Ispravite sljedeće:",
   errors: {
     tooMany: "Najviše je 30 odjeljaka.",
     titleRequired: "Naziv odjeljka je obavezan.",

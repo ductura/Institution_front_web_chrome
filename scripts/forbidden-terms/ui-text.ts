@@ -154,13 +154,20 @@ export function findUiTextModules(root: string): string[] {
   return found.sort();
 }
 
+/**
+ * The one reading of "dokaz autorstva" the interface may carry: the negation that Ustav v1.6 C-6 asks for next to every
+ * share ("nije dokaz autorstva"), as in the work review scan (PG-14). Masked before the dictionary reads the text; the
+ * dictionary itself is unchanged, so "dokaz autorstva" in any other reading is still found.
+ */
+const NOT_PROOF_OF_AUTHORSHIP = /(?<![\p{L}\p{N}])nije dokaz autorstva(?![\p{L}\p{N}])/giu;
+
 /** Dictionary entries in the interface text of every module on `UI_TEXT_MODULES` below `root`. */
 export function scanUiTextModules(root: string): { files: readonly string[]; findings: readonly UiTextFinding[] } {
   const files = findUiTextModules(root);
   const findings: UiTextFinding[] = [];
   for (const file of files) {
     for (const text of extractUiText(file, readFileSync(path.join(root, file), "utf8"), "catalogue")) {
-      const terms = findForbiddenTerms(text.text);
+      const terms = findForbiddenTerms(text.text.replace(NOT_PROOF_OF_AUTHORSHIP, "nije ·"));
       if (terms.length > 0) findings.push({ ...text, terms });
     }
   }

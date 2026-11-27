@@ -89,7 +89,7 @@ test("NZ-6: the filter, by keyboard, keeps one student's extensions and those fo
   const rows = list.getByRole("listitem");
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0)).toContainText("Student vidi: Bio 15. 12. 2099. u 23:59, razlog: Tehnička poteškoća");
-  await expect(rows.nth(1)).toContainText("Student vidi: Bio 20. 12. 2099. u 23:59, razlog: (skriven Vama)");
+  await expect(rows.nth(1)).toContainText("Student vidi: Bio 20. 12. 2099. u 23:59, razlog: (nije prikazano Vama)");
   await expect(rows.nth(1)).toContainText("Razlog koji je zabilježio drugi nastavnik ne vidite; student ga vidi.");
 
   // Keyboard only: focus the filter and move through the students with the arrow keys.

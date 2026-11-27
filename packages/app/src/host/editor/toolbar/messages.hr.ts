@@ -82,7 +82,7 @@ export const toolbarBehaviourHr = {
   menuToFootnote: "U fusnotu",
   menuStash: "Odloži",
   menuCut: "Izreži",
-  menuCopy: "Kopiraj",
+  menuCopy: "Stavi u međuspremnik",
   menuHere: "Ovdje",
   menuSendComment: "Komentar uz označeni tekst",
   menuReview: "Pregled",

@@ -5,7 +5,7 @@ export const stemHr = {
   quote: {
     title: "Navod prema izvoru",
     fine: "U redu je ovako",
-    hint: "Doslovni navod mora biti prepisan točno. Usporedba je slovo po slovo i ne razumije smisao.",
+    hint: "Doslovni navod mora biti naveden točno. Usporedba je slovo po slovo i ne razumije smisao.",
     matchesProof: (page: string | null) => (page === null ? "Tekst navoda podudara se s tekstom u priloženoj potvrdi." : `Tekst navoda podudara se s tekstom u priloženoj potvrdi, str. ${page}.`),
     matchesNote: "Tekst navoda podudara se s tekstom u Vašoj bilješci uz izvor.",
     pageDiffers: (proof: string, quoted: string) => `Tekst navoda podudara se s tekstom u priloženoj potvrdi, ali je tamo stranica ${proof}, a u navodu ${quoted}.`,

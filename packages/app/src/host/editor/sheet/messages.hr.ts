@@ -68,7 +68,7 @@ export const sheetPageHr = {
   unavailableBody: "Tablica se ne može otvoriti uz spremanje. Rad nije promijenjen.",
   signedOutTitle: "Prijava je završena",
   signedOutBody: "Prijavite se ponovno kako biste nastavili s radom.",
-  recoveryTitle: "Potrebna je odluka o spremljenoj verziji",
+  recoveryTitle: "Potrebna je odluka o verziji na poslužitelju",
   recoveryBody: "Verzija na ovom uređaju i verzija na poslužitelju se razlikuju. Prikazana je verzija s ovog uređaja i ne mijenja se.",
   stoppedNote: "Zapis promjena je prekinut. Tablica se i dalje sprema na ovom uređaju, ali poslužitelj je više ne preuzima.",
   refusedNote: "Poslužitelj nije preuzeo zadnju promjenu. Ponovno učitajte stranicu da se pošalje ponovno.",
