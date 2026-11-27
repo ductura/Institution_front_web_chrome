@@ -18,7 +18,7 @@ async function render(add: (id: string, text: string) => Promise<NoteAdded>) {
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => root!.render(createElement(DeclarationCorrection, { assignmentId: ASSIGNMENT, receiptHref: "/app/web/rad/a1/predaja/potvrda", add })));
+  await act(async () => root!.render(createElement(DeclarationCorrection, { assignmentId: ASSIGNMENT, receiptHref: "/aplikacija/rad/a1/predaja/potvrda", add })));
   return host;
 }
 const link = (name: string) => [...host!.querySelectorAll("a")].find((a) => a.textContent === name)!;
@@ -40,7 +40,7 @@ describe("Ispravak izjave (PR-14)", () => {
     expect(el.textContent).toContain("za pravni pregled");
     expect(el.textContent).toContain("Tekst ovog odjeljka čeka pravni pregled.");
     expect(el.textContent).toContain("Potvrđena izjava se ne mijenja.");
-    expect(link("Povlačenje predaje").getAttribute("href")).toBe("/app/web/rad/a1/predaja/potvrda");
+    expect(link("Povlačenje predaje").getAttribute("href")).toBe("/aplikacija/rad/a1/predaja/potvrda");
   });
 
   it("adds the note only on the server's answer, and a blank one marks the field", async () => {

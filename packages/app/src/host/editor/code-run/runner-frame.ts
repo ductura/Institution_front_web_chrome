@@ -3,7 +3,7 @@
 // It is created for one run and removed afterwards; nothing it does reaches the server.
 import { MAX_CODE_CHARS, MAX_RUN_TESTS, RUN_TIMEOUT_MS, parseFrameAnswer, type CodeTest, type RunOutcome } from "./runner.ts";
 
-export const CODE_RUN_FRAME_PATH = "/app/code-run/frame.html";
+export const CODE_RUN_FRAME_PATH = "/aplikacija/code-run/frame.html";
 
 let counter = 0;
 

@@ -25,7 +25,7 @@ const documentId = "rad-izmisljeni-pregled";
 const previousId = "rad-izmisljeni-prethodni";
 const assignmentId = "00000000-0000-4000-8000-0000000000a1";
 const studentId = "00000000-0000-4000-8000-0000000000e1";
-const review = `/app/web/nastavnik/rad/${documentId}/pregled`;
+const review = `/aplikacija/nastavnik/rad/${documentId}/pregled`;
 const SUMMARY = {
   summaryFormat: "ductus-process-summary-v1",
   sessions: { evidenceKind: "observed", breakAboveMinutes: 30, count: 0, items: [] },

@@ -26,7 +26,7 @@ const available = (notStarted: number, inProgress: number, submitted: number): A
   status: 200, body: { status: "available", started: inProgress + submitted, submitted, stages: { notStarted, inProgress, submitted } },
 });
 const notPractice = async (): Promise<AssignmentRead> => ({ kind: "ready", value: { isPractice: false } } as unknown as AssignmentRead);
-const HOST = { base: "/app/web", page: { path: "/nastavnik/kolegiji/[courseId]/zbirno" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik/kolegiji/[courseId]/zbirno" }, role: "teacher" } as unknown as HostValue;
 
 describe("CourseAggregatePage in the browser (PIL-K-ZBIRNO)", () => {
   let root: Root | undefined;
@@ -98,6 +98,6 @@ describe("CourseAggregatePage in the browser (PIL-K-ZBIRNO)", () => {
 
   it("sends a signed-out teacher to sign-in and back to this course's aggregate", async () => {
     const { left } = await mount([available(5, 5, 10)], { status: 401, body: { code: "unauthorized" } });
-    expect(left).toEqual([signInHref(`/app/web${aggregatePath(COURSE)}`)]);
+    expect(left).toEqual([signInHref(`/aplikacija${aggregatePath(COURSE)}`)]);
   });
 });

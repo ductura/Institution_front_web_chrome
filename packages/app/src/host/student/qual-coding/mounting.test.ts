@@ -12,7 +12,7 @@ describe("the coding page is mounted", () => {
     expect(resolve("/zadaci/kodiranje", "teacher")).not.toMatchObject({ kind: "page" });
   });
   it("the Next page renders the coding route", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/zadaci/kodiranje/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/zadaci/kodiranje/page.tsx"), "utf8");
     expect(page).toContain("QualCodingRoute");
   });
   it("the list of materials links to it with the material's id", () => {
