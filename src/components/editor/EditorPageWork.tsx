@@ -139,8 +139,8 @@ function Note({ read, assignmentId, base, onRetry }: {
   if (read.kind === "opening") return <SheetNote>{t.workspace.openLoading}</SheetNote>;
   const exit = openFailureExit(read.failure, { assignmentId, base });
   return (
-    <div data-open-failure={read.failure}>
-      <SheetAlert><p>{openFailureText(read.failure)}</p></SheetAlert>
+    <div role="alert" data-open-failure={read.failure}>
+      <SheetAlert announce={false}><p>{openFailureText(read.failure)}</p></SheetAlert>
       {exit.kind === "link"
         ? <a className="btn" href={exit.href}>{exit.label}</a>
         : <button type="button" className="btn" onClick={exit.kind === "retry" ? onRetry : () => globalThis.location.reload()}>{exit.label}</button>}

@@ -73,8 +73,9 @@ export function SheetNote({ children }: { children: ReactNode }) {
  * S-07 (E4, E5): a read that failed. One role=alert frame, 1 px edge and text in the error
  * colour, radius 4, no fill; the way out ("Pokušaj ponovno", a button) goes under it, not inside.
  */
-export function SheetAlert({ children }: { children: ReactNode }) {
-  return <div className={styles.alertFrame} role="alert">{children}</div>;
+export function SheetAlert({ children, announce = true }: { children: ReactNode; announce?: boolean }) {
+  // `announce` is false where an outer element already carries role=alert (E5), so it is announced once.
+  return <div className={styles.alertFrame} role={announce ? "alert" : undefined}>{children}</div>;
 }
 
 /** "Pokušaj ponovno" under a SheetAlert: an underlined accent link that reads again. */
