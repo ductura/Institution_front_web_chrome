@@ -10,6 +10,7 @@ import {
 } from "./model";
 import { n11Messages as text } from "./messages.hr";
 import { Kv, WorkPage, WorkPanel, workPageStyles as styles } from "../n07/WorkPage";
+import { useTaskCrumb } from "../n06/task-context";
 
 const Lines = ({ message }: { message: string }) => (
   <><p className="note" role="status">{message}</p><div className="skel w80" /><div className="skel w60" /><div className="skel w40" /></>
@@ -102,9 +103,11 @@ export default function N11Compare({ port, documentId, replayHref, signInHref, w
     return () => { live = false; };
   }, [port, documentId, attempt, signInHref]);
 
+  // F4-NAS-R12: the student, the kind of work and the assignment's title above the comparison.
+  const crumb = useTaskCrumb(documentId);
   const pending = read === null || read.kind === "signedOut";
   return (
-    <WorkPage back={workHref} backLabel={text.backToWork}>
+    <WorkPage back={workHref} backLabel={text.backToWork} crumb={crumb}>
       <WorkPanel id={read?.kind === "ready" && submittedVersions(read.versions).length > 1 ? "cp-h" : "pg-h"} title={text.title} busy={pending}>
         {pending && <Lines message={text.loadingVersions} />}
         {read?.kind === "unavailable" && <Failure message={text.versionsError} retry={() => setAttempt((n) => n + 1)} />}

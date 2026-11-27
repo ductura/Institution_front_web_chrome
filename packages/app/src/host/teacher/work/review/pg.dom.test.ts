@@ -73,9 +73,9 @@ describe("NF-5 sections of Pregled rada", () => {
 
   it("PG-5: lists the important places with „Skoči”, starts nothing and has no live region", async () => {
     const reads = { summary: () => ok(SUMMARY), details: () => ok({ activeEditingMinutes: 1, keyEvents: [] }) } as unknown as ReviewReads;
-    const el = await mount(h(Places, { documentId: DOC, reads, replayHref: "/app/web/nastavnik/rad/x/reprodukcija" }));
+    const el = await mount(h(Places, { documentId: DOC, reads, replayHref: "/aplikacija/nastavnik/rad/x/reprodukcija" }));
     expect(el.querySelectorAll("tbody tr")).toHaveLength(1);
-    expect(el.querySelector("a[data-jump]")?.getAttribute("href")).toBe("/app/web/nastavnik/rad/x/reprodukcija");
+    expect(el.querySelector("a[data-jump]")?.getAttribute("href")).toBe("/aplikacija/nastavnik/rad/x/reprodukcija");
     expect(el.querySelector("[aria-live]")).toBeNull();
     expect(el.textContent).toContain("Lijepljenje, 420 znakova");
     expect(el.textContent).toContain("razmak");

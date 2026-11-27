@@ -13,7 +13,7 @@ export function useChapterTargets(enabled: boolean): ChapterTargets {
 
   useEffect(() => {
     // The editor surface remounts with the document. It also runs outside Next in the layout fixture.
-    const match = /^(?:\/app\/(?:web|chrome))?\/rad\/([^/]+)\/?$/u.exec(window.location.pathname);
+    const match = /^(?:\/aplikacija)?\/rad\/([^/]+)\/?$/u.exec(window.location.pathname);
     const assignmentId = assignmentIdOf(match?.[1] ?? "");
     if (!enabled || !assignmentId) return;
     let active = true;

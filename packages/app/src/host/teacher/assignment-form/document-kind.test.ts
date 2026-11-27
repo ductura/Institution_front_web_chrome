@@ -15,7 +15,7 @@ import { assignmentFormHr as f, documentKindHr as k } from "./messages.hr";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 // Invented course, assignment and ids.
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const course = { id: "c1", name: "Izmišljeni kolegij", academicYear: "2026./2027.", aiPolicy: "partially_allowed" } as const;
 const courseId = "0b7c4f0e-6d1a-4c55-9a3e-2f1d8c9b7a61";
 const assignmentId = "8c7b6a5d-4e3f-4b2a-8d9c-6e5f4a3b2c01";

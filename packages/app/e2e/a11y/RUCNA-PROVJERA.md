@@ -1,6 +1,6 @@
 # Ručna provjera pristupačnosti (WEB-1805, M11.6)
 
-Kontrolni popis za vlasnika. Automatska provjera (`pnpm --filter @ductura/app run test:a11y`) pokriva axe razina A i AA, naslov stranice i vidljiv fokus na svim glavnim ekranima. Ne zamjenjuje čitač zaslona. Dok sve stavke ispod nisu zapisane, izjava ostaje „djelomično usklađena” (`COMPLIANCE` u `app/[base]/pristupacnost/statement.ts`).
+Kontrolni popis za vlasnika. Automatska provjera (`pnpm --filter @ductura/app run test:a11y`) pokriva axe razina A i AA, naslov stranice i vidljiv fokus na svim glavnim ekranima. Ne zamjenjuje čitač zaslona. Dok sve stavke ispod nisu zapisane, izjava ostaje „djelomično usklađena” (`COMPLIANCE` u `app/(host)/pristupacnost/statement.ts`).
 
 Okruženje: Chrome na računalu, NVDA (Windows) i VoiceOver (macOS), lokalni stog s lažnim OIDC-om i izmišljenim računima `demo-student`, `demo-teacher` i `demo-admin`. Uz svaku stavku upiši datum, čitač i ishod (prolazi / ne prolazi + opis).
 

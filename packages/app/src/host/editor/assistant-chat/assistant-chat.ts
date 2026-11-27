@@ -18,6 +18,29 @@ export function askablePurposes(allowed: readonly string[]): AiPurpose[] {
   return order.filter((key) => allowed.includes(key));
 }
 
+/**
+ * F4-EDI-R08 (ASIST-4): "samo sažimanje". `student.notice.get` carries `aiSummaryOnly` (optional); only a literal
+ * `true` counts, a missing or malformed value is the ordinary Asistent.
+ */
+export function summaryOnlyOf(view: object | null): boolean {
+  return view !== null && "aiSummaryOnly" in view && view.aiSummaryOnly === true;
+}
+
+/** ASIST-4: the least words the text to summarise may have. */
+export const SUMMARY_MIN_WORDS = 8;
+
+export function wordCount(text: string): number {
+  const trimmed = text.trim();
+  return trimmed === "" ? 0 : trimmed.split(/\s+/u).length;
+}
+
+/**
+ * Assumption (open question, paritet-nastavnik-2 no. 1): the purpose catalogue has no summarising key, and the
+ * teacher form calls the setting "Samo sažimanje literature", so the request goes under `literature_search`;
+ * the server still decides (purpose_not_allowed is shown as the card's own banner).
+ */
+export const SUMMARY_PURPOSE: AiPurpose = "literature_search";
+
 export type AskInput = {
   readonly assignmentId: string;
   readonly conversationId: string | null;

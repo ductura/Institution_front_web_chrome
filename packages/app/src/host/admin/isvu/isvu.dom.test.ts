@@ -46,7 +46,7 @@ async function mount() {
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => { root!.render(createElement(HostContext, { value: { base: "/app/web", page, role: "admin" } }, createElement(IsvuRoute))); });
+  await act(async () => { root!.render(createElement(HostContext, { value: { base: "/aplikacija", page, role: "admin" } }, createElement(IsvuRoute))); });
   await settle(); await settle();
 }
 afterEach(() => { act(() => root?.unmount()); host?.remove(); root = null; host = null; vi.unstubAllGlobals(); });

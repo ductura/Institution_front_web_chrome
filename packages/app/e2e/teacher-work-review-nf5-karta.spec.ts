@@ -16,7 +16,7 @@ const profile = vectors.find((v) => v.route === "profile.me.get" && v.name === "
 const documentId = "rad-izmisljeni-karta";
 const assignmentId = "00000000-0000-4000-8000-0000000000a1";
 const studentId = "00000000-0000-4000-8000-0000000000e1";
-const review = `/app/web/nastavnik/rad/${documentId}/pregled?kartica=podrijetlo`;
+const review = `/aplikacija/nastavnik/rad/${documentId}/pregled?kartica=podrijetlo`;
 const H1 = "00000000-0000-4000-8000-0000000000b1";
 const P1 = "00000000-0000-4000-8000-0000000000b2";
 const P2 = "00000000-0000-4000-8000-0000000000b3";
