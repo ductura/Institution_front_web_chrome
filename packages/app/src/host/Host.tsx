@@ -23,6 +23,7 @@ import { StudentToasts } from "./student/toast/StudentToasts";
 import { NoRoleScreen } from "./signin/SignInScreen";
 import ShellNotifications from "./shell/notifications/ShellNotifications";
 import { shellMessagesFor } from "./teacher/shell/messages";
+import { documentTitle } from "./states/document-title";
 
 /**
  * The institution front (#2028 c.6993786629 §3.3), as the layout of
@@ -92,7 +93,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
     const page = shown === null ? null : navLabel(shown, role, { ...catalogues, t: shellMessagesFor(t, role) });
     // WCAG 2.4.2: a path no page has keeps a title of its own too, the error's heading.
     const heading = page ?? (resolved?.kind === "notFound" ? t.errorPage.notFoundTitle : null);
-    const title = heading === null ? t.app.name : `${heading} · ${t.app.name}`;
+    const title = documentTitle(heading, t.app.name);
     // WCAG 2.4.2 (WEB-1805): Next streams the root layout's title after hydration on
     // public pages and on pages with async params, and would put back the bare app name.
     const keep = () => {
