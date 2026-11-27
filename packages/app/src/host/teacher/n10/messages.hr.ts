@@ -34,6 +34,8 @@ export const n10Messages = {
   gapsTitle: "Praznine u zapisu",
   gapsNone: "Zapis nema praznina.",
   notesTitle: "Napomene studenta",
+  notesEmpty: "Student uz predaju nije ostavio napomenu.",
+  notesNote: "Napomene je student napisao uz predaju; prikazane su kako ih je zapisao.",
   stateTitle: "Stanje zapisa",
   stateComplete: "Zapis je cjelovit.",
   stateGaps: "Zapis ima praznine (vidi popis).",

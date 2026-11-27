@@ -155,7 +155,7 @@ describe("NF-5 PG-11, PG-12, PG-13", () => {
   });
 
   describe("the review page", () => {
-    const HOST = { base: "/app/web", page: { path: "/nastavnik/rad/[id]/pregled" }, role: "teacher" } as unknown as HostValue;
+    const HOST = { base: "/aplikacija", page: { path: "/nastavnik/rad/[id]/pregled" }, role: "teacher" } as unknown as HostValue;
     const header = (grade: "eligible" | "practice"): HeaderRead => ({ kind: "ready", header: {
       facts: { studentName: "Student A", assignmentId: ASSIGNMENT, state: "nije_predano", previousId: null, nextId: null, receipt: null },
       context: { course: "Kolegij A", title: "Lokalni mediji", workType: "essay", dueAt: "2026-11-30T22:59:00.000Z" }, grade,
@@ -171,7 +171,7 @@ describe("NF-5 PG-11, PG-12, PG-13", () => {
       comments: async () => ({ kind: "ok", threads: [] }), drafts: async () => ({ kind: "ready", drafts: [] }), seen: async () => ({ kind: "ready", items: [] }),
     };
     const provenance: ProvenanceCall = async () => ({ kind: "noMarks" });
-    beforeEach(() => { window.history.replaceState(null, "", `/app/web/nastavnik/rad/${DOCUMENT}/pregled`); });
+    beforeEach(() => { window.history.replaceState(null, "", `/aplikacija/nastavnik/rad/${DOCUMENT}/pregled`); });
 
     const page = (grade: "eligible" | "practice", d: ExportDeps) => mount(h(HostContext.Provider, { value: HOST },
       h(ReviewPage, { documentId: DOCUMENT, reads: reads(grade), extras: QUIET, provenanceCall: provenance, matchCall: async () => ({ kind: "none" as const }), exportDeps: d })));

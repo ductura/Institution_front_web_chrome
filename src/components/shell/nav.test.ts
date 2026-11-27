@@ -102,12 +102,12 @@ describe("offersProblemReport", () => {
   });
 });
 
-// #2028 c.6993786629 §1: the app is served under /app/web and /app/chrome.
+// #2028 c.6993786629 §1: the app is served under /aplikacija and /aplikacija.
 describe("appHref", () => {
   it("puts every path of the app under its base, the home under base/", () => {
-    expect(appHref("/app/web", "/zadaci")).toBe("/app/web/zadaci");
-    expect(appHref("/app/chrome", "/ustanova/korisnici")).toBe("/app/chrome/ustanova/korisnici");
-    expect(appHref("/app/web", "/")).toBe("/app/web/");
+    expect(appHref("/aplikacija", "/zadaci")).toBe("/aplikacija/zadaci");
+    expect(appHref("/aplikacija", "/ustanova/korisnici")).toBe("/aplikacija/ustanova/korisnici");
+    expect(appHref("/aplikacija", "/")).toBe("/aplikacija/");
   });
 
   it("leaves the path alone without a base", () => {

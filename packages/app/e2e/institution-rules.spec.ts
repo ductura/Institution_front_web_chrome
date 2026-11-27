@@ -29,7 +29,7 @@ async function fakeServer(page: Page, role: string, fake: Fake) {
 test("the administrator reads the history, compares and publishes a new version", async ({ page }) => {
   const fake: Fake = { posts: [], rules: RULES };
   await fakeServer(page, "institution_admin", fake);
-  await page.goto("/app/web/ustanova/pravila");
+  await page.goto("/aplikacija/ustanova/pravila");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pravila fakulteta");
   const history = page.getByRole("table", { name: /Povijest verzija: Seminarski rad/ });
   await expect(history.getByRole("row")).toHaveCount(3);
@@ -55,7 +55,7 @@ test("a 422 is shown beside its field and nothing is published as done", async (
     reply: { status: 422, body: { error: "invalid_ai_purposes", code: "invalid_ai_purposes", messageKey: "errors.invalid_ai_purposes", status: 422 } },
   };
   await fakeServer(page, "institution_admin", fake);
-  await page.goto("/app/web/ustanova/pravila");
+  await page.goto("/aplikacija/ustanova/pravila");
   await page.getByLabel("Profil zapisa").selectOption("extended");
   await page.getByRole("button", { name: "Pregledaj razliku" }).click();
   await page.getByRole("button", { name: "Objavi novu verziju" }).click();
@@ -67,7 +67,7 @@ test("a 422 is shown beside its field and nothing is published as done", async (
 test("the check before sending stops purposes under a prohibition, with no request", async ({ page }) => {
   const fake: Fake = { posts: [], rules: RULES };
   await fakeServer(page, "institution_admin", fake);
-  await page.goto("/app/web/ustanova/pravila");
+  await page.goto("/aplikacija/ustanova/pravila");
   await page.getByLabel("AI pomoć").selectOption("prohibited");
   await page.getByRole("button", { name: "Pregledaj razliku" }).click();
   await expect(page.getByRole("group", { name: "Dopuštene uporabe" }).getByText(/ne može se odabrati nijedna uporaba/)).toBeVisible();
@@ -77,7 +77,7 @@ test("the check before sending stops purposes under a prohibition, with no reque
 test("a teacher does not see the page", async ({ page }) => {
   const fake: Fake = { posts: [], rules: RULES };
   await fakeServer(page, "teacher", fake);
-  await page.goto("/app/web/ustanova/pravila");
+  await page.goto("/aplikacija/ustanova/pravila");
   await expect(page.getByRole("table", { name: /Povijest verzija/ })).toHaveCount(0);
   await expect(page.getByText("Nova verzija pravila")).toHaveCount(0);
 });

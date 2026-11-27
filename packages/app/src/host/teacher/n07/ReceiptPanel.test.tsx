@@ -17,14 +17,14 @@ const view = receiptView({
   }, payloadDigestSha256: "x", signature: { algorithm: "Ed25519", keyId: "k", keyVersion: "1", signatureEncoding: "raw", signatureBase64Url: "s" } } },
 });
 const html = (v: Parameters<typeof ReceiptPanel>[0]["view"]) =>
-  renderToStaticMarkup(<ReceiptPanel view={v} onRetry={() => {}} onCopy={() => {}} verifyHref={(p) => `/app/web${p}`} />);
+  renderToStaticMarkup(<ReceiptPanel view={v} onRetry={() => {}} onCopy={() => {}} verifyHref={(p) => `/aplikacija${p}`} />);
 
 describe("N-07 receipt panel", () => {
   it("puno shows the prototype's parts: title, UTC details, fingerprint, record, check link and QR sample", () => {
     const out = html(view);
     for (const part of ["Predano 5. 11. 2026. u 21:14", text.utc, text.fingerprintTitle, text.copy, "Zapis ima praznine.",
       text.recordKept, text.verifyNote, text.verifyLink, text.qrNote]) expect(out).toContain(part);
-    expect(out).toContain(`href="/app/web/provjera#r=00000000-0000-4000-8000-0000000000c7&amp;o=${SHA}"`);
+    expect(out).toContain(`href="/aplikacija/provjera#r=00000000-0000-4000-8000-0000000000c7&amp;o=${SHA}"`);
     expect(out).toContain('aria-hidden="true"');
   });
   it("loading, error and prazno use the prototype's words", () => {

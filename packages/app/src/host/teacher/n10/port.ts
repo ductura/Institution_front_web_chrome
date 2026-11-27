@@ -7,7 +7,7 @@
 import { createApi, type ApiOptions } from "../../../../../../src/client/api";
 import { fetchProcessSummary, summaryAgrees } from "../../../../../../src/client/process-summary";
 import { readTimeMachineVersions } from "../../../../../../src/client/time-machine";
-import { thresholdRows, type DetailsOutcome, type N10Port, type ThresholdsOutcome } from "./model";
+import { thresholdRows, type DetailsOutcome, type N10Port, type NotesOutcome, type ThresholdsOutcome } from "./model";
 
 export async function readSummaryDetails(documentId: string, current: () => boolean, options: ApiOptions = {}): Promise<DetailsOutcome> {
   if (!current()) return { kind: "signedOut" };
@@ -35,11 +35,34 @@ export async function readOriginThresholds(documentId: string, current: () => bo
   }
 }
 
+/**
+ * The student's notes at the submission: teacher.work.get names the student and the assignment of the work, then
+ * teacher.submission-notes.get gives the notes. Someone else's work or student is a 404 (notFound), never an empty list.
+ */
+export async function readSubmissionNotes(documentId: string, current: () => boolean, options: ApiOptions = {}): Promise<NotesOutcome> {
+  if (!current()) return { kind: "signedOut" };
+  try {
+    const call = createApi(options);
+    const work = await call("teacher.work.get", { params: { documentId }, query: undefined, body: undefined });
+    if (!work.ok) return { kind: work.status === 401 ? "signedOut" : work.status === 404 ? "notFound" : "unavailable" };
+    if (work.body.documentId !== documentId) return { kind: "unavailable" };
+    if (!current()) return { kind: "signedOut" };
+    const { assignmentId, studentId } = work.body;
+    const result = await call("teacher.submission-notes.get", { params: { assignmentId, studentId }, query: undefined, body: undefined });
+    if (!result.ok) return { kind: result.status === 401 ? "signedOut" : result.status === 404 ? "notFound" : "unavailable" };
+    if (result.status !== 200) return { kind: "unavailable" };
+    return { kind: "ok", notes: result.body.notes.map(({ id, text, createdAt }) => ({ id, text, createdAt })) };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}
+
 export function n10Port(current: () => boolean): N10Port {
   return {
     summary: (documentId) => fetchProcessSummary(documentId, current),
     details: (documentId) => readSummaryDetails(documentId, current),
     versions: async (documentId) => (current() ? readTimeMachineVersions(documentId) : { kind: "signedOut" }),
     thresholds: (documentId) => readOriginThresholds(documentId, current),
+    notes: (documentId) => readSubmissionNotes(documentId, current),
   };
 }

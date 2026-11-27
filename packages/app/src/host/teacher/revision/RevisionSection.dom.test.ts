@@ -20,7 +20,7 @@ HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) { t
 HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) { this.removeAttribute("open"); };
 
 const INSTRUCTION = "Izmišljena uputa: dopunite uvod jednim izvorom.";
-const COMPARE = "/app/web/nastavnik/rad/izmisljeni-rad-0001/usporedba";
+const COMPARE = "/aplikacija/nastavnik/rad/izmisljeni-rad-0001/usporedba";
 const answered = { kind: "done", explanation: "Dopunjeno.", revision: 9, isOwn: false, window: "2026-11-06T09:00:00.000Z" };
 const request = (state: RevisionRequest["state"], response: object | null = null): RevisionRequest => ({
   id: "8b7a6c5d-4e3f-4a2b-9c1d-0e9f8a7b6c01", number: 1, state, rowSeq: 4, anchor: null,

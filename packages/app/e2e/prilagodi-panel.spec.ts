@@ -23,7 +23,7 @@ async function skipGuide(page: Page) {
 test("ED-39: Prilagodi panel chooses the width (shared with Raspored) and the density, and keeps them", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await student(page);
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
 
   const rail = page.getByRole("complementary", { name: "Struktura rada" });

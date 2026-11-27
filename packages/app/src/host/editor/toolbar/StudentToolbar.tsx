@@ -38,6 +38,9 @@ import { useCodeBlockHost } from "../code-block/CodeBlockHost";
 import { codeBlockHr } from "../code-block/messages.hr";
 import { profileById, DEFAULT_PROFILE_ID, type RuleProfile } from "../rules/profiles";
 import { SkeletonDialog } from "../areas/skeleton/SkeletonDialog";
+import { PageFormatDialog } from "@/components/editor/pages/PageFormatDialog";
+import { pagesMessages } from "@/components/editor/pages/messages.hr";
+import { pageFormatOf } from "../page-format/page-format-of";
 import { skeletonAvailable } from "../areas/skeleton/skeleton";
 import { skeletonMessages } from "../areas/skeleton/messages.hr";
 import { assignmentIdFromPath, downloadLatex, latexMenuItem, useLatexStyle } from "../stem/latex-export-menu";
@@ -246,7 +249,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(skeletonProfile));
   const code = useCodeBlockHost(editor, confirmedWorkSchemaVersion);
   const latexStyle = useLatexStyle(typeof window === "undefined" ? null : assignmentIdFromPath(window.location.pathname));
-  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | "structure" | null>(null);
+  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | "structure" | "pageFormat" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
   const toast = useStudentToast();
@@ -299,6 +302,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     ...shellItems(shell),
     { id: "citationSettings", label: workPartsMessages.citationTitle },
     { id: "readingSettings", label: readingSettingsHr.menu },
+    // F4-PM1-R12A: the page format from the faculty rules, read only, so also on a submitted work.
+    { id: "pageFormat", label: pagesMessages.formatTitle },
     ...textSizeItems(zoom),
     ...viewItems(clean),
     ...pendingViewItems(),
@@ -336,6 +341,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       <Menu label={t.toolbar.view} items={view} onSelect={(id) => {
         if (id === "citationSettings") setDialog("citation");
         else if (id === "readingSettings") setDialog("reading");
+        else if (id === "pageFormat") setDialog("pageFormat");
         else if (id === "structure") setDialog("structure");
         else if (id === "cleanText") setCleanText(setClean(document.documentElement, localStore, !clean));
         else if (id === "textSmaller" || id === "textLarger") onZoom(id === "textSmaller" ? -1 : 1);
@@ -375,6 +381,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         </Dialog>
       )}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
+      {dialog === "pageFormat" && <PageFormatDialog format={pageFormatOf(skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null)} onClose={() => setDialog(null)} />}
       {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
       <ReadingSettingsDialog open={dialog === "reading"} onClose={() => setDialog(null)} />
       {v3.dialog}

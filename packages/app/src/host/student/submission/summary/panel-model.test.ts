@@ -73,7 +73,7 @@ const props = (over: Partial<SummaryPanelProps> = {}): SummaryPanelProps => ({
   submitted: false,
   confirmed: false,
   online: true,
-  workHref: "/app/web/rad/a-1",
+  workHref: "/aplikacija/rad/a-1",
   onRetry: () => {},
   onAddNote: async () => ({ kind: "nepoznato" }),
   onNoteAdded: () => {},
@@ -88,7 +88,7 @@ describe("SummaryPanel", () => {
       t.gaps.title, t.declaration.title, t.notes.title, t.record.title, t.provenance.title]) expect(html).toContain(title);
     expect(html).toContain(t.observed);
     expect(html).toContain(t.pastes.origin);
-    expect(html).toContain(`href="/app/web/rad/a-1"`);
+    expect(html).toContain(`href="/aplikacija/rad/a-1"`);
     expect(html).toContain(t.provenance.link);
     expect(html).toContain(t.versions.unavailable);
     expect(html).toContain(t.assistant.unavailable);

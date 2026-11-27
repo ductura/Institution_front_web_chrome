@@ -14,7 +14,7 @@ describe("the coding materials page is mounted", () => {
     expect(resolve(PATH, "teacher")).not.toMatchObject({ kind: "page" });
   });
   it("the Next page renders QualMaterialsPage", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/zadaci/gradivo-kodiranja/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/zadaci/gradivo-kodiranja/page.tsx"), "utf8");
     expect(page).toContain("QualMaterialsPage");
   });
 });

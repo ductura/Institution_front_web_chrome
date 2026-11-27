@@ -108,7 +108,7 @@ describe("downloadLatex", () => {
 describe("style and address", () => {
   it("reads the assignment from the work address only", () => {
     expect(assignmentIdFromPath("/rad/abc")).toBe("abc");
-    expect(assignmentIdFromPath("/app/web/rad/abc/")).toBe("abc");
+    expect(assignmentIdFromPath("/aplikacija/rad/abc/")).toBe("abc");
     expect(assignmentIdFromPath("/rad/abc/predaja")).toBeNull();
     expect(assignmentIdFromPath("/nastavnik/rad/abc")).toBeNull();
   });

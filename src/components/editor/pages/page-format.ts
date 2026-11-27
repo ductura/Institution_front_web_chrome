@@ -31,7 +31,8 @@ export const PAGE_WIDTH_CM = 21;
 export const PAGE_HEIGHT_CM = 29.7;
 
 const fold = (text: string) => text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-const cm = (text: string) => parseFloat(text.replace(",", "."));
+// A matched group is always there; the type allows undefined only under noUncheckedIndexedAccess.
+const cm = (text: string | undefined) => parseFloat((text ?? "").replace(",", "."));
 const NUMBER = String.raw`(\d+(?:[.,]\d+)?)`;
 
 function readMargins(all: string): { margins: Margins; pattern?: RegExp } {
@@ -73,7 +74,7 @@ export function derivePageFormat(profile?: RuleProfile): PageFormat {
   if (right) cite((fact) => /desn\w+\s+(kut|ugl)/.test(fact));
   if (fromIntro) cite((fact) => /uvod/.test(fact));
   return {
-    font: profile?.font ? profile.font.split(/\s+ili\s+|,|\//)[0].trim() : "Times New Roman",
+    font: profile?.font ? (profile.font.split(/\s+ili\s+|,|\//)[0] ?? profile.font).trim() : "Times New Roman",
     size: profile?.size ?? 12,
     spacing: profile?.spacing ?? 1.5,
     margins,

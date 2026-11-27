@@ -29,6 +29,7 @@ import { submitConfirmed, type Confirmed, type NewerChoice } from "./newer-local
 import { deviceHasNewer, sendLatestFromDevice } from "./local-hold";
 import { takeChoice } from "./newer-choice";
 import DeclarationDialog from "../declaration/DeclarationDialog";
+import { conversationsRow, serverAttachedCount, type AttachedCount, type AttachedCountRead } from "../declaration/attached-count";
 import { useFocusAfterDialog, useOpener } from "../declaration/dialog-model";
 import { routerPath } from "../../../../bases";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "../summary/declaration-gate";
@@ -72,6 +73,8 @@ export type SubmitStepProps = {
   readonly timing?: Timing;
   /** The declaration's gate; the server's by default, a recorded one in tests. */
   readonly declarationGate?: GateRead;
+  /** F4-PRE-R02: the conversations that go with the declaration; the server's by default. */
+  readonly attachedConversations?: AttachedCountRead;
 };
 
 /** PD-3 (PR-7): the dialog's sentence from what is true of this submission: the declaration only when confirmed. */
@@ -84,7 +87,7 @@ export default function SubmitStep(props: SubmitStepProps) {
   return <Step key={props.assignmentId} {...props} />;
 }
 
-function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGate = serverGate }: SubmitStepProps) {
+function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGate = serverGate, attachedConversations = serverAttachedCount }: SubmitStepProps) {
   const router = useRouter();
   const { base } = useHost();
   const online = useOnline();
@@ -137,6 +140,13 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
 
   const { gate, reload: readGate } = useDeclarationGate(assignmentId, declarationGate);
   const confirmed = opensSending(gate);
+  // F4-PRE-R02: read again with the gate, so a change made in PD-10 shows here too.
+  const [attached, setAttached] = useState<AttachedCount | null | "loading">("loading");
+  useEffect(() => {
+    let live = true;
+    void attachedConversations(assignmentId).then((n) => { if (live) setAttached(n); }, () => { if (live) setAttached(null); });
+    return () => { live = false; };
+  }, [assignmentId, attachedConversations, gate]);
   const declareLabel = useOpener(gate);
   const mainSubmit = useRef<HTMLButtonElement>(null);
   useFocusAfterDialog(declaring, declareLabel, mainSubmit);
@@ -274,6 +284,7 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
               <StepKv label={t.due}>{dueText}</StepKv>
               <StepKv label={t.words}>{thousands(words)}</StepKv>
               {gate.kind === "not_required" && <StepKv label={t.declarationRow}>{declarationWhy}</StepKv>}
+              {conversationsRow(attached) !== null && <StepKv label={t.conversationsRow}>{conversationsRow(attached)}</StepKv>}
               {stage.kind === "unavailable" && <p className="note" role="note">{t.stageUnavailable}</p>}
               <p className="note">{t.timeNote}</p>
             </>
@@ -309,7 +320,8 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
               <Button tone="secondary" busy={sending} onClick={closeDialog}>{t.cancel}</Button>
             </>
           )}>
-          <p className="note">{dialogSentence(title, gate.kind === "confirmed", 0, words)}</p>
+          {/* F4-PRE-R02: the conversations go with a confirmed declaration only; unknown counts as none named. */}
+          <p className="note">{dialogSentence(title, gate.kind === "confirmed", gate.kind === "confirmed" && attached !== null && attached !== "loading" ? attached.attached : 0, words)}</p>
           <p className="note">{t.noLonger}</p>
           {late && (
             <>

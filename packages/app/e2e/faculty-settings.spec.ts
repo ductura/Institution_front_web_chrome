@@ -11,6 +11,7 @@ async function fake(page: Page, role: string, writes: string[]) {
   await page.route("**/api/v1/institution/faculty-rules", (route) => { if (route.request().method() !== "GET") writes.push(route.request().method()); return route.fulfill({ json: RULES }); });
   await page.route("**/api/v1/institution/origin-thresholds", (route) => route.fulfill({ json: { thresholds: [] } }));
   await page.route("**/api/v1/institution/retention", (route) => route.fulfill({ json: { classes: [{ key: "sessions", label: "retention.sessions", retentionDays: null, mode: "dry-run", candidates: null, lastRunAt: null }] } }));
+  await page.route("**/api/v1/institution/assistant-setting", (route) => { if (route.request().method() !== "GET") writes.push(route.request().method()); return route.fulfill({ json: { assistant: false, transcription: false, tools: false, settingVersion: 1, changeable: false } }); });
   await page.route("**/api/v1/institution/thesis-forms", (route) => { if (route.request().method() !== "GET") writes.push(route.request().method()); return route.fulfill({ json: { forms: [{ code: "izjava-mentora", version: 2, title: "Izjava mentora", workTypes: ["bachelor_thesis", "master_thesis"], active: true, publishedAt: "2026-10-02T10:00:00.000Z" }] } }); });
   await page.route("**/api/v1/institution/thesis-settings", (route) => { if (route.request().method() !== "GET") writes.push(route.request().method()); return route.fulfill({ json: { mentorConsentRequired: true, changedAt: "2026-10-03T10:00:00.000Z" } }); });
 }
@@ -24,7 +25,7 @@ for (const width of [390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     const writes: string[] = [];
     await fake(page, "institution_admin", writes);
-    await page.goto("/app/web/ustanova/postavke");
+    await page.goto("/aplikacija/ustanova/postavke");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Postavke fakulteta");
     await expect(page.getByText("Rok još nije određen (čeka odluku)")).toBeVisible();
     await expect(page.getByText("Na snazi je 1 od 1 obrazaca.")).toBeVisible();
@@ -44,10 +45,10 @@ for (const width of [390, 1280]) {
 test("student: „Moja prava” je statična uputa; nastavnik ne otvara postavke fakulteta", async ({ page }) => {
   const writes: string[] = [];
   await fake(page, "student", writes);
-  await page.goto("/app/web/moja-prava");
+  await page.goto("/aplikacija/moja-prava");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moja prava");
   await expect(page.getByText("Ova uputa čeka pravni pregled.")).toBeVisible();
   await axe(page);
-  await page.goto("/app/web/ustanova/postavke");
+  await page.goto("/aplikacija/ustanova/postavke");
   await expect(page).not.toHaveURL(/ustanova\/postavke/);
 });

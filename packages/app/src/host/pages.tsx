@@ -4,12 +4,11 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import {
-  appHref, MentoredWorks, readMentoredWorks, readTeacherCourses, StudentHome, TeacherCourses,
-  type MentoredWorksCall, type MyAssignmentsRead, type TeacherCoursesCall,
+  appHref, MentoredWorks, readMentoredWorks, readTeacherCourses, TeacherCourses,
+  type MentoredWorksCall, type TeacherCoursesCall,
 } from "../../../../src/components/index.ts";
-import { readMyAssignments, type AssignmentsCall } from "../../../../src/components/student/my-assignments-read.ts";
 import { messagesHr as t } from "../../../../locales/hr.ts";
-import { createApi, goToSignIn, leaveFor, signInHref } from "../../../../src/client/api.ts";
+import { createApi, goToSignIn, leaveFor, readSession, signInHref } from "../../../../src/client/api.ts";
 
 import type { Base } from "../bases";
 import { internalRoute, routeOf } from "../routes";
@@ -23,12 +22,10 @@ import { TeacherPage, type TeacherRead } from "./teacher/shell/TeacherPage";
 import { CourseQuestionnaires } from "./teacher/questionnaire/Questionnaires";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { CourseRhythm } from "./teacher/input-rhythm/mounts";
-import { startWorkAction } from "./student/start-work/action";
-import { HomePage } from "./student/home/HomePage";
 import SignInScreen from "./signin/SignInScreen";
-import { signInViewOf } from "./signin/sign-in-view";
+import { signInViewOf, skipTarget } from "./signin/sign-in-view";
 
-// The pages the host shows, one per route of app/[base]/. Each reads the
+// The pages the host shows, one per route of app/(host)/. Each reads the
 // institution server only through src/client.
 
 /** A page of the navigation not yet connected to the institution server: its heading and a note. */
@@ -56,7 +53,7 @@ export function PublicPendingPage() {
  * the prototype. Sign-in is AAI@EduHr only (D-09): the button, and "Pokušaj
  * ponovno" in the error states, show "preusmjeravanje" and leave for the login
  * of the institution server. A returnTo of the app ("/zadaci" or
- * "/app/web/zadaci") comes back under this base; any other goes to its home.
+ * "/aplikacija/zadaci") comes back under this base; any other goes to its home.
  * `?stanje=` and the login route's `?greska=` ask for a state.
  */
 export function SignInPage() {
@@ -70,29 +67,19 @@ export function SignInPage() {
     setLeaving(true);
     leaveFor(href);
   };
-  return <SignInScreen view={leaving ? "redirecting" : signInViewOf(query)} href={href} onStart={start} />;
-}
-
-/** S01 (E-2, WEB-2102) is its own page; S02 over student.assignments.get, read once per visit. */
-export function StudentPage({ view }: { view: "home" | "courses" }) {
-  return view === "home" ? <HomePage /> : <CoursesPage />;
-}
-
-function CoursesPage() {
-  const { base } = useHost();
-  const [read, setRead] = useState<MyAssignmentsRead | null>(null);
+  // KA-05-WEB: a visitor who already has a session does not see the screen.
+  const asked = signInViewOf(query);
   useEffect(() => {
+    if (asked === "noRole" || asked === "refused") return;
     let live = true;
-    void readMyAssignments(createApi() as unknown as AssignmentsCall).then((result) => {
-      if (live) setRead(result);
+    void readSession().then((result) => {
+      if (live && result.kind === "signedIn") leaveFor(appHref(base, skipTarget(route)));
     });
     return () => {
       live = false;
     };
-  }, []);
-  if (read === null) return <p role="status">{hostText.loading}</p>;
-  return <StudentHome read={read} enroll={null} view="courses" signIn={(returnTo) => signInHref(appHref(base, returnTo))}
-    assignmentAction={startWorkAction} />;
+  }, [base, route, asked]);
+  return <SignInScreen view={leaving ? "redirecting" : asked} href={href} onStart={start} base={base} />;
 }
 
 export { TeacherPage, type TeacherRead } from "./teacher/shell/TeacherPage";

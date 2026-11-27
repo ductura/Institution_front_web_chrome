@@ -22,7 +22,7 @@ import { ConsultPanel } from "../work/consult/ConsultPanel";
 import { docWords } from "../mentor/prep-model";
 import { latestReturn } from "../mentor/round-feedback";
 import { readRubric } from "../../student/rubric/read";
-import { abstractWords, reportSeen, seenAtOf, thesisShownOf, unreportedSeen, workStateOf, type MentoredRead } from "./mentor-mount";
+import { abstractWords, consentOf, reportSeen, seenAtOf, thesisShownOf, unreportedSeen, workStateOf, type ConsentRead, type MentoredRead } from "./mentor-mount";
 
 /** The clipboard, when the browser gives it. */
 const copyText = (text: string): Promise<boolean> =>
@@ -37,12 +37,14 @@ type Reads = {
   returns: Read<readonly ReturnNotice[]>;
   /** MK-9: the student's own "Dokle sam stao" (readingPlace of the sealed note's read). */
   reading: ReadingPlace;
+  /** MEN-R08: the mentor's consent in force; null when unread (a work without mentorship answers 404). */
+  consent: ConsentRead;
 };
 /** The slots' client, made at call time (the page's origin is read then, not while rendering). */
 const slotsCall = ((...args: Parameters<SlotsApi>) => createApi()(...args)) as SlotsApi;
 /** ED-35: the student's read of each teacher's working criteria, made at call time like the slots' client. */
 const studentCriteriaCall: StudentCriteriaCall = (id, input) => createApi()(id, { ...input, body: undefined });
-const LOADING: Reads = { requests: undefined, milestones: undefined, messages: undefined, slots: undefined, returns: undefined, reading: undefined };
+const LOADING: Reads = { requests: undefined, milestones: undefined, messages: undefined, slots: undefined, returns: undefined, reading: undefined, consent: null };
 
 /** The most pages of returns read before the list counts as unread (50 returns a page). */
 const RETURN_PAGES = 20;
@@ -95,13 +97,18 @@ async function readReading(documentId: string): Promise<ReadingPlace> {
   return null;
 }
 
+/** MEN-R08: the mentor's consent; any failed or odd answer is null ("nedostupno" / no consent), never "given". */
+async function readConsent(documentId: string): Promise<ConsentRead> {
+  return consentOf(await createApi()("work.mentor-consent.get", { params: { documentId }, query: undefined, body: undefined }));
+}
+
 /** One read of everything the card shows, again when the work is submitted. Never throws. */
 async function readAll(documentId: string): Promise<Reads> {
   const quiet = <T,>(p: Promise<T>) => p.catch(() => null);
-  const [requests, milestones, messages, slots, returns, reading] = await Promise.all([
+  const [requests, milestones, messages, slots, returns, reading, consent] = await Promise.all([
     quiet(listRevisionRequests(documentId)), quiet(readWorkMilestones(documentId)),
     quiet(readWorkMessages(documentId)), quiet(readConsultationSlots(slotsCall, documentId)), quiet(readReturns(documentId)),
-    quiet(readReading(documentId)),
+    quiet(readReading(documentId)), quiet(readConsent(documentId)),
   ]);
   return {
     requests: requests?.kind === "ok" ? requests.requests : null,
@@ -110,6 +117,7 @@ async function readAll(documentId: string): Promise<Reads> {
     slots: slots?.kind === "ready" ? slots.slots : null,
     returns,
     reading,
+    consent,
   };
 }
 
@@ -159,7 +167,7 @@ export function MentorMount({ assignmentId, documentId, submitted, editor }: {
 
   // WEB-NF6-RUNDA (MK-8): the latest whole-work return gives the revision its deadline and the mentor's comment.
   const ret = reads.returns ? currentReturn(latestReturn(reads.returns, documentId), reads.requests ?? []) : null;
-  const state = reads.requests === undefined && !submitted ? undefined : withReturn(workStateOf(submitted, reads.requests ?? null), ret);
+  const state = reads.requests === undefined && !submitted ? undefined : withReturn(workStateOf(submitted, reads.requests ?? null, reads.consent), ret);
   const said = reads.requests === undefined || reads.returns === undefined ? undefined
     : reads.requests === null || reads.returns === null ? null : { ret, requests: reads.requests };
   // MEN-R06 (MEN-21): what the student was shown is told to the server once per page; a failed call is retried on the next read.

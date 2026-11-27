@@ -13,7 +13,7 @@ import { readOutline, saveTemplate, TemplateField, type Outline } from "./Templa
 type Call = Parameters<typeof saveTemplate>[0];
 const callOf = (answer: (id: string, input: { body?: unknown }) => unknown) =>
   vi.fn(async (id: string, input: { body?: unknown }) => answer(id, input)) as unknown as Call & ReturnType<typeof vi.fn>;
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const course = { id: "c1", name: "Izmišljeni kolegij", academicYear: "2026./2027.", aiPolicy: "partially_allowed" } as const;
 // Invented outline.
 const outline: Outline = { version: 3, titlePage: ["title", "author"], sections: [{ title: "Uvod", hint: "Tema i cilj" }, { title: "Zaključak", hint: "" }] };
