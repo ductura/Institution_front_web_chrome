@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_INSTITUTION_SERVER, institutionRewrites, institutionServerUrl, legacyAuthRedirects } from "./rewrites";
+import {
+  DEFAULT_INSTITUTION_SERVER,
+  institutionRedirects,
+  institutionRewrites,
+  institutionServerUrl,
+  legacyAuthRedirects,
+} from "./rewrites";
 
 const SERVER = "http://127.0.0.1:4010";
 
@@ -56,5 +62,13 @@ describe("legacyAuthRedirects", () => {
     for (const path of ["/", "/aplikacija", "/api/auth", "/api/v1/auth/logout", "/api/authx/login", "/prijava"])
       expect(match(path)).toBeNull();
     expect(institutionRewrites(SERVER, "development").some((r) => r.source === "/" || r.source === "/:path*")).toBe(false);
+  });
+});
+
+describe("institutionRedirects (F4-STU-R01)", () => {
+  it("sends the root /prijava of the server's failed sign-in to the app's own /prijava, not permanently", () => {
+    expect(institutionRedirects()).toEqual([
+      { source: "/prijava", destination: "/aplikacija/prijava", basePath: false, permanent: false },
+    ]);
   });
 });

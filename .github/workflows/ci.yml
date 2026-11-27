@@ -202,12 +202,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The unit tests of ./src/** take about 25 s; as a job of their own
-          # they took a runner and about 45 s of setup for that. checks runs
-          # them after the typecheck and still ends before the longest
-          # behaviour leg. Every package still runs in exactly one part.
-          - { part: checks, packages: "./src/**" }
-          - { part: unit, packages: "!./src/**" }
+          # CI-WEB-NOGE: the unit tests are two legs of their own and `checks`
+          # keeps only the typecheck. Measured per package (4 cores, seconds):
+          # app 123, editor-core 45, components 31, client 19, forbidden-terms
+          # 10, ui 9, catalog 4, every other src/ package 1 to 3. Leg 1 is
+          # packages/app (about 123 s), leg 2 every other package (about 125
+          # s); before, `unit` ran all of them in about 190 s next to a
+          # `checks` that held the typecheck and the src/ tests. The two
+          # filters are each other's complement, so every package still runs
+          # in exactly one leg.
+          - { part: checks }
+          - { part: unit, leg: 1, of: 2, packages: "./packages/app" }
+          - { part: unit, leg: 2, of: 2, packages: "!./packages/app" }
           - { part: behaviour, leg: 1, of: 3, browser: true }
           - { part: behaviour, leg: 2, of: 3, browser: true }
           - { part: behaviour, leg: 3, of: 3, browser: true }
@@ -246,9 +252,28 @@ jobs:
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore tsbuildinfo
+      # CI-WEB-TSBUILD: tsc writes .tsbuildinfo (also with --noEmit) and on the
+      # next run re-checks only the files whose content or whose imports'
+      # content changed. The key holds the hash of the lockfile and of every
+      # tsconfig, so a change of dependencies or compiler options starts cold;
+      # tsc itself also drops the info when its options or version differ, and
+      # a stale file only costs time, never a missed error. The sha suffix makes
+      # every run save its own entry; restore-keys takes the newest of the same
+      # configuration. Nothing is skipped: the same `typecheck` script runs in
+      # every package, only with the two incremental flags added.
+        if: matrix.part == 'checks'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            **/.tsbuildinfo
+            !**/node_modules/**
+          key: tsbuildinfo-${{ runner.os }}-node22-${{ hashFiles('pnpm-lock.yaml', '**/tsconfig*.json', '!**/node_modules/**') }}-${{ github.sha }}
+          restore-keys: |
+            tsbuildinfo-${{ runner.os }}-node22-${{ hashFiles('pnpm-lock.yaml', '**/tsconfig*.json', '!**/node_modules/**') }}-
       - name: Typecheck
         if: matrix.part == 'checks'
-        run: pnpm -r run typecheck
+        run: pnpm -r run typecheck --incremental --tsBuildInfoFile .tsbuildinfo
       - name: Typecheck of src/client
         if: matrix.part == 'checks' && needs.changes.outputs.client == 'true'
         working-directory: src/client
@@ -465,10 +490,13 @@ jobs:
   # once here and the shards download .next (without its cache). The rewrites
   # read the server URL at build time, so it is the same fake one as in
   # packages/app/playwright.config.ts. It follows `app` (`changes` gives
-  # `app-build` the same value), and ci-ok needs it.
+  # `app-build` the same value) and also runs when `sistem` does (CI-WEB-NOGE):
+  # the system pass downloads this build instead of building the host again
+  # (about 55 s), and patches the server URL baked into the rewrites. ci-ok
+  # needs it.
   app-build:
     needs: changes
-    if: ${{ needs.changes.outputs.app-build == 'true' }}
+    if: ${{ needs.changes.outputs.app-build == 'true' || needs.changes.outputs.sistem == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -594,9 +622,11 @@ jobs:
   # e2e/sistem/ or its config, and on everything that runs every job.
   # ci-ok needs it.
   sistem:
-    needs: changes
+    needs: [changes, app-build]
     if: ${{ needs.changes.outputs.sistem == 'true' }}
     uses: ./.github/workflows/sistem.yml
+    with:
+      build_artifact: true
     permissions:
       contents: read
 

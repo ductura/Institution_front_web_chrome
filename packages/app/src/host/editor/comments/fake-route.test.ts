@@ -11,7 +11,7 @@ export const ANCHOR = {
 type Row = { threadId: string; commentId: string; position: number; authorRole: "teacher" | "student"; isOwn: boolean; body: string | null; anchor: unknown; state: string; createdWindow: string; deletedWindow: string | null };
 
 /** The route of the server, in memory: the student may reply; `status` forces an answer. */
-export function fakeRoute(opts: { status?: number; teacherOnly?: boolean } = {}) {
+export function fakeRoute(opts: { status?: number; teacherOnly?: boolean } = {}, suggestions?: (url: string, body: Record<string, unknown>) => Response) {
   let n = 0;
   const id = () => `bbbbbbbb-0000-4000-8000-${String(++n).padStart(12, "0")}`;
   const rows: Row[] = [
@@ -26,6 +26,8 @@ export function fakeRoute(opts: { status?: number; teacherOnly?: boolean } = {})
   const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
     const action = String(url).split("/").at(-1)!;
     const body = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+    // EDI-R10: the proposals route is another route; it has its own stand-in (suggestions-route.test.ts).
+    if (String(url).includes("/suggestions/")) return suggestions?.(String(url), body) ?? json(404);
     calls.push({ action, body });
     if (action === "list") return json(200, { comments: rows });
     if (opts.status) return json(opts.status);

@@ -10,8 +10,8 @@ import { HOW_IT_WORKS_HREF, homeHref, navFor } from "../../../../src/components/
 import ErrorScreen from "../../../../src/components/shell/ErrorScreen.ts";
 import { goToSignIn, readSession, type SessionRead } from "../../../../src/client/api.ts";
 
-import { BASE_PATH, nextPath, type Base } from "../bases";
-import { internalRoute, publicPage, resolve, routeOf, shellRole } from "../routes";
+import { nextPath, type Base } from "../bases";
+import { browserRoute, hostRoute, internalRoute, publicPage, resolve, shellRole } from "../routes";
 import { navLabel, useLocale } from "../i18n";
 import { isNarrow, withoutShell } from "./ljuska-po-ekranu";
 import { HostContext } from "./context";
@@ -34,7 +34,8 @@ import { shellMessagesFor } from "./teacher/shell/messages";
  */
 export default function Host({ base, children }: { base: Base; children: ReactNode }) {
   const router = useRouter();
-  const route = routeOf(`${BASE_PATH}${usePathname()}`, base);
+  // An edge address ("/", "/pomoc", D-318) is read from the browser (hostRoute).
+  const route = hostRoute(usePathname(), typeof window === "undefined" ? null : window.location.pathname, base);
   const open = publicPage(route);
   const [session, setSession] = useState<SessionRead | null>(null);
   const catalogues = useLocale();
@@ -43,7 +44,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   const load = useCallback(() => {
     setSession(null);
     void readSession().then((read) => {
-      if (read.kind === "signedOut") goToSignIn(appHref(base, routeOf(window.location.pathname, base)));
+      if (read.kind === "signedOut") goToSignIn(appHref(base, browserRoute(window.location.pathname, base)));
       setSession(read);
     });
   }, [base]);

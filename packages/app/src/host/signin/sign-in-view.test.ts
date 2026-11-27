@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { signInViewOf } from "./sign-in-view";
+import { FOOTER_LINKS, signInViewOf, skipTarget } from "./sign-in-view";
 
 const of = (query: string) => signInViewOf(new URLSearchParams(query));
 
@@ -28,5 +28,17 @@ describe("signInViewOf", () => {
     expect(of("stanje=odbijeno")).toBe("refused");
     expect(of("stanje=bezuloge&greska=login_refused")).toBe("refused");
     expect(of("greska=provider_unavailable")).not.toBe(of("greska=login_refused"));
+  });
+});
+
+describe("footer and skip (KA-05-WEB)", () => {
+  it("has the six links of the concept, none of them an external address", () => {
+    expect(FOOTER_LINKS.map((l) => l.key)).toEqual(["help", "contact", "privacy", "terms", "accessibility", "status"]);
+    for (const l of FOOTER_LINKS) expect(l.path.startsWith("/")).toBe(true);
+  });
+  it("never sends a signed-in visitor back to the sign-in", () => {
+    expect(skipTarget(null)).toBe("/");
+    expect(skipTarget("/prijava")).toBe("/");
+    expect(skipTarget("/zadaci")).toBe("/zadaci");
   });
 });

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   AI_PURPOSES, assignmentBody, type AssignmentCreation, type AssignmentDraft, type WorkType,
 } from "@/components/teacher/assignment-create";
-import { createApi } from "@/client/api";
+import { createApi, leaveFor } from "@/client/api";
 import { publishAssignment } from "@/components/teacher/TeacherSetup/assignment-mutations";
 import { assignmentSetupMessages as setup } from "@/components/teacher/TeacherSetup/messages.hr";
 import type { TeacherCourse } from "@/components/teacher/teacher-courses-read";
@@ -31,6 +31,8 @@ import { checkRubric, type Rubric, type RubricErrors } from "../rubric/rubric-mo
 import { publishHr } from "../publish/messages.hr";
 import { CheckListLink, PublishDone } from "../publish/PublishDone";
 import { isUncertain, publishOutcome } from "../publish/publish-outcome";
+import { handOverPublished } from "../publish/published-handoff";
+import { toastWhenConfirmed } from "../toast";
 import { NoticePreview } from "../publish/NoticePreview";
 
 type Course = Pick<TeacherCourse, "id" | "name" | "academicYear" | "aiPolicy">;
@@ -44,6 +46,9 @@ type SaveTemplate = (assignmentId: string, use: boolean) => Promise<TemplateOutc
 const loadOutlineDefault: LoadOutline = (workType) => readOutline(createApi() as Call, workType);
 type ApplyRules = (assignmentId: string, choices: RuleChoices) => Promise<RuleName[]>;
 type FormDraft = AssignmentDraft & { practice?: boolean; documentKind?: DocumentKind };
+type Navigate = (href: string) => void;
+/** Every navigation out of a page goes through the client's one exit (no-direct-api). */
+const goTo: Navigate = leaveFor;
 type Phase = "form" | "review" | "publishing" | "published";
 
 const a = t.teacher.assignment;
@@ -57,9 +62,11 @@ const initialDraft: FormDraft = {
  * The teacher's "Novi zadatak" (WEB-2146, N-02/N-03): one form in sections zs-1 to zs-4, then a separate
  * "Pregled i objava" with "Objavi zadatak" and "Natrag na obrazac" (kartice: not a five-step wizard).
  * Publishing calls the existing create-assignment route (`publishAssignment`); `publish` is injectable for tests.
+ * NAS-19: after the server confirmed, and every follow-up switch was set, the teacher goes back to /nastavnik,
+ * where the toast says the assignment is published (3200 ms). A follow-up that failed keeps this screen with its alert.
  */
-export default function AssignmentForm({ course, publish = publishAssignment, cancelHref = "/nastavnik", loadGroups, setRules, setRubricFor, setTemplateFor, setQuestionFor, loadOutline = loadOutlineDefault }: {
-  course: Course; publish?: Publish; cancelHref?: string; loadGroups?: LoadGroups; setRules?: ApplyRules; setRubricFor?: SaveRubric;
+export default function AssignmentForm({ course, publish = publishAssignment, cancelHref = "/nastavnik", doneHref = cancelHref, navigate = goTo, loadGroups, setRules, setRubricFor, setTemplateFor, setQuestionFor, loadOutline = loadOutlineDefault }: {
+  course: Course; publish?: Publish; cancelHref?: string; doneHref?: string; navigate?: Navigate; loadGroups?: LoadGroups; setRules?: ApplyRules; setRubricFor?: SaveRubric;
   setTemplateFor?: SaveTemplate; setQuestionFor?: SaveQuestion; loadOutline?: LoadOutline;
 }) {
   const request = useRef<{ body: string; key: string } | null>(null);
@@ -120,16 +127,28 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
     if (request.current?.body !== serialized) request.current = { body: serialized, key: crypto.randomUUID() };
     setFailure(null);
     setPhase("publishing");
-    const result = await publish(course.id, aiBody, request.current.key);
-    const outcome = publishOutcome(result);
+    // The toast only after the server confirmed (B-6, decision 2164): `confirmed` is set by `toastWhenConfirmed` alone.
+    let confirmed = false;
+    const { result, ...outcome } = await toastWhenConfirmed(async () => {
+      const answer = await publish(course.id, aiBody, request.current!.key);
+      return { ...publishOutcome(answer), result: answer };
+    }, () => { confirmed = true; }, publishHr.published);
     setUncertain(isUncertain(result));
     if (outcome.ok) {
       // Withdrawal and the declaration are switches of the new assignment: set after the create answer, each by its route.
       const id = result.kind === "available" ? result.id : null;
-      setRuleFailures(id === null ? [] : await (setRules ?? ((assignmentId, picked) => applyRules(createApi() as Call, assignmentId, picked)))(id, choices).catch((): RuleName[] => ["late", "withdrawal", "declaration"]));
-      setRubricOutcome(id === null ? "none" : await (setRubricFor ?? ((assignmentId, picked) => saveRubric(createApi() as Call, assignmentId, picked)))(id, rubric).catch((): SaveOutcome => "failed"));
-      setTemplateOutcome(id === null ? "none" : await (setTemplateFor ?? ((assignmentId, use) => saveTemplate(createApi() as Call, assignmentId, use)))(id, useTemplate).catch((): TemplateOutcome => "failed"));
-      setQuestionOutcome(id === null ? "none" : await (setQuestionFor ?? ((assignmentId, text) => saveQuestion(createApi() as Call, assignmentId, text, { skipEmpty: true })))(id, question).catch((): QuestionOutcome => "failed"));
+      const rules = id === null ? [] : await (setRules ?? ((assignmentId, picked) => applyRules(createApi() as Call, assignmentId, picked)))(id, choices).catch((): RuleName[] => ["late", "withdrawal", "declaration"]);
+      const rubricDone: SaveOutcome = id === null ? "none" : await (setRubricFor ?? ((assignmentId, picked) => saveRubric(createApi() as Call, assignmentId, picked)))(id, rubric).catch((): SaveOutcome => "failed");
+      const templateDone: TemplateOutcome = id === null ? "none" : await (setTemplateFor ?? ((assignmentId, use) => saveTemplate(createApi() as Call, assignmentId, use)))(id, useTemplate).catch((): TemplateOutcome => "failed");
+      const questionDone: QuestionOutcome = id === null ? "none" : await (setQuestionFor ?? ((assignmentId, text) => saveQuestion(createApi() as Call, assignmentId, text, { skipEmpty: true })))(id, question).catch((): QuestionOutcome => "failed");
+      setRuleFailures(rules);
+      setRubricOutcome(rubricDone);
+      setTemplateOutcome(templateDone);
+      setQuestionOutcome(questionDone);
+      const settled = (o: string) => o === "saved" || o === "none";
+      const allSet = rules.length === 0 && settled(rubricDone) && settled(templateDone) && settled(questionDone);
+      // Back to the courses, whose toast region says it; without session storage the confirmation stays here.
+      if (confirmed && allSet && handOverPublished()) { navigate(doneHref); return; }
       setPhase("published");
     }
     else { setFailure(outcome.error ?? a.errors.unavailable); setPhase("review"); }
@@ -150,7 +169,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
   }
 
   if (phase === "publishing") {
-    return <section className="card" aria-busy="true" aria-label={`${course.name} · ${course.academicYear}`}><p role="status" className="note">{a.pending}</p></section>;
+    return <section className="card" aria-busy="true" aria-label={`${course.name} · ${course.academicYear}`}><p role="status" className="note">{publishHr.pending}</p></section>;
   }
 
   if (phase === "review") {

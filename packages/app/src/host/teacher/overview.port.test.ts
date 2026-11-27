@@ -95,6 +95,15 @@ describe("N-17 overview port (NZ-2, NZ-10)", () => {
     expect(read.cards.map((c) => [c.courseId, c.assignmentId])).toEqual([[K1, A1]]);
     expect(asked.some((p) => p.includes(A2) || p.includes(K2))).toBe(false);
   });
+  it("F4-PM2-R08: marks the client cannot read yet say so once on the card, and no row is shown as unmarked", async () => {
+    const asked: string[] = [];
+    const read = await overviewPort({ course: K1, task: null }, client(ANSWERS, asked)).read();
+    if (read.kind !== "ready") throw new Error(read.kind);
+    expect(read.cards[0]!.accommodationsUnavailable).toBe(true);
+    expect(read.cards[0]!.rows!.every((r) => r.accommodation === undefined)).toBe(true);
+    // TODO(ugovor): until the extract has teacher.student-accommodation.get the client rejects it without a request.
+    expect(asked.some((p) => p.endsWith("/accommodation"))).toBe(false);
+  });
   it("an assignment no course has (a stale link) shows every assignment, never an empty overview", async () => {
     const read = await overviewPort({ course: null, task: "nepostojeci" }, client(ANSWERS)).read();
     if (read.kind !== "ready") throw new Error(read.kind);
