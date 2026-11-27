@@ -238,10 +238,27 @@
     display: inline-flex;
   }
 
-  .nav,
-  .foot {
+  .nav {
     display: none;
     flex-basis: 100%;
+  }
+
+  /*
+   * STU-R07 / P-13: the bell ("Obavijesti") and "Odjava" stay in the top row's second line
+   * without opening "Izbornik"; only the quiet links, the institution line and the theme
+   * button wait for the menu.
+   */
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    flex-basis: 100%;
+    align-items: center;
+    gap: var(--space-1h);
+    margin: 0;
+  }
+
+  .foot > :is(.context, .quiet, .footButton) {
+    display: none;
   }
 
   .side[data-open="true"] .nav {
@@ -254,40 +271,38 @@
     text-align: left;
   }
 
-  .side[data-open="true"] .foot {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1h);
-    margin: 0;
-  }
-
-  .side[data-open="true"] .context {
+  .side[data-open="true"] .foot > .context {
+    display: block;
     flex-basis: 100%;
     text-align: left;
     font-size: var(--fs-sm);
   }
 
-  .side[data-open="true"] .quiet {
+  .side[data-open="true"] .foot > .quiet {
+    display: block;
     width: auto;
     padding: 0 var(--space-2h);
     font-size: var(--fs-ui);
   }
 
-  .side[data-open="true"] .account,
-  .side[data-open="true"] .account > *,
-  .side[data-open="true"] .account > * > * {
+  .side[data-open="true"] .foot > .footButton {
+    display: inline-flex;
+  }
+
+  .account,
+  .account > *,
+  .account > * > * {
     display: flex;
     flex-wrap: wrap;
   }
 
-  .side[data-open="true"] .account a:not(dialog *, [role="dialog"] *) {
+  .account a:not(dialog *, [role="dialog"] *) {
     width: auto;
     padding: 0 var(--space-2h);
     font-size: var(--fs-ui);
   }
 
-  .side[data-open="true"] :is(.footButton, .account button:not(dialog *, [role="dialog"] *)) {
+  :is(.footButton, .account button:not(dialog *, [role="dialog"] *)) {
     width: auto;
     padding: 0 var(--space-3);
     font-size: var(--fs-ui);
@@ -310,9 +325,16 @@
     display: grid;
   }
 
-  .foot {
-    display: flex;
-    flex-wrap: wrap;
+  .foot > .context {
+    display: block;
+  }
+
+  .foot > .quiet {
+    display: block;
+  }
+
+  .foot > .footButton {
+    display: inline-flex;
   }
 
   .menu {

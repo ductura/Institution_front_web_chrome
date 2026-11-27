@@ -154,15 +154,6 @@ export function enrollRoute(code: string): string {
   return normal === "" ? "/upis" : `/upis?kod=${encodeURIComponent(normal)}`;
 }
 
-/**
- * INT-31: only a row with no work yet offers "Započni rad". A started work is
- * opened by its own "Otvori rad"; a submitted one, or one whose notice comes
- * first, offers no start at all.
- */
-export function startsWork(kind: RowKind): boolean {
-  return kind === "zadatak";
-}
-
 /** The button label of a row (btn()): "Otvori rad", "Pročitaj upute" or "Otvori zadatak". */
 export function rowAction(kind: RowKind): { label: string; primary: boolean } {
   if (kind === "predano") return { label: t.openWork, primary: false };
