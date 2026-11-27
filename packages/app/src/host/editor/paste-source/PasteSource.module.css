@@ -1,0 +1,11 @@
+/* ED-76: the "Prepoznat izvor" offer after a paste (prototype features.js openPop "menu", editor.css .banner). */
+.banner {
+  font-family: var(--ff-ui); font-size: 13px; background: var(--well); color: var(--ink);
+  border-radius: var(--radius); padding: 10px 12px; margin: 8px 0;
+  display: flex; gap: 8px 10px; align-items: center; flex-wrap: wrap;
+}
+.banner b { font-weight: 600; }
+.why { color: var(--ink-3); font-size: 12px; }
+.grow { flex: 1; }
+.note { font-family: var(--ff-ui); font-size: 12.5px; color: var(--ink-2); margin: 8px 0; }
+@media (max-width: 640px) { .banner { font-size: 12.5px; padding: 8px 10px; } }
