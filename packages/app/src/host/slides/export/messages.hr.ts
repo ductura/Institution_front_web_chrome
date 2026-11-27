@@ -8,6 +8,7 @@ export const slidesExportText = {
   preparing: "Pripremam datoteku…",
   readyPptx: "Datoteka .pptx je preuzeta.",
   readyPdf: "PDF je preuzet.",
+  notConfirmed: "Izvoz je moguć tek kad poslužitelj potvrdi zadnju reviziju slajdova.",
   notFound: "Slajdovi nisu pronađeni ili ta verzija ne postoji.",
   invalid: "Zahtjev za izvoz nije valjan.",
   failed: "Izvoz nije uspio. Pokušajte ponovno.",

@@ -67,6 +67,7 @@ export default function SlidesExport({ documentId, title, confirmed, versionId =
         <Button onClick={() => void start("pptx")} disabled={off}>{t.pptx}</Button>
         <Button onClick={() => void start("pdf")} disabled={off}>{t.pdf}</Button>
       </div>
+      {!confirmed ? <p role="note">{t.notConfirmed}</p> : null}
       {busy ? <p role="status">{t.preparing}</p> : null}
       {failure !== undefined ? <LoadAlert body={failure} retry={{ label: t.retry, onRetry: () => void start(lastFormat.current) }} /> : null}
       {shown.kind === "ready" ? (

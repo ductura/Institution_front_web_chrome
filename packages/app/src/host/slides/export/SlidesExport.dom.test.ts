@@ -36,7 +36,7 @@ describe("SlidesExport in the browser", () => {
     const request = await render(false, ready("pdf"));
     expect(button(t.pptx).disabled).toBe(true);
     expect(button(t.pdf).disabled).toBe(true);
-    expect(host.querySelector("[role=note]")).toBeNull();
+    expect(host.querySelector("[role=note]")?.textContent).toBe(t.notConfirmed);
     await click(button(t.pdf));
     expect(request).not.toHaveBeenCalled();
     expect(download).not.toHaveBeenCalled();
