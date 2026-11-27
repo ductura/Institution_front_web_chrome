@@ -31,6 +31,8 @@ export const editorPanelLayoutsHr = {
   // ED-70: "Potpoglavlja" and "Donji dijelovi", as in the prototype "Prilagodi panel".
   subModes: { open: "Rasklopljena", closed: "Sklopljena", active: "Samo u aktivnom" },
   parts: "Donji dijelovi",
+  // ED-118: the right panel's groups, as in the prototype "Prilagodi desni panel".
+  groupParts: "Dijelovi panela i redoslijed",
   moveUp: (label: string) => `Pomakni gore: ${label}`,
   moveDown: (label: string) => `Pomakni dolje: ${label}`,
   width: "Širina na računalu",
