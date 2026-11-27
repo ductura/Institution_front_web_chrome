@@ -55,6 +55,8 @@ import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
 import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
 import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
+import { SheetToc } from "../editor/toc/SheetToc";
+import type { TocEditor } from "../../../../editor-core/src/outline/index.ts";
 import { leftSectionsFor, RailFooter, StartWorkHost } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
 import { SlidesWork } from "../slides/editor/SlidesWork";
@@ -172,6 +174,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
                 <AssistantRules assignmentId={assignmentId} base={base} />
               </>,
               instructions: () => <><NoticeInstructions assignmentId={assignmentId} /><RubricCard assignmentId={assignmentId} here={here} /></>,
+              // ED-71: "Prikaz › Sadržaj na listu" puts the table of contents on the sheet above the text.
+              sheetTop: ({ editor, scope, documentId }) => <SheetToc editor={editor as unknown as TocEditor | null} scope={scope} documentId={documentId} />,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId, read.dueAt), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></>,
               footer: <RailFooter range={frame.range} dueAt={read.dueAt} />,

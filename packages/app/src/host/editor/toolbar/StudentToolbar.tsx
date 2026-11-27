@@ -10,7 +10,7 @@
 // phone gets "Brzi alati" above the keyboard. Only actions this editor has are offered; the rest stay hidden.
 import "./text-size.css";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Button, ContextMenu, Dialog, type MenuEntry, type MenuPoint, type ShellTheme } from "@ductura/ui";
 import type { Editor } from "@tiptap/core";
 
@@ -61,6 +61,9 @@ import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model"
 import { DEFAULT_PREFS, loadPrefs, savePrefs, type ToolbarPrefs } from "./toolbar-prefs";
 import { currentShell, pendingViewItems, readClean, setClean, setShell, shellItems, viewItems } from "./view-menu";
 import { DraftPanelHost } from "../draft-panel/DraftPanelHost";
+import { requestPanel } from "@/components/editor/layout-prefs/open-panel";
+import { readSheetToc, setSheetToc, sheetTocKeyOf, subscribeSheetToc } from "../toc/sheet-toc";
+import { requestPregledView } from "../right/pregled-view";
 
 /** The browser's storage, reached lazily: even reaching it can throw. */
 const localStore = () => window.localStorage;
@@ -273,6 +276,9 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   // "Čisti tekst": read after mount, as the shell theme is.
   const [clean, setCleanText] = useState(false);
   useEffect(() => { const on = readClean(document.documentElement, localStore); setCleanText(on); setClean(document.documentElement, localStore, on); }, []);
+  // ED-71: "Sadržaj na listu", kept for this person and work (sheet-toc); off on the server's markup.
+  const tocKey = sheetTocKeyOf(workPartsKey);
+  const sheetToc = useSyncExternalStore(subscribeSheetToc, () => readSheetToc(tocKey), () => false);
   const focused = useEditorFocused(editor);
   const [quickMore, setQuickMore] = useState<MenuPoint | null>(null);
   const openCrossReference = v3.openInsert ? () => v3.openInsert?.("crossReference") : undefined;
@@ -305,7 +311,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     // F4-PM1-R12A: the page format from the faculty rules, read only, so also on a submitted work.
     { id: "pageFormat", label: pagesMessages.formatTitle },
     ...textSizeItems(zoom),
-    ...viewItems(clean),
+    ...viewItems(clean, sheetToc),
     ...pendingViewItems(),
   ];
   return (
@@ -344,6 +350,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         else if (id === "pageFormat") setDialog("pageFormat");
         else if (id === "structure") setDialog("structure");
         else if (id === "cleanText") setCleanText(setClean(document.documentElement, localStore, !clean));
+        else if (id === "viewToc") setSheetToc(tocKey, !sheetToc);
+        else if (id === "viewFirstLines") { requestPanel("review"); requestPregledView("nacrt"); }
         else if (id === "textSmaller" || id === "textLarger") onZoom(id === "textSmaller" ? -1 : 1);
         else if (id === "shell:dark" || id === "shell:light") setShellTheme(setShell(document.documentElement, localStore, id === "shell:light" ? "light" : "dark"));
         else if (id === "dark" || id === "light") setSheetTheme(id);
