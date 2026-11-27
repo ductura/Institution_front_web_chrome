@@ -6,14 +6,13 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { goToSignIn } from "@/client/api";
 import { formatDateTimeHr } from "@/lib/i18n/hr";
 import { wordRangeHr } from "@/lib/i18n/length-line";
-import { messagesHr as t } from "@/lib/i18n/messages.hr";
+import { assignmentSetupHr as wizard, messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import {
   AI_PURPOSES, assignmentBody, type AssignmentBody, type AssignmentCreation, type AssignmentDraft, type WorkType,
 } from "./assignment-create";
 import { newAssignmentHref } from "./links";
 import { publishAssignment } from "./TeacherSetup/assignment-mutations";
-import { assignmentSetupMessages as wizard } from "./TeacherSetup/messages.hr";
 import type { TeacherCourse } from "./teacher-courses-read";
 import { yearHr } from "./TeacherCourses";
 import styles from "./TeacherSetup.module.css";

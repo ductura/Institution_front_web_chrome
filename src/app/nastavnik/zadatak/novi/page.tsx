@@ -7,10 +7,9 @@ import { serverApi } from "@/client/server";
 import LoadAlert from "@/components/shell/LoadAlert";
 import TeacherSetup from "@/components/teacher/TeacherSetup";
 import { yearHr } from "@/components/teacher/TeacherCourses";
-import { assignmentSetupMessages } from "@/components/teacher/TeacherSetup/messages.hr";
 import { newAssignmentHref } from "@/components/teacher/links";
 import { readTeacherCourses, type TeacherCourse } from "@/components/teacher/teacher-courses-read";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { assignmentSetupHr, messagesHr } from "@/lib/i18n/messages.hr";
 
 import styles from "../../page.module.css";
 
@@ -41,7 +40,7 @@ export default async function NewAssignmentPage({ searchParams }: {
     body = course ? <TeacherSetup key={course.id} course={course} /> : (
       <>
         <LoadAlert>{t.missing}</LoadAlert>
-        <p><Link href={path}>{assignmentSetupMessages.choose}</Link></p>
+        <p><Link href={path}>{assignmentSetupHr.choose}</Link></p>
       </>
     );
   }
@@ -59,7 +58,7 @@ function CourseSelection({ courses }: { courses: TeacherCourse[] }) {
   if (!courses.length) return <p>{messagesHr.teacherCourseCodes.emptyNext}</p>;
   return (
     <section aria-labelledby="odabir-kolegija">
-      <h2 id="odabir-kolegija">{assignmentSetupMessages.choose}</h2>
+      <h2 id="odabir-kolegija">{assignmentSetupHr.choose}</h2>
       <ul>{courses.map(({ id, name, academicYear }) => (
         <li key={id}><Link href={newAssignmentHref(id)}>{name}, {yearHr(academicYear)}</Link></li>
       ))}</ul>

@@ -40,7 +40,7 @@ const text = (markup: string) => markup.replace(/<[^>]*>/g, " ").replace(/\s+/g,
 const SAYS_SUBMITTED = /\bPredano\b|Rad je predan/;
 
 describe("ReceiptPanel (WEB-27, S: E-11)", () => {
-  it("variant puno: three rows in Zagreb time, one UTC block with the exact values, and the copy button without the digest", () => {
+  it("variant puno: three rows in Zagreb time, one details block with the same instants, and the copy button without the digest", () => {
     const markup = render({ kind: "potvrdeno", receipt: receipt() });
     const shown = text(markup);
     expect(shown).toContain("Predano");
@@ -49,7 +49,13 @@ describe("ReceiptPanel (WEB-27, S: E-11)", () => {
     expect(shown).toContain(`${t.signingStarted} 19. studenoga 2026. u 14:05`);
     expect(markup.match(/<details/g)).toHaveLength(1);
     expect(markup).toMatch(new RegExp(`<summary[^>]*>${t.utc.replace(/[()]/g, "\\$&")}</summary>`));
-    for (const iso of [PAYLOAD.requestedAt, PAYLOAD.dueAt, PAYLOAD.signedAt]) expect(markup).toContain(`<code>${iso}</code>`);
+    // Owner decision 27. 11. 2026.: the block shows people's form, the raw instant only in dateTime.
+    for (const [iso, shownAs] of [
+      [PAYLOAD.requestedAt, "19. studenoga 2026. u 14:05"],
+      [PAYLOAD.dueAt, "20. studenoga 2026. u 23:59"],
+      [PAYLOAD.signedAt, "19. studenoga 2026. u 14:05"],
+    ]) expect(markup).toContain(`<time dateTime="${iso}">${shownAs}</time>`);
+    expect(shown).not.toContain(PAYLOAD.requestedAt);
     expect(shown).not.toContain("Potvrda potpisana");
     expect(shown).toContain(`${t.assignmentVersion} 2`);
     expect(shown).toContain(`${t.revision} 7`);
@@ -87,7 +93,7 @@ describe("ReceiptPanel (WEB-27, S: E-11)", () => {
     expect(shown).toContain("Čeka potvrdu");
     expect(shown).toContain("Predaja je zabilježena 19. studenoga 2026. u 14:05. Potpis potvrde još se izdaje; vrijeme predaje se time ne mijenja.");
     expect(shown).toContain(`${t.signingStarted} ${t.notYetRecorded}`);
-    expect(markup).toContain(`<code>${PAYLOAD.requestedAt}</code>`);
+    expect(markup).toContain(`<time dateTime="${PAYLOAD.requestedAt}">19. studenoga 2026. u 14:05</time>`);
     expect(markup).toContain(`href="/rad/x/predaja/potvrda">${t.check}`);
     expect(markup).not.toContain("Otisak u međuspremnik");
   });

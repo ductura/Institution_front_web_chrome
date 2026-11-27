@@ -7,7 +7,7 @@
  * `renderToStaticMarkup`. "Predano" only with the signed receipt the client
  * checked against the contract (B-6); `ceka` (recorded, not signed yet)
  * never says it. Times are in Europe/Zagreb; below them one details block
- * gives the exact UTC values from the receipt (E-11). The browser does not check the Ed25519 signature (P-4) and the
+ * repeats the receipt's instants in the same form (E-11). The browser does not check the Ed25519 signature (P-4) and the
  * panel says so. Not built here: /provjera, QR and PDF (wave 9).
  */
 
@@ -49,11 +49,15 @@ function zagreb(iso: string): string {
   return parts === null ? iso : `${parts.date} ${messagesHr.summary.at} ${parts.time}`;
 }
 
-/** E-11: one block under the rows with the receipt's instants as given (ISO, UTC). */
+/**
+ * E-11: one block under the rows with the receipt's instants. Owner decision
+ * 27. 11. 2026.: people see times as "19. listopada 2026. u 14:05" (Zagreb),
+ * never raw ISO or UTC; the exact instant stays in `dateTime`.
+ */
 function UtcDetails({ rows }: { rows: readonly (readonly [string, string])[] }) {
   return (
     <Details summary={t.utc}>
-      <KeyValueList items={rows.map(([label, iso]) => ({ id: label, label, value: <code>{iso}</code> }))} />
+      <KeyValueList items={rows.map(([label, iso]) => ({ id: label, label, value: <time dateTime={iso}>{zagreb(iso)}</time> }))} />
     </Details>
   );
 }

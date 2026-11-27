@@ -28,8 +28,8 @@ describe("WEB-9C public verification page", () => {
     }} />);
     expect(html).toContain('role="status"');
     expect(html).toContain(t.matched);
-    expect(html).toContain("20. studenoga 2026. 13:05");
-    expect(html).toContain("20. studenoga 2026. 13:06");
+    expect(html).toContain('<time dateTime="2026-11-20T12:05:00Z">20. studenoga 2026. u 13:05</time>');
+    expect(html).toContain('<time dateTime="2026-11-20T12:06:00Z">20. studenoga 2026. u 13:06</time>');
     expect(html).toContain("izmisljeni-kljuc");
   });
 
