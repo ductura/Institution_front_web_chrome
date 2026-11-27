@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH, ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
+import { SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH, ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole, browserRoute, hostRoute } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the same app under /app/web and /app/chrome", () => {
@@ -15,6 +15,34 @@ describe("baseOf and routeOf", () => {
     expect(routeOf("/app/web", "/app/web")).toBe("/");
     expect(routeOf("/app/web/zadaci/kolegiji/", "/app/web")).toBe("/zadaci/kolegiji");
     expect(routeOf("/app/chrome/ustanova", "/app/chrome")).toBe("/ustanova");
+  });
+});
+
+describe("browserRoute and hostRoute (edge addresses, D-318)", () => {
+  it("reads the edge's addresses as the front's routes", () => {
+    expect(browserRoute("/", "/app/web")).toBe("/naslovnica");
+    expect(browserRoute("/pomoc", "/app/web")).toBe("/pomoc");
+    expect(browserRoute("/stanje/", "/app/web")).toBe("/stanje");
+    expect(browserRoute("/aplikacija", "/app/web")).toBe("/");
+    expect(browserRoute("/aplikacija/", "/app/web")).toBe("/");
+    expect(browserRoute("/aplikacija/zadaci/kolegiji", "/app/web")).toBe("/zadaci/kolegiji");
+    expect(browserRoute("/aplikacijax", "/app/web")).toBe("/aplikacijax");
+    expect(browserRoute("/app/web/zadaci", "/app/web")).toBe("/zadaci");
+  });
+
+  it("keeps the landing page public at the edge's root", () => {
+    expect(publicPage(browserRoute("/", "/app/web"))?.path).toBe("/naslovnica");
+  });
+
+  it("uses Next's path under the base and the browser's address otherwise", () => {
+    // Server render: the path the edge rewrote to; no browser address.
+    expect(hostRoute("/app/web/naslovnica", null, "/app/web")).toBe("/naslovnica");
+    // Hydration at "/": Next's pathname has no basePath, so the address decides.
+    expect(hostRoute("/app/", "/", "/app/web")).toBe("/naslovnica");
+    expect(hostRoute("/app/oc", "/pomoc", "/app/web")).toBe("/pomoc");
+    // A page opened through the router is under the base again.
+    expect(hostRoute("/app/web/zadaci", "/app/web/zadaci", "/app/web")).toBe("/zadaci");
+    expect(hostRoute("/app/chrome/ustanova", "/app/chrome/ustanova", "/app/chrome")).toBe("/ustanova");
   });
 });
 

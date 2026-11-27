@@ -66,6 +66,36 @@ export function routeOf(pathname: string, base: Base): string {
   return trimmed === "" ? "/" : trimmed;
 }
 
+/** The edge's entry for the whole front (Preloader#64 deploy/edge/routes.ts, APP_PATH). */
+const EDGE_APP_PATH = "/aplikacija";
+
+/**
+ * The route for an address the browser shows. The edge (D-318, Preloader#64)
+ * serves pages of the front at addresses of its own and the browser keeps them:
+ * "/" is /naslovnica, "/aplikacija/…" is the front's "/…", and a public page
+ * ("/pomoc", "/stanje" …) keeps its path. An address under "/app" is the front's own.
+ */
+export function browserRoute(pathname: string, base: Base): string {
+  if (pathname === "/app" || pathname.startsWith("/app/")) return routeOf(pathname, base);
+  if (pathname === "/") return "/naslovnica";
+  if (pathname === EDGE_APP_PATH || pathname.startsWith(`${EDGE_APP_PATH}/`)) {
+    return routeOf(pathname.slice(EDGE_APP_PATH.length) || "/", base);
+  }
+  return routeOf(pathname, base);
+}
+
+/**
+ * The host's route. The server renders the path the edge rewrote to, under the
+ * base; in the browser, Next's pathname for an edge address is not under the
+ * base (it does not hold the basePath), so the route comes from the address
+ * itself (`browserPathname`, null on the server). Without this, "/" rendered the
+ * landing page and hydrated as sign-in or "Stranica ne postoji".
+ */
+export function hostRoute(nextPathname: string, browserPathname: string | null, base: Base): string {
+  const underBase = nextPathname === base || nextPathname.startsWith(`${base}/`);
+  return underBase || browserPathname === null ? routeOf(nextPathname, base) : browserRoute(browserPathname, base);
+}
+
 /** The shell's role for a session role; an account kind without a space of its own has none. */
 export function shellRole(role: SessionRole | null): ShellRole | null {
   if (role === "institution_admin") return "admin";
