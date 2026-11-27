@@ -4,11 +4,12 @@ import { act, createElement as h } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { messagesHr as shell } from "../../../../../../locales/hr.ts";
 import { questionnaireExportText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
 const download = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 vi.mock("../../../../../../src/components/editor/EarlierDraft", () => ({ downloadBlob: download }));
 const { default: QuestionnaireExportPage } = await import("./QuestionnaireExportPage");
@@ -141,12 +142,18 @@ describe("QuestionnaireExportPage in the browser", () => {
   it("not found (another teacher's or unknown), error and loading are different states", async () => {
     const gone = apiOf({ "teacher.questionnaire-export.get": () => fail(404, "not_found"), "teacher.questionnaire.get": () => fail(404, "not_found") });
     await render(gone.call);
-    expect(host.querySelector("[role=alert]")?.textContent).toBe(t.notFound.body);
+    expect(host.querySelector("h1")?.textContent).toBe(shell.errorPage.notFoundTitle);
+    expect(host.querySelector("[role=alert]")).toBeNull();
     expect(text()).not.toContain(t.downloadJson);
+    const denied = apiOf({ "teacher.questionnaire-export.get": () => fail(403, "forbidden"), "teacher.questionnaire.get": () => fail(403, "forbidden") });
+    await render(denied.call);
+    expect(host.querySelector("h1")?.textContent).toBe(shell.access.deniedTitle);
+    expect(host.querySelector("a")?.textContent).toBe(shell.access.backToOwn);
+    expect(host.querySelector("[role=alert]")).toBeNull();
     const broken = apiOf({ "teacher.questionnaire-export.get": () => fail(503, "unavailable"), "teacher.questionnaire.get": () => TITLE });
     await render(broken.call);
     expect(host.querySelector("[role=alert]")?.textContent).toBe(t.unavailable);
-    expect(text()).not.toContain(t.notFound.title);
+    expect(text()).not.toContain(shell.errorPage.notFoundTitle);
     expect(button(t.retry)).toBeDefined();
   });
 

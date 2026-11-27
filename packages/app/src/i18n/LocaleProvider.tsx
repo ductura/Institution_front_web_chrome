@@ -32,7 +32,7 @@ const liveCall: LocaleCall = (id, input) =>
   import("../../../../src/client/api.ts").then(({ createApi }) => createApi()(id, input as never)) as ReturnType<LocaleCall>;
 
 /**
- * The interface language of everything under app/[base]/ (D-70, M11.5). It
+ * The interface language of everything under app/(host)/ (D-70, M11.5). It
  * starts in Croatian, as the server rendered it, takes the browser's copy of
  * the saved language on mount and the server's value once the host has read
  * the session. A change is saved through `profile.interface-locale.post` and

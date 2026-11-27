@@ -79,6 +79,22 @@ describe("SaidPanel", () => {
     expect(full.querySelector("blockquote")?.textContent).toBe(ret.comment);
     expect(full.textContent).toContain("Rok dorade:");
   });
+  it("MEN-R06: tells the caller only the open revisions the panel counts, and only while it is displayed", async () => {
+    const now = new Date("2026-11-22T10:00:00");
+    const rq = (n: number, state: string) => ({ id: `00000000-0000-4000-8000-00000000000${n}`, number: n, state, rowSeq: 1, anchor: {}, versions: [] });
+    const shown = vi.fn();
+    await mount(h(SaidPanel, { read: undefined, now, onShown: shown }));
+    await mount(h(SaidPanel, { read: null, now, onShown: shown }));
+    await mount(h(SaidPanel, { read: { ret: null, requests: [] }, now, onShown: shown }));
+    // Every revision answered or closed and no return: the panel shows "empty", nothing is confirmed.
+    await mount(h(SaidPanel, { read: { ret: null, requests: [rq(1, "responded"), rq(2, "closed")] as never }, now, onShown: shown }));
+    // The right panel mounts every tab and hides the inactive ones: mounted but hidden is not seen.
+    await mount(h("div", { hidden: true }, h(SaidPanel, { read: { ret: null, requests: [rq(3, "open")] as never }, now, onShown: shown })));
+    expect(shown).not.toHaveBeenCalled();
+    await mount(h(SaidPanel, { read: { ret: null, requests: [rq(4, "open"), rq(5, "reopened"), rq(6, "responded")] as never }, now, onShown: shown }));
+    expect(shown).toHaveBeenCalledOnce();
+    expect(shown.mock.calls[0]![0].map((r: { id: string }) => r.id)).toEqual([rq(4, "open").id, rq(5, "reopened").id]);
+  });
 });
 
 describe("OwnPanel", () => {

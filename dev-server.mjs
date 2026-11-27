@@ -1,6 +1,6 @@
 // Razvojni poslužitelj starog npm kostura (E-0.3): / i /api/documents s
 // memorijskim oponašateljem, za e2e matricu (DAN-755). Front institucije pod
-// /app/web/ i /app/chrome/ je Next.js aplikacija u packages/app (`pnpm dev`),
+// /aplikacija/ je Next.js aplikacija u packages/app (`pnpm dev`),
 // koja /api/v1/* sama prosljeđuje Institution_serveru.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';

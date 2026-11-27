@@ -6,6 +6,6 @@
 .mono { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
 .preview { min-height: 54px; padding: 12px; font-size: 18px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--rule-2, currentColor); border-radius: 4px; overflow-x: auto; }
 .preview[data-ok] { }
-.preview:not([data-ok]) { color: var(--danger, inherit); }
+.preview:not([data-ok]) { color: var(--error); }
 .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
 .note { font-size: 12px; margin: 4px 0 0; width: 100%; }

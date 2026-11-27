@@ -1,6 +1,6 @@
 // ED-10 (NF2-P10, ASIST-1..9): the Asistent card. Texts from the prototype (nf2.js aiCard), without what
 // the server cannot do yet: no "priloži izjavi" (declaration-v1 keeps ai.attachments empty), no
-// "Preostalo upita: n od 10" (the limit is not in the contract) and no sentence about simulated answers.
+// and no sentence about simulated answers. F4-EDI-R04: the day's count (limit and used) is now read from the server.
 export const assistantChatHr = {
   title: "Asistent",
   tag: {
@@ -8,7 +8,13 @@ export const assistantChatHr = {
     prohibited: "nedostupan za ovaj zadatak",
     disabled: "trenutačno isključen",
     limit: "ograničenje uporabe",
+    summaryOnly: "samo sažimanje",
   },
+  summaryOnlyLead: "Za ovaj zadatak Asistent samo sažima.",
+  summaryOnly: " Upišite tekst koji želite sažeti; druge svrhe nisu dopuštene.",
+  summaryPrompt: "Tekst za sažimanje",
+  summarySend: "Sažmi",
+  summaryTooShort: (min: number) => `Upišite barem ${min} riječi.`,
   noticeLead: "Odgovore daje Asistent, a ne Vi.",
   notice: " Ductura bilježi razgovor s Asistentom i vidite ga niže. Šalje se samo ono što upišete, ne cijeli rad.",
   prohibitedLead: "Asistent nije dostupan.",
@@ -39,12 +45,24 @@ export const assistantChatHr = {
   conversations: (n: number) => `Razgovori (${n})`,
   none: "Još nema razgovora. Svaki razgovor s Asistentom Ductura zabilježi, a Vi ga vidite ovdje.",
   thisDevice: "Prikazani su razgovori započeti na ovom uređaju.",
+  listUnavailable: "Popis razgovora s poslužitelja trenutačno se ne može učitati.",
+  remaining: (left: number, limit: number) => `Preostalo upita danas: ${left} od ${limit}.`,
+  remainingUnavailable: "Broj preostalih upita trenutačno se ne može učitati.",
   unreadable: "Razgovor se trenutačno ne može učitati.",
   loadingConversation: "Učitavam razgovor…",
   you: "Vi",
   assistant: "Asistent",
   noAnswer: "Asistent nije odgovorio na ovaj upit.",
   questions: (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "upit" : "upita"}`,
+  // ED-80 (prototype assist2.js `.aipii`): personal data in the question, before it is sent.
+  pii: {
+    title: "U tekstu su osobni podaci",
+    kinds: { email: "E-adresa", longNumber: "OIB ili dugi broj", phone: "Broj telefona" },
+    body: (found: string) => `${found}. Pružatelju ih ne treba slati.`,
+    cut: "Ukloni ih i pošalji",
+    go: "Pošalji svejedno",
+    cancel: "Odustani",
+  },
   say: {
     asking: "Asistent odgovara.",
     answered: "Asistent je odgovorio. Odgovor je u razgovoru niže. Razgovor je zabilježen u Ducturi.",

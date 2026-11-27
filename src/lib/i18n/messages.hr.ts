@@ -25,6 +25,11 @@ export const editorPanelLayoutsHr = {
   // ED-37 (P2-6): the chapter row parts, as in the prototype "Prilagodi panel".
   row: "U retku poglavlja",
   rowParts: { words: "Broj riječi", status: "Točka stanja", flags: "Napomene „za popraviti”" },
+  // ED-70: "Potpoglavlja" and "Donji dijelovi", as in the prototype "Prilagodi panel".
+  subModes: { open: "Rasklopljena", closed: "Sklopljena", active: "Samo u aktivnom" },
+  parts: "Donji dijelovi",
+  moveUp: (label: string) => `Pomakni gore: ${label}`,
+  moveDown: (label: string) => `Pomakni dolje: ${label}`,
   width: "Širina na računalu",
   widths: { narrow: "Uska", medium: "Srednja", wide: "Široka" },
   settingsNote: "Postavke vrijede samo za Vas i pamte se u ovom pregledniku.",
@@ -88,11 +93,12 @@ export const hr = {
   },
   shell: {
     skipToContent: "Preskoči na sadržaj",
-    demoBadge: "Demo · izmišljeni podaci",
+    demoBadge: "Demo, izmišljeni podaci",
     // Design v3 shell (#476 6314969336): only static labels and the role the
     // server read; no names or counts the app does not have.
     sideNav: "Bočna navigacija",
-    workNav: "Radni prostor",
+    // PAR2-A3: not the name of the fifth item, so a screen reader does not say "Radni prostor" twice.
+    workNav: "Glavna navigacija",
     home: `${APP_NAME}, početna`,
     space: { teacher: "Nastavnički prostor", student: "Studentski prostor", admin: "Administracija ustanove" },
     nav: {
@@ -888,6 +894,7 @@ export const hr = {
       link: "Novi zadatak u kolegiju",
       missing: "Kolegij nije dostupan ovom računu.",
       unavailable: "Kolegij trenutačno nije moguće učitati. Pokušajte ponovno.",
+      retry: "Pokušaj ponovno",
       codeKept: "Upisni kod kolegija ostaje isti.",
       studentsNotified: "Studenti upisani u kolegij vide zadatak među svojim zadacima.",
     },
@@ -955,6 +962,12 @@ export const hr = {
       reload: "Učitaj aktualnu verziju",
       missing: "Zadatak nije dostupan ovom računu.",
       unavailable: "Zadatak trenutačno nije moguće učitati. Pokušajte ponovno.",
+      confirm: {
+        title: "Objaviti verziju {n}?",
+        lead: "Mijenja se ono što student čita u obavijesti, pa će verziju {n} morati ponovno potvrditi prije nastavka pisanja. Već napisan tekst ostaje kakav jest. Mijenja se:",
+        publish: "Objavi verziju {n}",
+        cancel: "Natrag na izmjene",
+      },
       fields: {
         title: "Naslov",
         instructions: "Upute studentima",
@@ -1205,7 +1218,8 @@ export const hr = {
     lead: "Kolegiji u kojima predajete i njihovi zadaci. Poredak: akademska godina, pa naziv; zadaci po roku.",
     newCourse: "Novi kolegij i zadatak",
     empty: "Nemate kolegija u kojima predajete.",
-    emptyLead: "Stvorite kolegij i objavite prvi zadatak.",
+    emptyBody: "Kolegij izrađuje administrator fakulteta i dodjeljuje ga nositelju. Kad Vas doda u kolegij, on se pojavljuje ovdje.",
+    emptyNext: "Treba li Vam novi kolegij, javite se administratoru svojeg fakulteta.",
     noAssignments: "Još nema zadataka.",
     unavailable: "Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.",
     retry: "Pokušaj ponovno",
@@ -1228,23 +1242,13 @@ export const hr = {
     accommodation: "Odobrena prilagodba",
     accommodationsUnavailable: "Oznake odobrene prilagodbe trenutačno nisu dostupne. Pokušajte ponovno.",
   },
-  // DAN-492 (M2.6-P02, N-16), design pregled-radova-v2: only what the read gives (D-202).
+  // DAN-492 (M2.6-P02, N-16): only what the page /nastavnik/mentorstva says itself. The list
+  // (MentoredWorks) reads locales/hr.ts, so its keys are not repeated here (27. 11. 2026.).
   mentoredWorks: {
     title: "Radovi uz mentora",
     lead: "Završni, diplomski i drugi radovi kojima ste mentor. Ovdje odobravate ili odbijate i zahtjeve studenata za mentorstvo.",
-    listTitle: "Radovi · abecedno",
-    orderNote: "Popis se ne može poredati po brojevima.",
-    empty: "Nemate otvorenih mentorstava.",
     unavailable: "Radovi trenutačno nisu dostupni. Pokušajte ponovno.",
     retry: "Pokušaj ponovno",
-    unnamed: "Ime nije dostupno",
-    open: "Otvori rad",
-    // The state as text only, never a colour (D-128).
-    state: {
-      not_started: "Rad nije započet.",
-      in_progress: "U pisanju",
-      submitted: "Predano",
-    },
   },
   // WEB-32 (N-16): the card of mentorship requests; a note only after the server's answer (B-6).
   mentorshipRequests: {
@@ -1258,7 +1262,6 @@ export const hr = {
     approving: "Odobrava se…",
     decline: "Odbij",
     dialogTitle: "Odbiti zahtjev za mentorstvo?",
-    dialogLead: "{name}",
     reason: "Razlog odbijanja (neobavezno)",
     reasonHint: "Razlog nije obavezan. Preporučujemo da ga upišete zbog studenta. Student će vidjeti razlog.",
     cancel: "Odustani",
@@ -1294,7 +1297,6 @@ export const hr = {
     },
     save: "Zabilježi produljenje",
     saving: "Bilježi se…",
-    cancel: "Odustani",
     listTitle: "Produljeni rokovi",
     empty: "Nijedan rok nije produljen.",
     unavailable: "Produljenja trenutačno nisu dostupna. Pokušajte ponovno.",
@@ -1305,6 +1307,8 @@ export const hr = {
     recorded: "Produljenje je zabilježeno. Razlog vidite samo Vi i taj student.",
     earlierSubmission: "Predaja je zatražena prije ovog produljenja. Produljenje ne mijenja tu predaju; bilježi se kao dopuna uz nju.",
     missing: "Odaberite studenta, novi rok i razlog.",
+    // Design alignment 27. 11. 2026. (N-07, text approved): the same check for all students names no student.
+    missingAll: "Odaberite novi rok i razlog.",
     invalid: "Produljenje nije zabilježeno. Provjerite da je novi rok kasniji od roka koji sada vrijedi i da razlog odgovara izboru.",
     notFound: "Zadatak ili student više nisu dostupni.",
     unknown: "Nije poznato je li produljenje zabilježeno. Osvježite stranicu prije novog pokušaja.",
@@ -1322,9 +1326,7 @@ export const hr = {
       submittedMinute: "Vrijeme predaje",
       afterDeadline: "Nakon roka",
       pdfName: "Datoteka PDF",
-      pdfSha256: "Otisak PDF (SHA-256)",
       docxName: "Datoteka DOCX",
-      docxSha256: "Otisak DOCX (SHA-256)",
     },
     yes: "da",
     no: "ne",
@@ -1334,6 +1336,7 @@ export const hr = {
     noSubmissionsTitle: "Nema predanih radova",
     noSubmissions: "Paket se može pripremiti kad bude barem jedan predani rad.",
     unavailable: "Predaje trenutačno nije moguće učitati. Pokušajte ponovno.",
+    retry: "Pokušaj ponovno",
     fingerprintsTitle: "Otisci",
     fingerprintsNote: "Otisci pojedinih datoteka nalaze se u CSV popisu i u zasebnoj datoteci u paketu. Na ovom ekranu prikazuje se otisak paketa kad je paket spreman.",
     fingerprintsMeaning: "Otisak pokazuje da datoteka nije mijenjana od predaje; ne govori ništa o autorstvu.",
@@ -1370,7 +1373,7 @@ export const hr = {
     // #757 D1, za potvrdu: a student whose account has no name; never a number or an address.
     unnamed: "Ime nije dostupno",
     studentsLabel: "Studenti",
-    studentsTitle: "Studenti · po prezimenu",
+    studentsTitle: "Studenti, po prezimenu",
     // #732 item 18, design pregled-radova-v2 (D-80): the list has no order by numbers.
     orderNote: "Popis se ne može poredati po brojevima.",
     work: {
@@ -1397,6 +1400,8 @@ export const hr = {
     viewModes: "Prikaz",
     // #711 F1, za potvrdu: the name of the top bar region (course, assignment, view, submission).
     barLabel: "Zadatak i prikaz",
+    // Design alignment 27. 11. 2026. (text 2): the line under the title, "{kolegij}, {vrsta}, rok {rok}".
+    subtitleDue: "rok {time}",
     modeWriting: "Pisanje",
     modeTeacherView: "Kako vidi nastavnik",
     // #732 item 7 (owner 6397193676): the line above the teacher's view, and why the switch is off.
@@ -1640,6 +1645,25 @@ export const hr = {
     failureUnknown: "Spremanje nije uspjelo. Izvezite tekst da ga ne izgubite.",
     failureInvalid: "Ovaj tekst nije moguće spremiti. Izvezite ga da ga ne izgubite.",
     recovery: "Lokalni zapis nije moguće pouzdano pročitati. Ostaje netaknut, a ova kartica ništa ne sprema.",
+    // F4-EDI-R05: the way out of a CONFLICT. The dialog says what each choice does to the text of
+    // this device; the notice above stays for a sheet that cannot offer it.
+    conflictDialog: {
+      open: "Odluči o razlici",
+      title: "Rad na poslužitelju razlikuje se od teksta na ovom uređaju",
+      intro: "Odaberite koja verzija ostaje u radu. Ništa se ne briše bez vašeg izbora.",
+      loading: "Učitavam verziju s poslužitelja…",
+      unavailable: "Verzija s poslužitelja trenutačno nije dostupna. Tekst ostaje na uređaju. Pokušajte ponovno.",
+      retry: "Pokušaj ponovno",
+      diffHeading: "Razlika: uklonjeno je ono što postoji samo na ovom uređaju, dodano je ono što postoji samo na poslužitelju.",
+      takeServer: "Uzmi verziju s poslužitelja",
+      takeServerHelp: "Lokalne promjene se odbacuju iz rada. Tekst s ovog uređaja ostaje samo kao kopija na uređaju.",
+      keepLocal: "Zadrži tekst s ovog uređaja",
+      keepLocalHelp: "Uzima se svježa verzija s poslužitelja, a tekst s ovog uređaja šalje se kao nova verzija iznad nje.",
+      working: "Radim…",
+      refused: "Odluka nije primijenjena. Tekst je ostao kakav je bio. Pokušajte ponovno.",
+      failed: "Odluka nije primijenjena jer poslužitelj ne odgovara. Tekst je ostao kakav je bio.",
+      cancel: "Zatvori",
+    },
     exportText: "Izvezi tekst",
   },
   // F-8 (DAN-211): the browser reports no network. Says nothing about the
@@ -1943,6 +1967,8 @@ export const hr = {
     works: {
       title: "Moji radovi",
       lede: "Vaši radovi na svim kolegijima i njihovo stanje.",
+      // Design alignment 27. 11. 2026. (R5): the works' own expired sign-in.
+      signedOut: "Prijavite se da vidite svoje radove.",
       search: "Traži po naslovu ili kolegiju",
       year: "Akademska godina",
       allYears: "Sve godine",
@@ -2250,7 +2276,7 @@ export const hr = {
     button: "Prijava sustavom AAI@EduHr",
     passwordNote: "Lozinku upisujete samo kod AAI@EduHr.",
     roleTitle: "Jedan ulaz. Vaš prostor.",
-    roleBody: "Nakon prijave otvara se vaš prostor prema dodijeljenoj ulozi. Ulogu nastavnika potvrđuje administrator fakulteta.",
+    roleBody: "Nakon prijave otvara se Vaš prostor prema dodijeljenoj ulozi. Ulogu nastavnika potvrđuje administrator fakulteta.",
     codeSummary: "Prvi dolazak ili imate kod zadatka?",
     codeNote: "Prvo se prijavite sustavom AAI@EduHr. Kod zadatka od nastavnika upisujete nakon prijave.",
     footer: "Identitet AAI@EduHr · pristup prema dodijeljenoj ulozi",
@@ -2312,7 +2338,7 @@ export const hr = {
     emptyBody: "Zbirni pregled prikazuje predaje jednog zadatka. Kad u kolegiju objavite zadatak, ovdje ga možete odabrati.",
     pickLabel: "Zadatak",
     pickSubmit: "Prikaži",
-    assignmentOption: "{course} · {assignment}",
+    assignmentOption: "{course}, {assignment}",
     caption: "Predaje zadatka {assignment}",
     noStudents: "U ovom zadatku još nema studenata.",
     unavailable: "Zbirni pregled trenutačno nije dostupan. Pokušajte ponovno.",
@@ -2336,6 +2362,8 @@ export const hr = {
   // work. No "Zatraži doradu" (wave 8) and no deadline extension (wave 11).
   teacherLiveWork: {
     untitled: "Rad uživo",
+    // Design alignment 27. 11. 2026. (N-04, text 57): the way back from the receipt names the student.
+    untitledFor: "Rad uživo: {name}",
     sidePanel: "Sažetak procesa i granice zapisa",
     neighbours: "Drugi radovi",
     previous: "Prethodni rad",
@@ -3066,6 +3094,31 @@ export const whatIsRecordedHr = {
   not: { heading: "Što ne bilježi", text: "Koje tipke pritišćeš, koliko brzo tipkaš kao broj, ništa izvan Ducture." },
   who: { heading: "Tko vidi", text: "Ti i tvoj nastavnik ili mentor, isto i u isto vrijeme." },
   note: "Ništa od ovoga nije ocjena ni tvrdnja o autorstvu.",
+  /** F4-EDI-R06: read-only overview of what the work holds besides the text. */
+  recorded: {
+    heading: "Što je još zabilježeno uz rad",
+    loading: "Učitavam…",
+    unavailable: "Trenutačno nije dostupno.",
+    signedOut: "Sesija je istekla. Prijavi se ponovno pa opet otvori ovaj prozor.",
+    conversations: {
+      heading: "Razgovori s pomoćnikom",
+      none: "Nema razgovora.",
+      count: "Razgovora: {conversations}, upita: {requests}.",
+      last: "Zadnji upit: {date}.",
+      unknown: "Razgovori se prikazuju kad je rad otvoren iz zadatka.",
+    },
+    transfers: {
+      heading: "Prijenosi u rad",
+      imported_file: "Uvezeno iz datoteke",
+      pasted_known: "Zalijepljeno, s objašnjenjem",
+      pasted_unknown: "Zalijepljeno, bez objašnjenja",
+      percent: "{percent} %",
+    },
+    attachments: {
+      heading: "Prilozi",
+      unavailable: "Popis priloga trenutačno nije dostupan.",
+    },
+  },
 } as const;
 
 /** WEB-0910, PIL-P1-RITAM-PREKIDAC: the rhythm setting in the dialog "Što Ductura bilježi dok pišeš". */

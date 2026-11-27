@@ -8,7 +8,10 @@
 .said { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .bar button { color: inherit; font-size: 12px; text-decoration: underline; text-decoration-color: var(--link-rule); text-underline-offset: 3px; }
 /* The length goes to the right edge. */
-.scope { margin-left: auto; }
+/* Design alignment 27. 11. 2026. (S-07): the parts of the length line 12 px apart, no dot. */
+.scope { margin-left: auto; display: inline-flex; flex-wrap: wrap; column-gap: 12px; }
+/* S-07: the parts of the length line are separate elements 12 px apart, with no "·". */
+.scopeParts { display: inline-flex; flex-wrap: wrap; column-gap: 12px; }
 .net { color: var(--ink); font-weight: 600; }
 /* ED-04: the crossing of a limit is heard, not seen (the fact is already in the line). */
 .said { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

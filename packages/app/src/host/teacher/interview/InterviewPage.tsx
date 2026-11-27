@@ -1,12 +1,18 @@
 "use client";
 
-import { Button, Card, DataTable, TextArea, TextField } from "@ductura/ui";
+import { Button, Card, DataTable, Dialog, TextArea, TextField } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
 import { downloadBlob } from "../../../../../../src/components/editor/EarlierDraft";
+import { LoadAlert, NotFoundState } from "../../states/States";
 import { interviewMessages as text } from "./messages.hr";
-import { appointmentLine, dateHr, failureMessage, isInvited, momentHr, orderedQuestions, pdfBytes, questionError, zagrebToIso } from "./model";
+import { appointmentLine, dateHr, failureMessage, isInvited, momentHr, orderedQuestions, paragraphLabel, paragraphRefOf, pdfBytes, questionError, zagrebToIso } from "./model";
 import type { InterviewOutcome, InterviewPreparation, InterviewQuestion, InterviewTeacherPort } from "./port";
+
+type Fault = "unavailable" | "notFound" | "signedOut";
+/** Where a message stands: under the invitation, under the questions or in the appointment card. */
+type Scope = "invite" | "question" | "appointment";
+type Notice = { readonly scope: Scope; readonly text: string };
 
 type Props = {
   port: InterviewTeacherPort;
@@ -24,9 +30,10 @@ type Props = {
  */
 export default function InterviewPage({ port, documentId, workHref, summaryHref, originHref }: Props) {
   const [prep, setPrep] = useState<InterviewPreparation | null>(null);
-  const [fault, setFault] = useState<string | null>(null);
+  const [fault, setFault] = useState<Fault | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [adding, setAdding] = useState(false);
   const [question, setQuestion] = useState("");
   const [paragraph, setParagraph] = useState("");
@@ -40,26 +47,32 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
     let live = true;
     void port.read(documentId).then((out) => {
       if (!live) return;
-      if (out.kind === "ok") { setPrep(out.value); setFault(null); } else setFault(failureMessage(out));
-    }).catch(() => { if (live) setFault(text.unavailable); });
+      if (out.kind === "ok") { setPrep(out.value); setFault(null); } else setFault(out.kind === "signedOut" || out.kind === "notFound" ? out.kind : "unavailable");
+    }).catch(() => { if (live) setFault("unavailable"); });
     return () => { live = false; };
   }, [port, documentId, attempt]);
 
   const reload = () => { setPrep(null); setFault(null); setAttempt((n) => n + 1); };
 
   /** Success is shown only after the server confirms (B-6); the page then reads the state again. */
-  const act = async (request: () => Promise<InterviewOutcome<unknown>>, after?: () => void) => {
+  const act = async (scope: Scope, request: () => Promise<InterviewOutcome<unknown>>, after?: () => void) => {
     setNotice(null);
     const out = await request().catch((): InterviewOutcome<unknown> => ({ kind: "unavailable" }));
-    if (out.kind === "ok") { after?.(); setNotice(text.saved); setAttempt((n) => n + 1); } else setNotice(failureMessage(out));
+    if (out.kind === "ok") { after?.(); setNotice({ scope, text: text.saved }); setAttempt((n) => n + 1); return; }
+    const message = failureMessage(out);
+    setNotice(message === null ? null : { scope, text: message });
   };
 
   const download = async () => {
     setNotice(null);
     const out = await port.pdf(documentId).catch((): InterviewOutcome<never> => ({ kind: "unavailable" }));
-    if (out.kind !== "ok") { setNotice(failureMessage(out)); return; }
+    if (out.kind !== "ok") {
+      const message = failureMessage(out);
+      setNotice(message === null ? null : { scope: "invite", text: message });
+      return;
+    }
     downloadBlob(new Blob([pdfBytes(out.value)], { type: "application/pdf" }), out.value.filename);
-    setNotice(text.pdfReady);
+    setNotice({ scope: "invite", text: text.pdfReady });
   };
 
   const header = (
@@ -70,11 +83,13 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
     </header>
   );
 
-  if (fault !== null) {
+  // 401: the shell leads to the AAI@EduHr sign-in, so the page says nothing. 404: "Stranica ne postoji".
+  if (fault === "signedOut") return <div>{header}</div>;
+  if (fault === "notFound") return <NotFoundState title={text.notFound} />;
+  if (fault === "unavailable") {
     return (
       <div>{header}
-        <p role="alert">{fault}</p>
-        <Button tone="quiet" onClick={reload}>{text.retry}</Button>
+        <LoadAlert body={text.unavailable} retry={{ label: text.retry, onRetry: reload }} />
       </div>
     );
   }
@@ -84,15 +99,17 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
   const rows = orderedQuestions(prep.questions);
   const submitQuestion = () => {
     const error = questionError(question);
+    const ref = paragraphRefOf(paragraph);
     if (error !== null) { setFormError(error); return; }
+    if (!ref.ok) { setFormError(text.paragraphInvalid); return; }
     setFormError(undefined);
-    void act(() => port.addQuestion(documentId, { paragraphRef: paragraph.trim() === "" ? null : paragraph.trim(), questionText: question.trim() }),
+    void act("question", () => port.addQuestion(documentId, { paragraphRef: ref.value, questionText: question.trim() }),
       () => { setAdding(false); setQuestion(""); setParagraph(""); });
   };
   const submitAppointment = () => {
     const at = zagrebToIso(day, time);
-    if (place.trim() === "" || at === null) { setNotice(text.appointmentFieldsEmpty); return; }
-    void act(() => port.setAppointment(documentId, { place: place.trim(), at }));
+    if (place.trim() === "" || at === null) { setNotice({ scope: "appointment", text: text.appointmentFieldsEmpty }); return; }
+    void act("appointment", () => port.setAppointment(documentId, { place: place.trim(), at }));
   };
 
   return (
@@ -100,10 +117,17 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
       {header}
       <div>
         <Button tone="quiet" onClick={() => void download()}>{text.exportPdf}</Button>
-        <Button disabled={invited} onClick={() => void act(() => port.invite(documentId))}>{text.invite}</Button>
+        <Button disabled={invited} onClick={() => setConfirming(true)}>{text.invite}</Button>
       </div>
       <p>{invited && prep.invitedAt !== null ? text.invited(momentHr(prep.invitedAt)) : text.notInvited}</p>
-      {notice !== null && <p role="status">{notice}</p>}
+      <Message notice={notice} scope="invite" />
+      <Dialog open={confirming} title={text.confirmTitle} onClose={() => setConfirming(false)}
+        actions={<>
+          <Button tone="secondary" onClick={() => setConfirming(false)}>{text.cancel}</Button>
+          <Button onClick={() => { setConfirming(false); void act("invite", () => port.invite(documentId)); }}>{text.confirmSend}</Button>
+        </>}>
+        <p>{text.confirmBody}</p>
+      </Dialog>
 
       <Card level={2} title={text.summaryTitle}>
         <p>{text.summaryNote}</p>
@@ -131,14 +155,14 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
           rows={rows}
           empty={text.partsEmpty}
           columns={[
-            { id: "paragraph", header: text.colParagraph, rowHeader: true, cell: (q) => q.paragraphRef ?? text.generalParagraph },
+            { id: "paragraph", header: text.colParagraph, rowHeader: true, cell: (q) => paragraphLabel(q.paragraphRef) },
             { id: "how", header: text.colHow, cell: (q) => (q.mine ? text.howTeacher : text.howOther) },
             { id: "question", header: text.colQuestion, cell: (q) => q.questionText },
             { id: "remove", header: text.colRemove, cell: (q) => (q.mine
-              ? <Button tone="quiet" onClick={() => void act(() => port.removeQuestion(documentId, q.id))}>{text.remove}</Button> : null) },
+              ? <Button tone="quiet" onClick={() => void act("question", () => port.removeQuestion(documentId, q.id))}>{text.remove}</Button> : null) },
           ]}
         />
-        <p>{text.studentSeesThem}</p>
+        <p>{invited ? text.studentSeesThem : text.studentSeesThemLater}</p>
         {adding ? (
           <div>
             <TextField label={text.paragraphLabel} hint={text.paragraphHint} value={paragraph} onChange={(e) => setParagraph(e.target.value)} />
@@ -147,6 +171,7 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
             <Button tone="quiet" onClick={() => { setAdding(false); setFormError(undefined); }}>{text.cancel}</Button>
           </div>
         ) : <Button tone="quiet" onClick={() => setAdding(true)}>{text.addQuestion}</Button>}
+        <Message notice={notice} scope="question" />
       </Card>
 
       <Card level={2} title={text.attachmentsTitle}>
@@ -157,17 +182,23 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
       <Card level={2} title={text.appointmentTitle}>
         <p>{appointmentLine(prep)}</p>
         <TextField label={text.placeLabel} value={place} onChange={(e) => setPlace(e.target.value)} />
-        <TextField label={text.atLabel} type="date" value={day} onChange={(e) => setDay(e.target.value)} />
-        <TextField label={`${text.atLabel} (hh:mm)`} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        <TextField label={text.dateLabel} type="date" value={day} onChange={(e) => setDay(e.target.value)} />
+        <TextField label={text.timeLabel} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
         <Button onClick={submitAppointment}>{text.saveAppointment}</Button>
         {prep.heldOn !== null ? <p role="status">{text.heldOn(dateHr(prep.heldOn))}</p> : (
           <div>
             <TextField label={text.heldLabel} type="date" value={heldDay} onChange={(e) => setHeldDay(e.target.value)} />
-            <Button disabled={!invited} onClick={() => (heldDay === "" ? setNotice(text.heldEmpty) : void act(() => port.markHeld(documentId, heldDay)))}>{text.markHeld}</Button>
+            <Button disabled={!invited} onClick={() => (heldDay === "" ? setNotice({ scope: "appointment", text: text.heldEmpty }) : void act("appointment", () => port.markHeld(documentId, heldDay)))}>{text.markHeld}</Button>
           </div>
         )}
+        <Message notice={notice} scope="appointment" />
         <p>{text.outcomeNote}</p>
       </Card>
     </div>
   );
+}
+
+/** A message from an action, shown under the button it belongs to (N-14). */
+function Message({ notice, scope }: { notice: Notice | null; scope: Scope }) {
+  return notice !== null && notice.scope === scope ? <p role="status">{notice.text}</p> : null;
 }

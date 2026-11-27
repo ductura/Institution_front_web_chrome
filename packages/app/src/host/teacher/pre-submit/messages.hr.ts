@@ -7,7 +7,11 @@ export const preSubmitMessages = {
   error: "Sažetak procesa trenutačno nije moguće učitati. Predaja i potvrda time nisu zahvaćene.",
   retry: "Pokušaj ponovno",
   placesHeading: "Mjesta za izvor koja je student ostavio u tekstu",
-  // The server's summary does not carry the open source places: said as unavailable, never as "none" (B-6).
+  // Open places come from the versioned document (NAS-R20); a failed read is said as unavailable, never as "none" (B-6).
+  placesLoading: "Učitavam mjesta za izvor…",
+  placesNone: "Nema otvorenih mjesta za izvor.",
+  place: (title: string, paragraph: number): string => `${title}, odlomak ${paragraph}`,
+  placeNoHeading: (paragraph: number): string => `Odlomak ${paragraph}`,
   placesUnavailable: "Popis mjesta za izvor trenutačno nije dostupan.",
   pastedHeading: "Zalijepljeno (izvor nije opažen)",
   pastedNone: (threshold: string): string => `Nema lijepljenja duljih od ${threshold}.`,

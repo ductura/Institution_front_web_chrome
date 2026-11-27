@@ -8,7 +8,7 @@ import { expect, test, type Page } from "./fixtures/test";
 
 const ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c14";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d14";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 const DOI = "10.1234/izmisljeno.2026.7";
 
 const notice = {
@@ -39,6 +39,8 @@ async function server(page: Page, replies: Reply[]) {
   await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({
     json: { assignments: [{ assignmentId: ID, workState: "in_progress" }] },
   }));
+  // F4-V17-R01: this spec types into an empty work, so the assignment has no template skeleton here.
+  await page.route(`**/api/v1/student/assignments/${ID}/template`, (route) => route.fulfill({ status: 404, json: { code: "not_found" } }));
   await page.route(`**/api/v1/student/assignments/${ID}/notice`, (route) => route.fulfill({ json: notice }));
   await page.route("**/api/v1/sources/lookup", async (route) => {
     bodies.push(route.request().postDataJSON());

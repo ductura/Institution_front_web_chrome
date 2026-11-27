@@ -33,7 +33,7 @@ async function mount() {
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => { root!.render(createElement(HostContext.Provider, { value: { base: "/app/web", page, role: "admin" } }, createElement(FacultySettingsRoute, { view: "work-template" }))); });
+  await act(async () => { root!.render(createElement(HostContext.Provider, { value: { base: "/aplikacija", page, role: "admin" } }, createElement(FacultySettingsRoute, { view: "work-template" }))); });
   await settle();
 }
 afterEach(() => { act(() => root?.unmount()); host?.remove(); root = null; host = null; vi.unstubAllGlobals(); });
@@ -118,7 +118,9 @@ describe("Predložak rada", () => {
   it("403 pokazuje da predložak vidi samo administrator, bez obrasca", async () => {
     stub({ get: () => Response.json({ error: "forbidden" }, { status: 403 }) });
     await mount();
-    expect(text()).toContain("samo administrator ustanove");
+    expect(text()).toContain("Nemate pristup ovom prikazu");
+    expect(text()).not.toContain("samo administrator");
+    expect([...host!.querySelectorAll("a")].map((a) => a.textContent)).toContain("Natrag na moj prostor");
     expect(button("Spremi novu verziju")).toBeUndefined();
   });
 

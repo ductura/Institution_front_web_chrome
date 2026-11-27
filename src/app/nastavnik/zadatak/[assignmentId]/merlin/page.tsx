@@ -14,7 +14,7 @@ const t = messagesHr.merlinExport;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
+export const metadata = { title: `${t.title}, ${messagesHr.app.name}` };
 
 /**
  * `/nastavnik/zadatak/[assignmentId]/merlin` (WEB-1114, N-18, C-16): the

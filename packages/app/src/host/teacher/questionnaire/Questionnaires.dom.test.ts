@@ -39,11 +39,11 @@ function fake(overrides: Overrides = {}): QuestionnairePort & { calls: string[] 
 
 let root: Root | null = null;
 let host: HTMLElement | null = null;
-async function show(port: QuestionnairePort, onSignedOut = () => {}) {
+async function show(port: QuestionnairePort, onSignedOut = () => {}, exportHref?: (id: string) => string) {
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => { root!.render(createElement(QuestionnairePanel, { courseId: course, courseName: "Kolegij A", port, onSignedOut })); });
+  await act(async () => { root!.render(createElement(QuestionnairePanel, { courseId: course, courseName: "Kolegij A", port, onSignedOut, exportHref })); });
 }
 const button = (label: string) => {
   const b = [...host!.querySelectorAll("button")].find((x) => x.textContent === label || x.getAttribute("aria-label") === label);
@@ -66,6 +66,20 @@ const field = (label: string) => {
 afterEach(() => { act(() => root?.unmount()); host?.remove(); root = null; host = null; });
 
 describe("questionnaire panel", () => {
+  // F4-V18-22-R01: the export screen is reached from the list, for the questionnaires that took responses.
+  it("links each open or closed questionnaire to its export, and a draft to none", async () => {
+    const href = (id: string) => `/x/nastavnik/upitnici/${id}/izvoz`;
+    await show(fake({ list: async () => ready([item("open"), item("draft", { id: q1, title: "Nacrt" })]) }), () => {}, href);
+    const links = [...host!.querySelectorAll("a")];
+    expect(links.map((a) => a.getAttribute("href"))).toEqual([href(qid)]);
+    expect(links[0]!.getAttribute("aria-label")).toBe(text.actionFor(text.exportResponses, item("open").title));
+  });
+
+  it("offers no export link where the page gives no address", async () => {
+    await show(fake({ list: async () => ready([item("closed")]) }));
+    expect(host!.querySelectorAll("a").length).toBe(0);
+  });
+
   it("shows loading, then the list; a failed read is an error with retry, never 'no questionnaires'", async () => {
     let attempts = 0;
     const port = fake({ list: async () => (++attempts === 1 ? { kind: "unavailable" as Failure } : ready([item("open", { responseCount: 3 })])) });
@@ -86,7 +100,8 @@ describe("questionnaire panel", () => {
     const out = vi.fn();
     await show(fake({ list: async () => ({ kind: "signedOut" }) }), out);
     expect(out).toHaveBeenCalled();
-    expect(host!.textContent).toContain(text.signedOut);
+    expect(host!.textContent).not.toContain(text.signedOut);
+    expect(host!.querySelector("[role=alert]")).toBeNull();
     expect([...host!.querySelectorAll("button")].some((b) => b.textContent === text.retry)).toBe(false);
   });
 

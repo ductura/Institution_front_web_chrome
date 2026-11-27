@@ -1,6 +1,6 @@
 // WEB-NF6-ETAPE (NF-6 MK-5, MK-6, MK-7): on N-16 the mentor sees, per started work, the stages with due dates,
 // descriptions and notes, adds a stage or applies the faculty template, and reads what was agreed at the
-// latest consultation; "Otvori mentorstvo" is not available yet. The student sees the mentor of an approved
+// latest consultation with its agreed tasks (F4-MEN-R03); "Otvori mentorstvo" is not available yet. The student sees the mentor of an approved
 // request and sends a declined one to another teacher. The server is the VIZ "puno" scenario over the
 // contract's vectors, with this page's reads and writes answered per test. Every person, text and identifier is invented.
 import { axe, setTheme } from "./a11y/check";
@@ -28,7 +28,13 @@ const PLAN = { milestones: [{ id: "00000000-0000-4000-8000-00000000e603", positi
 
 type Sent = { method: string; path: string; body: unknown };
 
-async function serveTeacher(page: Page) {
+// F4-MEN-R01: the students of the teacher's courses for "Otvori mentorstvo", and the opening itself.
+const K1 = "00000000-0000-4000-8000-00000000e6c1";
+const S1 = "00000000-0000-4000-8000-00000000e6d1";
+const M1 = "00000000-0000-4000-8000-00000000e6e1";
+const ROSTER = { students: [{ studentId: S1, givenName: "Lana", familyName: "Izmišljena", groupName: null, assignments: [] }] };
+
+async function serveTeacher(page: Page, open: { status: number; json: unknown } = { status: 201, json: { mentorshipId: M1 } }) {
   const server = generatedServer("puno");
   const sent: Sent[] = [];
   await page.clock.setFixedTime(new Date(FIKSNI_DATUM));
@@ -36,7 +42,12 @@ async function serveTeacher(page: Page) {
     const req = route.request();
     const path = new URL(req.url()).pathname;
     const body = req.postData() ? JSON.parse(req.postData() as string) as unknown : undefined;
-    if (path.includes("milestone-plan")) sent.push({ method: req.method(), path, body });
+    if (path.includes("milestone-plan") || path === "/api/v1/mentorships") sent.push({ method: req.method(), path, body });
+    if (req.method() === "GET" && path === "/api/v1/teacher/courses") {
+      return route.fulfill({ json: { courses: [{ id: K1, name: "Izmišljeni kolegij", academicYear: "2026/2027", aiPolicy: "partially_allowed", assignments: [] }] } });
+    }
+    if (req.method() === "GET" && path === `/api/v1/teacher/courses/${K1}/students`) return route.fulfill({ json: ROSTER });
+    if (req.method() === "POST" && path === "/api/v1/mentorships") return route.fulfill(open);
     if (req.method() === "GET" && path.endsWith("/milestone-states")) return route.fulfill({ json: STAGES });
     if (req.method() === "GET" && path.endsWith("/consultation-records")) return route.fulfill({ json: RECORDS });
     if (req.method() === "POST" && path.endsWith("/milestone-plan/milestones")) return route.fulfill({ status: 201, json: PLAN });
@@ -51,18 +62,19 @@ async function serveTeacher(page: Page) {
 test("the mentor sees each work's stages and agreement, adds a stage, and is told a template conflict", async ({ page }, info) => {
   const sent = await serveTeacher(page);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   const plans = page.getByTestId("mentor-work-plan");
   await expect(plans).toHaveCount(2);
   const first = plans.first();
-  await expect(first.getByText("Etape · 1 od 2 odobreno")).toBeVisible();
-  await first.getByText("Etape · 1 od 2 odobreno").click();
+  await expect(first.getByText("Etape, 1 od 2 odobreno")).toBeVisible();
+  await first.getByText("Etape, 1 od 2 odobreno").click();
   await expect(first.getByText("Izmišljeni opis: naslov i tri rečenice o temi.")).toBeVisible();
   await expect(first.getByText("Izmišljena napomena: proširiti metodu.")).toBeVisible();
   await expect(first.getByText("Izmišljeni dogovor: dovršiti uvod do idućeg tjedna.")).toBeVisible();
-  await expect(first.getByText(t.agreed.tasks)).toBeVisible();
-  await expect(page.getByRole("button", { name: t.open.button })).toBeDisabled();
-  await expect(page.getByText(t.open.unavailable)).toBeVisible();
+  await expect(first.getByRole("heading", { name: t.agreed.taskList.title })).toBeVisible();
+  // F4-MEN-R01: the card offers the students of the teacher's courses; nothing is sent before the click.
+  await expect(page.getByLabel(t.open.student).locator("option", { hasText: "Lana Izmišljena" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: t.open.button })).toBeEnabled();
   for (const theme of ["dark", "light"] as const) {
     await setTheme(page, theme);
     await axe(page, info, `mentorstva-1280-${theme}`);
@@ -93,10 +105,45 @@ test("the mentor sees each work's stages and agreement, adds a stage, and is tol
   await expect(first.getByText(t.plan.conflict)).toBeVisible();
 });
 
+test("F4-MEN-R01: the mentor opens a mentorship by keyboard; only the 201 says opened, a 409 says it is already open", async ({ page }, info) => {
+  const sent = await serveTeacher(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/aplikacija/nastavnik/mentorstva");
+  const card = page.getByTestId("open-mentorship");
+  await card.getByRole("button", { name: t.open.button }).click();
+  await expect(page.getByText(t.open.studentRequired)).toBeVisible();
+  expect(sent).toEqual([]);
+  await card.getByLabel(t.open.student).selectOption(S1);
+  await card.getByLabel(t.open.workType).selectOption("master_thesis");
+  await card.getByLabel(t.open.topic).fill("Izmišljena tema rada");
+  await card.getByRole("button", { name: t.open.button }).focus();
+  await page.keyboard.press("Enter");
+  // The page reads again so the new mentorship shows; the note stays.
+  await expect(page.getByRole("status").filter({ hasText: t.open.opened })).toBeVisible();
+  expect(sent).toEqual([{ method: "POST", path: "/api/v1/mentorships", body: { studentId: S1, workType: "master_thesis", topic: "Izmišljena tema rada" } }]);
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const theme of ["dark", "light"] as const) {
+      await setTheme(page, theme);
+      await axe(page, info, `mentorstvo-otvori-${width}-${theme}`);
+    }
+  }
+});
+
+test("F4-MEN-R01: a mentorship of that kind already open is said as the server said it", async ({ page }) => {
+  await serveTeacher(page, { status: 409, json: { error: "conflict", code: "conflict" } });
+  await page.goto("/aplikacija/nastavnik/mentorstva");
+  const card = page.getByTestId("open-mentorship");
+  await card.getByLabel(t.open.student).selectOption(S1);
+  await card.getByRole("button", { name: t.open.button }).click();
+  await expect(page.getByRole("alert").filter({ hasText: t.open.alreadyOpen })).toBeVisible();
+  await expect(page.getByText(t.open.opened)).toHaveCount(0);
+});
+
 test("on a phone the mentor's plan has no sideways scroll and no axe findings", async ({ page }, info) => {
   await serveTeacher(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   await expect(page.getByTestId("mentor-work-plan")).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   for (const theme of ["dark", "light"] as const) {
@@ -112,12 +159,44 @@ const REQUESTS = { requests: [
   { ...base, requestId: "00000000-0000-4000-8000-0000000000b2", workType: "bachelor_thesis", state: "declined", endedAt: "2026-11-04T10:00:00.000Z", mentorshipId: null },
 ] };
 
+const OPENED = { nextBefore: null, notifications: [{
+  id: "00000000-0000-4000-8000-00000000e6f1", targetId: M1, workType: "doctoral_thesis", topic: "Izmišljena tema doktorata",
+  mentorName: { givenName: "Vesna", familyName: "Izmišljena" }, createdAt: "2026-11-20T10:00:00.000Z", readAt: null,
+}] };
+
 for (const width of [1280, 390]) {
-  test(`the student sees the mentor and sends a declined request to another teacher (${width} px)`, async ({ page }, info) => {
+  test(`F4-MEN-R01: the student sees the mentorship a teacher opened, with its topic (${width} px)`, async ({ page }, info) => {
     const server = generatedServer("puno");
     await page.route("**/api/v1/**", (route) => {
       const req = route.request();
       const path = new URL(req.url()).pathname;
+      if (path.endsWith("/notifications/mentorship-opened")) return route.fulfill({ json: OPENED });
+      if (path.endsWith("/student/mentorship-requests")) return route.fulfill({ json: { requests: [] } });
+      if (path.endsWith("/student/mentor-candidates")) return route.fulfill({ json: { candidates: [TEACHER] } });
+      const result = server.answer("student", req.method(), path);
+      if (result === "hang") return undefined;
+      return route.fulfill(result);
+    });
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/aplikacija/zadaci/mentorstvo");
+    await expect(page.getByTestId("my-mentorship")).toHaveText(/Doktorski rad: mentor Vesna Izmišljena/);
+    await expect(page.getByTestId("my-mentorship")).toContainText(s.mine.openedNew);
+    await expect(page.getByText(s.mine.openedOn.replace("{date}", "20. studenoga 2026."))).toBeVisible();
+    await expect(page.getByText("Tema: Izmišljena tema doktorata")).toBeVisible();
+    await expect(page.getByText(s.mine.empty)).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    for (const theme of ["dark", "light"] as const) {
+      await setTheme(page, theme);
+      await axe(page, info, `mentorstvo-otvoreno-${width}-${theme}`);
+    }
+  });
+
+  test(`F4-MEN-R01: a failed read of opened mentorships says so and keeps the requests (${width} px)`, async ({ page }) => {
+    const server = generatedServer("puno");
+    await page.route("**/api/v1/**", (route) => {
+      const req = route.request();
+      const path = new URL(req.url()).pathname;
+      if (path.endsWith("/notifications/mentorship-opened")) return route.fulfill({ status: 503, json: { error: "unavailable", code: "unavailable" } });
       if (path.endsWith("/student/mentorship-requests")) return route.fulfill({ json: REQUESTS });
       if (path.endsWith("/student/mentor-candidates")) return route.fulfill({ json: { candidates: [TEACHER] } });
       const result = server.answer("student", req.method(), path);
@@ -125,7 +204,28 @@ for (const width of [1280, 390]) {
       return route.fulfill(result);
     });
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/app/web/zadaci/mentorstvo");
+    await page.goto("/aplikacija/zadaci/mentorstvo");
+    await expect(page.getByText(s.mine.openedUnavailable)).toBeVisible();
+    await expect(page.getByTestId("my-mentorship")).toHaveText(/Diplomski rad: mentor Marko Izmišljeni/);
+  });
+}
+
+for (const width of [1280, 390]) {
+  test(`the student sees the mentor and sends a declined request to another teacher (${width} px)`, async ({ page }, info) => {
+    const server = generatedServer("puno");
+    await page.route("**/api/v1/**", (route) => {
+      const req = route.request();
+      const path = new URL(req.url()).pathname;
+      // Only the requests here; the mentorships a teacher opened have their own F4-MEN-R01 tests above.
+      if (path.endsWith("/notifications/mentorship-opened")) return route.fulfill({ json: { notifications: [], nextBefore: null } });
+      if (path.endsWith("/student/mentorship-requests")) return route.fulfill({ json: REQUESTS });
+      if (path.endsWith("/student/mentor-candidates")) return route.fulfill({ json: { candidates: [TEACHER] } });
+      const result = server.answer("student", req.method(), path);
+      if (result === "hang") return undefined;
+      return route.fulfill(result);
+    });
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/aplikacija/zadaci/mentorstvo");
     await expect(page.getByRole("heading", { name: s.mine.title })).toBeVisible();
     await expect(page.getByTestId("my-mentorship")).toHaveText(/Diplomski rad: mentor Marko Izmišljeni/);
     await expect(page.getByText(s.mine.openedOn.replace("{date}", "3. studenoga 2026."))).toBeVisible();

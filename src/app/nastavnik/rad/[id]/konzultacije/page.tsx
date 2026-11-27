@@ -5,7 +5,7 @@ import { consultationMessages as t } from "@/components/teacher/consultation-rec
 import { liveWorkHref } from "@/components/teacher/LiveWorkFrame";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
+export const metadata = { title: `${t.title}, ${messagesHr.app.name}` };
 
 export default async function ConsultationsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

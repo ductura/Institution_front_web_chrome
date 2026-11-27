@@ -3,7 +3,7 @@
 Domaćin fronta institucije (ugovor #2028 c.6993786629 §1 i §3.3) na Next.js 16 (App Router). Ekrani su iz `src/components`, API ide kroz `src/client/api.ts`.
 
 ```sh
-pnpm dev     # next dev na http://localhost:5173/app/web/ i /app/chrome/
+pnpm dev     # next dev na http://localhost:5173/aplikacija/
 pnpm build   # next build
 pnpm start   # next start na :5173
 ```
@@ -14,29 +14,29 @@ Konfiguracija ide samo kroz env varijable, bez tajni u repou:
 | --- | --- | --- |
 | `INSTITUTION_SERVER_URL` | `http://127.0.0.1:4000` | Kamo Next prosljeđuje `/api/v1/*` kad radi bez edgea (`next dev`, `next start`, Vercel). Čita se pri gradnji. Kroz edge na :8000 `/api/v1/*` ide izravno Institution_serveru. |
 
-Adrese: `basePath` je `/app`, a segment `app/[base]/` je `web` ili `chrome`; za svaki drugi segment stranica ne postoji. Edge ovamo šalje samo `/app/web/*` i `/app/chrome/*`, pa su datoteke gradnje pod `/app/web/_next/` (`assetPrefix`), a javne datoteke u `public/web/`. Za Vercel je projekt `packages/app` s presetom Next.js (`vercel.json`).
+Adrese (D-318): `basePath` je `/aplikacija`, a stranice su u grupi ruta `app/(host)/`, koja ne ulazi u adresu. Stare adrese `/app/web/*` i `/app/chrome/*` ne poslužuju se ovdje, preusmjerava ih rub. Edge ovamo šalje samo `/aplikacija/*`, pa su datoteke gradnje pod `/aplikacija/_next/`, a javne datoteke (`public/`) pod `/aplikacija/`. Za Vercel je projekt `packages/app` s presetom Next.js (`vercel.json`).
 
 | Datoteka | Što |
 | --- | --- |
 | `next.config.ts` | `basePath`, `assetPrefix`, prosljeđivanje `/api/v1/*` i korijen radnog prostora za Turbopack. |
 | `app/layout.tsx` | Korijenski layout: fontovi, tokeni i tema (tamna je zadana, D-188; spremljena svijetla postavlja se prije iscrtavanja). |
-| `app/[base]/layout.tsx` | Provjeri bazu (`src/bases.ts`, inače „Stranica ne postoji” iz `app/not-found.tsx`) i oko stranice postavi domaćina `src/host/Host.tsx`. |
-| `src/host/Host.tsx` | Javnu stranicu prikazuje bez čitanja sesije. Ostale putanje vodi u `src/host/SignedInHost.tsx`, koji se učitava tek izvan javnih stranica (DAN-1571). |
+| `app/(host)/layout.tsx` | Provjeri bazu (`src/bases.ts`, inače „Stranica ne postoji” iz `app/not-found.tsx`) i oko stranice postavi domaćina `src/host/Host.tsx`. |
+| `src/host/Host.tsx` | Javnu stranicu prikazuje bez čitanja sesije. Ostale putanje vodi u `src/host/SignedInHost.tsx`, koji se učitava tek izvan javnih stranica (DAN-1571). Naslov kartice može postaviti sama stranica (`usePageTitle`). |
 | `src/host/SignedInHost.tsx` | Jedno čitanje sesije. Na 401 preusmjerava na prijavu, a na grešku pokazuje ekran s „Pokušaj ponovno”. Ljuska prikazuje ulogu, ime ustanove i „Odjava” (`SignOut.tsx`). Stranicu druge uloge i `/` vodi na početni ekran uloge. Poveznice aplikacije otvara Next router, bez ponovnog učitavanja. |
-| `app/[base]/zadaci/`, `zadaci/kolegiji/`, `nastavnik/`, `nastavnik/mentorstva/` | Spojeni ekrani (`src/host/pages.tsx`). |
-| `app/[base]/zadatak/[id]/` | Obavijest zadatka (`src/host/student/notice/NoticePage.tsx`). Čita aktualnu verziju preko `student.notice.get`, bilježi otvaranje preko `student.notice-read.post` i potvrđuje prikazanu verziju preko `institution.acknowledgment.post`. |
-| `app/[base]/rad/`, `upis/`, `upis/kolegij/[courseId]/` | Studentske stranice Ductusa na svojim adresama, iza oznake `TREBA API` (u datoteci piše koja operacija `/api/v1` nedostaje u `src/client`). Do tada pokazuju naslov i napomenu da prikaz još nije spojen. |
-| `app/[base]/rad/[assignmentId]/predaja/{,izjava,pregled,slanje,potvrda}` | Predaja rada u pet koraka (`src/host/student/submission/`). Svaki korak provjerava zadatak (`student.assignments.get`, `student.assignment-work.get`): odjava vodi na AAI@EduHr, nepotvrđena obavijest na obavijest. Potvrda se čita s poslužitelja pri svakom otvaranju. E2E s lažnim API-jem je u `e2e/student-submission.spec.ts`. |
-| `app/[base]/zadaci/radovi/`, `rad/[assignmentId]/{dnevnik-pristupa,reprodukcija}/` | „Moji radovi” (filtri `?q=` i `?godina=`), dnevnik pristupa i reprodukcija vlastitog rada (`src/host/student/other/`). Dnevnik i reprodukcija čitaju dokument rada iz potpisane potvrde predaje, pa se stvarno prikazuju samo za predan rad. Rad u tijeku čita se kao nedostupan, a nezapočet kao nezapočet. E2E s lažnim API-jem je u `e2e/student-other.spec.ts`. |
-| `app/[base]/nastavnik/rad/[id]/{,reprodukcija,predaja,konzultacije}` | Rad uživo s komentarima, reprodukcija, potvrda predaje i zapisi konzultacija (`src/host/teacher/work/`). Čitanje potvrde po ID-u rada ovisi o `teacher.work.get`. E2E s lažnim API-jem je u `e2e/teacher-work.spec.ts`. |
-| `app/[base]/nastavnik/brz-put/` | Nastavnička stranica Ductusa iza oznake `TREBA API`. `nastavnik/kolegiji/` preusmjerava na `nastavnik/` pod istom bazom. |
-| `app/[base]/nastavnik/zadatak/{novi,[assignmentId]/uredi,[assignmentId]/rad/[documentId]/jezik}/` | HOST-T2: odabir kolegija i objava zadatka, učitavanje i objava nove verzije te jezik pojedinačnog rada (`src/host/teacher/assignment/`). Jezik pojedinačnog rada ima lažni API u testu. Na poslužitelju treba dodati GET i montirati postojeći POST ugovor. |
-| `app/[base]/ustanova/{,korisnici,kolegiji,pravila}/` | Stranice administratora ustanove (A-01 do A-04) u `src/host/institution/`. „Novi kolegij” koristi `institution.admin-courses.post`. Pregled, popisi i pravila imaju zasebne poruke o nedostupnosti do uvođenja čitanja. |
-| `app/[base]/kako-radi/` | Statični ekran „Kako Ductura radi” za svaku prijavljenu ulogu. Koristi `src/components/how-it-works` i hrvatske poruke iz `locales/hr.ts`. |
-| `app/[base]/stanje/` | Javno „Stanje sustava” bez čitanja sesije. `StatusBoard` čita `platform.status.get` kroz `src/client` i prikazuje rezultate, zastarjelost ili grešku s ponovnim pokušajem. |
-| `app/[base]/prijava/` | Javna stranica vodi ravno na prijavu preko AAI@EduHr (D-09) i vraća na traženu stranicu pod istom bazom. |
+| `app/(host)/zadaci/`, `zadaci/kolegiji/`, `nastavnik/`, `nastavnik/mentorstva/` | Spojeni ekrani (`src/host/pages.tsx`). |
+| `app/(host)/zadatak/[id]/` | Obavijest zadatka (`src/host/student/notice/NoticePage.tsx`). Čita aktualnu verziju preko `student.notice.get`, bilježi otvaranje preko `student.notice-read.post` i potvrđuje prikazanu verziju preko `institution.acknowledgment.post`. |
+| `app/(host)/rad/`, `upis/`, `upis/kolegij/[courseId]/` | Studentske stranice Ductusa na svojim adresama, iza oznake `TREBA API` (u datoteci piše koja operacija `/api/v1` nedostaje u `src/client`). Do tada pokazuju naslov i napomenu da prikaz još nije spojen. |
+| `app/(host)/rad/[assignmentId]/predaja/{,izjava,pregled,slanje,potvrda}` | Predaja rada u pet koraka (`src/host/student/submission/`). Svaki korak provjerava zadatak (`student.assignments.get`, `student.assignment-work.get`): odjava vodi na AAI@EduHr, nepotvrđena obavijest na obavijest. Potvrda se čita s poslužitelja pri svakom otvaranju. E2E s lažnim API-jem je u `e2e/student-submission.spec.ts`. |
+| `app/(host)/zadaci/radovi/`, `rad/[assignmentId]/{dnevnik-pristupa,reprodukcija}/` | „Moji radovi” (filtri `?q=` i `?godina=`), dnevnik pristupa i reprodukcija vlastitog rada (`src/host/student/other/`). Dnevnik i reprodukcija čitaju dokument rada iz potpisane potvrde predaje, pa se stvarno prikazuju samo za predan rad. Rad u tijeku čita se kao nedostupan, a nezapočet kao nezapočet. E2E s lažnim API-jem je u `e2e/student-other.spec.ts`. |
+| `app/(host)/nastavnik/rad/[id]/{,reprodukcija,predaja,konzultacije}` | Rad uživo s komentarima, reprodukcija, potvrda predaje i zapisi konzultacija (`src/host/teacher/work/`). Čitanje potvrde po ID-u rada ovisi o `teacher.work.get`. E2E s lažnim API-jem je u `e2e/teacher-work.spec.ts`. |
+| `app/(host)/nastavnik/brz-put/` | Nastavnička stranica Ductusa iza oznake `TREBA API`. `nastavnik/kolegiji/` preusmjerava na `nastavnik/` pod istom bazom. |
+| `app/(host)/nastavnik/zadatak/{novi,[assignmentId]/uredi,[assignmentId]/rad/[documentId]/jezik}/` | HOST-T2: odabir kolegija i objava zadatka, učitavanje i objava nove verzije te jezik pojedinačnog rada (`src/host/teacher/assignment/`). Jezik pojedinačnog rada ima lažni API u testu. Na poslužitelju treba dodati GET i montirati postojeći POST ugovor. |
+| `app/(host)/ustanova/{,korisnici,kolegiji,pravila}/` | Stranice administratora ustanove (A-01 do A-04) u `src/host/institution/`. „Novi kolegij” koristi `institution.admin-courses.post`. Pregled, popisi i pravila imaju zasebne poruke o nedostupnosti do uvođenja čitanja. |
+| `app/(host)/kako-radi/` | Statični ekran „Kako Ductura radi” za svaku prijavljenu ulogu. Koristi `src/components/how-it-works` i hrvatske poruke iz `locales/hr.ts`. |
+| `app/(host)/stanje/` | Javno „Stanje sustava” bez čitanja sesije. `StatusBoard` čita `platform.status.get` kroz `src/client` i prikazuje rezultate, zastarjelost ili grešku s ponovnim pokušajem. |
+| `app/(host)/prijava/` | Javna stranica vodi ravno na prijavu preko AAI@EduHr (D-09) i vraća na traženu stranicu pod istom bazom. |
 | `app/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx` | Greška stranice, greška korijenskog layouta i nepostojeća stranica, na hrvatskom. |
-| `app/[base]/[[...path]]/` | `/` pod bazom (domaćin vodi na početni ekran uloge) i putanje bez stranice („Stranica ne postoji” u ljusci). |
+| `app/(host)/page.tsx` i `app/(host)/[...path]/` | `/` pod bazom (domaćin vodi na početni ekran uloge) i putanje bez stranice („Stranica ne postoji” u ljusci). |
 | `src/routes.ts` | Čiste funkcije: baza, putanja, stranica po ulozi (rute iz `src/components/shell/nav.ts` i stranice Ductusa s dinamičkim segmentom, npr. `/zadatak/[id]`), preusmjeravanje na početni ekran uloge. |
 | `tsconfig.json` | Uz stroge opcije i Ductusov alias `@/` iz `src/components/tsconfig.json`, da domaćin montira ekrane kopirane iz Ductusa (HOST). |
 | `vitest.config.ts` | Jedinični testovi čistih dijelova (`src/**/*.test.ts`). |

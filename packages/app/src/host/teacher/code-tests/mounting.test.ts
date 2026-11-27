@@ -13,9 +13,15 @@ describe("the teacher's code-test page is mounted", () => {
     expect(resolve("/nastavnik/zadatak/a1/testovi", null)).not.toMatchObject({ kind: "page" });
   });
   it("the Next page renders CodeTestsPage, which mounts the form, and refuses a malformed id as not found", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/nastavnik/zadatak/[assignmentId]/testovi/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/nastavnik/zadatak/[assignmentId]/testovi/page.tsx"), "utf8");
     expect(page).toContain("CodeTestsPage");
     expect(page).toContain("notFound()");
     expect(readFileSync(join(import.meta.dirname, "CodeTestsPage.tsx"), "utf8")).toContain("<CodeTestsForm");
+  });
+  it("the task's card links to it and the page returns to the task", () => {
+    const card = readFileSync(join(import.meta.dirname, "../assignment-facts/AssignmentFacts.tsx"), "utf8");
+    expect(card).toContain("/testovi");
+    expect(card).toContain("code-tests-link");
+    expect(readFileSync(join(import.meta.dirname, "CodeTestsPage.tsx"), "utf8")).toContain("taskPath(assignmentId)");
   });
 });

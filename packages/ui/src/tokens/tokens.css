@@ -21,6 +21,17 @@
 }
 
 /*
+ * WEB-DIZ-S-ZAJEDNICKO (Ductus#2059 c.7214951129, A1): the design's names for
+ * the error colour are aliases of the existing --error, never a new value.
+ * Set on every element (zero specificity), so each one follows the --error of
+ * its own scope: the shell's, the light theme's or the sheet's.
+ */
+:where(*, *::before, *::after) {
+  --danger: var(--error);
+  --color-error: var(--error);
+}
+
+/*
  * WCAG 1.4.10 (VIZ-WCAG-LAZNI): with auto side margins in a grid main, a .page
  * takes the width its content asks for, and a table that scrolls in its own
  * frame asks for more than 320 px, so the whole screen scrolled sideways.

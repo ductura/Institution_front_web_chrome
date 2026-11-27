@@ -4,7 +4,7 @@ import { Button, Checkbox, Dialog } from "@ductura/ui";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { editorHelpHr as t } from "../../../lib/i18n/messages.hr";
-import { defaultHelp, forLevel, levelOf, readHelp, settingsKey, toggleWarning, warningKeys, warnings, type HelpSettings, type Level, type Warning } from "./preferences";
+import { defaultHelp, forLevel, HELP_CHANGED, levelOf, readHelp, settingsKey, toggleWarning, warningKeys, warnings, type HelpSettings, type Level, type Warning } from "./preferences";
 import { WhatIsRecorded } from "./what-is-recorded";
 import styles from "./EditorHelp.module.css";
 
@@ -14,6 +14,7 @@ export function useEditorHelp() {
   const save = (next: HelpSettings) => {
     setSettings(next);
     try { localStorage.setItem(settingsKey, JSON.stringify(next)); } catch { /* The changes work for this page. */ }
+    window.dispatchEvent(new CustomEvent<HelpSettings>(HELP_CHANGED, { detail: next }));
   };
   return {
     ...settings,
@@ -45,9 +46,11 @@ type Props = {
   fresh?: boolean;
   /** The open work: "Što Ductura bilježi" reads its rhythm setting (PIL-P1-RITAM-PREKIDAC). */
   documentId?: string;
+  /** The assignment of the open work: "Što Ductura bilježi" lists its conversations with the assistant. */
+  assignmentId?: string;
 };
 
-export function EditorHelpDialogs({ view, onClose, help, counts, notice, documentId }: Props) {
+export function EditorHelpDialogs({ view, onClose, help, counts, notice, documentId, assignmentId }: Props) {
   const close = <Button tone="quiet" onClick={onClose}>{t.close}</Button>;
   return <>
     <Dialog open={view === "writing"} title={t.settingsTitle} actions={close} onClose={onClose}>
@@ -79,7 +82,7 @@ export function EditorHelpDialogs({ view, onClose, help, counts, notice, documen
       </>}
     </Dialog>
     <Dialog open={view === "recorded"} title={t.recorded} actions={close} onClose={onClose}>
-      <WhatIsRecorded documentId={documentId} />
+      <WhatIsRecorded documentId={documentId} assignmentId={assignmentId} />
     </Dialog>
   </>;
 }

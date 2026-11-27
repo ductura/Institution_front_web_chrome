@@ -7,7 +7,7 @@ export const declarationStepText = {
   recordedTag: "zabilježeno",
   // NF-3 PR-4 (Q-10): only "Asistent", never a provider or a model.
   transferLine: "Prijenos iz Asistenta, {at}",
-  transferWho: "Asistent · {target}",
+  transferWho: "Asistent, {target}",
   chatLine: "Razgovor s Asistentom bez prijenosa, {date}",
   chatWho: "Asistent",
   // NF-3 PR-4 (E-9a): what the block holds and where outside tools go.
@@ -24,6 +24,17 @@ export const declarationStepText = {
   attachmentsNote: "Uz izjavu se prilaže cijeli razgovor, točno kako je zabilježen. Pregledajte ga prije potvrde.",
   required: "Obvezno: iz ovog razgovora prenesen je tekst.",
   review: "Pregledaj razgovor",
+  // F4-PRE-R02: the prototype's words (Ductura_student.html, step 2); the "unavailable" lines are new.
+  attachedCount: "Nastavnik vidi samo priložene razgovore. Priloženo: {a} od {n}.",
+  attachedMeta: "priloženo izjavi",
+  notAttachedMeta: "nije priloženo",
+  attach: "Priloži izjavi",
+  detach: "Skini s izjave",
+  attachUnavailable: "Prilaganje razgovora trenutačno nije dostupno.",
+  attachFailed: "Promjena priloga nije spremljena na poslužitelju. Pokušajte ponovno.",
+  attachStale: "Razgovor se u međuvremenu promijenio. Pregledajte ga i priložite ponovno.",
+  chatsUnavailable: "Razgovore s Asistentom trenutačno nije moguće učitati.",
+  chatUnavailable: "Razgovor trenutačno nije moguće učitati.",
   question: "Pitanje nastavnika",
   answer: "Odgovor (nije obavezan)",
   form: "Obrazac izjave",
@@ -67,7 +78,7 @@ export const declarationStepText = {
 } as const;
 
 export const chatDialogText = {
-  title: "Razgovor {n} · {date}",
+  title: "Razgovor {n}, {date}",
   meta: "Točno kako je zabilježen i kako će ga vidjeti nastavnik.",
   you: "Vi",
   ai: "Asistent",

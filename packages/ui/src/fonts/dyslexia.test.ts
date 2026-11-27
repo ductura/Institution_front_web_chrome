@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const css = readFileSync(new URL("../styles/reading-font.css", import.meta.url), "utf8");
@@ -34,11 +35,35 @@ describe("reading font for dyslexia", () => {
     expect(code).not.toContain("@import");
     for (const m of code.matchAll(/url\(\s*["']?([^"')]+)/g)) {
       const target = m[1] ?? "";
-      expect(target.startsWith("./dyslexia/"), target).toBe(true);
+      expect(/^\.\.\/fonts\/dyslexia\/[A-Za-z0-9-]+\.woff2$/.test(target), target).toBe(true);
+      expect(existsSync(new URL(`./dyslexia/${target.split("/").pop()}`, import.meta.url)), target).toBe(true);
     }
   });
 
-  it("ships no font file until the owner confirms the licence", () => {
+  it("puts url() after local() in every source list, with a woff2 format", () => {
+    const srcs = [...code.matchAll(/src:([^;]+);/g)].map((m) => m[1] ?? "");
+    expect(srcs.length).toBeGreaterThan(0);
+    for (const src of srcs) {
+      expect(src.indexOf("local("), src).toBeGreaterThanOrEqual(0);
+      expect(src.indexOf("local("), src).toBeLessThan(src.indexOf("url("));
+      expect(src).toContain('format("woff2")');
+    }
+  });
+
+  it("matches the README table: every font file is listed with its SHA-256 and sits next to OFL.txt", () => {
+    const readme = readFileSync(new URL("./dyslexia/README.md", import.meta.url), "utf8");
+    const files = readdirSync(new URL("./dyslexia/", import.meta.url)).filter((f) => /\.woff2$/.test(f));
+    expect(files.length).toBeGreaterThan(0);
+    for (const f of files) {
+      const hash = createHash("sha256").update(readFileSync(new URL(`./dyslexia/${f}`, import.meta.url))).digest("hex");
+      expect(readme, f).toContain(`\`${f}\``);
+      expect(readme, f).toContain(hash);
+    }
+    const ofl = readFileSync(new URL("./dyslexia/OFL.txt", import.meta.url), "utf8");
+    expect(ofl).toContain("SIL OPEN FONT LICENSE Version 1.1");
+  });
+
+  it("ships a font file only together with its licence", () => {
     const files = readdirSync(new URL("./dyslexia/", import.meta.url));
     const fonts = files.filter((f) => /\.(woff2?|ttf|otf)$/i.test(f));
     const hasLicence = files.some((f) => /^(OFL|LICENSE)/i.test(f));

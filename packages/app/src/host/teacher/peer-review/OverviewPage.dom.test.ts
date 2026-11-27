@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { teacherPeerReviewText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 const { default: OverviewPage } = await import("./OverviewPage");
 
@@ -118,6 +118,18 @@ describe("the teacher's peer-review page in the browser", () => {
       await render(h(OverviewPage, { assignmentId: A, call: apiOf({ "peer-review.round.get": () => fail(401, "unauthorized"), "peer-review.teacher-overview.get": () => fail(401, "unauthorized") }).call }));
       expect(signIn).toHaveBeenCalled();
     });
+  });
+
+  it("V19: 403 shows the denied state instead of the page; the overview says how many reviews were allocated", async () => {
+    await render(h(OverviewPage, { assignmentId: A, call: apiOf({ "peer-review.round.get": () => fail(403, "forbidden"), "peer-review.teacher-overview.get": () => fail(403, "forbidden") }).call }));
+    expect(host.querySelector("h1")!.textContent).toBe("Nemate pristup ovom prikazu");
+    expect(host.querySelectorAll("h1")).toHaveLength(1);
+    await render(h(OverviewPage, { assignmentId: A, call: apiOf({ "peer-review.round.get": () => roundView("open"), "peer-review.teacher-overview.get": () => ok({ allocations: [{ reviewId: null, reviewer: p("Ana", "Babić"), author: p("Iva", "Čović"), state: "pending" }] }) }).call }));
+    expect(host.querySelector("[data-testid=overview-count]")!.textContent).toBe("Dodijeljeno recenzija: 1.");
+    expect(host.querySelector("[data-testid=allocation]")!.textContent).not.toContain("·");
+    expect(text()).toContain(t.round.lead);
+    expect(text()).not.toContain("poslužitelj");
+    expect(field(t.round.rubricLabel.replace("{n}", "1")).maxLength).toBe(120);
   });
 
   describe("allocation", () => {

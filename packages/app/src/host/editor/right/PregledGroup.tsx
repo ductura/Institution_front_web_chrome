@@ -11,7 +11,7 @@ import type { useLocalEditor } from "@/components/editor/LocalDocument";
 
 import { jumpToBlock } from "./jump";
 import { ReviewPanel } from "../../../../../../src/components/editor/review/ReviewPanel";
-import { readReviewDoc } from "../../../../../../src/components/editor/review/model";
+import { readReviewDoc, type ReviewDoc } from "../../../../../../src/components/editor/review/model";
 import { TextFixesPanel } from "../../../../../../src/components/editor/text-fixes/TextFixesPanel";
 import { createReadAloud, READ_ALOUD_MAX_RATE, READ_ALOUD_MIN_RATE, type ReadAloudController, type ReadAloudState } from "../read-aloud/controller";
 import { readAloudSupported } from "../read-aloud/support";
@@ -21,16 +21,21 @@ import { tiptapToCanonicalV4 } from "../../../../../editor-core/src/editor/inter
 import QuoteReviewCard from "../stem/QuoteReviewCard";
 import type { EvidenceBySource } from "../stem/quote-check";
 import { loadQuoteEvidence, quotedSources } from "./quote-evidence";
+import { onPregledView, takePregledView, type PregledView } from "./pregled-view";
 
-import { pregledHr as t } from "./messages.hr";
+import { pregledHr as t, thousands } from "./messages.hr";
+import { consistency, nextUse, numbersWithoutSource, quotations, repeatedWords, seams, sentenceStarts } from "./pregled-tools";
+import nacrt from "./Nacrt.module.css";
 import {
   abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, outlineRows, removeTerm, saveTerms, termCounts,
   WHOLE, MAX_DEFINITION_LENGTH, MAX_TERM_LENGTH, type PregledScope, type Term, type TermStorage,
 } from "./pregled-model";
+import { blockTextAt, sentenceShape } from "./sentence-shape";
 
 type Editor = NonNullable<ReturnType<typeof useLocalEditor>>;
-type View = "nacrt" | "pojmovnik" | "provjere";
-const VIEWS: readonly View[] = ["nacrt", "pojmovnik", "provjere"];
+// ED-73, ED-74: "oblik" and the five sub views are views of this group only; the Prikaz menu (pregled-view) asks for the first three.
+type View = PregledView | "oblik" | "savovi" | "ponavljanja" | "dosljednost" | "brojke" | "navodi";
+const VIEWS: readonly View[] = ["nacrt", "pojmovnik", "provjere", "oblik", "savovi", "ponavljanja", "dosljednost", "brojke", "navodi"];
 
 const browserStorage = (): TermStorage | null => { try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; } };
 
@@ -42,7 +47,8 @@ export function PregledGroup({ editor, documentId, assignmentId, enabledCheckIds
   /** Check ids the institution enabled; null when none were read (every check of this build runs). */
   enabledCheckIds?: readonly string[] | null;
 }) {
-  const [view, setView] = useState<View>("nacrt");
+  const [view, setView] = useState<View>(() => takePregledView() ?? "nacrt");
+  useEffect(() => onPregledView(setView), []);
   const [wholeWork, setWholeWork] = useState(false);
   const snapshot = useEditorSnapshot(editor);
   const doc = useMemo(() => (snapshot ? readReviewDoc(snapshot.doc) : null), [snapshot?.doc]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -55,7 +61,7 @@ export function PregledGroup({ editor, documentId, assignmentId, enabledCheckIds
       <div role="group" aria-label={t.views}>
         {VIEWS.map((id) => <Button key={id} tone={view === id ? "primary" : "quiet"} aria-pressed={view === id} onClick={() => setView(id)}>{t[id]}</Button>)}
       </div>
-      {view !== "provjere" && <>
+      {view !== "provjere" && view !== "oblik" && <>
         <div role="group" aria-label={t.scope}>
           <Button tone="quiet" aria-pressed={!wholeWork} onClick={() => setWholeWork(false)}>{t.scopeChapter}</Button>
           <Button tone="quiet" aria-pressed={wholeWork} onClick={() => setWholeWork(true)}>{t.scopeWork}</Button>
@@ -64,6 +70,12 @@ export function PregledGroup({ editor, documentId, assignmentId, enabledCheckIds
       </>}
       {view === "nacrt" && <Nacrt editor={editor} doc={doc} scope={scope} />}
       {view === "pojmovnik" && <Pojmovnik doc={doc} scope={scope} workId={documentId} />}
+      {view === "savovi" && <Savovi editor={editor} doc={doc} scope={scope} />}
+      {view === "ponavljanja" && <Ponavljanja editor={editor} doc={doc} scope={scope} />}
+      {view === "dosljednost" && <Dosljednost editor={editor} doc={doc} scope={scope} />}
+      {view === "brojke" && <Brojke editor={editor} doc={doc} scope={scope} />}
+      {view === "navodi" && <Navodi editor={editor} doc={doc} scope={scope} />}
+      {view === "oblik" && <OblikRecenica text={blockTextAt(doc, snapshot.from)} />}
       {view === "provjere" && <>
         <ReviewPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />
         <TextFixesPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />
@@ -94,6 +106,29 @@ function QuoteCheck({ editor, pmDoc, assignmentId }: { editor: Editor; pmDoc: Ed
   }, [assignmentId, key]);
   if (doc === null) return null;
   return <QuoteReviewCard doc={doc} evidence={evidence !== null && evidence.for === key ? evidence.read : null} />;
+}
+
+/** ED-73: "Oblik rečenica", one bar per sentence of the paragraph at the cursor (prototype features.js `bars`). */
+function OblikRecenica({ text }: { text: string | null }) {
+  const bars = text === null ? [] : sentenceShape(text);
+  return (
+    <div data-oblik-recenica="">
+      <p>{t.shapeIntro}</p>
+      {bars.length === 0 ? <p role="status">{t.shapeEmpty}</p> : (
+        <ol aria-label={t.shapeList} style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {bars.map((bar) => (
+            <li key={bar.index} aria-label={t.shapeBar(bar.index + 1, bar.words, bar.long)} data-long={bar.long ? "" : undefined}
+              style={{ display: "flex", alignItems: "center", gap: 6, margin: "3px 0", fontSize: 11.5, color: "var(--ink-3)" }}>
+              <i aria-hidden="true" style={{ display: "block", height: 8, minWidth: 4, borderRadius: 999,
+                width: `${bar.width}%`, background: bar.long ? "var(--warn)" : "var(--accent)" }} />
+              <span aria-hidden="true" style={{ fontVariantNumeric: "tabular-nums" }}>{bar.words}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+      <p>{t.shapeHint}</p>
+    </div>
+  );
 }
 
 /** The document and the cursor of the open editor, read again after every transaction. */
@@ -165,12 +200,19 @@ function Nacrt({ editor, doc, scope }: { editor: Editor; doc: NonNullable<Return
       {fallback && active && <p role="status">{t.listenVoiceFallback}</p>}
       {note && <p role="status">{note}</p>}
       {rows.length === 0 ? <p>{t.nacrtEmpty}</p> : (
-        <ol>
+        <ol className={nacrt.list} data-nacrt>
           {rows.map((row, i) => (
             <li key={row.key}>
-              {row.chapter !== null && row.chapter !== rows[i - 1]?.chapter && <strong>{row.chapter}</strong>}
-              <button type="button" onClick={() => jumpToBlock(editor, row.pos)}>{row.sentence}</button>
-              <small> {t.words(row.words)}{row.long ? ` · ${t.longFirst}` : ""}</small>
+              {row.chapter !== null && row.chapter !== rows[i - 1]?.chapter && <strong className={nacrt.heading}>{row.chapter}</strong>}
+              <button type="button" className={nacrt.row} onClick={() => jumpToBlock(editor, row.pos)}>
+                {row.shown}
+                {row.long && <span className={nacrt.tag} title={t.longFirst(row.words)}>{t.longFirstTag(row.words)}</span>}
+                <span className={nacrt.meta}>
+                  <span>{t.words(row.paragraphWords)}</span>
+                  <span>{t.citations(row.citations)}</span>
+                  {row.flags.map((flag) => <span key={flag} className={nacrt.flag}>{t.flags[flag]}</span>)}
+                </span>
+              </button>
             </li>
           ))}
         </ol>
@@ -232,6 +274,116 @@ function Pojmovnik({ doc, scope, workId }: { doc: NonNullable<ReturnType<typeof 
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+// ED-74: the five tools of the prototype's Pregled (tools.js, review2.js). Each row jumps to its paragraph.
+type ToolProps = { editor: Editor; doc: ReviewDoc; scope: PregledScope };
+
+function Savovi({ editor, doc, scope }: ToolProps) {
+  const list = useMemo(() => seams(doc, scope), [doc, scope]);
+  const side = (label: string, s: { sentence: string | null; pos: number | null }) => <>
+    <h4>{label}</h4>
+    {s.sentence !== null && s.pos !== null
+      ? <button type="button" onClick={() => jumpToBlock(editor, s.pos!)}>{s.sentence}</button>
+      : <p>{t.seamNoText}</p>}
+  </>;
+  return (
+    <div>
+      <p>{t.seamIntro}</p>
+      {list.length === 0 ? <p>{t.seamNone}</p> : list.map((seam) => (
+        <div key={seam.key} data-seam="">
+          {side(t.seamEnd(seam.end.chapter), seam.end)}
+          {side(t.seamStart(seam.start.chapter), seam.start)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Ponavljanja({ editor, doc, scope }: ToolProps) {
+  const starts = useMemo(() => sentenceStarts(doc, scope), [doc, scope]);
+  const words = useMemo(() => repeatedWords(doc, scope), [doc, scope]);
+  const find = (key: string) => {
+    const pos = nextUse(doc, key, editor.state.selection.from);
+    if (pos !== null) jumpToBlock(editor, pos);
+  };
+  return (
+    <div>
+      <p>{t.repIntro}</p>
+      <h3>{t.repStarts}</h3>
+      {starts.length === 0 ? <p>{t.repStartsNone}</p> : (
+        <ul>
+          {starts.map((s) => (
+            <li key={s.word}>
+              <button type="button" onClick={() => jumpToBlock(editor, s.pos)}><strong>{s.word}…</strong> <small>{t.repStartCount(s.count)}</small></button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <h3>{t.repWords}</h3>
+      {words.length === 0 ? <p>{t.repWordsNone}</p> : (
+        <div role="group" aria-label={t.repWords}>
+          {words.map((w) => <Button key={w.key} tone="quiet" title={t.repWordFind} onClick={() => find(w.key)}>{w.word} {t.times(w.count)}</Button>)}
+        </div>
+      )}
+      <p>{t.repWordsNote}</p>
+    </div>
+  );
+}
+
+function Dosljednost({ editor, doc, scope }: ToolProps) {
+  const { mixed, consistent } = useMemo(() => consistency(doc, scope), [doc, scope]);
+  return (
+    <div>
+      <p>{t.dosIntro}</p>
+      {mixed.length === 0 ? <p>{t.dosNone}</p> : mixed.map((c) => (
+        <div key={c.name} data-consistency="">
+          <h4>{c.name}</h4>
+          <p><small>{t.dosWays(c.forms.length)}</small></p>
+          <ul>
+            {c.forms.map((f) => (
+              <li key={f.form}><button type="button" onClick={() => jumpToBlock(editor, f.pos)}><strong>{f.form}</strong> <small>{t.times(f.count)}</small></button></li>
+            ))}
+          </ul>
+        </div>
+      ))}
+      {mixed.length > 0 && consistent.length > 0 && <p>{t.dosOk(consistent)}</p>}
+    </div>
+  );
+}
+
+function Brojke({ editor, doc, scope }: ToolProps) {
+  const rows = useMemo(() => numbersWithoutSource(doc, scope), [doc, scope]);
+  return (
+    <div>
+      <p>{t.numIntro}</p>
+      {rows.length === 0 ? <p>{t.numNone}</p> : (
+        <ul>
+          {rows.map((r) => (
+            <li key={r.key}><button type="button" onClick={() => jumpToBlock(editor, r.pos)}><strong>{r.number}</strong> <span>{r.sentence}</span></button></li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function Navodi({ editor, doc, scope }: ToolProps) {
+  const q = useMemo(() => quotations(doc, scope), [doc, scope]);
+  const row = (x: (typeof q.list)[number]) => (
+    <li key={x.key}><button type="button" onClick={() => jumpToBlock(editor, x.pos)}><strong>{t.quoWords(x.words, x.block)}</strong> <span>{x.text}</span></button></li>
+  );
+  return (
+    <div>
+      <div data-quote-share="">
+        <p><strong>{t.quoShare(thousands(q.quoted), thousands(q.total))}</strong></p>
+        <p>{t.quoCount(q.list.length)}</p>
+      </div>
+      {q.long.length > 0 && <><h3>{t.quoLong(q.long.length)}</h3><ul>{q.long.map(row)}</ul></>}
+      <h3>{t.quoLongest}</h3>
+      {q.longest.length === 0 ? <p>{t.quoNone}</p> : <ul>{q.longest.map(row)}</ul>}
     </div>
   );
 }

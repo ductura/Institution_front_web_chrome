@@ -5,7 +5,7 @@ import styles from "./page.module.css";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export const metadata = { title: `${t.fastPath.title} · ${t.app.name}` };
+export const metadata = { title: `${t.fastPath.title}, ${t.app.name}` };
 
 export default async function FastPathPage({ searchParams }: { searchParams: Promise<{ zadatak?: string | string[] }> }) {
   const { zadatak } = await searchParams;

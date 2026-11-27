@@ -50,7 +50,41 @@ describe("Prikaz: what the host cannot show yet", () => {
   it("lists the prototype's Prikaz group, disabled and marked, never hidden", () => {
     const items = pendingViewItems();
     expect(items.map((i) => i.id)).toEqual([...PENDING_VIEWS]);
-    expect(items.map((i) => i.label)).toEqual(["Sadržaj na listu", "Promjene od predaje mentoru", "Povijest rada", "Prvi redovi"]);
+    expect(items.map((i) => i.label)).toEqual(["Promjene od predaje mentoru", "Povijest rada"]);
     for (const item of items) expect(item).toMatchObject({ disabled: true, hint: "nedostupno" });
+  });
+});
+
+describe("Prikaz: Struktura rada i Čisti tekst (EDI-R17)", () => {
+  it("lists both as live items, not pending, beside ED-71's Sadržaj na listu and Prvi redovi", async () => {
+    const { viewItems } = await import("./view-menu");
+    expect(viewItems(false).map((i) => [i.id, i.label, i.disabled])).toEqual([
+      ["viewToc", "Sadržaj na listu", undefined], ["structure", "Struktura rada", undefined],
+      ["cleanText", "Čisti tekst (bez savjeta)", undefined], ["viewFirstLines", "Prvi redovi", undefined],
+    ]);
+    expect(viewItems(true)[2]?.label).toBe("✓ Čisti tekst (bez savjeta)");
+  });
+
+  it("ticks Sadržaj na listu only while the box is on the sheet (ED-71)", async () => {
+    const { viewItems, PENDING_VIEWS: pending } = await import("./view-menu");
+    expect(viewItems(false, true)[0]?.label).toBe("✓ Sadržaj na listu");
+    expect(viewItems(false, false)[0]?.label).toBe("Sadržaj na listu");
+    expect(pending).not.toContain("viewToc");
+    expect(pending).not.toContain("viewFirstLines");
+  });
+
+  it("keeps Čisti tekst on <html> and in the browser; blocked storage still changes the page", async () => {
+    const { readClean, setClean, CLEAN_KEY } = await import("./view-menu");
+    const root = rootWith(null);
+    const store = memory();
+    expect(readClean(root, () => store)).toBe(false);
+    expect(setClean(root, () => store, true)).toBe(true);
+    expect(root.getAttribute("data-clean-text")).toBe("on");
+    expect(store.kept.get(CLEAN_KEY)).toBe("on");
+    expect(readClean(rootWith(null), () => store)).toBe(true);
+    const blocked = () => { throw new Error("blocked"); };
+    setClean(root, blocked, false);
+    expect(root.getAttribute("data-clean-text")).toBe("off");
+    expect(readClean(rootWith(null), blocked)).toBe(false);
   });
 });

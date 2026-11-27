@@ -6,8 +6,11 @@ import type { createApi } from "@/client/api";
 // the course, so the page reads student.assignments.get (the student's own
 // courses, as the server allows) and picks the assignment here.
 export type CourseRead =
-  | { kind: "assignment"; assignmentId: string }
-  | { kind: "none" | "signedOut" | "notFound" | "unavailable" };
+  | { kind: "assignment"; assignmentId: string; courseName?: string }
+  | { kind: "none"; courseName?: string }
+  | { kind: "signedOut" | "notFound" | "unavailable" }
+  /** DIZ S-05 (KU4): 403 is its own state; a course that is not the student's stays "notFound" (KU2). */
+  | { kind: "denied" };
 
 type Api = ReturnType<typeof createApi>;
 
@@ -46,11 +49,13 @@ export async function readCourse(call: Api, courseId: string, now: Date = new Da
   } catch {
     return { kind: "unavailable" };
   }
-  if (!result.ok) return result.status === 401 ? { kind: "signedOut" } : { kind: "unavailable" };
-  const { courses } = result.body as { courses: { id: string; assignments: AssignmentDue[] }[] };
+  if (!result.ok) return result.status === 401 ? { kind: "signedOut" } : result.status === 403 ? { kind: "denied" } : { kind: "unavailable" };
+  const { courses } = result.body as { courses: { id: string; name?: string; assignments: AssignmentDue[] }[] };
   // Only a course the student is enrolled in is listed; anything else is not theirs.
   const course = courses.find((item) => item.id === courseId);
   if (!course) return { kind: "notFound" };
   const id = pickOpenAssignment(course.assignments, now);
-  return id ? { kind: "assignment", assignmentId: id } : { kind: "none" };
+  // R-17 / P-B1: the name of the course comes with the read, for the toast of the step.
+  const courseName = course.name?.trim() || undefined;
+  return id ? { kind: "assignment", assignmentId: id, courseName } : { kind: "none", courseName };
 }

@@ -89,7 +89,8 @@ describe("StudentHome, Archivum S01 on /zadaci (DAN-344)", () => {
         ],
       }],
     });
-    expect(html).toContain(`${home.courseLabel} · 2026./2027.`);
+    // Design alignment 27. 11. 2026.: label and year as two parts 12 px apart, no dot.
+    expect(html).toContain(`<span>${home.courseLabel}</span><span>2026./2027.</span>`);
     expect(html).toContain(`${added.teachers}: Iva Izmišljena (${added.teacherRole.holder}), Ana Primjerić (${added.teacherRole.collaborator})`);
     expect(html).toContain("Produljeni rok: 7. prosinca 2026. u 23:59");
     expect(html).not.toContain("Rok: 30. studenoga 2026.");
@@ -104,7 +105,7 @@ describe("StudentHome, Archivum S01 on /zadaci (DAN-344)", () => {
     // A course the read gives no teachers or year for shows neither.
     const bare = render({ kind: "ready", courses });
     expect(bare).not.toContain(`${added.teachers}:`);
-    expect(bare).not.toContain(`${home.courseLabel} · `);
+    expect(bare).toContain(`<span>${home.courseLabel}</span></p>`);
     expect(findForbiddenTerms(JSON.stringify([added.teachers, added.teacherRole, added.extendedDue, added.enrollLink]))).toEqual([]);
   });
 

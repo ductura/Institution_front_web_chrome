@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "./fixtures/test";
 
-const PAGE = "/app/web/analiza";
+const PAGE = "/aplikacija/analiza";
 const ME = { roles: ["student"], displayName: "Student A", institution: { slug: "izm", displayName: "Izmišljeni fakultet za testove" } };
 const CATALOGUE = {
   limits: { maxRows: 500, maxColumns: 12, maxCellLength: 64, maxBodyBytes: 131072 },
@@ -118,12 +118,10 @@ async function calculateOn(page: Page, analysis: string, columns: string[]) {
   await page.getByRole("button", { name: "Izračunaj" }).click();
 }
 
-const digests = async (page: Page) => {
-  const found = await page.locator("dd code").allTextContents();
-  return found.map((text) => text.replace(/\s/g, ""));
-};
+// The fingerprints are not shown (Ductus#2059, V15 B): what a person can compare is the numbers in the tables.
+const shownTables = async (page: Page) => (await page.getByRole("table").allTextContents()).join("|");
 
-test("an invented sample, descriptive statistics and correlation: tables and fingerprints", async ({ page }) => {
+test("an invented sample, descriptive statistics and correlation: tables, no fingerprints shown", async ({ page }) => {
   const seen = await fakeServer(page);
   await page.goto(PAGE);
   await expect(page.getByRole("heading", { level: 1, name: "Statistička analiza" })).toBeVisible();
@@ -133,9 +131,9 @@ test("an invented sample, descriptive statistics and correlation: tables and fin
   await calculateOn(page, "Opisna statistika", ["Biootpad kg tjedno", "Kompost kg tjedno"]);
   const table = page.getByRole("table", { name: "Opisna statistika po stupcima" });
   await expect(table.getByRole("row")).toHaveCount(3);
-  const [dataset, result] = await digests(page);
-  expect(dataset).toMatch(/^[0-9a-f]{64}$/);
-  expect(result).toMatch(/^[0-9a-f]{64}$/);
+  await expect(page.locator("dd code")).toHaveCount(0);
+  await expect(page.getByText(/[0-9a-f]{4} [0-9a-f]{4} [0-9a-f]{4} [0-9a-f]{4}/)).toHaveCount(0);
+  const result = await shownTables(page);
   expect(seen.runs).toHaveLength(1);
   expect(seen.runs[0]).toMatchObject({ analysisId: "descriptive", analysisVersion: "1.0.0", variables: ["Biootpad kg tjedno", "Kompost kg tjedno"] });
   // The body carries no identity of anyone, only the invented set.
@@ -150,24 +148,23 @@ test("an invented sample, descriptive statistics and correlation: tables and fin
   await page.getByRole("button", { name: "Izračunaj" }).click();
   await expect(page.getByRole("table", { name: "Pearsonov koeficijent korelacije po parovima" }).getByRole("row")).toHaveCount(2);
   await expect(page.getByRole("table", { name: "Matrica korelacije" })).toBeVisible();
-  const [, correlationResult] = await digests(page);
-  expect(correlationResult).not.toBe(result);
+  expect(await shownTables(page)).not.toBe(result);
   expect(seen.runs).toHaveLength(2);
 });
 
-test("the same set and version twice give the same fingerprints; another choice gives another", async ({ page }) => {
+test("the same set and version twice give the same tables; another choice gives another", async ({ page }) => {
   const seen = await fakeServer(page);
   await page.goto(PAGE);
   await loadSample(page);
   await calculateOn(page, "Opisna statistika", ["Biootpad kg tjedno"]);
   await expect(page.getByRole("table", { name: "Opisna statistika po stupcima" })).toBeVisible();
-  const first = await digests(page);
+  const first = await shownTables(page);
 
   await page.getByRole("button", { name: "Nova analiza" }).click();
   await loadSample(page);
   await calculateOn(page, "Opisna statistika", ["Biootpad kg tjedno"]);
   await expect(page.getByRole("table", { name: "Opisna statistika po stupcima" })).toBeVisible();
-  const second = await digests(page);
+  const second = await shownTables(page);
 
   expect(seen.runs).toHaveLength(2);
   expect(seen.runs[1]).toEqual(seen.runs[0]);
@@ -178,8 +175,8 @@ test("the same set and version twice give the same fingerprints; another choice 
   for (const name of ["Biootpad kg tjedno", "Kompost kg tjedno"]) await page.getByRole("checkbox", { name: new RegExp(`^${name} \\(`) }).check();
   await page.getByRole("button", { name: "Izračunaj" }).click();
   await expect(page.getByRole("table", { name: "Opisna statistika po stupcima" }).getByRole("row")).toHaveCount(3);
-  const third = await digests(page);
-  expect(third[0]).not.toBe(first[0]);
+  const third = await shownTables(page);
+  expect(third).not.toBe(first);
 });
 
 test("a bad CSV shows the error, goes nowhere and nothing is sent", async ({ page }) => {

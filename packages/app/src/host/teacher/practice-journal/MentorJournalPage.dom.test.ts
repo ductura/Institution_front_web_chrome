@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mentorJournalText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 // The teacher read hook of pages.tsx, without pulling the whole host in: the same states, read once per attempt.
 vi.mock("../../pages", async () => {
@@ -64,6 +64,22 @@ describe("MentorJournalPage in the browser", () => {
   const submit = async (form: HTMLFormElement) => { await act(async () => { form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); }); };
   const openFirst = async () => { await act(async () => { host.querySelector<HTMLButtonElement>("[data-testid=placement] button")!.click(); }); };
 
+  it("shows the 403 state with the way back and no journal for a non-teacher", async () => {
+    const d = apiOf({ "practice.placements.get": () => ok({ placements: [] }) });
+    await render(d.call, (() => (async () => fail(403, "forbidden")) as never) as never);
+    expect(text()).toContain(t.deniedTitle);
+    expect(host.querySelector<HTMLAnchorElement>(`a[href="/aplikacija/nastavnik"]`)?.textContent).toBe(t.backToOwn);
+    expect(host.querySelector("[data-testid=placement]")).toBeNull();
+  });
+
+  it("frames an unavailable practice list as an alert with a retry", async () => {
+    const d = apiOf({ "practice.placements.get": () => fail(503, "unavailable") });
+    await render(d.call);
+    const alert = host.querySelector("[role=alert]");
+    expect(alert?.textContent).toContain(t.placementsUnavailable);
+    expect([...host.querySelectorAll("button")].some((b) => b.textContent === t.retry)).toBe(true);
+  });
+
   it("lists the practices with the student's name and opens one to read the entries and the history", async () => {
     const d = apiOf({ "practice.placements.get": () => ok({ placements: [PLACEMENT] }), "practice.entries.get": () => ok({ entries: [E1, E2], signoffs: [SIGNOFF] }) });
     await render(d.call);
@@ -74,7 +90,11 @@ describe("MentorJournalPage in the browser", () => {
     expect(host.querySelectorAll("[data-testid=entry]")).toHaveLength(2);
     expect(d.calls.find((c) => c.id === "practice.entries.get")!.input.params).toEqual({ placementId: PLACEMENT.placementId });
     expect(text()).toContain("Izmišljen komentar.");
-    expect(text()).toContain("ab".repeat(32));
+    expect(text()).not.toContain("ab".repeat(32));
+    expect(text()).not.toContain("Sažetak zapisa");
+    expect(text()).toContain("potpisano 4. travnja 2026. u 10:00");
+    expect(text()).toContain("Potpisanih zapisa: 2");
+    expect(text()).toContain("Komentar mentora: Izmišljen komentar.");
     expect(text()).toContain(t.signedMark);
     expect(text()).toContain(t.privateNote);
   });
@@ -208,6 +228,6 @@ describe("MentorJournalPage in the browser", () => {
   it("goes to sign-in when the session is gone", async () => {
     const { call } = apiOf({ "practice.placements.get": () => fail(401, "unauthorized") });
     await render(call);
-    expect(signIn).toHaveBeenCalledWith("/app/web/nastavnik/mentorstva/dnevnik-prakse");
+    expect(signIn).toHaveBeenCalledWith("/aplikacija/nastavnik/mentorstva/dnevnik-prakse");
   });
 });

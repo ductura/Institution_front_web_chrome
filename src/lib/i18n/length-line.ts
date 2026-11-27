@@ -3,7 +3,7 @@ import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "./l
 
 /**
  * The length line of the status bar (FE-D6, design editor-v11: "označeno 12
- * riječi · 210 / 2 000–2 500 riječi · ≈ 1 str."). Pure, so the wording and
+ * riječi", "210 / 2 000–2 500 riječi", "≈ 1 str.", parts 12 px apart). Pure, so the wording and
  * the arithmetic are tested without a DOM. Croatian is the default; English
  * (M11.5-P01b) takes its templates from the catalogue and its own grouping
  * and plural ("2,000–2,500 words").
@@ -78,8 +78,13 @@ export type LengthLine = {
   readonly selected: string | null;
   /** The count itself, shown in bold. */
   readonly count: string;
-  /** What follows the count: " / 2 000–2 500 riječi · ≈ 1 str." */
+  /** What follows the count: " / 2 000–2 500 riječi". */
   readonly rest: string;
+  /**
+   * "≈ 1 str.", or null before the first word. Design alignment 27. 11. 2026. (S-07): its own
+   * part, 12 px from the count, never joined by a dot.
+   */
+  readonly pages: string | null;
 };
 
 export function lengthLine(
@@ -96,6 +101,7 @@ export function lengthLine(
   return {
     selected: selectedWords > 0 ? t.workspace.selectedWords.replace("{words}", selected) : null,
     count: GROUP[locale](words),
-    rest: pages > 0 ? `${noun} · ${t.workspace.pagesApprox.replace("{pages}", String(pages))}` : noun,
+    rest: noun,
+    pages: pages > 0 ? t.workspace.pagesApprox.replace("{pages}", String(pages)) : null,
   };
 }

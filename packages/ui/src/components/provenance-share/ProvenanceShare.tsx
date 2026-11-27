@@ -2,7 +2,6 @@
 
 import { useId } from "react";
 
-import { InertButton } from "../assistant-states/InertButton";
 import {
   matchIsConsistent, orderedShare, shareIsConsistent, splitBlock,
   type AiMatchRecord, type ProvenanceBlock, type ShareCategory, type ShareRecord,
@@ -66,7 +65,7 @@ export function ProvenanceShare({ labels, state, onRetry }: ProvenanceShareProps
     <section className={styles.panel} aria-label={labels.title}>
       <h2 className={styles.title}>{labels.title}</h2>
       <p className={role === "alert" ? styles.alert : styles.note} role={role}>{text}</p>
-      {role === "alert" && onRetry && <div className={styles.acts}><InertButton onClick={onRetry}>{labels.retry}</InertButton></div>}
+      {role === "alert" && onRetry && <button type="button" className={styles.retryLink} onClick={onRetry}>{labels.retry}</button>}
     </section>
   );
 

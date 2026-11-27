@@ -3,8 +3,8 @@
 // that a test is hidden or that its result counts towards a mark.
 export const codeTestsText = {
   title: "Testovi uz zadatak",
-  lead: "Dodajte do 10 testova za programski zadatak (JavaScript). Studenti vide svaki test i mogu ga pokrenuti u svom pregledniku; rezultat vide samo oni i ne ulazi u ocjenu.",
-  back: "Natrag na kolegije",
+  lead: "Dodajte do {max} testova za programski zadatak (JavaScript). Studenti vide svaki test i mogu ga pokrenuti u svom pregledniku; rezultat vide samo oni i ne ulazi u ocjenu.",
+  back: "Natrag na zadatak",
   link: "Testovi uz zadatak",
   gone: "Ovaj zadatak nije dostupan.",
   loading: "Učitavanje testova…",
@@ -24,7 +24,7 @@ export const codeTestsText = {
     remove: "Ukloni test {n}",
   },
   add: "Dodaj test",
-  addLimit: "Dosegnut je najveći broj testova (10).",
+  addLimit: "Dosegnut je najveći broj testova ({max}).",
   save: "Spremi testove",
   saving: "Sprema se…",
   saved: "Testovi su spremljeni.",
@@ -33,7 +33,7 @@ export const codeTestsText = {
     title: "Naziv testa ima 1 do 120 znakova.",
     input: "Ulaz mora biti ispravan JSON.",
     expected: "Očekivani izlaz mora biti ispravan JSON.",
-    count: "Najviše 10 testova.",
+    count: "Najviše {max} testova.",
     size: "Testovi su preveliki: ukupno najviše 16 KiB.",
   },
   writeFailure: {
@@ -44,7 +44,7 @@ export const codeTestsText = {
   },
   preview: {
     title: "Pregled kako ga vidi student",
-    lead: "Student vidi ove testove i napomenu ispod njih.",
+    lead: "Studenti vide ove testove i napomenu ispod njih.",
     note: "Pokrenuto u vašem pregledniku; to nije provjera nastavnika i ne ulazi u ocjenu.",
     input: "Ulaz",
     expected: "Očekivano",

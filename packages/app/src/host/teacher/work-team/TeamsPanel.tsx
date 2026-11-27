@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Card, RouteLoading, Select } from "@ductura/ui";
+import { Button, Card, Dialog, RouteLoading, Select } from "@ductura/ui";
 
 import type { createApi } from "@/client/api";
 import { ContributionCard } from "../../student/work-team/ContributionCard";
 import { fullName, plural } from "../../student/work-team/model";
+import { LoadAlert } from "../../states/States";
 import { teacherTeamText as t } from "./messages.hr";
 import { hasRoom, membersByName, peopleByName } from "./model";
 import {
@@ -35,6 +36,7 @@ export function TeamsPanel({ assignmentId, call, setting, version, onSignedOut }
   const [note, setNote] = useState<{ tone: "status" | "alert"; text: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [pick, setPick] = useState<Record<string, string>>({});
+  const [removing, setRemoving] = useState<{ teamId: string; studentId: string; name: string; n: string } | null>(null);
   const [shown, setShown] = useState<string | null>(null);
   const [contribution, setContribution] = useState<ContributionRead | null>(null);
 
@@ -80,8 +82,8 @@ export function TeamsPanel({ assignmentId, call, setting, version, onSignedOut }
   if (read.kind !== "ok") {
     return (
       <Card level={2} title={t.teams.title}>
-        <p role="alert">{read.kind === "notFound" ? t.gone : t.unavailable}</p>
-        {read.kind === "unavailable" && <p><Button tone="quiet" onClick={() => { setRead(null); reload(); }}>{t.retry}</Button></p>}
+        <LoadAlert body={read.kind === "notFound" ? t.gone : t.unavailable}
+          retry={read.kind === "unavailable" ? { label: t.retry, onRetry: () => { setRead(null); reload(); } } : undefined} />
       </Card>
     );
   }
@@ -90,7 +92,7 @@ export function TeamsPanel({ assignmentId, call, setting, version, onSignedOut }
   const open = setting === null ? teams : teams.filter((team) => hasRoom(team, setting));
   return (
     <>
-      {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
+      {note !== null && (note.tone === "alert" ? <LoadAlert body={note.text} /> : <p role="status">{note.text}</p>)}
       <Card level={2} title={t.teams.title}>
         {off && <p data-testid="teams-off">{t.teams.disabled}</p>}
         <p>
@@ -112,7 +114,7 @@ export function TeamsPanel({ assignmentId, call, setting, version, onSignedOut }
                       {fullName(m)} <span>({t.teams.state[m.workState]})</span>{" "}
                       <Button tone="quiet" disabled={busy !== null} busy={busy === `remove-${m.studentId}`}
                         aria-label={t.teams.removeAria.replace("{name}", fullName(m)).replace("{n}", n)}
-                        onClick={() => void run(`remove-${m.studentId}`, () => memberAction(call(), assignmentId, team.teamId, { studentId: m.studentId, action: "remove" }), t.teams.removed)}>
+                        onClick={() => setRemoving({ teamId: team.teamId, studentId: m.studentId, name: fullName(m), n })}>
                         {busy === `remove-${m.studentId}` ? t.teams.removing : t.teams.remove}
                       </Button>
                     </li>
@@ -134,7 +136,7 @@ export function TeamsPanel({ assignmentId, call, setting, version, onSignedOut }
       <Card level={2} title={t.unassigned.title}>
         {unassigned.length === 0 ? <p>{t.unassigned.none}</p> : (
           <>
-            {open.length === 0 && <p>{t.unassigned.noTeams}</p>}
+            {open.length === 0 && <p>{teams.length === 0 ? t.unassigned.noTeams : t.unassigned.full}</p>}
             <ul>
               {peopleByName(unassigned).map((s) => {
                 // A stale choice (the team filled up meanwhile) is no choice.
@@ -143,6 +145,9 @@ export function TeamsPanel({ assignmentId, call, setting, version, onSignedOut }
                 return (
                   <li key={s.studentId} data-testid="unassigned">
                     <strong>{fullName(s)}</strong>
+                    {open.length === 0 && teams.length > 0 && (
+                      <Button tone="quiet" disabled aria-label={t.unassigned.addAria.replace("{name}", fullName(s))}>{t.unassigned.add}</Button>
+                    )}
                     {open.length > 0 && (
                       <>
                         <Select label={t.unassigned.pick.replace("{name}", fullName(s))} placeholder={t.unassigned.pickPlaceholder} disabled={busy !== null} value={chosen}
@@ -161,6 +166,19 @@ export function TeamsPanel({ assignmentId, call, setting, version, onSignedOut }
           </>
         )}
       </Card>
+      <Dialog open={removing !== null} title={t.teams.removeConfirmTitle} onClose={() => setRemoving(null)} dismissible
+        actions={(
+          <>
+            <Button tone="quiet" onClick={() => setRemoving(null)}>{t.teams.removeConfirmNo}</Button>
+            <Button onClick={() => {
+              const r = removing;
+              setRemoving(null);
+              if (r !== null) void run(`remove-${r.studentId}`, () => memberAction(call(), assignmentId, r.teamId, { studentId: r.studentId, action: "remove" }), t.teams.removed);
+            }}>{t.teams.removeConfirmYes}</Button>
+          </>
+        )}>
+        <p>{removing === null ? "" : t.teams.removeConfirmBody.replace("{name}", removing.name).replace("{n}", removing.n)}</p>
+      </Dialog>
     </>
   );
 }

@@ -126,8 +126,8 @@ describe("MentorshipRequests", () => {
     }));
     const shown = text(html);
     expect(shown).toContain(t.title);
-    expect(shown).toContain("Iva Izmišljena Završni rad · Zahtjev poslan");
-    expect(shown).toContain(`${t.unnamed} Završni rad · Zahtjev poslan`);
+    expect(shown).toContain("Iva Izmišljena Završni rad Zahtjev poslan");
+    expect(shown).toContain(`${t.unnamed} Završni rad Zahtjev poslan`);
     expect(html).toContain(`aria-label="${t.approve}: Iva Izmišljena"`);
     expect(html).toContain(`aria-label="${t.decline}: ${t.unnamed}"`);
     expect(shown).not.toContain(t.approved);
@@ -150,6 +150,9 @@ describe("MentorshipRequests", () => {
     expect(text(html)).toContain(t.unavailable);
     expect(text(html)).not.toContain(t.empty);
     expect(html).toContain(`href="${HERE}"`);
+    // Design alignment 27. 11. 2026.: the alert box, with the link to try again under it.
+    expect(html).toMatch(/<p role="alert"[^>]*>[^<]*<\/p><p[^>]*><a[^>]*href=/);
+    expect(html).not.toContain("\u00b7");
   });
 
   it("uses no forbidden term", () => {

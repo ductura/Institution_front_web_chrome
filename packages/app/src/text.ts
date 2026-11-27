@@ -13,11 +13,19 @@ export const hostText = {
   signInNoRoleTitle: "Prijava je uspjela",
   signInNoRoleBody: "Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti.",
   signOutFailed: "Odjava nije uspjela. Pokušajte ponovno.",
+  signOutAll: "Odjavi sve sesije",
   signIn: "Prijava",
   // HOST-T3: the label of N-13 (WEB-1113) until locales/ has its catalogue.
   deadlineExtensions: "Produljenje roka",
   mentorshipRequest: "Zahtjev za mentorstvo",
   practiceJournal: "Dnevnik prakse",
+  // WEB-NASLOVI-SVE: the part of a work's tab title, "<naziv rada> — Pisanje" / "— Predaja".
+  // WEB-NASLOVI-SVE: the logo link leads to the personal space, named for what it is (no "Početna" of two meanings).
+  homeLabelStudent: "Ductura, moji zadaci",
+  homeLabelTeacher: "Ductura, moji kolegiji",
+  homeLabelAdmin: "Ductura, ustanova",
+  titleWriting: "Pisanje",
+  titleSubmission: "Predaja",
   qualMaterials: "Gradivo za kodiranje",
   questionnaires: "Upitnici",
   qualExport: "Izvoz kodiranja",

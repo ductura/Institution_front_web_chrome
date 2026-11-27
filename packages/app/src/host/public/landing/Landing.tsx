@@ -12,24 +12,24 @@ import { Teacher } from "./Teacher";
  * The public home page after koncepti/naslovnica (DAN-1520), ported section
  * by section from the top. Text: `messagesHr.landing`.
  */
-/** `base`: the app's address prefix, for the links to sign in and home (`appHref`). */
-export function Landing({ base }: { base: string }) {
+/** The links lead to the edge's absolute paths (./edge.ts), so the page takes no base; `base` stays for callers. */
+export function Landing(_: { base?: string }) {
   return (
     <div className={styles.landing}>
-      <SiteHeader base={base} />
+      <SiteHeader />
       <div className={styles.backdrop} aria-hidden="true" />
       <main id="sadrzaj" className={styles.main}>
         <div className={styles.opening}>
-          <Hero base={base} />
+          <Hero />
         </div>
         <How />
         <Teacher />
         <Privacy />
         <Institutions />
         <Questions />
-        <Download base={base} />
+        <Download />
       </main>
-      <SiteFooter base={base} />
+      <SiteFooter />
     </div>
   );
 }

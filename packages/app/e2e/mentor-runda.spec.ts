@@ -84,7 +84,7 @@ for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 900 });
       const posted: unknown[] = [];
       await student(page, posted);
-      await page.goto(`/app/web/rad/${T1}`);
+      await page.goto(`/aplikacija/rad/${T1}`);
       await setTheme(page, theme);
       await skipGuide(page);
       const card = await openMentor(page, width);
@@ -122,7 +122,7 @@ for (const width of [390, 1280]) {
 test("MK-8: this work's return gives the mentor's comment and the revision deadline", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, [], false, true);
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const card = await openMentor(page, 1280);
   const said = card.locator("[data-mentor-said]");
@@ -134,7 +134,7 @@ test("MK-8: this work's return gives the mentor's comment and the revision deadl
 test("MK-8: a failed read of the returns says unavailable and reads again on request", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, [], true);
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const card = await openMentor(page, 1280);
   const said = card.locator("[data-mentor-said]");
@@ -170,7 +170,7 @@ for (const width of [390, 1280]) {
         if (path.endsWith("/seen-by-student")) return route.fulfill({ json: { items: [] } });
         return route.fulfill({ status: 503, json: { code: "unavailable" } });
       });
-      await page.goto("/app/web/nastavnik/mentorstva");
+      await page.goto("/aplikacija/nastavnik/mentorstva");
       await setTheme(page, theme);
       const round = page.locator("[data-round-review]");
       await expect(round.getByRole("heading", { name: "Pregled runde: Iva Izmišljena" })).toBeVisible();

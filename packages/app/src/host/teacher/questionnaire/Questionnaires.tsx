@@ -6,12 +6,22 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
+import { LoadAlert } from "../../states/States";
+import { exportPath } from "../questionnaire-export/model";
 import { questionnairePort, type Failure, type QuestionnairePort } from "./port";
 import {
   KINDS, MAX_QUESTIONS, answersOf, bodyOf, draftOf, emptyDraft, emptyQuestion, nextState, takesManualEntry,
   type Draft, type DraftQuestion, type Kind, type ListItem, type Problem, type Question, type Questionnaire, type SheetInput,
 } from "./model";
 import { questionnaireMessages as text } from "./messages.hr";
+
+/** "12. studenoga 2026." for an ISO day; anything else is shown as it came. */
+export function longDay(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (m === null) return iso;
+  const date = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return date.getUTCMonth() !== Number(m[2]) - 1 || date.getUTCDate() !== Number(m[3]) ? iso : date.toLocaleDateString("hr-HR", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" });
+}
 
 type Mode =
   | { kind: "list" }
@@ -34,7 +44,7 @@ export function DraftForm({ draft, onChange, problem, busy }: {
     <div data-testid="questionnaire-form">
       <TextField label={text.fieldTitle} value={draft.title} maxLength={400} disabled={busy}
         error={here("title", null)} onChange={(e) => onChange({ ...draft, title: e.currentTarget.value })} />
-      {problem?.problem === "count" && <p role="alert">{text.problem.count}</p>}
+      {problem?.problem === "count" && <LoadAlert body={text.problem.count} />}
       {draft.questions.map((q, index) => (
         <fieldset key={index} data-question={index + 1}>
           <legend>{text.questionHeading(index + 1)}</legend>
@@ -117,7 +127,7 @@ export function SheetForm({ questionnaire, onSubmit, busy, notice }: {
           onChange={(next) => setInputs({ ...inputs, [q.id]: next })} />
       ))}
       {check && !check.ok && check.reason === "none" && <p role="alert">{text.manualProblem.none}</p>}
-      {notice && <p role={notice.error ? "alert" : "status"}>{notice.label}</p>}
+      {notice && (notice.error ? <LoadAlert body={notice.label} /> : <p role="status">{notice.label}</p>)}
       <Button type="button" disabled={busy} onClick={() => {
         const next = answersOf(questions, inputs);
         setCheck(next);
@@ -128,8 +138,10 @@ export function SheetForm({ questionnaire, onSubmit, busy, notice }: {
   );
 }
 
-export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: {
+export function QuestionnairePanel({ courseId, courseName, port, onSignedOut, exportHref }: {
   courseId: string; courseName: string; port: QuestionnairePort; onSignedOut: () => void;
+  /** The link to the export of one questionnaire (F4-V18-22-R01); without it the list offers none. */
+  exportHref?: (questionnaireId: string) => string;
 }) {
   const [items, setItems] = useState<ListItem[] | null>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
@@ -236,7 +248,7 @@ export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: 
   const columns: DataTableColumn<ListItem>[] = [
     { id: "title", header: text.colTitle, rowHeader: true, cell: (row) => row.title },
     { id: "state", header: text.colState, cell: (row) => text.state[row.state] },
-    { id: "created", header: text.colCreated, cell: (row) => row.createdOn },
+    { id: "created", header: text.colCreated, cell: (row) => longDay(row.createdOn) },
     { id: "questions", header: text.colQuestions, cell: (row) => row.questionCount },
     { id: "responses", header: text.colResponses, cell: (row) => row.responseCount },
     {
@@ -249,6 +261,7 @@ export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: 
             {to !== null && <Button type="button" tone="quiet" disabled={busy} aria-label={text.actionFor(to === "open" ? text.publish : text.close, row.title)}
               onClick={() => setConfirm({ item: row, to })}>{to === "open" ? text.publish : text.close}</Button>}
             {takesManualEntry(row.state) && <Button type="button" tone="quiet" disabled={busy} aria-label={text.actionFor(text.manual, row.title)} onClick={() => void openManual(row)}>{text.manual}</Button>}
+            {row.state !== "draft" && exportHref !== undefined && <a href={exportHref(row.id)} aria-label={text.actionFor(text.exportResponses, row.title)}>{text.exportResponses}</a>}
           </>
         );
       },
@@ -260,7 +273,7 @@ export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: 
       <div>
         <h3>{mode.id === null ? text.formTitleNew : text.formTitleEdit}</h3>
         {busy && <p role="status">{text.saving}</p>}
-        {feedback && <p role={feedback.error ? "alert" : "status"}>{feedback.label}</p>}
+        {feedback && (feedback.error ? <LoadAlert body={feedback.label} /> : <p role="status">{feedback.label}</p>)}
         <DraftForm draft={mode.draft} busy={busy} problem={problem} onChange={(draft) => setMode({ ...mode, draft })} />
         <Button type="button" disabled={busy} onClick={() => void save()}>{text.save}</Button>
         <Button type="button" tone="quiet" disabled={busy} onClick={() => { setMode({ kind: "list" }); setFeedback(null); }}>{text.discard}</Button>
@@ -282,7 +295,7 @@ export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: 
     <div data-testid="questionnaires" data-state={items === null && failure === null ? "loading" : failure ?? "ready"}>
       <p>{text.lead}</p>
       {busy && <p role="status">{text.saving}</p>}
-      {feedback && <p role={feedback.error ? "alert" : "status"}>{feedback.label}</p>}
+      {feedback && (feedback.error ? <LoadAlert body={feedback.label} /> : <p role="status">{feedback.label}</p>)}
       {confirm && (
         <div role="alertdialog" aria-label={confirm.to === "open" ? text.publish : text.close}>
           <p>{confirm.to === "open" ? text.confirmPublish(confirm.item.title) : text.confirmClose(confirm.item.title)}</p>
@@ -292,7 +305,8 @@ export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: 
       )}
       {failure !== null
         ? <>
-          <p role="alert">{failureText(failure)}</p>
+          {/* E6: a lapsed sign-in is not shown in the panel; 401 leads to the sign-in. */}
+          {failure !== "signedOut" && <LoadAlert body={failureText(failure)} />}
           {failure !== "signedOut" && <Button type="button" onClick={() => setAttempt((n) => n + 1)}>{text.retry}</Button>}
         </>
         : items === null ? <p role="status">{text.loading}</p>
@@ -312,11 +326,11 @@ export function CourseQuestionnaires({ courseId, courseName }: { courseId: strin
   const port = useMemo(() => questionnairePort(createApi()), []);
   return (
     <div>
-      <Button type="button" tone="quiet" aria-label={`${text.title} · ${courseName}`} aria-expanded={open} aria-controls={panelId}
+      <Button type="button" tone="quiet" aria-label={`${text.title}, ${courseName}`} aria-expanded={open} aria-controls={panelId}
         onClick={() => setOpen(!open)}>{text.title}</Button>
       <div id={panelId} hidden={!open}>
         {open && <QuestionnairePanel courseId={courseId} courseName={courseName} port={port}
-          onSignedOut={() => goToSignIn(appHref(base, "/nastavnik"))} />}
+          onSignedOut={() => goToSignIn(appHref(base, "/nastavnik"))} exportHref={(id) => appHref(base, exportPath(id))} />}
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { practiceJournalText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 const { default: PracticeJournalPage } = await import("./PracticeJournalPage");
 
@@ -69,6 +69,17 @@ describe("PracticeJournalPage in the browser", () => {
     await render(call);
     expect(text()).toContain(t.entriesUnavailable);
     expect(text()).not.toContain(t.noEntries);
+  });
+
+  it("frames the read error as an alert, marks an unsigned entry 'Čeka potpis' and says an ended practice takes no entries", async () => {
+    const unsigned = { entryId: "e9", date: "2026-03-20", hours: 1, text: "Izmišljen zapis.", correctsEntryId: null, createdAt: "2026-03-20T10:00:00.000Z" };
+    let d = apiOf({ "practice.placements.get": () => ok({ placements: [PLACEMENT] }), "practice.entries.get": () => ({ ok: false, status: 503, code: "unavailable" }) });
+    await render(d.call);
+    expect(host.querySelector("[role=alert]")?.textContent).toContain(t.entriesUnavailable);
+    d = apiOf({ "practice.placements.get": () => ok({ placements: [{ ...PLACEMENT, endsOn: "2026-03-31", signedThrough: null }] }), "practice.entries.get": () => ok({ entries: [unsigned], signoffs: [] }) });
+    await render(d.call);
+    expect(text()).toContain(t.unsignedMark);
+    expect(text()).toContain(t.endedNote);
   });
 
   it("reads another student's practice as not available", async () => {
@@ -177,6 +188,6 @@ describe("PracticeJournalPage in the browser", () => {
   it("goes to sign-in when the session is gone", async () => {
     const { call } = apiOf({ "practice.placements.get": () => ({ ok: false, status: 401, code: "unauthorized" }) });
     await render(call);
-    expect(signIn).toHaveBeenCalledWith("/app/web/zadaci/dnevnik-prakse");
+    expect(signIn).toHaveBeenCalledWith("/aplikacija/zadaci/dnevnik-prakse");
   });
 });

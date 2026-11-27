@@ -9,7 +9,7 @@ import ErrorScreen from "../../../../src/components/shell/ErrorScreen.ts";
 import { goToSignIn, readSession, type SessionRead } from "../../../../src/client/api.ts";
 
 import type { Base } from "../bases";
-import { resolve, routeOf, shellRole } from "../routes";
+import { browserRoute, resolve, shellRole } from "../routes";
 import { useLocale } from "../i18n";
 import { isNarrow, withoutShell } from "./ljuska-po-ekranu";
 import { HostContext } from "./context";
@@ -30,9 +30,10 @@ import { shellMessagesFor } from "./teacher/shell/messages";
  * role inside the prototypes' shell (VIZ-0: no top bar, so no breadcrumb; the
  * institution's name moves to the side bar's foot).
  */
-export default function SignedInHost({ base, route, navigate, children }: {
+export default function SignedInHost({ base, route, navigate, detail, children }: {
   base: Base;
   route: string;
+  detail: string | null;
   navigate: (to: string, replace?: boolean) => void;
   children: ReactNode;
 }) {
@@ -42,7 +43,7 @@ export default function SignedInHost({ base, route, navigate, children }: {
   const load = useCallback(() => {
     setSession(null);
     void readSession().then((read) => {
-      if (read.kind === "signedOut") goToSignIn(appHref(base, routeOf(window.location.pathname, base)));
+      if (read.kind === "signedOut") goToSignIn(appHref(base, browserRoute(window.location.pathname, base)));
       setSession(read);
     });
   }, [base]);
@@ -64,7 +65,7 @@ export default function SignedInHost({ base, route, navigate, children }: {
     if (resolved?.kind === "redirect") navigate(resolved.to, true);
   }, [resolved, navigate]);
 
-  useDocumentTitle(resolved?.kind === "page" ? resolved.page : null, role, resolved?.kind === "notFound");
+  useDocumentTitle(resolved?.kind === "page" ? resolved.page : null, role, resolved?.kind === "notFound", detail);
 
   if (session === null) return <RouteLoading label={hostText.loading} />;
   if (session.kind === "signedOut") return <RouteLoading label={hostText.signingIn} />;
@@ -86,7 +87,7 @@ export default function SignedInHost({ base, route, navigate, children }: {
           role={role}
           name={t.app.name}
           homeHref={link(homeHref(role))}
-          homeLabel={ui.sideShell.home[role ?? "none"]}
+          homeLabel={{ student: hostText.homeLabelStudent, teacher: hostText.homeLabelTeacher, admin: hostText.homeLabelAdmin, none: ui.sideShell.home.none }[role ?? "none"]}
           sideLabel={shellText.shell.sideNav}
           navLabel={shellText.shell.workNav}
           items={navFor(role, shellText).map((item) => ({ href: link(item.href), label: item.label }))}

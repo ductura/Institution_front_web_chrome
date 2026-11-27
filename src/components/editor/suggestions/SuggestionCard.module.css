@@ -6,4 +6,4 @@
 .change ins { background: var(--cmt-bg); text-decoration: none; }
 .hint { color: var(--ink-2); margin: 0; }
 .actions { display: flex; gap: 8px; }
-.error { color: var(--danger, currentColor); margin: 0; }
+.error { color: var(--error); margin: 0; }

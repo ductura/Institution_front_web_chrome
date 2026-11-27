@@ -1,0 +1,6 @@
+/* WEB-DIZ-S06-S42 (Ductus#2059 c.7214951129, S-42): the reader's name and role are two elements, 12 px apart. */
+.reader {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+}

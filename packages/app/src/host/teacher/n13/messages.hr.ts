@@ -11,8 +11,13 @@ export const n13Messages = {
   // NZ-2 (Daniel, NF-4 odluka 5): extension also for an assignment whose deadline has passed.
   passedTitle: "Rok ovog zadatka je prošao.",
   passedBody: "Produljenje je i dalje moguće: student koji nije predao može predati do novog roka.",
-  // NZ-5 varijanta B: the server has no route for a separate late-submission exception yet.
-  exceptionUnavailable: "Posebna iznimka za predaju nakon roka, s vlastitim zapisom, još nije dostupna. Predaju nakon roka jednom studentu omogućite produljenjem roka za tog studenta.",
+  // NZ-5 varijanta B: the exception for a late submission has a record of its own, shown in the list with the mark „iznimka”.
+  exceptionNote: "Student koji nije predao može dobiti i posebnu iznimku za predaju nakon roka; ona se bilježi zasebno i u popisu ima oznaku „iznimka”.",
+  lateMark: "iznimka",
+  lateTitle: "Iznimke za predaju nakon roka",
+  lateUntil: "predaja dopuštena do",
+  lateEmpty: "Nijedna iznimka za predaju nakon roka nije zabilježena.",
+  lateUnavailable: "Iznimke za predaju nakon roka trenutačno nisu dostupne. Pokušajte ponovno.",
   unavailable: "Rokove trenutačno nije moguće učitati. Pokušajte ponovno.",
   listUnavailable: "Produljeni rokovi trenutačno nisu dostupni. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",
@@ -56,6 +61,11 @@ export const n13Messages = {
   recordedRest: "Student vidi novi rok uz zadatak. Razlog vidite samo Vi i taj student.",
   conflict: (who: string | null): string => `${who ?? "Student"} je predaju zatražio prije ovog produljenja.`,
   conflictRest: "Produljenje ne mijenja tu predaju; bilježi se kao dopuna uz nju.",
+  // NAS-R14 (NAS-26): the warning before saving, from the submissions the server already holds.
+  existingOne: (who: string, minute: string): string => `Predaja studenta ${who} već postoji (zatraženo ${minute}).`,
+  existingAll: (count: number): string => `Predaja već postoji kod ${count} ${count % 10 === 1 && count % 100 !== 11 ? "studenta" : "studenata"}:`,
+  existingRest: "Produljenje ne mijenja te predaje; bilježi se kao dopuna uz njih.",
+  submissionsUnknown: "Predaje studenata trenutačno nije moguće provjeriti; ako je netko već predao, produljenje ne mijenja tu predaju.",
   missing: "Odaberite studenta, novi rok i razlog.",
   invalid: "Produljenje nije zabilježeno. Provjerite da je novi rok kasniji od roka koji sada vrijedi i da razlog odgovara izboru.",
   notFound: "Zadatak ili student više nisu dostupni.",

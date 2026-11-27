@@ -11,10 +11,14 @@ export const pregledHr = {
   scopeWork: "Cijeli rad",
   noChapter: "Kursor nije u poglavlju; prikazuje se cijeli rad.",
   unavailable: "Pregled trenutačno nije dostupan. Tekst rada nije otvoren.",
-  nacrtIntro: "Prva rečenica svakog odlomka, redom. Tako vidite nit argumenta bez čitanja cijelog teksta.",
-  nacrtEmpty: "U ovom opsegu još nema odlomaka.",
+  // ED-72: tekstovi „Obrnutog nacrta” doslovno iz prototipa (right.js firstLines, features.js).
+  nacrtIntro: "Prva rečenica svakog odlomka. Ako se ovako čita kao argument, odlomci su dobro složeni.",
+  nacrtEmpty: "Ovdje još nema odlomaka.",
   words: (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "riječ" : "riječi"}`,
-  longFirst: "Prva rečenica je duga (više od 35 riječi).",
+  citations: (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "navod" : "navoda"}`,
+  longFirstTag: (n: number) => `${n} riječi`,
+  longFirst: (n: number) => `Prva rečenica ima ${n} riječi; glavna misao se gubi.`,
+  flags: { noCitations: "bez navoda", oneSentence: "jedna rečenica", longParagraph: "dug odlomak" },
   listen: "Poslušaj",
   listenStop: "Stani",
   listenPause: "Pauza",
@@ -43,4 +47,54 @@ export const pregledHr = {
   maxTerms: "Pojmovnik je pun. Ukloni neki pojam da dodaš novi.",
   duplicate: "Taj pojam već postoji.",
   storageOff: "Pohrana u pregledniku nije dostupna; pojmovi se neće sačuvati.",
+  // ED-74: Šavovi, Ponavljanja, Dosljednost (tools.js), Brojke bez izvora i Doslovni navodi (review2.js).
+  savovi: "Šavovi",
+  ponavljanja: "Ponavljanja",
+  dosljednost: "Dosljednost",
+  brojke: "Brojke bez izvora",
+  navodi: "Doslovni navodi",
+  seamIntro: "Kraj jednog i početak sljedećeg poglavlja. Čita li se drugo kao nastavak prvoga? Ako ne, dodajte rečenicu koja ih povezuje.",
+  seamEnd: (chapter: string) => `Kraj: ${chapter}`,
+  seamStart: (chapter: string) => `Početak: ${chapter}`,
+  seamNoText: "još nema teksta",
+  seamNone: "Rad još nema dva poglavlja.",
+  repIntro: "Za pogledati, nije greška. Isti početak rečenice ili ista riječ mnogo puta zaredom umara čitatelja.",
+  repStarts: "Počeci rečenica",
+  repStartCount: (n: number) => `${n} ${plural(n, "rečenica počinje", "rečenice počinju", "rečenica počinje")} ovako`,
+  repStartsNone: "Nijedan početak se ne ponavlja tri ili više puta.",
+  repWords: "Najčešće riječi",
+  repWordsNone: "Premalo teksta.",
+  repWordFind: "Pokaži u tekstu",
+  repWordsNote: "Pojmovi rada se smiju ponavljati. Pogledajte riječi koje nisu pojmovi.",
+  dosIntro: "Isto zapisano na više načina. Odaberite jedan zapis i držite ga se. Navodi izvora nisu uključeni.",
+  dosWays: (n: number) => `zapisano na ${n} ${plural(n, "način", "načina", "načina")}`,
+  dosNone: "U ovom dijelu rada sve je zapisano na isti način.",
+  dosOk: (names: readonly string[]) => `Dosljedno: ${names.join(", ")}.`,
+  numIntro: "Rečenice s brojkom, postotkom ili iznosom u kojima nema navoda. Ako je podatak Vaš (iz vlastitog istraživanja ili tablice), to je u redu.",
+  numNone: "Svaka rečenica s brojkom ima navod.",
+  quoShare: (quoted: string, total: string) => `${quoted} od ${total} riječi su doslovni navodi`,
+  quoCount: (n: number) => `${n} ${plural(n, "navod", "navoda", "navoda")} u navodnicima ili u zasebnom bloku. Rad se čita kao Vaš kad većinu izvora prepričate svojim riječima.`,
+  quoLong: (n: number) => `Dulji od 40 riječi, a nisu u zasebnom bloku (${n})`,
+  quoLongest: "Najdulji navodi",
+  quoWords: (n: number, block: boolean) => `${n} ${plural(n, "riječ", "riječi", "riječi")}${block ? " (zaseban blok)" : ""}`,
+  quoNone: "Nema doslovnih navoda.",
+  // ED-73 (prototip features.js `bars`): Oblik rečenica odlomka s kursorom.
+  oblik: "Oblik rečenica",
+  shapeIntro: "Duljina svake rečenice u odlomku s kursorom.",
+  shapeEmpty: "U odlomku nema rečenica.",
+  shapeHint: "Izmjena kratkih i dugih rečenica čini tekst čitljivijim.",
+  shapeList: "Rečenice odlomka po duljini",
+  shapeBar: (index: number, words: number, long: boolean) =>
+    `${index}. rečenica: ${words} ${words % 10 === 1 && words % 100 !== 11 ? "riječ" : "riječi"}${long ? ", duga (više od 40 riječi)" : ""}`,
 } as const;
+
+/** Croatian plural: one (1, 21…), few (2–4, 22–24…), many. */
+export function plural(n: number, one: string, few: string, many: string): string {
+  const d = n % 10, h = n % 100;
+  if (d === 1 && h !== 11) return one;
+  if (d >= 2 && d <= 4 && (h < 12 || h > 14)) return few;
+  return many;
+}
+
+/** A number with a space between thousands, as the prototype writes it. */
+export const thousands = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");

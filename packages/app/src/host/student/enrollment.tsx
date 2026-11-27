@@ -13,11 +13,13 @@ import styles from "./enrol/EnrolledCourse.module.css";
 import { courseHref, noticeHref, readCourse, type CourseRead } from "./enrol/course-read.ts";
 import { createApi, leaveFor, signInHref } from "../../../../../src/client/api.ts";
 import { studentHostHr as t } from "./i18n/messages.hr.ts";
+import { LoadAlert } from "../states/States";
+import { StudentDenied } from "./read/denied";
 
 import { hostText } from "../../text";
 import { nextPath } from "../../bases";
 import { useHost } from "../context";
-import { studentToastText } from "./toast/messages.hr";
+import { enrolledToast } from "./toast/messages.hr";
 import { useStudentToast } from "./toast/StudentToasts";
 
 /** A navigation of a screen (written without the base) under the host's base. */
@@ -27,14 +29,19 @@ function useGo() {
   return (href: string, replace = false) => (replace ? router.replace(nextPath(base, href)) : router.push(nextPath(base, href)));
 }
 
+/**
+ * The course the student has just enrolled in (set by the form's replace-navigation, read once by the
+ * step after it): the toast waits for that step because only its read knows the course's name (P-B1).
+ */
+let justEnrolled: string | null = null;
+
 /** "Upis u kolegij": the code form; after enrolment the next screen is the course's notice (PRODUCT §5 rule 6). */
 export function EnrollPage() {
   const { base } = useHost();
   const go = useGo();
-  const toast = useStudentToast();
-  // PD-7: after enrolment (the form's replace-navigation to the course) a toast says so.
+  // PD-7: after enrolment (the form's replace-navigation to the course) the next step says so, with the name.
   const navigate = (href: string, replace = false) => {
-    if (replace && href.startsWith(courseHref(""))) toast(studentToastText.enrolled);
+    justEnrolled = replace && href.startsWith(courseHref("")) ? href : null;
     go(href, replace);
   };
   return (
@@ -54,6 +61,7 @@ const c = t.student.enroll.course;
 export function EnrolledCoursePage({ courseId }: { courseId: string }) {
   const { base } = useHost();
   const go = useGo();
+  const toast = useStudentToast();
   const [read, setRead] = useState<CourseRead | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -67,18 +75,28 @@ export function EnrolledCoursePage({ courseId }: { courseId: string }) {
     };
   }, [courseId, attempt]);
   useEffect(() => {
+    // Once, and only straight after an enrolment, never on a reload or a link to this step.
+    if ((read?.kind === "assignment" || read?.kind === "none") && justEnrolled === courseHref(courseId)) {
+      justEnrolled = null;
+      toast(enrolledToast(read.courseName));
+    }
     if (read?.kind === "assignment") go(noticeHref(read.assignmentId), true);
     if (read?.kind === "signedOut") leaveFor(signInHref(appHref(base, courseHref(courseId))));
     // go and base are stable for this page; the read is what moves on.
   }, [read]);
   if (read === null || read.kind === "assignment" || read.kind === "signedOut") return <p role="status">{hostText.loading}</p>;
+  // DIZ S-05 (KU4): 403 is not a read error; the heading and the way back, no further text.
+  if (read.kind === "denied") return <div className={`page ${styles.screen}`}><StudentDenied base={base} /></div>;
   return (
     <div className={`page ${styles.screen}`}>
       <section className={styles.card}>
         <h1>{t.student.enroll.title}</h1>
-        <p className={styles.status} role="status">{c[read.kind]}</p>
+        {/* KU3: "unavailable" is a read error, so an alert frame in the error colour; the others are plain statuses. */}
+        {read.kind === "unavailable"
+          ? <LoadAlert body={c.unavailable} />
+          : <p className={styles.status} role="status">{c[read.kind]}</p>}
         <div className={styles.links}>
-          {read.kind === "unavailable" ? <button type="button" className="btn" onClick={() => setAttempt((n) => n + 1)}>{c.retry}</button> : null}
+          {read.kind === "unavailable" ? <button type="button" className={styles.retryLink} onClick={() => setAttempt((n) => n + 1)}>{c.retry}</button> : null}
           <a href={appHref(base, "/upis")}>{c.another}</a>
         </div>
       </section>

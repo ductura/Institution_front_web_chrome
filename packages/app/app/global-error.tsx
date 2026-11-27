@@ -8,6 +8,7 @@ import { useLayoutEffect } from "react";
 
 import ErrorScreen from "../../../src/components/shell/ErrorScreen.ts";
 import { messagesHr as t } from "../../../locales/hr.ts";
+import { documentTitle } from "../src/host/states/document-title";
 
 // From Ductus src/app/global-error.tsx (#732 item 3): an error in the root
 // layout replaces the whole document, so this page brings its own <html> in
@@ -25,7 +26,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
   return (
     <html lang="hr" data-theme="dark" suppressHydrationWarning>
       <body>
-        <title>{`${t.errorPage.errorTitle} · ${t.app.name}`}</title>
+        <title>{documentTitle(t.errorPage.errorTitle, t.app.name)}</title>
         <ErrorScreen title={t.errorPage.errorTitle} body={t.errorPage.errorBody} onRetry={reset} />
       </body>
     </html>

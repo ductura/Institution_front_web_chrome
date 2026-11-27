@@ -1,6 +1,7 @@
 // WEB-2145 (paritet N-01, prijedlog 5): facts of each assignment on "Moji kolegiji" and the banner of an
 // interrupted publish. Wording of docs/prototip/Ductura_nastavnik.html (`taskFacts`, `subRows`, `subLine`,
 // variant `prekinuto`); a part the server does not say is left out, never invented.
+import { oneDot } from "../../../i18n/date-dot";
 const studentWord = (n: number): string => {
   const a = n % 10, b = n % 100;
   return a >= 1 && a <= 4 && !(b >= 11 && b <= 14) ? "studenta" : "studenata";
@@ -45,22 +46,22 @@ export const assignmentFactsMessages = {
   checkedPublished: "Popis zadataka učitan s poslužitelja; zadatak je objavljen.",
   checkedUnknown: "Popis zadataka učitan s poslužitelja.",
   checkUnavailable: "Popis zadataka trenutačno nije dostupan. Pokušajte ponovno.",
-  // NZ-5 (variant A): an exception for one student is a deadline extension for that student, with its record.
+  // NZ-5 (variant B): an exception for one student is a record of its own, marked „iznimka” in the list.
   late: {
     open: "Dopusti predaju nakon roka…",
     title: "Dopusti predaju nakon roka",
-    intro: (name: string): string => `${name} dobiva novi rok za ovaj zadatak. Izmjena se zapisuje i vidi se u popisu „Produljeni rokovi”.`,
+    intro: (name: string): string => `${name} smije predati nakon roka do odabranog trenutka. Iznimka se zapisuje i vidi se u popisu „Produljeni rokovi” s oznakom „iznimka”.`,
     reason: "Razlog",
     reasonPlaceholder: "Odaberite razlog",
     reasons: { justified: "Opravdan razlog", technical: "Tehnička poteškoća", agreement: "Dogovor s nastavnikom" },
     due: "Novi rok (po zagrebačkom vremenu)",
-    studentSees: "Student vidi novi rok i razlog, a zapis se ne briše.",
+    studentSees: "Student vidi do kada smije predati, a zapis se ne briše.",
     record: "Zabilježi iznimku",
     cancel: "Odustani",
     needReason: "Odaberite razlog s popisa.",
     needDue: "Odaberite novi rok.",
     dueNotLater: "Novi rok mora biti u budućnosti.",
-    recorded: (when: string): string => `Zabilježeno: predaja je dopuštena do ${when}.`,
+    recorded: (when: string): string => oneDot(`Zabilježeno: predaja je dopuštena do ${when}.`),
     notRecorded: "Iznimka nije zabilježena. Provjerite rok i pokušajte ponovno.",
     unknown: "Nije sigurno je li iznimka zabilježena. Provjerite popis „Produljeni rokovi”.",
     list: "Produljeni rokovi",

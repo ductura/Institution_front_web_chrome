@@ -41,8 +41,9 @@ describe("WEB-11 the course after the enrollment", () => {
     expect(await readCourse(api, OTHER, NOW)).toEqual({ kind: "notFound" });
   });
 
-  it("reads 401 as signed out and anything else as unavailable", async () => {
+  it("reads 401 as signed out, 403 as denied and anything else as unavailable", async () => {
     expect(await readCourse(apiWith(() => json({ error: "unauthorized" }, 401)), COURSE)).toEqual({ kind: "signedOut" });
+    expect(await readCourse(apiWith(() => json({ error: "forbidden" }, 403)), COURSE)).toEqual({ kind: "denied" });
     expect(await readCourse(apiWith(() => json({ error: "unavailable" }, 503)), COURSE)).toEqual({ kind: "unavailable" });
     expect(await readCourse(apiWith(() => json({ courses: "x" })), COURSE)).toEqual({ kind: "unavailable" });
   });

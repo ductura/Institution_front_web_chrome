@@ -10,8 +10,8 @@
 // phone gets "Brzi alati" above the keyboard. Only actions this editor has are offered; the rest stay hidden.
 import "./text-size.css";
 
-import { useEffect, useState } from "react";
-import { Button, ContextMenu, type MenuEntry, type MenuPoint, type ShellTheme } from "@ductura/ui";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { Button, ContextMenu, Dialog, type MenuEntry, type MenuPoint, type ShellTheme } from "@ductura/ui";
 import type { Editor } from "@tiptap/core";
 
 import { BLOCK_STYLES, blockStyleOf, stateOf, TOOLS, type ToolbarState as EditorState } from "@/components/editor/EditorToolbarFor";
@@ -38,14 +38,19 @@ import { useCodeBlockHost } from "../code-block/CodeBlockHost";
 import { codeBlockHr } from "../code-block/messages.hr";
 import { profileById, DEFAULT_PROFILE_ID, type RuleProfile } from "../rules/profiles";
 import { SkeletonDialog } from "../areas/skeleton/SkeletonDialog";
-import { skeletonAvailable } from "../areas/skeleton/skeleton";
+import { PageFormatDialog } from "@/components/editor/pages/PageFormatDialog";
+import { pagesMessages } from "@/components/editor/pages/messages.hr";
+import { pageFormatOf } from "../page-format/page-format-of";
+import { useActiveProfile } from "../areas/skeleton/active-profile";
+import { useSkeletonAvailability } from "../areas/skeleton/use-skeleton-availability";
 import { skeletonMessages } from "../areas/skeleton/messages.hr";
 import { assignmentIdFromPath, downloadLatex, latexMenuItem, useLatexStyle } from "../stem/latex-export-menu";
 import { stemHr } from "../stem/messages.hr";
+import { SpeechControls } from "@/components/editor/addons/SpeechControls";
 import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
 import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
-import { moveChapterInEditor } from "../../../../../editor-core/src/outline/index.ts";
+import { moveChapterInEditor, type TocEditor } from "../../../../../editor-core/src/outline/index.ts";
 import { placeFromFlags, type ContextAction, type CursorPlace } from "./context-button";
 import { useOfferSlashCommands } from "../slash-commands";
 import { EditorToolbarHost } from "./EditorToolbarHost";
@@ -55,7 +60,11 @@ import { canStep, DEFAULT_ZOOM, loadZoom, saveZoom, snapZoom, stepZoom, zoomPerc
 import { MobileQuickBar } from "./ToolbarBehaviour";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 import { DEFAULT_PREFS, loadPrefs, savePrefs, type ToolbarPrefs } from "./toolbar-prefs";
-import { currentShell, pendingViewItems, setShell, shellItems } from "./view-menu";
+import { currentShell, pendingViewItems, readClean, setClean, setShell, shellItems, viewItems } from "./view-menu";
+import { DraftPanelHost } from "../draft-panel/DraftPanelHost";
+import { requestPanel } from "@/components/editor/layout-prefs/open-panel";
+import { readSheetToc, setSheetToc, sheetTocKeyOf, subscribeSheetToc } from "../toc/sheet-toc";
+import { requestPregledView } from "../right/pregled-view";
 
 /** The browser's storage, reached lazily: even reaching it can throw. */
 const localStore = () => window.localStorage;
@@ -83,6 +92,14 @@ export function exportMenuItems(editor: Editor | null): { id: string; label: str
 }
 
 const live = (editor: Editor | null): editor is Editor => !!editor && !editor.isDestroyed && editor.isEditable;
+
+/** ED-R18: a dictated phrase typed at the caret (over the selection) with a space after it; false when the editor is not writable. */
+export function insertDictatedPhrase(editor: Editor | null, phrase: string): boolean {
+  const text = phrase.trim();
+  if (!text || !live(editor)) return false;
+  editor.chain().focus().command(({ tr }) => { tr.insertText(`${text} `); return true; }).run();
+  return true;
+}
 
 /** The editor's state as the toolbar model wants it. The V2 schema has no numbered list, so it is never on. */
 export function toolbarStateOf(s: EditorState): ToolbarState {
@@ -233,10 +250,14 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const state = useEditorSnapshot(editor);
   const theme = useSheetTheme();
   const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
-  const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(skeletonProfile));
+  // The profile the student chose in "Zahtjevi rada" (WEB-DIZ-B-V21); a profile given by the caller wins.
+  const chosenProfile = useActiveProfile();
+  const workProfile = skeletonProfile ?? chosenProfile;
+  const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(workProfile));
   const code = useCodeBlockHost(editor, confirmedWorkSchemaVersion);
+  const skeletonState = useSkeletonAvailability(editor, workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null);
   const latexStyle = useLatexStyle(typeof window === "undefined" ? null : assignmentIdFromPath(window.location.pathname));
-  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | null>(null);
+  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | "structure" | "pageFormat" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
   const toast = useStudentToast();
@@ -257,6 +278,12 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   // ED-44: the app's own light or dark ("Ljuska"); read after mount, as the inline theme script set it.
   const [shell, setShellTheme] = useState<ShellTheme>("dark");
   useEffect(() => { setShellTheme(currentShell(document.documentElement, localStore)); }, []);
+  // "Čisti tekst": read after mount, as the shell theme is.
+  const [clean, setCleanText] = useState(false);
+  useEffect(() => { const on = readClean(document.documentElement, localStore); setCleanText(on); setClean(document.documentElement, localStore, on); }, []);
+  // ED-71: "Sadržaj na listu", kept for this person and work (sheet-toc); off on the server's markup.
+  const tocKey = sheetTocKeyOf(workPartsKey);
+  const sheetToc = useSyncExternalStore(subscribeSheetToc, () => readSheetToc(tocKey), () => false);
   const focused = useEditorFocused(editor);
   const [quickMore, setQuickMore] = useState<MenuPoint | null>(null);
   const openCrossReference = v3.openInsert ? () => v3.openInsert?.("crossReference") : undefined;
@@ -272,7 +299,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "codeBlock", label: code.inBlock ? codeBlockHr.edit : codeBlockHr.insert, disabled: !writeOk || !code.availability.enabled, hint: code.availability.enabled ? undefined : code.availability.reason },
     { id: "hole", label: t.toolbar.insertItems.hole, disabled: !writeOk },
     { id: "workParts", label: workPartsMessages.title, disabled: !writeOk },
-    { id: "skeleton", label: skeletonMessages.menu, disabled: !writeOk || !skeletonAvailable(skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null) },
+    { id: "skeleton", label: skeletonMessages.menu, disabled: !writeOk || !skeletonState.enabled, hint: skeletonState.enabled ? undefined : skeletonState.reason },
   ]);
   const convert: Item[] = [
     { id: "toQuote", label: t.toolbar.convertItems.toQuote, disabled: !writeOk || state.quote },
@@ -286,7 +313,10 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     ...shellItems(shell),
     { id: "citationSettings", label: workPartsMessages.citationTitle },
     { id: "readingSettings", label: readingSettingsHr.menu },
+    // F4-PM1-R12A: the page format from the faculty rules, read only, so also on a submitted work.
+    { id: "pageFormat", label: pagesMessages.formatTitle },
     ...textSizeItems(zoom),
+    ...viewItems(clean, sheetToc),
     ...pendingViewItems(),
   ];
   return (
@@ -322,6 +352,11 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       <Menu label={t.toolbar.view} items={view} onSelect={(id) => {
         if (id === "citationSettings") setDialog("citation");
         else if (id === "readingSettings") setDialog("reading");
+        else if (id === "pageFormat") setDialog("pageFormat");
+        else if (id === "structure") setDialog("structure");
+        else if (id === "cleanText") setCleanText(setClean(document.documentElement, localStore, !clean));
+        else if (id === "viewToc") setSheetToc(tocKey, !sheetToc);
+        else if (id === "viewFirstLines") { requestPanel("review"); requestPregledView("nacrt"); }
         else if (id === "textSmaller" || id === "textLarger") onZoom(id === "textSmaller" ? -1 : 1);
         else if (id === "shell:dark" || id === "shell:light") setShellTheme(setShell(document.documentElement, localStore, id === "shell:light" ? "light" : "dark"));
         else if (id === "dark" || id === "light") setSheetTheme(id);
@@ -333,6 +368,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
           else if (id === "copy") void copyWorkText(editor).then((ok) => toast(copyToastText(ok)));
         }} />
       <ReadAloudControls editor={editor} />
+      {/* ED-R18: dictation into the document; reading aloud is the menu above, so only "Diktiraj" shows. */}
+      <SpeechControls reading={false} editable={writeOk} getText={() => ""} onPhrase={(phrase) => { insertDictatedPhrase(editor, phrase); }} />
       <MobileQuickBar editable={writeOk} focused={focused} dialogOpen={dialog !== null} canUndo={state.canUndo} hide={HIDDEN_QUICK_TOOLS}
         onTool={(id, at) => {
           if (id === "undo") toolbarCommands(editor).undo();
@@ -349,8 +386,15 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
           else if (id === "italic") run.toggleItalic();
         }} />
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
-      {dialog === "skeleton" && editor && <SkeletonDialog editor={editor} profile={skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null} onClose={() => setDialog(null)} />}
+      {dialog === "skeleton" && editor && <SkeletonDialog editor={editor} profile={workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null} onClose={() => setDialog(null)} />}
+      {dialog === "structure" && (
+        <Dialog open title={toolbarBehaviourHr.viewStructure} onClose={() => setDialog(null)}
+          actions={<Button onClick={() => setDialog(null)}>{toolbarBehaviourHr.viewStructureClose}</Button>}>
+          <DraftPanelHost editor={editor as unknown as TocEditor | null} workId={workPartsKey} />
+        </Dialog>
+      )}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
+      {dialog === "pageFormat" && <PageFormatDialog format={pageFormatOf(workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null)} onClose={() => setDialog(null)} />}
       {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
       <ReadingSettingsDialog open={dialog === "reading"} onClose={() => setDialog(null)} />
       {v3.dialog}

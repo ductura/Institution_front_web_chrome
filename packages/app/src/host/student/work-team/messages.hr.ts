@@ -9,7 +9,7 @@ export const workTeamText = {
   retry: "Pokušaj ponovno",
   gone: "Ovaj zadatak nije dostupan.",
   disabled: "Ovaj zadatak se ne radi u timu.",
-  openWork: "Otvori moj rad",
+  openWork: "Otvori moj dio",
   none: {
     title: "Još niste u timu",
     choice: "Možete osnovati novi tim ili se pridružiti postojećem.",
@@ -18,11 +18,11 @@ export const workTeamText = {
   create: "Osnuj novi tim",
   creating: "Osniva se…",
   join: "Pridruži se",
-  joinAria: "Pridruži se timu s {n} članova",
+  joinAria: "Pridruži se: tim {n}, članova: {m}",
   joining: "Pridružuje se…",
   openTeamsTitle: "Timovi sa slobodnim mjestom",
   noOpenTeams: "Nema timova sa slobodnim mjestom.",
-  openTeamLine: "Tim, članova: {n}",
+  openTeamLine: "Tim {n}, članova: {m}",
   member: {
     title: "Članovi tima",
     memberCount: { one: "{n} član", few: "{n} člana", many: "{n} članova" },
@@ -43,7 +43,7 @@ export const workTeamText = {
     conflict: "Radnja nije prihvaćena jer se tim u međuvremenu promijenio ili je predaja već izvršena. Stanje je osvježeno.",
     notFound: "Zadatak ili tim više nisu dostupni. Stanje je osvježeno.",
     invalid: "Radnja nije ispravna.",
-    unknown: "Nije poznato je li radnja izvršena. Osvježite stanje prije novog pokušaja.",
+    unknown: "Nije poznato je li radnja izvršena. Osvježite stranicu prije novog pokušaja.",
   },
   contribution: {
     title: "Što je zabilježeno u dijelovima tima",

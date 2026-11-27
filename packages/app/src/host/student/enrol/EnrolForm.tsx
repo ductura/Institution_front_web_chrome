@@ -32,6 +32,11 @@ export default function EnrolForm({ signInHref, navigate }: {
     form.current?.querySelector("input")?.focus({ preventScroll: true });
   }, []);
 
+  // R-17: after every change of state that shows the form again (a refusal, "another course") the field has the focus.
+  useEffect(() => {
+    if (result === null || !("courseId" in result)) form.current?.querySelector("input")?.focus({ preventScroll: true });
+  }, [result]);
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy.current) return;
@@ -96,7 +101,7 @@ export default function EnrolForm({ signInHref, navigate }: {
           )}
         />
         {sending ? <p className={styles.meta} role="status">{enrolText.sendingStatus}</p> : null}
-        {error.form === null ? null : <p className={styles.note} role="alert">{error.form}</p>}
+        {error.form === null ? null : <p className={styles.error} role="alert">{error.form}</p>}
         {result?.kind === "signedOut" ? <p><a href={signInHref}>{t.student.signIn}</a></p> : null}
       </form>
     </section>

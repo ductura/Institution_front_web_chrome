@@ -3,6 +3,7 @@
 import { Button, TextField } from "@ductura/ui";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
+import LoadAlert from "../shell/LoadAlert";
 import { zagrebParts } from "../summary/zagreb-time";
 
 import { parseVerificationCode, readVerificationFields, type VerificationCode } from "./code";
@@ -19,6 +20,15 @@ function ReceiptTime({ iso }: { iso: string }) {
 }
 
 export function VerificationFeedback({ state }: { state: VerificationState }) {
+  // Design alignment 27. 11. 2026. (J-02): an unanswered check is the alert box; "Provjeri" asks again.
+  if (state.kind === "unavailable") {
+    return (
+      <>
+        <div role="status" />
+        <LoadAlert className={styles.unavailable}>{t.unavailable}</LoadAlert>
+      </>
+    );
+  }
   return (
     <div role="status">
       {state.kind !== "idle" && (

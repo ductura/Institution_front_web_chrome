@@ -2,6 +2,8 @@ import { createElement as h, type ReactNode } from "react";
 
 import { messagesHr } from "../../../locales/hr.ts";
 
+import LoadAlert, { DeniedState } from "../shell/LoadAlert";
+
 import EmptyHome from "./EmptyHome";
 import MyAssignments, { type AssignmentAction, type AssignmentHref } from "./MyAssignments";
 import type { MyAssignmentsRead } from "./my-assignments-read";
@@ -42,6 +44,8 @@ export default function StudentHome({ read, enroll, signIn, view = "home", assig
   // Subtitle and enrol action only beside a list that loaded: the
   // unavailable state shows the title alone, as in the package, and the
   // empty list brings its own way to enrol. S02 has no enrol action.
+  // Design alignment 27. 11. 2026. (Z7): 403 is not a read error; the heading and the way back only.
+  if (read.kind === "denied") return h(DeniedState, null);
   const ready = read.kind === "ready";
   const courses = view === "courses";
   // DAN-891 (891-1): S-02 of the approved reference centres the greeting over
@@ -66,12 +70,14 @@ function body(read: MyAssignmentsRead, enroll: ReactNode, signIn: (returnTo: str
       // An OIDC login: a real navigation, not a prefetchable Link.
       h("p", null, h("a", { className: "btn", href: signIn(here) }, messagesHr.student.signIn)));
   }
+  if (read.kind === "denied") return h(DeniedState, null);
   if (read.kind === "unavailable") {
-    return h("section", { className: styles.state, role: "alert", "aria-labelledby": "zadaci-nedostupno" },
-      h("h2", { id: "zadaci-nedostupno", className: styles.stateTitle }, home.unavailableHeading),
-      h("p", { className: styles.stateBody }, home.unavailableBody),
-      // A plain reload of the route: the read runs again on the server.
-      h("p", null, h("a", { className: styles.enroll, href: here }, messagesHr.auth.retry)));
+    // Design alignment 27. 11. 2026. (Z4, K3): heading and text in the one role=alert frame,
+    // both in the error colour; "Pokušaj ponovno" is the link under it, a plain reload
+    // of the route, so the read runs again on the server.
+    return h(LoadAlert, { className: styles.state, retry: { label: messagesHr.auth.retry, href: here } },
+      h("span", { className: styles.stateTitle }, home.unavailableHeading),
+      h("span", { className: styles.stateBody }, home.unavailableBody));
   }
   if (read.courses.length === 0) {
     return h(EmptyHome, { enroll });

@@ -60,12 +60,12 @@ describe("koraci", () => {
 });
 
 describe("ruta je montirana", () => {
-  it("ima zapis u PAGES i Next stranicu u app/[base]", () => {
+  it("ima zapis u PAGES i Next stranicu u app/(host)", () => {
     const page = PAGES.find((p) => p.path === "/analiza");
     expect(page?.label).toBe("Statistička analiza");
     expect(page?.roles).toEqual(["teacher", "student"]);
     expect(page?.public).toBeUndefined();
-    expect(existsSync(join(__dirname, "../../../app/[base]/analiza/page.tsx"))).toBe(true);
+    expect(existsSync(join(__dirname, "../../../app/(host)/analiza/page.tsx"))).toBe(true);
   });
 
   it("bez sesije vodi na prijavu, administrator ide na svoj početak, nastavnik i student otvaraju", () => {
@@ -94,6 +94,26 @@ describe("stranica", () => {
     await flush();
     expect(read).toHaveBeenCalledTimes(2);
     expect(out.querySelector("input[type=file]")).not.toBeNull();
+  });
+
+  it("403: „Nemate pristup ovom prikazu” i „Natrag na moj prostor”, bez teksta greške; 401 ne prikazuje grešku", async () => {
+    const denied = await mount({ read: async () => ({ kind: "denied" }) });
+    expect(denied.querySelector("h1")?.textContent).toBe("Nemate pristup ovom prikazu");
+    expect(denied.querySelector("a")?.textContent).toBe("Natrag na moj prostor");
+    expect(denied.querySelector("[role=alert]")).toBeNull();
+    expect(denied.textContent).not.toContain(analysisPageMessages.off);
+    act(() => root?.unmount());
+    denied.remove();
+    const signedOut = await mount({ read: async () => ({ kind: "signedOut" }) });
+    expect(signedOut.querySelector("[role=alert]")).toBeNull();
+    expect(signedOut.textContent).not.toContain(analysisPageMessages.failed);
+  });
+
+  it("nedostupan popis je okvir role=alert s poveznicom, ne gumb u kartici", async () => {
+    const out = await mount({ read: async () => ({ kind: "unavailable" }) });
+    expect(out.querySelector("[role=alert]")?.textContent).toContain(analysisPageMessages.unavailable);
+    expect(out.querySelector("[role=alert] button")).toBeNull();
+    expect(button(out, "Pokušaj ponovno")).not.toBeUndefined();
   });
 
   it("bez skupa „Dalje” je onemogućeno; nakon primjera je moguće i vodi na odabir analize", async () => {

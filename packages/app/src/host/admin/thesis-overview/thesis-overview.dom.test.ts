@@ -35,7 +35,7 @@ async function mount() {
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => { root!.render(createElement(HostContext.Provider, { value: { base: "/app/web", page, role: "admin" } }, createElement(ThesisOverviewRoute))); });
+  await act(async () => { root!.render(createElement(HostContext.Provider, { value: { base: "/aplikacija", page, role: "admin" } }, createElement(ThesisOverviewRoute))); });
   await settle();
 }
 afterEach(() => { act(() => root?.unmount()); host?.remove(); root = null; host = null; vi.unstubAllGlobals(); });
@@ -112,11 +112,91 @@ describe("Završni i diplomski radovi", () => {
     expect(text()).toContain("Ustanova još nema završnih ni diplomskih radova");
   });
 
-  it("403 pokazuje da popis vidi samo administrator, bez tablice", async () => {
+  it("403 pokazuje samo „Nemate pristup ovom prikazu” i „Natrag na moj prostor”, bez tablice i bez teksta greške", async () => {
     stub(() => Response.json({ error: "forbidden" }, { status: 403 }));
     await mount();
-    expect(text()).toContain("samo administrator ustanove");
+    expect(host!.querySelector("h1")?.textContent).toBe("Nemate pristup ovom prikazu");
+    expect(host!.querySelector("a")?.textContent).toBe("Natrag na moj prostor");
+    expect(host!.querySelector("a")?.getAttribute("href")).toBe("/aplikacija/ustanova");
+    expect(text()).not.toContain("samo administrator");
     expect(host!.querySelector("table")).toBeNull();
+    expect(host!.querySelector("[role=alert]")).toBeNull();
+  });
+
+  it("401 ne ispisuje ništa na stranici, nego vodi na prijavu", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign, pathname: "/aplikacija/ustanova/zavrsni-radovi" });
+    stub(() => Response.json({ error: "unauthorized" }, { status: 401 }));
+    await mount();
+    expect(text()).toBe("");
+    expect(assign).toHaveBeenCalledTimes(1);
+    expect(String(assign.mock.calls[0]![0])).toContain("zavrsni-radovi");
+  });
+
+  it("datum obrane je s punim mjesecom i bez „·”", async () => {
+    stub(() => Response.json({ works: [work("a", { defenseAt: "2026-12-14T09:30:00.000Z", stage: "defense_scheduled" })], next: null }));
+    await mount();
+    expect(text()).toContain("14. prosinca 2026. u 10:30");
+    expect(text()).not.toContain("·");
+    expect(text()).not.toMatch(/14\. 12\./);
+  });
+
+  it("nedostupan popis je okvir role=alert s poveznicom, a poveznica čita ponovno", async () => {
+    let n = 0;
+    const calls = stub(() => (++n === 1 ? new Response("{}", { status: 503 }) : Response.json({ works: [work("a")], next: null })));
+    await mount();
+    const alert = host!.querySelector("[role=alert]")!;
+    expect(alert.textContent).toContain("trenutačno nije dostupan");
+    expect(alert.querySelector("button, a")).toBeNull();
+    await click("Pokušaj ponovno");
+    expect(overview(calls)).toHaveLength(2);
+    expect(rowsCount()).toBe(1);
+    expect(host!.querySelector("[role=alert]")).toBeNull();
+  });
+
+  it("sljedeći radovi: okvir role=alert bez poveznice „Pokušaj ponovno”, gumb „Učitaj još” radi isto", async () => {
+    let n = 0;
+    stub(() => (++n === 1 ? Response.json({ works: [work("a")], next: "k1" }) : new Response("{}", { status: 503 })));
+    await mount();
+    await click("Učitaj još");
+    const alert = host!.querySelector("[role=alert]")!;
+    expect(alert.textContent).toContain("Sljedeći radovi trenutačno nisu dostupni");
+    expect(button("Pokušaj ponovno")).toBeUndefined();
+    expect(button("Učitaj još")).toBeTruthy();
+  });
+
+  it("povjerenstvo nedostupno: okvir role=alert i poveznica koja ponovno čita povjerenstvo", async () => {
+    let tries = 0;
+    stub((c) => {
+      if (c.url.pathname.endsWith("/institution/thesis-overview")) return Response.json({ works: [work("a")], next: null });
+      if (c.url.pathname.endsWith("/works/a/thesis-committee")) return ++tries === 1 ? new Response("{}", { status: 503 }) : Response.json({ members: [], changedAt: null, changedByPart: null });
+      return Response.json({ pending: [], confirmed: [] });
+    });
+    await mount();
+    await click("Povjerenstvo");
+    expect(host!.querySelector("section [role=alert]")?.textContent).toContain("Povjerenstvo trenutačno nije dostupno");
+    await click("Pokušaj ponovno");
+    expect(tries).toBe(2);
+    expect(host!.querySelector("section [role=alert]")).toBeNull();
+    expect(host!.querySelector("form")).not.toBeNull();
+  });
+
+  it("fokus ide na naslov povjerenstva pri otvaranju, a nakon „Zatvori” natrag na gumb „Povjerenstvo” u retku", async () => {
+    stub((c) => {
+      if (c.url.pathname.endsWith("/institution/thesis-overview")) return Response.json({ works: [work("a"), work("b")], next: null });
+      if (c.url.pathname.includes("/thesis-committee")) return Response.json({ members: [], changedAt: null, changedByPart: null });
+      return Response.json({ confirmed: [] });
+    });
+    await mount();
+    const second = [...host!.querySelectorAll("button")].filter((b) => b.textContent === "Povjerenstvo")[1]!;
+    await act(async () => { second.click(); });
+    await settle();
+    const heading = host!.querySelector("section h2") as HTMLElement;
+    expect(heading.textContent).toBe("Povjerenstvo rada: Ivo Studentb");
+    expect(document.activeElement).toBe(heading);
+    await click("Zatvori");
+    expect(host!.querySelector("section h2")).toBeNull();
+    expect(document.activeElement).toBe(second);
   });
 
   it("redak otvara povjerenstvo rada; 404 je zasebno stanje", async () => {

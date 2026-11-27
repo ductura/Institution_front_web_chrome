@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { signInHref } from "@/client/api";
 import { serverApi } from "@/client/server";
+import LoadAlert from "@/components/shell/LoadAlert";
 import CourseCodes from "@/components/teacher/kolegiji/CourseCodes";
 import { readTeacherCourses } from "@/components/teacher/teacher-courses-read";
 import { messagesHr } from "@/lib/i18n/messages.hr";
@@ -13,7 +14,7 @@ const t = messagesHr.teacherCourseCodes;
 const HREF = "/nastavnik/kolegiji";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
+export const metadata = { title: `${t.title}, ${messagesHr.app.name}` };
 
 /**
  * `/nastavnik/kolegiji` (WEB-18, N-01): the teacher's courses through
@@ -39,12 +40,7 @@ export default async function TeacherCourseCodesPage() {
     );
   } else {
     // A role the server no longer confirms reads like an unavailable list: never an empty one.
-    body = (
-      <>
-        <p role="alert" className={styles.alert}>{t.unavailable}</p>
-        <p><a className={styles.retry} href={HREF}>{t.retry}</a></p>
-      </>
-    );
+    body = <LoadAlert retry={{ label: t.retry, href: HREF }}>{t.unavailable}</LoadAlert>;
   }
   return (
     <div className={`page ${styles.page}`}>

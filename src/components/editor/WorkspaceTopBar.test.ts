@@ -25,6 +25,22 @@ describe("WorkspaceTopBarView", () => {
     expect(html).not.toContain(t.workspace.submitOffline);
   });
 
+  it("leads the mark to Moji zadaci under the base the app is served under (EDI-R02)", () => {
+    const under = (base?: string) =>
+      renderToStaticMarkup(createElement(WorkspaceTopBarView, { assignmentId: ID, base, title: "Izmišljeni rad", online: true, theme: "dark", onTheme: () => {} }));
+    expect(under("/aplikacija")).toContain('href="/aplikacija/zadaci"');
+    expect(under("/aplikacija")).toContain('href="/aplikacija/zadaci"');
+    expect(under("/aplikacija")).not.toContain('href="/zadaci"');
+    expect(under()).toContain('href="/zadaci"');
+  });
+
+  it("keeps Predaja rada under the same base (ED-81, NF2-P23)", () => {
+    const under = (base?: string) =>
+      renderToStaticMarkup(createElement(WorkspaceTopBarView, { assignmentId: ID, base, title: "Izmišljeni rad", online: true, theme: "dark", onTheme: () => {} }));
+    expect(under("/aplikacija")).toContain(`href="/aplikacija/rad/${ID}/predaja"`);
+    expect(under()).toContain(`href="/rad/${ID}/predaja"`);
+  });
+
   it("disables Predaja rada without a network and says why", () => {
     const html = bar(false);
     expect(html).not.toContain("/predaja");
@@ -45,11 +61,12 @@ describe("WorkspaceTopBarView", () => {
   it("shows the course line and hides Predaja rada on a read only work", () => {
     const html = renderToStaticMarkup(
       createElement(WorkspaceTopBarView, {
-        assignmentId: ID, title: "Izmišljeni rad", subtitle: "Izmišljeni kolegij · rok 8. 11. 2026., 23:59",
+        // Design alignment 27. 11. 2026. (S-07, text 2): parts joined by a comma, full date.
+        assignmentId: ID, title: "Izmišljeni rad", subtitle: "Izmišljeni kolegij, Esej, rok 8. studenoga 2026. u 23:59",
         readOnly: true, online: true, theme: "dark", onTheme: () => {},
       }),
     );
-    expect(html).toContain("Izmišljeni kolegij · rok 8. 11. 2026., 23:59");
+    expect(html).toContain("Izmišljeni kolegij, Esej, rok 8. studenoga 2026. u 23:59");
     expect(html).not.toContain(t.workspace.submitWork);
   });
 });

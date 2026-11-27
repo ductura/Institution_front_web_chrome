@@ -132,7 +132,7 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
   // Always the same wrapper, only its density changes: a new element would mount the side again and
   // close the open dialog, the open tab and the comments with it.
   const withDensity = (side: Side, node: ReactNode) => <div className={styles.density} data-density={prefs[side].dense ? "dense" : "airy"}>{node}</div>;
-  const left = withDensity("left", <LeftPanel layout={leftLayout} sections={leftSections} onJump={close} row={rowShows(prefs.left)}
+  const left = withDensity("left", <LeftPanel layout={leftLayout} sections={leftSections} onJump={close} row={rowShows(prefs.left)} parts={prefs.left}
     settings={<PanelSettings side="left" value={prefs.left} onChange={(value) => setSide("left", value)}
       width={sizes.rail} onWidth={pickWidth("rail")} />} />);
   const sections = renderWork ? { ...rightSections, work: renderWork(close) } : rightSections;

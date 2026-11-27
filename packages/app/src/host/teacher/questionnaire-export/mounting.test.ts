@@ -14,7 +14,7 @@ describe("the questionnaire export page is mounted", () => {
     expect(resolve(PATH, "student")).not.toMatchObject({ kind: "page" });
   });
   it("the Next page renders QuestionnaireExportPage for a valid id only", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/nastavnik/upitnici/[questionnaireId]/izvoz/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/nastavnik/upitnici/[questionnaireId]/izvoz/page.tsx"), "utf8");
     expect(page).toContain("QuestionnaireExportPage");
     expect(page).toContain("notFound()");
   });

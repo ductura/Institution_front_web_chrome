@@ -10,7 +10,8 @@ import type { ReactNode } from "react";
 import ProblemReportHelp from "../../../ProblemReportHelp";
 import StepLink from "../steps/StepLink";
 import { submitText as t } from "./messages.hr";
-import { fill, type Line } from "./model";
+import { fill, isErrorLine, type Line } from "./model";
+import outcome from "./Outcome.module.css";
 import { RECHECK_LIMIT, type RecheckState } from "./recheck";
 import type { SavedState } from "./use-saved-on-server";
 
@@ -35,7 +36,7 @@ export type OutcomePanelProps = {
 export default function OutcomePanel({ line, workHref, declarationHref, onBack, onReload, onRetry, onCheck, checking, recheck, saved }: OutcomePanelProps) {
   const alertAt = line.alertAt ?? line.text.length - 1;
   const lines: ReactNode[] = line.text.map((text, i) => (
-    <p key={text} className="note" id={i === 0 ? OUTCOME_ID : undefined} tabIndex={i === 0 ? -1 : undefined} role={i === alertAt ? "alert" : undefined}>{text}</p>
+    <p key={text} className={isErrorLine(line) ? `note ${outcome.error}` : "note"} id={i === 0 ? OUTCOME_ID : undefined} tabIndex={i === 0 ? -1 : undefined} role={i === alertAt ? "alert" : undefined}>{text}</p>
   ));
   const work = <StepLink href={workHref}>{t.openWorkspace}</StepLink>;
   const gaveUp = line.recheck === true && recheck.gaveUp;

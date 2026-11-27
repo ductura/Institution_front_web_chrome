@@ -1,8 +1,9 @@
 "use client";
 
 import { Button, Select, TextArea, TextField } from "@ductura/ui";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
+import { goToSignIn } from "@/client/api";
 import { formatDateTimeHr } from "@/lib/i18n/hr";
 import { wordRangeHr } from "@/lib/i18n/length-line";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
@@ -10,9 +11,11 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import {
   AI_PURPOSES, assignmentBody, type AssignmentBody, type AssignmentCreation, type AssignmentDraft, type WorkType,
 } from "./assignment-create";
+import { newAssignmentHref } from "./links";
 import { publishAssignment } from "./TeacherSetup/assignment-mutations";
 import { assignmentSetupMessages as wizard } from "./TeacherSetup/messages.hr";
 import type { TeacherCourse } from "./teacher-courses-read";
+import { yearHr } from "./TeacherCourses";
 import styles from "./TeacherSetup.module.css";
 
 type ExistingCourse = Pick<TeacherCourse, "id" | "name" | "academicYear" | "aiPolicy">;
@@ -48,7 +51,12 @@ function StudentPreview({ body }: { body: AssignmentBody }) {
     <section className={styles.card} aria-labelledby="pregled">
       <h3 id="pregled">{t.teacher.preview.heading}</h3>
       <p className={styles.listHead}>{body.title}</p>
-      <p>{a.workTypes[body.workType]} · {t.teacher.preview.opensFrom} {formatDateTimeHr(body.opensAt)} · {t.teacher.preview.due} {formatDateTimeHr(body.dueAt)}</p>
+      {/* Design alignment 27. 11. 2026. (A4): parts of a row are separate, 12 px apart. */}
+      <p className={styles.row}>
+        <span>{a.workTypes[body.workType]}</span>
+        <span>{t.teacher.preview.opensFrom} {formatDateTimeHr(body.opensAt)}</span>
+        <span>{t.teacher.preview.due} {formatDateTimeHr(body.dueAt)}</span>
+      </p>
       {range && <p>{range}</p>}
       {body.instructions.trim() && <p className={styles.brief}>{body.instructions}</p>}
       <p className={styles.listHead}>{tools.allowed}</p>
@@ -56,16 +64,12 @@ function StudentPreview({ body }: { body: AssignmentBody }) {
         ? <ul className={styles.summary}>{body.aiPurposes.map((purpose) => <li key={purpose}>{tools.purposes[purpose]}</li>)}</ul>
         : <p>{t.student.noTools}</p>}
       <ToolRestrictions banned={banned.map((purpose) => tools.purposes[purpose])} />
-      {body.importAllowed && <p className={styles.hint}>{wizard.importPreview}</p>}
       <p className={styles.hint}>{t.teacher.preview.rest}</p>
     </section>
   );
 }
 
-/** The host's extra field for step 3 (WEB-1801): the value and its setter, so the field lives in the host layer. */
-export type ImportField = (value: boolean, onChange: (value: boolean) => void) => ReactNode;
-
-export default function TeacherSetup({ course, importField }: { course: ExistingCourse; importField?: ImportField }) {
+export default function TeacherSetup({ course }: { course: ExistingCourse }) {
   const [draft, setDraft] = useState(initialDraft);
   const [step, setStep] = useState<Step>(1);
   const [result, setResult] = useState<AssignmentCreation | null>(null);
@@ -114,7 +118,10 @@ export default function TeacherSetup({ course, importField }: { course: Existing
     inFlight.current = true;
     setPending(true);
     try {
-      setResult(await publishAssignment(course.id, checked, request.current.key));
+      const outcome = await publishAssignment(course.id, checked, request.current.key);
+      // Design alignment 27. 11. 2026. (N-05): a lapsed session goes to sign-in and comes back here.
+      if (outcome.kind === "unauthorized") return goToSignIn(newAssignmentHref(course.id));
+      setResult(outcome);
     } finally {
       inFlight.current = false;
       setPending(false);
@@ -127,7 +134,7 @@ export default function TeacherSetup({ course, importField }: { course: Existing
 
   return (
     <section className={styles.card} aria-labelledby="zadatak">
-      <p className={styles.listHead}>{course.name} · {course.academicYear}</p>
+      <p className={styles.listHead}>{course.name}, {yearHr(course.academicYear)}</p>
       <ol className={styles.steps} role="list">
         {wizard.steps.map((label, index) => (
           <li key={label} aria-current={index + 1 === step ? "step" : undefined}>{label}</li>
@@ -158,16 +165,12 @@ export default function TeacherSetup({ course, importField }: { course: Existing
                 <TextField label={a.wordMax} inputMode="numeric" value={draft.wordMax}
                   onChange={(event) => edit("wordMax", event.target.value)} />
               </div>
-              <Select label={wizard.groups} options={[]} placeholder={wizard.unavailable} disabled />
             </>}
             {step === 3 && <>
               <Select label={wizard.help} value={allowsHelp ? "course" : "none"}
                 options={courseProhibits ? [noHelp] : helpOptions}
                 hint={courseProhibits ? tools.courseProhibits : t.teacher.course.policies[course.aiPolicy]}
                 onChange={(event) => edit("aiPurposes", event.target.value === "course" ? [...AI_PURPOSES] : [])} />
-              {!courseProhibits && <p className={styles.hint}>{wizard.summaryHelpPending}</p>}
-              <Select label={wizard.externalTools} options={[]} placeholder={wizard.unavailable} disabled />
-              {importField?.(draft.importAllowed === true, (value) => edit("importAllowed", value))}
             </>}
             {step === 4 && <>
               <p>{wizard.recordingNotice}</p>
@@ -178,7 +181,8 @@ export default function TeacherSetup({ course, importField }: { course: Existing
               <StudentPreview body={body} />
               <p className={styles.hint}>{t.teacher.existingCourse.studentsNotified} {wizard.noNotifications}</p>
             </>}
-            {error && <p className={styles.notice} role="alert">{error}</p>}
+            {/* Step 1 says it at the title field only. */}
+            {error && step !== 1 && <p className={styles.notice} role="alert">{error}</p>}
             <div className={styles.actions}>
               {step > 1 && !uncertain && <Button tone="quiet" onClick={() => move((step - 1) as Step)}>{wizard.back}</Button>}
               <Button type="submit" busy={pending}>{step === 5 ? pending ? a.pending : a.publish : wizard.next}</Button>

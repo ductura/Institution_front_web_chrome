@@ -5,12 +5,13 @@ export type AnalysisCatalogue = Extract<ApiResult<typeof OPERATION>, { ok: true 
 
 /**
  * Outcomes of reading the catalogue, each its own state: `off` is the function switched off (404, shown as "not
- * switched on"), `unavailable` is a 503 or a transport failure, `failed` is anything else (401, a body the contract
- * does not declare). None of them is ever an empty catalogue.
+ * switched on"), `signedOut` is 401 (the page goes to sign-in), `denied` is 403 (the page says it is not for this
+ * account), `unavailable` is a 503 or a transport failure, `failed` is anything else (a body the contract does not
+ * declare). None of them is ever an empty catalogue.
  */
 export type CatalogueRead =
   | { kind: "ready"; data: AnalysisCatalogue }
-  | { kind: "off" | "unavailable" }
+  | { kind: "off" | "unavailable" | "signedOut" | "denied" }
   | { kind: "failed"; status: number; code: string };
 
 export type CatalogueState = CatalogueRead | { kind: "loading" };
@@ -25,6 +26,8 @@ export async function readCatalogue(options?: ApiOptions): Promise<CatalogueRead
   }
   if (answer.ok) return { kind: "ready", data: answer.body };
   if (answer.status === 404) return { kind: "off" };
+  if (answer.status === 401) return { kind: "signedOut" };
+  if (answer.status === 403) return { kind: "denied" };
   if (answer.status === 503) return { kind: "unavailable" };
   return { kind: "failed", status: answer.status, code: answer.code };
 }

@@ -15,6 +15,6 @@ export const HostContext = createContext<HostValue | null>(null);
 /** The host's value; a page outside the host is a mistake of the routes. */
 export function useHost(): HostValue {
   const value = useContext(HostContext);
-  if (value === null) throw new Error("useHost outside app/[base]/layout.tsx");
+  if (value === null) throw new Error("useHost outside app/(host)/layout.tsx");
   return value;
 }

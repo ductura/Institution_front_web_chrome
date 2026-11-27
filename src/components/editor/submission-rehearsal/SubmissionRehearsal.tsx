@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { Button, CheckActionList, Dialog } from "@ductura/ui";
 import { useEditorState, type Editor } from "@tiptap/react";
 
+import { createApi, type ApiOptions } from "@/client/api";
 import { listComments, type CommentThread } from "@/client/comments";
 import { watchSessionEnd } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
@@ -21,6 +22,67 @@ import styles from "./SubmissionRehearsal.module.css";
 import { beforeSubmission, declarationText, useDeclarationGate, type GateRead } from "./declaration-gate";
 import { rehearsalMessagesHr as t } from "./messages.hr";
 import { loadRequirements, rangeDetail, readRehearsal, wordsLabel, type Requirements } from "./rehearsal-model";
+
+export type ConsentRead =
+  | { readonly kind: "given" | "withdrawn" }
+  | { readonly kind: "none"; readonly required: boolean }
+  | { readonly kind: "unavailable" };
+
+/** The mentor's consent as the server holds it (work.mentor-consent.get); any failure is "unavailable", never "none". */
+export async function loadMentorConsent(documentId: string, options?: ApiOptions): Promise<ConsentRead> {
+  try {
+    const answer = await createApi(options)("work.mentor-consent.get", {
+      params: { documentId }, query: undefined, body: undefined,
+    });
+    if (!answer.ok || answer.status !== 200) return { kind: "unavailable" };
+    const { state, requiredForSubmission } = answer.body;
+    if (state === "given" || state === "withdrawn") return { kind: state };
+    if (state === "none") return { kind: "none", required: requiredForSubmission };
+    return { kind: "unavailable" };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}
+
+export type ThesisFormsRead =
+  | { readonly kind: "ready"; readonly total: number; readonly accepted: number }
+  | { readonly kind: "none" }
+  | { readonly kind: "unavailable" };
+
+/**
+ * The thesis forms of this work as the server holds them (work.thesis-forms.get). A 404 means the work has no
+ * mentorship, so there are no thesis forms ("none", the row keeps the declaration form); any other failure or
+ * a wrong shape is "unavailable", never a count.
+ */
+export async function loadThesisForms(documentId: string, options?: ApiOptions): Promise<ThesisFormsRead> {
+  try {
+    const answer = await createApi(options)("work.thesis-forms.get", {
+      params: { documentId }, query: undefined, body: undefined,
+    });
+    if (!answer.ok) return answer.status === 404 ? { kind: "none" } : { kind: "unavailable" };
+    const forms: unknown = answer.status === 200 ? (answer.body as { forms?: unknown }).forms : undefined;
+    if (!Array.isArray(forms) || forms.some((form) => typeof form?.state !== "string")) return { kind: "unavailable" };
+    return forms.length === 0 ? { kind: "none" }
+      : { kind: "ready", total: forms.length, accepted: forms.filter((form) => form.state === "accepted").length };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}
+
+/** The row "Obrasci završnog rada": what the server says of the thesis forms; none when the work has none. */
+export function thesisFormsDetail(forms: ThesisFormsRead | undefined): string | undefined {
+  if (forms === undefined || forms.kind === "none") return undefined;
+  return forms.kind === "unavailable" ? t.thesisFormsUnavailable
+    : t.thesisFormsCount.replace("{accepted}", String(forms.accepted)).replace("{total}", String(forms.total));
+}
+
+export function consentDetail(consent: ConsentRead | undefined): string {
+  if (consent === undefined) return t.approvalChecking;
+  if (consent.kind === "given") return t.approvalGiven;
+  if (consent.kind === "withdrawn") return t.approvalWithdrawn;
+  if (consent.kind === "none") return consent.required ? t.approvalNoneRequired : t.approvalNone;
+  return t.approvalUnavailable;
+}
 
 type Supplement = { detail: string; open?: () => void };
 
@@ -82,6 +144,8 @@ function RehearsalDialog({
   const [showPackage, setShowPackage] = useState(false);
   const [requirements, setRequirements] = useState<Requirements>(null);
   const [loadedComments, setLoadedComments] = useState<readonly CommentThread[]>();
+  const [consent, setConsent] = useState<ConsentRead>();
+  const [thesisForms, setThesisForms] = useState<ThesisFormsRead>();
   const doc = useEditorState({ editor, selector: ({ editor }) => editor.state.doc, equalityFn: (a, b) => a === b });
   const model = useMemo(() => readRehearsal(doc, enabledChecks), [doc, enabledChecks]);
   // WEB-NUZ-PREDAJA-1 (PR-2): the declaration as the server holds it, the same read the steps of the
@@ -93,12 +157,15 @@ function RehearsalDialog({
     const current = () => active && !watch.ended();
     if (current()) {
       void loadRequirements(assignmentId).then((result) => { if (current()) setRequirements(result); });
+      // A caller that already knows the approval passes it; otherwise the server is asked.
+      if (documentId && approval === undefined) void loadMentorConsent(documentId).then((result) => { if (current()) setConsent(result); });
+      if (documentId) void loadThesisForms(documentId).then((result) => { if (current()) setThesisForms(result); });
       if (documentId) void listComments(documentId, current).then((result) => {
         if (current() && result.kind === "ok") setLoadedComments(result.threads);
       });
     }
     return () => { active = false; watch.close(); };
-  }, [assignmentId, documentId, session, close]);
+  }, [assignmentId, documentId, session, close, approval]);
 
   function leaveFor(action: () => void) {
     // The shared dialog must release focus before the editor or the next preview takes it.
@@ -133,7 +200,9 @@ function RehearsalDialog({
     approval: approval ?? "none", openPlaces: places.length, summaryWritten: Boolean(abstract?.text && summary?.text),
     declaration: gate.kind === "confirmed" || gate.kind === "not_required" ? "filled" : "missing",
   });
-  const approvalDetail = approval === undefined ? t.approvalUnavailable : rows.find((row) => row.id === "approval")?.detail;
+  const approvalDetail = approval !== undefined ? rows.find((row) => row.id === "approval")?.detail
+    : documentId ? consentDetail(consent) : t.approvalUnavailable;
+  const thesisFormsText = thesisFormsDetail(thesisForms);
   const form = messagesHr.beforeSubmit;
   const firstPlace = model.places[0];
   const missing = beforeSubmission(gate, places.length);
@@ -200,6 +269,7 @@ function RehearsalDialog({
           {supplement.detail}
         </Row>;
       })}
+      {thesisFormsText !== undefined && <Row title={t.thesisForms}>{thesisFormsText}</Row>}
       <Row title={form.form}>{form.formNotRun}</Row>
     </dl>
 

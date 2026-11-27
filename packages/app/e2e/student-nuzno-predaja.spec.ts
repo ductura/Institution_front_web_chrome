@@ -74,13 +74,13 @@ for (const width of [390, 1280]) {
     test(`PR-1, P-17: Predaja rada is whole and in view with its count (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page, { declaration: DRAFT });
-      await page.goto(`/app/web/rad/${T1}`);
+      await page.goto(`/aplikacija/rad/${T1}`);
       await setTheme(page, theme);
       const link = submitLink(page);
       // The draft is one thing before the submission; the places left in the text add to it.
       await expect(link).toHaveAccessibleName(/^Predaja rada: \d+ stvari? prije predaje$/);
-      // The host leads the base-less address to /app/web/rad/<id>/predaja (Host.tsx), as before.
-      await expect(link).toHaveAttribute("href", `/rad/${T1}/predaja`);
+      // ED-81 (NF2-P23): the link itself carries the base the app is served under.
+      await expect(link).toHaveAttribute("href", `/aplikacija/rad/${T1}/predaja`);
       await expect(link).toBeInViewport({ ratio: 1 });
       await expect(link).toHaveText(width <= 640 ? /^Predaja\s*\d+$/ : /^Predaja rada\s*\d+$/, { useInnerText: true });
       await link.focus();
@@ -94,7 +94,7 @@ for (const width of [390, 1280]) {
   test(`P-17: with a confirmed declaration the count names no declaration, and the link keeps its name (${width} px)`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
     await student(page, { declaration: CONFIRMED });
-    await page.goto(`/app/web/rad/${T1}`);
+    await page.goto(`/aplikacija/rad/${T1}`);
     const link = submitLink(page);
     await expect(link).toBeInViewport({ ratio: 1 });
     // Only places left in the text can make a count now; the name is whole even where "Predaja" is shown.
@@ -107,11 +107,11 @@ for (const width of [390, 1280]) {
   test(`PR-1 (E-7a): the banner of a submitted work leads to the receipt and, while allowed, to the withdrawal (${width} px)`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
     await student(page, { withdrawable: true });
-    await page.goto(`/app/web/rad/${T3}`);
+    await page.goto(`/aplikacija/rad/${T3}`);
     const banner = page.getByRole("status").filter({ hasText: "Rad je predan, pa se ovdje više ne može pisati." });
-    await expect(banner.getByRole("link", { name: "Otvori potvrdu o predaji" })).toHaveAttribute("href", `/app/web/rad/${T3}/predaja/potvrda`);
+    await expect(banner.getByRole("link", { name: "Otvori potvrdu o predaji" })).toHaveAttribute("href", `/aplikacija/rad/${T3}/predaja/potvrda`);
     const withdraw = banner.getByRole("link", { name: "Povuci predaju" });
-    await expect(withdraw).toHaveAttribute("href", `/app/web/rad/${T3}/predaja/potvrda#povuci`);
+    await expect(withdraw).toHaveAttribute("href", `/aplikacija/rad/${T3}/predaja/potvrda#povuci`);
     await axe(page, info, `predano-banner-${width}`);
     await withdraw.focus();
     await page.keyboard.press("Enter");
@@ -122,7 +122,7 @@ for (const width of [390, 1280]) {
 
 test("PR-1 (E-7a): no withdrawal from the banner when the server says it is closed", async ({ page }) => {
   await student(page, { withdrawable: false });
-  await page.goto(`/app/web/rad/${T3}`);
+  await page.goto(`/aplikacija/rad/${T3}`);
   const banner = page.getByRole("status").filter({ hasText: "Rad je predan, pa se ovdje više ne može pisati." });
   await expect(banner.getByRole("link", { name: "Otvori potvrdu o predaji" })).toBeVisible();
   await expect(banner.getByRole("link", { name: "Povuci predaju" })).toHaveCount(0);
@@ -135,13 +135,13 @@ for (const [name, declaration, words, missing] of [
   test(`PR-2: step 3 and the rehearsal say the same for ${name}`, async ({ page }, info) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await student(page, { declaration });
-    await page.goto(`/app/web/rad/${T1}/predaja/pregled`);
+    await page.goto(`/aplikacija/rad/${T1}/predaja/pregled`);
     await expect(page.getByText(words, { exact: true })).toBeVisible();
     await expect(page.getByText(missing, { exact: true })).toBeVisible();
     await expect(page.getByText("Mjesta za izvor, lijepljenja i pravila oblika ne zaustavljaju predaju.")).toBeVisible();
     await axe(page, info, `pregled-${name}`);
 
-    await page.goto(`/app/web/rad/${T1}`);
+    await page.goto(`/aplikacija/rad/${T1}`);
     await skipGuide(page);
     await page.getByRole("tab", { name: "Mentor" }).click();
     await page.getByRole("button", { name: "Proba predaje" }).click();

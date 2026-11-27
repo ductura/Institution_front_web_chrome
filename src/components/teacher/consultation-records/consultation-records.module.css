@@ -79,8 +79,10 @@
   border-bottom: 1px solid var(--raised-rule);
 }
 
+/* Design alignment 27. 11. 2026. (K6): the frame of LoadAlert, without the error-soft fill. */
 .error {
-  padding: var(--space-2) var(--space-3);
-  background: var(--error-soft);
-  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: var(--error);
+  border: 1px solid var(--error);
+  border-radius: var(--radius-sm, 4px);
 }

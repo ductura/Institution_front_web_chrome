@@ -12,7 +12,7 @@ export const peerReviewText = {
   loading: "Učitavanje…",
   unavailable: "Podaci trenutačno nisu dostupni. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",
-  gone: "Ovaj zadatak ili rad nije dostupan.",
+  gone: "Ovaj zadatak nije dostupan.",
   list: {
     title: "Radovi za recenziju",
     disabled: "Ovaj zadatak nema recenziju među studentima.",
@@ -22,6 +22,8 @@ export const peerReviewText = {
     workLabel: "Rad {n}",
     due: "Rok: {date}",
     pending: "Čeka Vašu recenziju",
+    notOpenYet: "Krug recenzije još nije otvoren.",
+    roundClosed: "Krug recenzije je zatvoren.",
     submitted: "Recenzija je poslana",
     write: "Napiši recenziju",
     writeAria: "Napiši recenziju rada {n}",

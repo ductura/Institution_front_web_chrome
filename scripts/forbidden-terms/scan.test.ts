@@ -78,7 +78,7 @@ describe("scanLocales on locales/", () => {
   it("reads every text and finds nothing", () => {
     const scan = report(REPO_ROOT);
     expect(found(scan)).toEqual([]);
-    expect(scan.read).toEqual({ "hr.ts": 1425, "en.ts": 1425 });
+    expect(scan.read).toEqual({ "hr.ts": 1431, "en.ts": 1431 });
   });
 });
 
@@ -94,7 +94,7 @@ describe("scan errors", () => {
 
 describe("invariant 1: every leaf is read", () => {
   it("reads the same numbers from a copy", () => {
-    expect(report(copy()).read).toEqual({ "hr.ts": 1425, "en.ts": 1425 });
+    expect(report(copy()).read).toEqual({ "hr.ts": 1431, "en.ts": 1431 });
   });
 
   it.each(["de.ts", "x.json", "notes.txt", "sub/hr.ts", "hr.test.json"])(
@@ -274,7 +274,7 @@ export const probe = Object.create(proto);
     const root = copy();
     probe(root, "hr.ts", ["Predano", "Sumnjivo pisanje"]);
     const scan = report(root);
-    expect(scan.read["hr.ts"]).toBe(1427);
+    expect(scan.read["hr.ts"]).toBe(1433);
     expect(found(scan)).toEqual(["hr.ts probe.1: forbidden term: sumnjivo"]);
   });
 });
@@ -403,7 +403,7 @@ describe("invariant 1b: a .ts catalogue is data, read without running it", () =>
       'const WORD = "Sumnjivo";\nexport const probe = { a: `${WORD} pisanje`, b: [WORD] };';
     writeFileSync(file, `${readFileSync(file, "utf8")}\n${source}\n`);
     const scan = report(root);
-    expect(scan.read["hr.ts"]).toBe(1427);
+    expect(scan.read["hr.ts"]).toBe(1433);
     expect(flagged(scan, "hr.ts")).toEqual(["probe.a", "probe.b.0"]);
   });
 

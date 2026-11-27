@@ -95,6 +95,27 @@ describe("N-17 overview port (NZ-2, NZ-10)", () => {
     expect(read.cards.map((c) => [c.courseId, c.assignmentId])).toEqual([[K1, A1]]);
     expect(asked.some((p) => p.includes(A2) || p.includes(K2))).toBe(false);
   });
+  it("F4-PM2-R08: the marks the server holds are read per student, and each row says marked or unmarked", async () => {
+    const asked: string[] = [];
+    const answers = {
+      ...ANSWERS,
+      [`/teacher/assignments/${A1}/students/${S1}/accommodation`]: { marked: true },
+      [`/teacher/assignments/${A1}/students/${S2}/accommodation`]: { marked: false },
+    };
+    const read = await overviewPort({ course: K1, task: null }, client(answers, asked)).read();
+    if (read.kind !== "ready") throw new Error(read.kind);
+    expect(read.cards[0]!.accommodationsUnavailable).toBeUndefined();
+    expect(read.cards[0]!.rows!.map((r) => r.accommodation)).toEqual([true, false]);
+    expect(asked.filter((p) => p.endsWith("/accommodation")).sort()).toEqual([
+      `/teacher/assignments/${A1}/students/${S1}/accommodation`, `/teacher/assignments/${A1}/students/${S2}/accommodation`,
+    ]);
+  });
+  it("F4-PM2-R08: marks the server does not answer say so once on the card, and no row is shown as unmarked", async () => {
+    const read = await overviewPort({ course: K1, task: null }, client(ANSWERS)).read();
+    if (read.kind !== "ready") throw new Error(read.kind);
+    expect(read.cards[0]!.accommodationsUnavailable).toBe(true);
+    expect(read.cards[0]!.rows!.every((r) => r.accommodation === undefined)).toBe(true);
+  });
   it("an assignment no course has (a stale link) shows every assignment, never an empty overview", async () => {
     const read = await overviewPort({ course: null, task: "nepostojeci" }, client(ANSWERS)).read();
     if (read.kind !== "ready") throw new Error(read.kind);

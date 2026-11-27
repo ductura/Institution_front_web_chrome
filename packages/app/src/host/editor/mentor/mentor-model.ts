@@ -4,6 +4,7 @@ import type { ConsultationSlot } from "../../../../../../src/client/consultation
 import type { WorkMessage } from "../../../../../../src/client/work-messages";
 import type { WorkMilestone } from "../../../../../../src/client/work-milestones";
 
+import { oneDot } from "../../../i18n/date-dot";
 import { mentorCardHr as t } from "./messages.hr";
 
 /** The collaborator only reads and comments (INVENTAR §7 t. 5). */
@@ -20,8 +21,9 @@ export type StateView = { headline: string; sub: string | null; request: string 
 export type ActionId = keyof typeof t.actions;
 
 const DAY = 86_400_000;
+// A date from dateText already ends with the year's dot: a template's full stop after it is not doubled.
 const fill = (text: string, values: Record<string, string | number>): string =>
-  text.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
+  oneDot(text.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? "")));
 const plural = (n: number): "one" | "few" | "many" => (n % 10 === 1 && n % 100 !== 11 ? "one" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? "few" : "many");
 
 export const dateText = (iso: string): string => new Intl.DateTimeFormat("hr-HR", { dateStyle: "long" }).format(new Date(iso));

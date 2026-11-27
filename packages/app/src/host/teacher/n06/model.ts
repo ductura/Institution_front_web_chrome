@@ -71,3 +71,19 @@ export const showNotSubmittedBanner = (facts: Pick<Facts, "state">, deadlinePass
   facts.state === "nije_predano" && deadlinePassed === true;
 
 export const extensionPath = (assignmentId: string): string => `/nastavnik/zadatak/${encodeURIComponent(assignmentId)}/produljenje`;
+
+/**
+ * NAS-R05: whether the assignment's deadline has passed, from the course list (teacher.courses.get). null when the
+ * assignment is not in the list or its due date is not a date: unknown, never guessed.
+ */
+export function deadlinePassedFor(
+  assignmentId: string, courses: readonly { readonly assignments: readonly { readonly id: string; readonly dueAt: string }[] }[], now: number,
+): boolean | null {
+  return duePassed(courses.flatMap((c) => c.assignments).find((a) => a.id === assignmentId)?.dueAt, now);
+}
+
+/** Whether a due date has passed; null when there is none or it is not a date (F4-NAS-R12 reads it with the title). */
+export function duePassed(dueAt: string | undefined, now: number): boolean | null {
+  const ms = dueAt === undefined ? Number.NaN : Date.parse(dueAt);
+  return Number.isFinite(ms) ? ms < now : null;
+}

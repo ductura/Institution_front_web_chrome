@@ -15,18 +15,20 @@ import { createApi, goToSignIn } from "../../../../../../src/client/api.ts";
 import { studentHostHr as messagesHr } from "../i18n/messages.hr.ts";
 
 import { nextPath, type Base } from "../../../bases";
+import { LoadAlert } from "../../states/States";
+import { StudentDenied } from "../read/denied";
 import { useHost } from "../../context";
 import { protoDateTime } from "../home/format";
 import { coursesText as t } from "./messages.hr";
-import { effectiveDue, extensionText, groupLabels, nearTag, practiceOf, ROW_ACTION, rowKind, submittedLine, type ExtensionNote, type RowKind, type Submitted } from "./model";
+import { deadlineTagOf, effectiveDue, extensionText, groupLabels, nearTag, practiceOf, ROW_ACTION, rowKind, submittedLine, workMeta, yearLabel, type ExtensionNote, type RowKind, type Submitted } from "./model";
 import { readCourses, readExtensions, serverHistory, type Assignment, type Course, type CoursesCall, type CoursesRead } from "./read";
 import own from "./courses.module.css";
 
 const home = messagesHr.student.home;
 
 export const whenHr = protoDateTime;
-const yearHr = (y: string) => /^(\d{4})\/(\d{4})$/.test(y) ? y.replace(/^(\d{4})\/(\d{4})$/, "$1./$2.") : y;
-export const yearLabel = yearHr;
+const yearHr = yearLabel;
+export { yearLabel };
 
 /** One read per visit and per "Pokušaj ponovno"; null while it runs. */
 function useCoursesRead(withStates: boolean): [CoursesRead | null, () => void] {
@@ -66,7 +68,7 @@ export function Frame({ title, lede, children }: { title: string; lede: string |
 }
 
 /** The states shared by both pages; null when the read is ready. */
-export function State({ read, retry, here, base }: { read: CoursesRead | null; retry: () => void; here: string; base: string }) {
+export function State({ read, retry, here, base, signedOut = t.signedOut }: { read: CoursesRead | null; retry: () => void; here: string; base: string; signedOut?: string }) {
   if (read === null) {
     return (
       <div className={own.course} aria-busy="true" role="status">
@@ -80,19 +82,15 @@ export function State({ read, retry, here, base }: { read: CoursesRead | null; r
   if (read.kind === "signedOut") {
     return (
       <div className={`${own.card} ${own.center}`}>
-        <p className={own.note} role="status">{t.signedOut}</p>
+        <p className={own.note} role="status">{signedOut}</p>
         <Button onClick={() => goToSignIn(appHref(base, here))}>{t.signIn}</Button>
       </div>
     );
   }
+  if (read.kind === "denied") return <StudentDenied base={base} />;
   if (read.kind === "unavailable") {
-    return (
-      <section className={own.card} role="alert" aria-labelledby="stanje-greska">
-        <h2 id="stanje-greska">{home.unavailableHeading}</h2>
-        <p className={own.note}>{home.unavailableBody}</p>
-        <Button className={own.start} onClick={retry}>{t.retry}</Button>
-      </section>
-    );
+    // DIZ S-02 (Z4, R6): one alert frame; "Pokušaj ponovno" is the link under it, not a button.
+    return <LoadAlert title={home.unavailableHeading} body={home.unavailableBody} retry={{ label: t.retry, onRetry: retry }} />;
   }
   return null;
 }
@@ -103,16 +101,20 @@ export function State({ read, retry, here, base }: { read: CoursesRead | null; r
  * reader hears the state and the deadline with the button (E-2h). NF-1 P-6/P-7: the submission time where the
  * server gave one, and the history of an extended deadline where the history read answered.
  */
-export function TaskItem({ a, course, kind, now, line, extension, submitted }: {
-  a: Assignment; course: string | null; kind: RowKind; now: Date; line?: ReactNode;
+export function TaskItem({ a, course, kind, now, line, extension, submitted, showWork }: {
+  a: Assignment; course: ReactNode | null; kind: RowKind; now: Date; line?: ReactNode;
   extension?: ExtensionNote | null; submitted?: Submitted | null;
+  /** STU-R14: E-3 only, the work kind and the mentor from the server's answer. */
+  showWork?: boolean;
 }) {
   const { base } = useHost();
   const due = effectiveDue(a.dueAt, a.extendedDueAt);
   const near = kind === "submitted" ? null : nearTag(due, now);
+  const deadline = deadlineTagOf({ submitted: kind === "submitted", dueAt: due, extended: typeof a.extendedDueAt === "string" && a.extendedDueAt !== "", originalDueAt: a.dueAt }, now.getTime());
   const action = ROW_ACTION[kind];
   const route = kind === "submitted" ? `/rad/${encodeURIComponent(a.id)}/predaja/potvrda` : kind === "notice" ? `/zadatak/${encodeURIComponent(a.id)}` : `/rad/${encodeURIComponent(a.id)}`;
   const extended = typeof a.extendedDueAt === "string" && a.extendedDueAt !== "" && kind !== "submitted";
+  const work = showWork === true ? workMeta(a) : null;
   const whenId = `kad-${a.id}`;
   const extId = `produljenje-${a.id}`;
   return (
@@ -120,9 +122,11 @@ export function TaskItem({ a, course, kind, now, line, extension, submitted }: {
       <span>
         {course === null ? null : <span className={own.eyebrow}>{course}</span>}
         <span className={own.title}>{a.title}</span>
+        {work === null ? null : <span className={own.meta} data-work-meta>{work}</span>}
         <span className={own.when} id={whenId}>
-          {line ?? (kind === "submitted" ? <span>{submittedLine(submitted, whenHr)}</span> : <span>{t.dueLabel.replace("{time}", whenHr(due))}</span>)}
+          {line ?? (kind === "submitted" ? <span>{submittedLine(submitted, whenHr)}</span> : whenHr(due) === "" ? null : <span>{t.dueLabel.replace("{time}", whenHr(due))}</span>)}
           {line === undefined && near !== null ? <Tag tone="warn">{near}</Tag> : null}
+          {deadline === null ? null : <Tag tone={deadline.kind === "late" ? "warn" : "neutral"}>{deadline.text}</Tag>}
           {line === undefined && kind === "notice" ? <Tag tone="open">{t.noticeFirst}</Tag> : null}
           {extended ? <Tag tone="open">{t.extended}</Tag> : null}
           <PracticeBadge practice={practiceOf(a)} />
@@ -160,7 +164,7 @@ export function MyCoursesPage() {
       ) : null}
       {shown ? read.courses.map((c: Course) => (
         <section key={c.id} className={own.course} aria-labelledby={`kolegij-${c.id}`}>
-          <span className={own.eyebrow}>{c.academicYear ? `${home.courseLabel} · ${yearHr(c.academicYear)}` : home.courseLabel}</span>
+          <span className={own.eyebrow}><span>{home.courseLabel}</span>{c.academicYear ? <span>{yearHr(c.academicYear)}</span> : null}</span>
           <h2 id={`kolegij-${c.id}`}>{c.name}</h2>
           {groupLabels(c.groups).length === 0 ? null : (
             <ul className={own.tags} aria-label={t.group}>
@@ -169,7 +173,7 @@ export function MyCoursesPage() {
           )}
           {c.assignments.length === 0 ? <p className={own.note}>{messagesHr.student.assignments.noAssignments}</p> : (
             <ul className={own.list}>
-              {c.assignments.map((a) => <TaskItem key={a.id} a={a} course={null} now={now} kind={rowKind(a.noticeFirst, read.states?.get(a.id) ?? null)}
+              {c.assignments.map((a) => <TaskItem key={a.id} a={a} course={null} now={now} showWork kind={rowKind(a.noticeFirst, read.states?.get(a.id) ?? null)}
                 extension={extensions.get(a.id) ?? null} submitted={read.submitted?.get(a.id) ?? null} />)}
             </ul>
           )}

@@ -12,8 +12,10 @@ import { toolbarBehaviourHr as hr } from "./messages.hr";
 
 type Item = { id: string; label: string; disabled?: boolean; hint?: string };
 
-/** The prototype's Prikaz group: Sadržaj na listu, Promjene od predaje mentoru, Povijest rada, Prvi redovi. */
-export const PENDING_VIEWS = ["viewToc", "viewDiff", "viewHistory", "viewFirstLines"] as const;
+/** The rest of the prototype's Prikaz group: Promjene od predaje mentoru, Povijest rada. */
+export const PENDING_VIEWS = ["viewDiff", "viewHistory"] as const;
+// "Sadržaj na listu" (ED-71), "Struktura rada" (DraftPanelHost), "Čisti tekst" and
+// "Prvi redovi" (ED-71) are no longer pending: see viewItems.
 
 const mark = (on: boolean, label: string) => `${on ? "✓ " : ""}${label}`;
 
@@ -23,6 +25,46 @@ export function shellItems(shell: ShellTheme): Item[] {
     { id: "shell:dark", label: mark(shell === "dark", hr.viewShellDark) },
     { id: "shell:light", label: mark(shell === "light", hr.viewShellLight) },
   ];
+}
+
+/** "Čisti tekst" (prototype t2Clean): hides the quiet hints in the text. Kept in this browser; the page carries it as `data-clean-text` on <html>. */
+export const CLEAN_KEY = "ductura.editor.cleanText";
+export const CLEAN_ATTR = "data-clean-text";
+
+/**
+ * The prototype's "Na zaslonu" items: "Sadržaj na listu" (ED-71: the table of contents on the
+ * sheet, ticked while shown), "Struktura rada", "Čisti tekst" and "Prvi redovi" (ED-71: the
+ * right panel's Pregled on its Nacrt, prototype `firstLines`).
+ */
+export function viewItems(clean: boolean, toc = false): Item[] {
+  return [
+    { id: "viewToc", label: mark(toc, hr.viewToc) },
+    { id: "structure", label: hr.viewStructure },
+    { id: "cleanText", label: mark(clean, hr.viewCleanText) },
+    { id: "viewFirstLines", label: hr.viewFirstLines },
+  ];
+}
+
+export function readClean(root: Pick<HTMLElement, "getAttribute"> | null, storage: () => Pick<Storage, "getItem"> | undefined): boolean {
+  const on = root?.getAttribute(CLEAN_ATTR);
+  if (on === "on") return true;
+  if (on === "off") return false;
+  try {
+    return storage()?.getItem(CLEAN_KEY) === "on";
+  } catch {
+    return false;
+  }
+}
+
+/** Puts "Čisti tekst" on <html> and keeps it; blocked storage keeps it for this page only. */
+export function setClean(root: Pick<HTMLElement, "setAttribute">, storage: () => Pick<Storage, "setItem"> | undefined, next: boolean): boolean {
+  root.setAttribute(CLEAN_ATTR, next ? "on" : "off");
+  try {
+    storage()?.setItem(CLEAN_KEY, next ? "on" : "off");
+  } catch {
+    // Storage blocked: the setting still holds on this page.
+  }
+  return next;
 }
 
 export function pendingViewItems(): Item[] {

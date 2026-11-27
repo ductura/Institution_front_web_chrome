@@ -7,9 +7,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { HostContext, type HostValue } from "../../context";
 import AssignmentForm from "./AssignmentForm";
 import { assignmentFormHr as f } from "./messages.hr";
+import { publishHr } from "../publish/messages.hr";
+import { takePublished } from "../publish/published-handoff";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const course = { id: "c1", name: "Izmišljeni kolegij", academicYear: "2026./2027.", aiPolicy: "partially_allowed" } as const;
 const groups = { kind: "ready", groups: [{ id: "g1", name: "Grupa A" }, { id: "g2", name: "Grupa B" }] } as const;
 
@@ -58,6 +60,30 @@ describe("AssignmentForm flow (NZ-3, NZ-4)", () => {
     expect(setRules).toHaveBeenCalledWith("a-new", expect.objectContaining({ withdrawal: false, declarationRequired: true }));
   });
 
+  it("turns late submission off, shows it in the review and passes it to the switches (F4-NAS-R01)", async () => {
+    const publish = vi.fn(async () => ({ kind: "available" as const, id: "a-new" }));
+    const setRules = vi.fn(async () => []);
+    const host = await mount({ publish, setRules, loadGroups: async () => ({ kind: "ready", groups: [] }) });
+    await fillBasics(host);
+    expect(box("pr-late", "yes").checked).toBe(true);
+    await click(box("pr-late", "no"));
+    expect(host.textContent).toContain(f.submitRules.seesLate.off);
+    await click(button(f.review));
+    const row = [...document.querySelectorAll("dt")].find((dt) => dt.textContent === f.labels.late);
+    expect(row?.nextElementSibling?.textContent).toBe(f.values.lateOff);
+    await click(button(f.publish));
+    expect(setRules).toHaveBeenCalledWith("a-new", expect.objectContaining({ lateAllowed: false }));
+  });
+
+  it("says when the late rule could not be set after publishing", async () => {
+    const host = await mount({ publish: async () => ({ kind: "available" as const, id: "a-new" }), setRules: async () => ["late"], loadGroups: async () => ({ kind: "ready", groups: [] }) });
+    await fillBasics(host);
+    await click(box("pr-late", "no"));
+    await click(button(f.review));
+    await click(button(f.publish));
+    expect(document.querySelector('[role="alert"]')?.textContent).toBe(f.submitRules.failed.late);
+  });
+
   it("sends no groupIds with every group ticked and asks for one when none is", async () => {
     const publish = vi.fn(async () => ({ kind: "available" as const, id: "a-new" }));
     const host = await mount({ publish, setRules: async () => [], loadGroups: async () => groups });
@@ -89,6 +115,67 @@ describe("AssignmentForm flow (NZ-3, NZ-4)", () => {
   });
 });
 
+describe("AssignmentForm publish outcome (F4-NAS-R13, NAS-19)", () => {
+  let root: Root | undefined;
+  afterEach(() => { act(() => root?.unmount()); document.body.innerHTML = ""; sessionStorage.clear(); });
+  const click = async (el: Element) => { await act(async () => { (el as HTMLElement).click(); }); };
+  const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === label)!;
+
+  async function toReview(props: Record<string, unknown>) {
+    sessionStorage.clear();
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => { root?.render(h(HostContext.Provider, { value: HOST }, h(AssignmentForm, { course, loadGroups: async () => ({ kind: "ready", groups: [] }), setRules: async () => [], ...props } as never))); });
+    const set = async (el: HTMLInputElement, value: string) => { await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(el, value); el.dispatchEvent(new Event("input", { bubbles: true })); }); };
+    await set([...host.querySelectorAll("input")].find((i) => i.maxLength === 160)!, "Izmišljeni seminar");
+    const when = host.querySelectorAll<HTMLInputElement>('input[type="datetime-local"]');
+    await set(when[0]!, "2027-01-10T10:00");
+    await set(when[1]!, "2027-01-30T16:00");
+    await click(button(f.review));
+    return host;
+  }
+
+  it("says „Objava zadatka u tijeku…” while the server has not answered", async () => {
+    let answer: (v: { kind: "available"; id: string }) => void = () => {};
+    const publish = () => new Promise<{ kind: "available"; id: string }>((r) => { answer = r; });
+    const navigate = vi.fn();
+    await toReview({ publish, navigate, doneHref: "/aplikacija/nastavnik" });
+    await click(button(f.publish));
+    const busy = document.querySelector('[aria-busy="true"] [role="status"]');
+    expect(busy?.textContent).toBe(publishHr.pending);
+    expect(navigate).not.toHaveBeenCalled();
+    await act(async () => { answer({ kind: "available", id: "a-new" }); });
+  });
+
+  it("goes back to /nastavnik with the mark for the toast only after the server confirmed", async () => {
+    const navigate = vi.fn();
+    await toReview({ publish: async () => ({ kind: "available" as const, id: "a-new" }), navigate, doneHref: "/aplikacija/nastavnik" });
+    await click(button(f.publish));
+    expect(navigate).toHaveBeenCalledWith("/aplikacija/nastavnik");
+    expect(takePublished()).toBe(true);
+  });
+
+  it("stays on the form without a mark when the server refused", async () => {
+    const navigate = vi.fn();
+    await toReview({ publish: async () => ({ kind: "forbidden" as const }), navigate });
+    await click(button(f.publish));
+    expect(navigate).not.toHaveBeenCalled();
+    expect(takePublished()).toBe(false);
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain(publishHr.refused);
+  });
+
+  it("keeps the confirmation and the alert here when a follow-up switch failed", async () => {
+    const navigate = vi.fn();
+    await toReview({ publish: async () => ({ kind: "available" as const, id: "a-new" }), setRules: async () => ["late"], navigate });
+    await click(button(f.publish));
+    expect(navigate).not.toHaveBeenCalled();
+    expect(takePublished()).toBe(false);
+    expect(document.body.textContent).toContain(publishHr.published);
+    expect(document.querySelector('[role="alert"]')?.textContent).toBe(f.submitRules.failed.late);
+  });
+});
+
 describe("AssignmentForm rubric (WEB-V17-RUBRIC-FORM)", () => {
   let root: Root | undefined;
   afterEach(() => { act(() => root?.unmount()); document.body.innerHTML = ""; });
@@ -117,7 +204,7 @@ describe("AssignmentForm rubric (WEB-V17-RUBRIC-FORM)", () => {
     const host = await start({ publish, setRules: async () => [], setRubricFor });
     await click(button("Dodaj kriterij"));
     await click(button(f.review));
-    expect(host.textContent).toContain("Rubrika nije potpuna");
+    expect(host.textContent).toContain("Kriteriji nisu potpuni");
     expect(host.querySelector("#zs-rubric")).not.toBeNull();
     expect(publish).not.toHaveBeenCalled();
     await type(host.querySelector<HTMLInputElement>('input[maxlength="120"]')!, "Struktura");
@@ -137,11 +224,11 @@ describe("AssignmentForm rubric (WEB-V17-RUBRIC-FORM)", () => {
     await start({ publish, setRules: async () => [], setRubricFor: none });
     await click(button(f.review));
     const review = [...document.querySelectorAll("dt")].find((dt) => dt.textContent === "Kriteriji");
-    expect(review?.nextElementSibling?.textContent).toBe("Zadani");
+    expect(review?.nextElementSibling?.textContent).toBe("Nisu zadani");
     await click(button(f.publish));
     expect(none).toHaveBeenCalledTimes(1);
     expect(none).toHaveBeenCalledWith("a-new", []);
-    expect(document.body.textContent).not.toContain("Rubrika nije spremljena");
+    expect(document.body.textContent).not.toContain("Kriteriji nisu spremljeni");
     act(() => root?.unmount()); document.body.innerHTML = "";
     const host = await start({ publish, setRules: async () => [], setRubricFor: async () => "conflict" as const });
     await click(button("Dodaj kriterij"));
@@ -149,6 +236,6 @@ describe("AssignmentForm rubric (WEB-V17-RUBRIC-FORM)", () => {
     for (const input of host.querySelectorAll<HTMLInputElement>('input[maxlength="80"]')) await type(input, "Razina");
     await click(button(f.review));
     await click(button(f.publish));
-    expect(document.body.textContent).toContain("Rubrika nije spremljena");
+    expect(document.body.textContent).toContain("Kriteriji nisu spremljeni");
   });
 });

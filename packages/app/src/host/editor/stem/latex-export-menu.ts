@@ -24,7 +24,7 @@ export type LatexMenuItem = { readonly id: "latex"; readonly label: string; read
 
 /** The work page's assignment id, from the address (the toolbar is not given it); null outside `/rad/<id>`. */
 export function assignmentIdFromPath(pathname: string): string | null {
-  const match = /^(?:\/app\/(?:web|chrome))?\/rad\/([^/]+)\/?$/u.exec(pathname);
+  const match = /^(?:\/aplikacija)?\/rad\/([^/]+)\/?$/u.exec(pathname);
   return match?.[1] ?? null;
 }
 

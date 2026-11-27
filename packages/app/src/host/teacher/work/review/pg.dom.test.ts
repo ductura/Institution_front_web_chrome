@@ -73,9 +73,9 @@ describe("NF-5 sections of Pregled rada", () => {
 
   it("PG-5: lists the important places with „Skoči”, starts nothing and has no live region", async () => {
     const reads = { summary: () => ok(SUMMARY), details: () => ok({ activeEditingMinutes: 1, keyEvents: [] }) } as unknown as ReviewReads;
-    const el = await mount(h(Places, { documentId: DOC, reads, replayHref: "/app/web/nastavnik/rad/x/reprodukcija" }));
+    const el = await mount(h(Places, { documentId: DOC, reads, replayHref: "/aplikacija/nastavnik/rad/x/reprodukcija" }));
     expect(el.querySelectorAll("tbody tr")).toHaveLength(1);
-    expect(el.querySelector("a[data-jump]")?.getAttribute("href")).toBe("/app/web/nastavnik/rad/x/reprodukcija");
+    expect(el.querySelector("a[data-jump]")?.getAttribute("href")).toBe("/aplikacija/nastavnik/rad/x/reprodukcija");
     expect(el.querySelector("[aria-live]")).toBeNull();
     expect(el.textContent).toContain("Lijepljenje, 420 znakova");
     expect(el.textContent).toContain("razmak");
@@ -107,11 +107,12 @@ describe("NF-5 sections of Pregled rada", () => {
     expect(el.querySelector("button")).not.toBeNull();
   });
 
-  it("PG-7: shows the student's explanation, or says there is none, and says the finding read is missing", async () => {
+  it("PG-7: shows the student's explanation, or says there is none, and points to the finding explanations", async () => {
     const el = await mount(h(Notes, { documentId: DOC, extras: extras() }));
     expect(el.textContent).toContain("Izmišljeno objašnjenje studenta.");
     expect(el.textContent).toContain("Prigovor");
-    expect(el.querySelector('[data-missing="finding-explanation"]')).not.toBeNull();
+    expect(el.querySelector('[data-missing="finding-explanation"]')).toBeNull();
+    expect(el.textContent).toContain("Karti podrijetla");
     await act(async () => { root!.unmount(); });
     document.body.innerHTML = "";
     const none = await mount(h(Notes, { documentId: DOC, extras: extras({ disputes: async () => ({ kind: "ok", disputes: [] }) }) }));

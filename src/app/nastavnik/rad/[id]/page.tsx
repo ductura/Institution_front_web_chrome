@@ -3,7 +3,7 @@ import LiveWorkView from "../../../../components/teacher/LiveWorkView";
 import { messagesHr } from "../../../../lib/i18n/messages.hr";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${messagesHr.liveView.context} · ${messagesHr.app.name}` };
+export const metadata = { title: `${messagesHr.liveView.context}, ${messagesHr.app.name}` };
 
 /**
  * `/nastavnik/rad/[id]` (WEB-34, N-06): the teacher's read-only live view of

@@ -38,11 +38,13 @@ describe("suggestionsFromList", () => {
     const list = suggestionsFromList({ suggestions: [row()] });
     expect(list?.[0]).toMatchObject({ id: ID, number: 1, state: "pending", replacement: "Rezultati" });
   });
-  it("rejects the whole body for an unknown field, state, duplicate or empty replacement", () => {
+  it("rejects the whole body for an unknown field, state, duplicate, missing or too long replacement", () => {
     expect(suggestionsFromList({ suggestions: [row({ extra: 1 })] })).toBeNull();
     expect(suggestionsFromList({ suggestions: [row({ state: "done" })] })).toBeNull();
     expect(suggestionsFromList({ suggestions: [row(), row()] })).toBeNull();
-    expect(suggestionsFromList({ suggestions: [row({ replacement: "" })] })).toBeNull();
+    expect(suggestionsFromList({ suggestions: [row({ replacement: undefined })] })).toBeNull();
+    expect(suggestionsFromList({ suggestions: [row({ replacement: "x".repeat(2001) })] })).toBeNull();
+    expect(suggestionsFromList({ suggestions: [row({ replacement: "" })] })?.[0]?.replacement).toBe("");
     expect(suggestionsFromList({})).toBeNull();
   });
 });
