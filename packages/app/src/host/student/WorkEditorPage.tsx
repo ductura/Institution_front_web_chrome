@@ -52,6 +52,7 @@ import { MarksHost } from "../editor/marks/MarksHost";
 import { HintsHost } from "../editor/hints/HintsHost";
 import { ReadAloudHost } from "../editor/read-aloud/ReadAloudHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
+import { CommentCardHost } from "../editor/comments/CommentCard";
 import { ChapterMarks } from "../editor/left/ChapterMarks";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
@@ -213,6 +214,8 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
               <ImportHost documentId={documentId} />
               <RulesHost role="student" />
               <MarksHost />
+              {/* ED-98: the comments lit in the text and, up to 1050 px, the card of a tapped comment. */}
+              <CommentCardHost documentId={documentId} session={session} />
               <HintsHost scope={scope} workId={documentId} />
               <ReadAloudHost />
               {/* EDI-R16: the "Započnite rad" wizard lives here, outside the closable Napredak section, so its dialog is never hidden. */}

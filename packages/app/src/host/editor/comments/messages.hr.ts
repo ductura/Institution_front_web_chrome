@@ -111,4 +111,14 @@ export const commentsHr = {
   proposalsUnavailable: "Prijedlozi nastavnika trenutačno nisu dostupni.",
   proposalsRefresh: "Osvježi prijedloge",
   proposalsReadOnly: "Rad je predan: prijedloge možete samo čitati.",
+  // ED-98: the comment card on a phone (prototype text2.js `#t2card`).
+  card: {
+    label: "Komentar",
+    who: { teacher: "Mentor", student: "Student", collaborator: "Suradnik" },
+    at: (i: number, n: number) => `${i} od ${n}`,
+    close: "Zatvori",
+    earlier: (n: number) => `Još ${n} ${n % 10 === 1 && n % 100 !== 11 ? "raniji odgovor" : "ranijih odgovora"} u Komentarima.`,
+    resolve: "Riješeno",
+    reopen: "Otvori ponovno",
+  },
 } as const;
