@@ -9,5 +9,10 @@ export const revisionText = {
   dueMissing: "nije naveden",
   declaration: "Prije predaje dorade pregledajte izjavu i, ako se nešto promijenilo, ispravite je i potvrdite ponovno.",
   send: "Pošalji doradu",
-  sendUnavailable: "Slanje dorade trenutačno nije dostupno.",
+  sending: "Šaljem doradu…",
+  sent: "Dorada je poslana nastavniku.",
+  sendSessionExpired: "Prijava je istekla. Prijavite se ponovno i pošaljite doradu.",
+  sendForbidden: "Doradu za ovaj rad ne možete poslati.",
+  sendConflict: "Dorada se trenutačno ne može poslati: rad nije vraćen na doradu ili je rok istekao.",
+  sendUnknown: "Slanje dorade nije moglo biti potvrđeno. Provjerite stanje rada prije ponovnog slanja.",
 } as const;

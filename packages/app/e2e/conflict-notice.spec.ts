@@ -75,13 +75,14 @@ const notice = (page: Page) => page.getByText("Rad na poslužitelju razlikuje se
 test.describe("ED-08 Sukob", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test("the notice says what to do and promises no decision", async ({ page }) => {
+  test("the notice says what to do, and the decision is a button of its own (F4-EDI-R05)", async ({ page }) => {
     await openConflict(page);
     await expect(notice(page)).toHaveText(
       "Rad na poslužitelju razlikuje se od teksta na ovom uređaju. Tekst ostaje na uređaju i zasad se ništa ne šalje. Izvezite tekst i javite se podršci.",
     );
     await expect(page.getByText(/dok ne odlučite/)).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /Odluči/ })).toHaveCount(0);
+    // F4-EDI-R05 deliberately changes this: the decision is offered in a dialog opened by this button, the notice stays as it was.
+    await expect(page.getByRole("button", { name: "Odluči o razlici" })).toHaveCount(1);
   });
 
   for (const width of [390, 1280]) {

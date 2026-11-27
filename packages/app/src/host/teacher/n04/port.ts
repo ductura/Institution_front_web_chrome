@@ -9,6 +9,7 @@
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { readTeacherCourses, type TeacherCoursesCall } from "../../../../../../src/components/teacher/teacher-courses-read";
+import { changeCourseStudent } from "../../institution/reads";
 import { deadlineOf, type Extension, type SubmissionDetail } from "../assignment-facts/model";
 import { details, extensions, followUp, type FollowUp, type FollowUpStudent } from "../assignment-facts/read";
 import { rosterPath, workStatusOf, type CourseStudentsPort, type RosterRead, type RosterWork, type WorkStatus } from "./model";
@@ -64,6 +65,9 @@ function unconfirmedWhenNotAcknowledged(status: WorkStatus, follow: { readonly n
 
 export function courseStudentsPort(client: () => RosterCall = () => createApi()): CourseStudentsPort {
   return {
+    async change(action, courseId, studentId) {
+      return (await changeCourseStudent(action, courseId, studentId)).kind;
+    },
     async read(courseId): Promise<RosterRead> {
       const call = client();
       const [answer, courses] = await Promise.all([

@@ -13,6 +13,8 @@ export const coursesText = {
   dayOne: "dan",
   dayMany: "dana",
   dueToday: "Rok je danas",
+  deadlinePassed: "Rok je prošao {date}",
+  originalDeadlinePassed: "Izvorni rok je prošao {date}",
   noticeFirst: "Prvo pročitajte obavijest",
   submittedAt: "Predano {time}",
   submittedNoTime: "Predano",

@@ -54,8 +54,9 @@ export async function checkHealth(response: Response) {
 
 async function checkPreloader(response: Response) {
   const html = await response.text();
-  // The Preloader's first screen offers the AAI@EduHr sign-in that returns to the web (#2028 §3.1).
-  if (!html.includes('/api/v1/auth/login?returnTo=%2Faplikacija%2F')) throw new Error('na / nije prvi ekran Preloadera');
+  // D-318: the Preloader's first screen is /ulaz; it leads to the app's sign-in screen (/aplikacija/prijava),
+  // which leaves for the AAI@EduHr login and returns to /aplikacija/ (#2028 §3.1). `/` is the app's landing page.
+  if (!html.includes(`href="${appBase}/prijava"`)) throw new Error('na /ulaz nije prvi ekran Preloadera');
 }
 
 async function checkShippedApp(response: Response) {
@@ -86,7 +87,7 @@ export const repoRevisions = () => ({
 });
 
 export default async function setup() {
-  await checkService(`${webOrigin}/`, 'Preloader (edge)', checkPreloader);
+  await checkService(`${webOrigin}/ulaz`, 'Preloader (edge)', checkPreloader);
   await checkService(`${webOrigin}${appBase}/stanje`, 'packages/app (edge)', checkShippedApp);
   await checkService(serverHealthUrl, 'Institution_server', checkHealth);
   await checkService(`${webOrigin}/api/v1/health`, 'edge → Institution_server', checkHealth);
