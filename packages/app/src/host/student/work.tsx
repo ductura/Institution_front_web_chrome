@@ -143,7 +143,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
             triggers={({ documentId }) => <SourcesMention documentId={documentId}
               openOrigin={() => router.push(nextPath(base, `/rad/${encodeURIComponent(assignmentId)}/podrijetlo`))} />}
-            literature={({ documentId }) => <><LiteratureList courseId={courseIdOf(assignments, assignmentId)} /><BibliographyMount documentId={documentId} assignmentId={assignmentId} /></>}
+            literature={({ documentId }) => <><LiteratureList courseId={courseIdOf(assignments, assignmentId)} /><BibliographyMount documentId={documentId} assignmentId={assignmentId} courseId={courseIdOf(assignments, assignmentId)} /></>}
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
@@ -234,7 +234,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
 }
 
 /** V18-22-R02 (V20-11, V20-14): the list of literature in the institution's style, under the sources of the work. */
-function BibliographyMount({ documentId, assignmentId }: { documentId: string; assignmentId: string }) {
+function BibliographyMount({ documentId, assignmentId, courseId }: { documentId: string; assignmentId: string; courseId: string | null }) {
   const editor = useLocalEditor();
-  return editor ? <StudentBibliographyHost documentId={documentId} editor={editor} assignmentId={assignmentId} /> : null;
+  return editor ? <StudentBibliographyHost documentId={documentId} editor={editor} assignmentId={assignmentId} courseId={courseId} /> : null;
 }

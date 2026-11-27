@@ -2,8 +2,8 @@
 import { createApi } from "./api";
 import { describe, expect, it } from "vitest";
 import {
-  REASON_MAX, TOPIC_MAX, closeConsultationSlot, optionalText, readConsultationSlots, readSlotDetails,
-  requestConsultationSlot, updateConsultationSlot, validStartsAt, type SlotsApi,
+  PREPARATION_MAX, REASON_MAX, TOPIC_MAX, closeConsultationSlot, optionalText, readConsultationSlots, readSlotDetails,
+  requestConsultationSlot, requestConsultationSlotWithPreparation, updateConsultationSlot, validPreparation, validStartsAt, type SlotsApi,
 } from "./consultation-slots";
 
 const DOC = "1a2b3c4d-5e6f-4a01-9c3d-4e5f6a7b8c9d";
@@ -216,5 +216,47 @@ describe("closeConsultationSlot", () => {
     expect(await closeConsultationSlot(answer(404, null), DOC, SLOT, "cancel")).toEqual({ kind: "greska", code: "not_found" });
     for (const s of [408, 503]) expect(await closeConsultationSlot(answer(s, null), DOC, SLOT, "cancel")).toEqual(nepoznato);
     expect(await closeConsultationSlot(broken, DOC, SLOT, "cancel")).toEqual(nepoznato);
+  });
+});
+
+describe("requestConsultationSlot with a preparation (MEN-26)", () => {
+  const prep = { text: "Priprema (izmišljena): izmijenjeno nekoliko odlomaka.", changedParagraphs: 3, resolvedComments: 2 };
+  const withPrep = { ...slot, topic: null, closing: null, preparation: prep };
+  it("goes through work.consultation-slot-requests.post and is saved from an answer that carries the same preparation", async () => {
+    const calls: Call[] = [];
+    expect(await requestConsultationSlotWithPreparation(answer(201, withPrep, calls), DOC, T1, undefined, prep)).toEqual({ kind: "saved", slot: withPrep });
+    expect(calls).toEqual([["POST", `/api/v1/works/${DOC}/consultation-slot-requests`, { startsAt: T1, preparation: prep }]]);
+  });
+  it("sends the topic too", async () => {
+    const calls: Call[] = [];
+    await requestConsultationSlotWithPreparation(answer(201, { ...withPrep, topic: "Tema" }, calls), DOC, T1, "Tema", prep);
+    expect(calls[0]![2]).toEqual({ startsAt: T1, topic: "Tema", preparation: prep });
+  });
+  it("an answer without the preparation, or with another one, is nepoznato (not saved)", async () => {
+    expect(await requestConsultationSlotWithPreparation(answer(201, { ...withPrep, preparation: null }), DOC, T1, undefined, prep)).toEqual(nepoznato);
+    expect(await requestConsultationSlotWithPreparation(answer(201, { ...withPrep, preparation: { ...prep, changedParagraphs: 4 } }), DOC, T1, undefined, prep)).toEqual(nepoznato);
+    expect(await requestConsultationSlotWithPreparation(answer(201, slot), DOC, T1, undefined, prep)).toEqual(nepoznato);
+  });
+  it("a bad preparation is not sent", async () => {
+    const calls: Call[] = [];
+    const ok = answer(201, withPrep, calls);
+    for (const bad of [{ ...prep, text: "   " }, { ...prep, text: "a".repeat(PREPARATION_MAX + 1) }, { ...prep, changedParagraphs: -1 },
+      { ...prep, resolvedComments: 1.5 }, { ...prep, changedParagraphs: 100001 }]) {
+      expect(validPreparation(bad)).toBe(false);
+      expect(await requestConsultationSlotWithPreparation(ok, DOC, T1, undefined, bad)).toEqual({ kind: "greska", code: "invalid" });
+    }
+    expect(calls).toEqual([]);
+    expect(validPreparation({ ...prep, text: "a".repeat(PREPARATION_MAX) })).toBe(true);
+  });
+  it("401, 404 and 422 are told apart; a network failure stays unknown", async () => {
+    expect(await requestConsultationSlotWithPreparation(answer(401, null), DOC, T1, undefined, prep)).toEqual({ kind: "session-expired" });
+    expect(await requestConsultationSlotWithPreparation(answer(404, null), DOC, T1, undefined, prep)).toEqual({ kind: "greska", code: "not_found" });
+    expect(await requestConsultationSlotWithPreparation(answer(422, null), DOC, T1, undefined, prep)).toEqual({ kind: "greska", code: "invalid" });
+    expect(await requestConsultationSlotWithPreparation(broken, DOC, T1, undefined, prep)).toEqual(nepoznato);
+  });
+  it("without a preparation the older route is still used", async () => {
+    const calls: Call[] = [];
+    await requestConsultationSlot(answer(201, slot, calls), DOC, T1);
+    expect(calls[0]![1]).toBe(`/api/v1/works/${DOC}/consultation-slots`);
   });
 });
