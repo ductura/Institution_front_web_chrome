@@ -24,7 +24,6 @@ import { loadQuoteEvidence, quotedSources } from "./quote-evidence";
 import { onPregledView, takePregledView, type PregledView } from "./pregled-view";
 
 import { pregledHr as t } from "./messages.hr";
-import { onPregledView, takePregledView } from "./pregled-view";
 import {
   abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, outlineRows, removeTerm, saveTerms, termCounts,
   WHOLE, MAX_DEFINITION_LENGTH, MAX_TERM_LENGTH, type PregledScope, type Term, type TermStorage,
