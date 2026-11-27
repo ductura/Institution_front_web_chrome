@@ -73,6 +73,12 @@ describe("Prikaz: Struktura rada i Čisti tekst (EDI-R17)", () => {
     expect(pending).not.toContain("viewFirstLines");
   });
 
+  it("ticks Tipografija dok tipkam while it is on (ED-99)", async () => {
+    const { typoItem } = await import("./view-menu");
+    expect(typoItem(true)).toEqual({ id: "viewTypo", label: "✓ Tipografija dok tipkam" });
+    expect(typoItem(false)).toEqual({ id: "viewTypo", label: "Tipografija dok tipkam" });
+  });
+
   it("keeps Čisti tekst on <html> and in the browser; blocked storage still changes the page", async () => {
     const { readClean, setClean, CLEAN_KEY } = await import("./view-menu");
     const root = rootWith(null);

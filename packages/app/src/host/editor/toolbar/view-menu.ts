@@ -45,6 +45,11 @@ export function viewItems(clean: boolean, toc = false): Item[] {
   ];
 }
 
+/** ED-99: "Tipografija dok tipkam" (prototype acad.js `acTypo`), ticked while typed „ ” – … are made. */
+export function typoItem(on: boolean): Item {
+  return { id: "viewTypo", label: mark(on, hr.viewTypo) };
+}
+
 export function readClean(root: Pick<HTMLElement, "getAttribute"> | null, storage: () => Pick<Storage, "getItem"> | undefined): boolean {
   const on = root?.getAttribute(CLEAN_ATTR);
   if (on === "on") return true;
