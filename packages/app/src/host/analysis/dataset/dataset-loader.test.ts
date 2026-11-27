@@ -43,3 +43,14 @@ describe("DatasetLoader", () => {
     expect(html).not.toContain('role="alert"');
   });
 });
+
+describe("popis odbijenog skupa (B3)", () => {
+  it("cijeli popis je u boji greške: okvir ima klasu, a pravilo daje --color-error naslovu i retcima", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const css = readFileSync(resolve(__dirname, "dataset.module.css"), "utf8");
+    expect(css).toMatch(/\.refused,\s*\.refused h3\s*\{\s*color: var\(--color-error\);/);
+    const src = readFileSync(resolve(__dirname, "DatasetLoader.tsx"), "utf8");
+    expect(src).toContain('<div role="alert" className={styles.refused}>');
+  });
+});

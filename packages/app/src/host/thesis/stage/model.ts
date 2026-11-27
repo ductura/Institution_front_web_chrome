@@ -1,5 +1,7 @@
 // WEB-V16-OBRANA: the pure rules of the stage form. `defenseAt` is required for "defense_scheduled" and
 // forbidden for every other stage (a correction of the date is the same stage sent again).
+import { formatDateTime } from "@ductura/ui";
+
 import { zagrebInstant, zagrebLocalMinute } from "../../../../../../src/lib/i18n/zagreb";
 
 export type Stage = "none" | "submitted_to_office" | "defense_scheduled" | "defended";
@@ -27,12 +29,13 @@ export function checkStage(stage: Stage, local: string): Checked {
 /** What the field shows for the stored date; "" when there is none. */
 export const fieldOf = (defenseAt: string | null): string => (defenseAt === null ? "" : zagrebLocalMinute(defenseAt));
 
-/** "14. 12. 2026. u 10:30" in Zagreb time, or null for a text that is not an instant. */
+/** "14. prosinca 2026. u 10:30" in Zagreb time, or null for a text that is not an instant. */
 export function formatDefense(defenseAt: string | null): string | null {
   if (defenseAt === null) return null;
   const local = zagrebLocalMinute(defenseAt);
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(local);
-  return m === null ? null : `${Number(m[3])}. ${Number(m[2])}. ${m[1]}. u ${m[4]}:${m[5]}`;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(local)) return null;
+  const text = formatDateTime(defenseAt, "hr");
+  return text === "" ? null : text;
 }
 
 export type StepState = "done" | "current" | "pending";

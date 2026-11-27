@@ -1,0 +1,9 @@
+/*
+ * D5: on a phone the toast is fixed to the foot of the viewport (16 px up) and would cover "Natrag" and
+ * "Nova analiza" at the end of the page. While a toast is open the page keeps room for it below.
+ */
+@media (max-width: 640px) {
+  .toastRoom {
+    padding-bottom: 6rem;
+  }
+}

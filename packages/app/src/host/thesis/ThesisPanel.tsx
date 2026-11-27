@@ -5,7 +5,9 @@
 // as three separate states. Data only through the section's own read; the frame touches no API.
 import { useCallback, useEffect, useState } from "react";
 
-import { Button, Card } from "@ductura/ui";
+import { Card } from "@ductura/ui";
+
+import { LoadAlert } from "../states/States";
 
 import { thesisHr } from "./messages.hr";
 import { orderSections, panelVisible, readSafely, type SectionState, type ThesisRole, type ThesisSectionDef } from "./model";
@@ -32,11 +34,10 @@ function Section({ section, documentId, role, onState }: {
   if (state.kind === "notFound") return null;
   if (state.kind === "loading") return <Card title={section.title} busy />;
   if (state.kind === "unavailable") {
-    // Card's `error` replaces its children, so the message and the retry are children together.
+    // A2: the alert frame, with "Pokušaj ponovno" as a link under it (Card's `error` would replace its children).
     return (
       <Card title={section.title}>
-        <p role="alert">{thesisHr.unavailable}</p>
-        <Button tone="secondary" onClick={reload}>{thesisHr.retry}</Button>
+        <LoadAlert body={thesisHr.unavailable} retry={{ label: thesisHr.retry, onRetry: reload }} />
       </Card>
     );
   }
