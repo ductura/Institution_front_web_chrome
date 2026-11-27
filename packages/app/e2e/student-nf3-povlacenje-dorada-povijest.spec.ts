@@ -135,19 +135,26 @@ for (const width of [390, 1280]) {
 
 for (const width of [390, 1280]) {
   for (const theme of ["light", "dark"] as const) {
-    test(`PR-16: the request for revision on the steps, with its deadline, comment and an unavailable „Pošalji doradu” (${width} px, ${theme})`, async ({ page }, info) => {
+    test(`PR-16: the request for revision on the steps, with its deadline, comment and a working „Pošalji doradu” (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page, { revision: REVISION(T1) });
+      const sends: unknown[] = [];
+      await page.route("**/api/v1/revision-send", (route) => { sends.push(route.request().postDataJSON()); return route.fulfill({ json: { round: 2 } }); });
       for (const step of ["izjava", "pregled", "slanje"] as const) {
         await page.goto(`/aplikacija/rad/${T1}/predaja/${step}`);
         await setTheme(page, theme);
         const block = main(page).locator("section").filter({ has: page.getByRole("heading", { name: "Rad je kod Vas: dorada" }) });
         await expect(block).toContainText("Dorada do 15. 12. 2026. u 13:00");
         await expect(block).toContainText("Izmišljeni komentar: doradite uvod i ispravite navode.");
-        await expect(block.getByRole("button", { name: "Pošalji doradu" })).toHaveAttribute("aria-disabled", "true");
-        await expect(block).toContainText("Slanje dorade trenutačno nije dostupno.");
+        const send = block.getByRole("button", { name: "Pošalji doradu" });
+        await expect(send).not.toHaveAttribute("aria-disabled", "true");
         if (step === "izjava") await expect(block).toContainText("Prije predaje dorade pregledajte izjavu");
         await axe(page, info, `dorada-${step}-${width}-${theme}`);
+        if (step === "slanje") {
+          await send.click();
+          await expect(block).toContainText("Dorada je poslana nastavniku.");
+          expect(sends).toHaveLength(1);
+        }
       }
     });
   }
