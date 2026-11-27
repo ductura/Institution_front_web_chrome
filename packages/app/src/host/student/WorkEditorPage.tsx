@@ -26,9 +26,9 @@ import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
 import { studentHostHr } from "./i18n/messages.hr.ts";
 
 import { SaveState } from "@ductura/ui";
-import { hostText } from "../../text";
 import { nextPath } from "../../bases";
 import { useHost } from "../context";
+import { useLocale } from "../../i18n";
 import { usePageTitle, workTitle } from "../page-title";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { AssistantMatchNoticeHost } from "../editor/assistant-match-notice/AssistantMatchNoticeHost";
@@ -110,7 +110,7 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
   const [attempt, setAttempt] = useState(0);
   // WEB-NASLOVI-SVE: the tab reads "<naziv rada> — Pisanje" once the work is read.
   const [name, setName] = useState<string | null>(null);
-  usePageTitle(workTitle(name, hostText.titleWriting));
+  usePageTitle(workTitle(name, useLocale().app.host.titleWriting));
   useEffect(() => {
     let live = true;
     if (attempt > 0) setShown({ kind: "loading" });

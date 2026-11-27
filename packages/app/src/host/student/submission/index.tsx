@@ -23,8 +23,8 @@ import { browserTransport, createApi, goToSignIn } from "../../../../../../src/c
 
 import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
+import { useLocale } from "../../../i18n";
 import { usePageTitle, workTitle } from "../../page-title";
-import { hostText } from "../../../text";
 import DeclarationStep from "./declaration/DeclarationStep";
 import { createStepPorts, type StepPorts } from "./declaration/step-ports";
 import { stepsText } from "./steps/messages.hr";
@@ -73,7 +73,7 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
   const [attempt, setAttempt] = useState(0);
   // WEB-NASLOVI-SVE: every step of the submission reads "<naziv rada> — Predaja".
   const [name, setName] = useState<string | null>(null);
-  usePageTitle(workTitle(name, hostText.titleSubmission));
+  usePageTitle(workTitle(name, useLocale().app.host.titleSubmission));
   useEffect(() => {
     let live = true;
     setShown({ kind: "loading" });
