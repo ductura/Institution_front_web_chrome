@@ -1,5 +1,6 @@
 export const selectionBubbleHr = {
   label: "Radnje za označeni tekst",
+  menuLabel: "Izbornik teksta",
   actions: {
     comment: "Komentar",
     cite: "Navod",

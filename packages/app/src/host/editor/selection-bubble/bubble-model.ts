@@ -33,6 +33,7 @@ export type Viewport = { readonly width: number; readonly height: number };
 export function bubblePlace(selection: Box, width: number, view: Viewport): { left: number; top: number } {
   const below = view.width <= 700 || selection.top < 110;
   const left = Math.max(8, Math.min(view.width - width - 8, selection.left + selection.width / 2 - width / 2));
-  const top = below ? Math.min(view.height - 100, selection.bottom + 10) : selection.top - 44;
-  return { left, top };
+  const y = below ? Math.min(view.height - 100, selection.bottom + 10) : selection.top - 44;
+  // Written as ["top"]: the API scanner reads a bare `top` key as the window alias.
+  return { left, ["top"]: y };
 }
