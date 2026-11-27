@@ -13,9 +13,10 @@ import { ASK_COMMENT_EVENT, askedComment, takeAskedComment } from "./ask-comment
 import styles from "./comments.module.css";
 import { MyChanges, type ReadMyChanges } from "./my-changes";
 import { commentsHr as t } from "./messages.hr";
+import { CommentsWalk, type WalkState } from "./walk";
 import {
   KINDS, abilities, applyFilters, bodyText, byRound, countsFor, isMine, messageFor, openForPrint, printText, quickReply,
-  repeated, safely, showFilters, statusOf, turnLabel, turnOf, usableSelection, withComment,
+  repeated, safely, showFilters, statusOf, turnLabel, turnOf, usableSelection, walkList, withComment,
   type Comment, type CommentsPort, type Kind, type Place, type Role, type Selection, type Template, type TurnFilter,
 } from "./model";
 
@@ -62,6 +63,8 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
   const [busy, setBusy] = useState(false);
   // WEB-F4-EDI-R20: "Prethodni / Sljedeći" walks the comments now shown, in their order.
   const [cursor, setCursor] = useState<string | null>(null);
+  // ED-78: "Riješi redom", the open comments one at a time; null while the card shows its list.
+  const [walk, setWalk] = useState<WalkState | null>(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
@@ -173,6 +176,23 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
     setMessage(messageFor(answer.kind, t.saved));
     if (answer.kind === "ok") setLoad((l) => (l.kind === "ready" ? { ...l, templates: answer.templates } : l));
   };
+  const toWalk = walkList(comments, role, submitted);
+  const resolveInWalk = async (c: Comment, raw: string): Promise<boolean> => {
+    const fix = raw.trim();
+    if (fix !== "") {
+      const body = bodyText(fix);
+      if (body === null) return false;
+      const sent = await run(() => port!.reply(workId, c.id, body), t.saved, (x) => x.replies.some((r) => r.text === body));
+      if (sent?.kind !== "ok") return false;
+    }
+    const done = await run(() => port!.setResolved(workId, c.id, true), t.saved, (x) => x.resolved);
+    if (done?.kind !== "ok") return false;
+    setWalk((w) => (w === null ? w : { ...w, i: w.i + 1, fixes: fix === "" ? w.fixes : { ...w.fixes, [c.id]: fix } }));
+    return true;
+  };
+  const copyWalk = async (summary: string) => {
+    try { await navigator.clipboard.writeText(summary); setMessage(t.walk.copied); } catch { setMessage(t.copyFailed); }
+  };
   const copyPrint = async () => {
     try { await navigator.clipboard.writeText(printText(comments)); setMessage(t.copied); } catch { setMessage(t.copyFailed); }
   };
@@ -205,6 +225,9 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
       ))}
       <div className={styles.bar}>
         {!submitted && <Button tone="secondary" size="dense" onClick={() => openNew()}>{t.newTitle}</Button>}
+        {walk === null && toWalk.length > 0 && (
+          <Button tone="secondary" size="dense" onClick={() => setWalk({ ids: toWalk, i: 0, fixes: {} })}>{t.walk.start(toWalk.length)}</Button>
+        )}
         <details className={styles.more}>
           <summary>{t.more}</summary>
           <div className={styles.menu}>
@@ -216,16 +239,21 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
           </div>
         </details>
       </div>
-      {shown.length === 0 && <p className={styles.muted}>{t.empty}</p>}
-      {shown.length > 1 && (
+      {walk !== null && (
+        <CommentsWalk comments={comments} walk={walk} busy={busy} onJump={onJump} onResolve={resolveInWalk}
+          onSkip={() => setWalk((w) => (w === null ? w : { ...w, i: w.i + 1 }))}
+          onEnd={() => setWalk(null)} onCopy={(s) => void copyWalk(s)} />
+      )}
+      {walk === null && shown.length === 0 && <p className={styles.muted}>{t.empty}</p>}
+      {walk === null && shown.length > 1 && (
         <div className={styles.actions} role="group" aria-label={t.stepGroup}>
           <Button tone="ghost" size="dense" onClick={() => step(-1)}>{t.prevComment}</Button>
           <span role="status" className={styles.muted}>{at < 0 ? t.stepNone(shown.length) : t.stepAt(at + 1, shown.length)}</span>
           <Button tone="ghost" size="dense" onClick={() => step(1)}>{t.nextComment}</Button>
         </div>
       )}
-      <ul className={styles.list}>
-        {shown.map((c) => {
+      <ul className={styles.list} hidden={walk !== null}>
+        {walk === null && shown.map((c) => {
           const can = abilities(c, role, submitted);
           const tn = turnOf(c);
           const label = turnLabel(tn, role);
