@@ -16,11 +16,15 @@ export type SubMode = (typeof SUB_MODES)[number];
  * `hideRow` (ED-37) lists the row parts switched off, in ROW_PARTS order; without it the row shows all.
  * `order` (ED-70) is the order of LEFT_PARTS when it differs from the default; `hideParts` the parts
  * switched off, in LEFT_PARTS order; `subs` the "Potpoglavlja" choice other than "open".
+ * `scope` (ED-116, right only, "Popisi prvo pokazuju") is kept only as "all"; without it lists open on this chapter.
  */
 export type LayoutPreferences = Record<Side, {
   layout: PanelLayout; mobile: MobileLayout; dense?: true; hideRow?: RowPart[];
-  order?: LeftPart[]; hideParts?: LeftPart[]; subs?: Exclude<SubMode, "open">;
+  order?: LeftPart[]; hideParts?: LeftPart[]; subs?: Exclude<SubMode, "open">; scope?: "all";
 }>;
+/** ED-116: what the comment and review lists of the right panel show first. */
+export const LIST_SCOPES = ["chapter", "all"] as const;
+export type ListScope = (typeof LIST_SCOPES)[number];
 
 export const DEFAULT_PREFERENCES: LayoutPreferences = {
   left: { layout: "a", mobile: "c" },
@@ -36,7 +40,7 @@ export function isPanelLayout(value: unknown): value is PanelLayout {
 function readSide(side: Side, value: unknown): LayoutPreferences[Side] {
   const defaults = DEFAULT_PREFERENCES[side];
   if (typeof value !== "object" || value === null) return defaults;
-  const { layout, mobile, dense, hideRow, order, hideParts, subs } = value as Record<string, unknown>;
+  const { layout, mobile, dense, hideRow, order, hideParts, subs, scope } = value as Record<string, unknown>;
   const hidden = Array.isArray(hideRow) ? ROW_PARTS.filter((part) => hideRow.includes(part)) : [];
   const off = Array.isArray(hideParts) ? LEFT_PARTS.filter((part) => hideParts.includes(part)) : [];
   const ordered = partOrder({ order: Array.isArray(order) ? order : undefined });
@@ -48,7 +52,20 @@ function readSide(side: Side, value: unknown): LayoutPreferences[Side] {
     ...(side === "left" && !isDefaultOrder(ordered) ? { order: ordered } : {}),
     ...(side === "left" && off.length > 0 ? { hideParts: off } : {}),
     ...(side === "left" && (subs === "closed" || subs === "active") ? { subs } : {}),
+    ...(side === "right" && scope === "all" ? { scope: "all" as const } : {}),
   };
+}
+
+/** The side with a "Popisi prvo pokazuju" choice; "chapter" leaves no key. */
+export function withScope(value: LayoutPreferences[Side], scope: ListScope): LayoutPreferences[Side] {
+  const next = { ...value };
+  if (scope === "all") next.scope = "all"; else delete next.scope;
+  return next;
+}
+
+/** ED-116: true when the person chose that the right panel's lists open on the whole work. */
+export function listsStartWholeWork(): boolean {
+  return readPreferences().right.scope === "all";
 }
 
 const isDefaultOrder = (order: readonly LeftPart[]) => order.every((part, index) => part === LEFT_PARTS[index]);

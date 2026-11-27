@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, TextField } from "@ductura/ui";
 import type { useLocalEditor } from "@/components/editor/LocalDocument";
+import { listsStartWholeWork } from "@/components/editor/layout-prefs/preferences";
 
 import { jumpToBlock } from "./jump";
 import { ReviewPanel } from "../../../../../../src/components/editor/review/ReviewPanel";
@@ -49,7 +50,8 @@ export function PregledGroup({ editor, documentId, assignmentId, enabledCheckIds
 }) {
   const [view, setView] = useState<View>(() => takePregledView() ?? "nacrt");
   useEffect(() => onPregledView(setView), []);
-  const [wholeWork, setWholeWork] = useState(false);
+  // ED-116: "Popisi prvo pokazuju" in the right panel's settings chooses where the lists open.
+  const [wholeWork, setWholeWork] = useState(listsStartWholeWork);
   const snapshot = useEditorSnapshot(editor);
   const doc = useMemo(() => (snapshot ? readReviewDoc(snapshot.doc) : null), [snapshot?.doc]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!editor || !snapshot || !doc) return <p role="status">{t.unavailable}</p>;
