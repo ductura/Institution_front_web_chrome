@@ -14,7 +14,7 @@ test("at 390 px the bell and Odjava are visible with the menu closed, and a row 
   await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({
     json: { assignments: [{ assignmentId: ID, workState: "not_started" }] },
   }));
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   const menu = page.getByRole("button", { name: "Izbornik" });
   await expect(menu).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("button", { name: /^Obavijesti/ })).toBeVisible();
