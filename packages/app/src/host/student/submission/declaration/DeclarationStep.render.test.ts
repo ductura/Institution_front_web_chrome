@@ -33,10 +33,12 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 const error = (status: number, code: string) => json(status, { error: code, code, messageKey: "errors.x", status, requestId: "00000000-0000-4000-8000-000000000000" });
 
 /** A server holding one declaration; `answer` decides each PUT (default: accept on the current version). */
-function server(start: typeof STATE, answer?: () => Promise<Response> | Response) {
+function server(start: typeof STATE, answer?: () => Promise<Response> | Response, conversations: readonly unknown[] = []) {
   let state = { ...start };
   const puts: unknown[] = [];
-  const fetchImpl: typeof fetch = async (_input, init) => {
+  const fetchImpl: typeof fetch = async (input, init) => {
+    // F4-PRE-R02: the assistant's list of conversations; none unless a test gives some.
+    if (String(input).includes("/assistant-conversations")) return json(200, { assignmentId: ASSIGNMENT, conversations });
     if ((init?.method ?? "GET") === "GET") return json(200, state);
     const body = JSON.parse(String(init?.body)) as { confirm: boolean };
     puts.push(body);
@@ -169,5 +171,25 @@ describe("NF-3 PR-4: an honest empty state on E-9", () => {
     expect(text).not.toContain(t.attachments);
     // Q-10: no provider and no model anywhere on the step.
     expect(text).not.toMatch(/AI pomoćnik|model/iu);
+  });
+});
+
+describe("F4-PRE-R06: transfers recorded in the declaration", () => {
+  const CONVERSATION = {
+    conversationId: "00000000-0000-4000-8000-0000000000c1", purposeKey: "summary",
+    createdAt: "2026-10-28T09:00:00.000Z", requestCount: 1, lastActivityAt: "2026-10-28T09:20:00.000Z",
+  };
+
+  it("with conversations but nothing recorded: the block says nothing is recorded and offers no 'Obrazac izjave' menu (R-34)", async () => {
+    await show(server(STATE, undefined, [CONVERSATION]).ports);
+    const text = host!.textContent ?? "";
+    expect(text).toContain(t.emptyRecorded);
+    expect(text).not.toContain("Nema razgovora za prilaganje.");
+    // The conversation is listed: the menu stays away although a conversation exists.
+    expect([...host!.querySelectorAll("button")].filter((b) => b.textContent === "Pregledaj razgovor")).toHaveLength(1);
+    expect(text).not.toContain(t.form);
+    expect(host!.querySelector("select")).toBeNull();
+    // R-35 waits for the explanation field: no "Dodaj objašnjenje".
+    expect(text).not.toContain("Dodaj objašnjenje");
   });
 });

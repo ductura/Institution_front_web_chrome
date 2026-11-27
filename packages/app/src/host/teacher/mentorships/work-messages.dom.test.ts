@@ -21,7 +21,7 @@ function serve(post: { status: number; body?: unknown }) {
   const json = (status: number, body?: unknown) => new Response(body === undefined ? null : JSON.stringify(body), {
     status, headers: body === undefined ? {} : { "content-type": "application/json" },
   });
-  vi.stubGlobal("location", { origin: ORIGIN, href: `${ORIGIN}/app/web/nastavnik/mentorstva` });
+  vi.stubGlobal("location", { origin: ORIGIN, href: `${ORIGIN}/aplikacija/nastavnik/mentorstva` });
   vi.stubGlobal("fetch", async (url: string | URL | Request, init?: RequestInit) => {
     const path = new URL(String(url), ORIGIN).pathname;
     const method = init?.method ?? "GET";

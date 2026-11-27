@@ -11,11 +11,11 @@ const CODE = { receiptId: ID, fingerprint: FP };
 
 describe("verifyHref", () => {
   it("carries a valid pair in the fragment, lower-cased", () => {
-    expect(verifyHref("/app/web/provjera", ID.toUpperCase(), FP.toUpperCase())).toBe(`/app/web/provjera#r=${ID}&o=${FP}`);
+    expect(verifyHref("/aplikacija/provjera", ID.toUpperCase(), FP.toUpperCase())).toBe(`/aplikacija/provjera#r=${ID}&o=${FP}`);
   });
   it("leads to the plain page without a valid pair", () => {
-    expect(verifyHref("/app/web/provjera", "", FP)).toBe("/app/web/provjera");
-    expect(verifyHref("/app/web/provjera", ID, "abc")).toBe("/app/web/provjera");
+    expect(verifyHref("/aplikacija/provjera", "", FP)).toBe("/aplikacija/provjera");
+    expect(verifyHref("/aplikacija/provjera", ID, "abc")).toBe("/aplikacija/provjera");
   });
   it("is the page's route", () => {
     expect(VERIFY_PATH).toBe("/provjera");

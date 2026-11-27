@@ -9,7 +9,7 @@ import { messagesEn as interfaceEn } from "../../../../locales/en.ts";
 import { messagesHr as interfaceHr } from "../../../../locales/hr.ts";
 import { findForbiddenTerms } from "../../../../scripts/forbidden-terms/terms.ts";
 
-import { COMPLIANCE, ENFORCEMENT_BODY, STANDARD, statementEn, statementHr } from "../../app/[base]/pristupacnost/statement";
+import { COMPLIANCE, ENFORCEMENT_BODY, STANDARD, statementEn, statementHr } from "../../app/(host)/pristupacnost/statement";
 import { fakeServer } from "./fake-server";
 
 const SECTIONS_HR = [
@@ -31,7 +31,7 @@ function shape(node: unknown): unknown {
 
 test("the statement opens without reading the session, with every section of the model statement", async ({ page }) => {
   const seen = await fakeServer(page, null);
-  await page.goto("/app/web/pristupacnost");
+  await page.goto("/aplikacija/pristupacnost");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Izjava o pristupačnosti");
   await expect(page.getByRole("heading", { level: 2 })).toHaveText(SECTIONS_HR);
   await expect(page.getByText("Narodne novine, broj 17/2019", { exact: false })).toBeVisible();
@@ -39,21 +39,15 @@ test("the statement opens without reading the session, with every section of the
   await expect(page.getByText("djelomično je usklađena", { exact: false })).toBeVisible();
   await expect(page.getByText("Izjava je sastavljena 21. studenoga 2026.")).toBeVisible();
   await expect(page.getByRole("link", { name: ENFORCEMENT_BODY.email })).toHaveAttribute("href", `mailto:${ENFORCEMENT_BODY.email}`);
-  await expect(page.getByRole("link", { name: "Na početnu" })).toHaveAttribute("href", "/app/web/");
+  await expect(page.getByRole("link", { name: "Na početnu" })).toHaveAttribute("href", "/aplikacija/");
   await expect(page).toHaveTitle("Izjava o pristupačnosti · Ductura");
   expect(seen.me).toBe(0);
-});
-
-test("under /app/chrome the home link keeps the base", async ({ page }) => {
-  await fakeServer(page, null);
-  await page.goto("/app/chrome/pristupacnost");
-  await expect(page.getByRole("link", { name: "Na početnu" })).toHaveAttribute("href", "/app/chrome/");
 });
 
 test("English text, from the saved interface language", async ({ page }) => {
   await fakeServer(page, null);
   await page.addInitScript(() => localStorage.setItem("ductura.interface-locale", "en"));
-  await page.goto("/app/web/pristupacnost");
+  await page.goto("/aplikacija/pristupacnost");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Accessibility statement");
   await expect(page.getByText("This statement was prepared on 21 November 2026.")).toBeVisible();
   await expect(page).toHaveTitle("Accessibility statement · Ductura");
@@ -62,11 +56,11 @@ test("English text, from the saved interface language", async ({ page }) => {
 for (const role of ["student", "teacher", "institution_admin"] as const) {
   test(`the shell of the ${role} links to the statement`, async ({ page }) => {
     await fakeServer(page, role);
-    await page.goto("/app/web/");
+    await page.goto("/aplikacija/");
     const link = page.getByRole("complementary").getByRole("link", { name: "Izjava o pristupačnosti" });
-    await expect(link).toHaveAttribute("href", "/app/web/pristupacnost");
+    await expect(link).toHaveAttribute("href", "/aplikacija/pristupacnost");
     await link.click();
-    await expect(page).toHaveURL(/\/app\/web\/pristupacnost$/);
+    await expect(page).toHaveURL(/\/aplikacija\/pristupacnost$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Izjava o pristupačnosti");
   });
 }
@@ -74,7 +68,7 @@ for (const role of ["student", "teacher", "institution_admin"] as const) {
 test("at 320 px the statement reflows without horizontal scrolling (WCAG 1.4.10)", async ({ page }) => {
   await fakeServer(page, null);
   await page.setViewportSize({ width: 320, height: 640 });
-  await page.goto("/app/web/pristupacnost");
+  await page.goto("/aplikacija/pristupacnost");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);

@@ -1,5 +1,5 @@
 import { fetchRetention, type RetentionClassRow } from "@/client/retention";
-import { createApi } from "@/client/api";
+import { createApi, type ApiOptions } from "@/client/api";
 
 import { readThresholds, ORIGIN_KINDS, type OriginThreshold, type ThresholdCall } from "../../institution/origin-thresholds/contract";
 import { currentOf, readRules, type RuleRow, type RuleVersion } from "../institution-config/rules";
@@ -51,4 +51,30 @@ export function assistantRows(rows: readonly RuleRow[]): AssistantRow[] {
     const row = rows.find((r) => r.workType === workType);
     return { workType, version: row === undefined ? null : currentOf(row) };
   });
+}
+
+/** institution.assistant-setting.get -> 200 { assistant, transcription, tools, settingVersion, changeable }; the faculty's switch as the server holds it. */
+export type AssistantSetting = { assistant: boolean; transcription: boolean; tools: boolean; settingVersion: number | null };
+
+export function parseAssistantSetting(v: unknown): AssistantSetting | null {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return null;
+  const o = v as Record<string, unknown>;
+  if (typeof o.assistant !== "boolean" || typeof o.transcription !== "boolean" || typeof o.tools !== "boolean") return null;
+  const version = o.settingVersion;
+  if (version !== null && !(typeof version === "number" && Number.isInteger(version) && version >= 1)) return null;
+  return { assistant: o.assistant, transcription: o.transcription, tools: o.tools, settingVersion: version };
+}
+
+/** A refusal or a wrong shape is never read as "off": the page then says the switch could not be read. */
+export async function readAssistantSettingPart(options?: ApiOptions): Promise<Part<AssistantSetting>> {
+  try {
+    const answer = await createApi(options)("institution.assistant-setting.get", { params: undefined, query: {}, body: undefined });
+    if (answer.ok) {
+      const value = parseAssistantSetting(answer.body);
+      return value === null ? { kind: "unavailable" } : { kind: "ready", value };
+    }
+    return answer.status === 401 ? { kind: "signedOut" } : answer.status === 403 ? { kind: "denied" } : { kind: "unavailable" };
+  } catch {
+    return { kind: "unavailable" };
+  }
 }

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { AssistantChatView } from "./AssistantChat";
 import {
   SHOWN,
-  PURPOSE_CATALOG_VERSION, askablePurposes, createAssistantPort, exchangesOf, heldChat, keepConversation, keptConversations, mergeConversations, requestsLeft, titleOf,
+  PURPOSE_CATALOG_VERSION, SUMMARY_MIN_WORDS, SUMMARY_PURPOSE, summaryOnlyOf, wordCount, askablePurposes, createAssistantPort, exchangesOf, heldChat, keepConversation, keptConversations, mergeConversations, requestsLeft, titleOf,
   type AssistantPort, type Message,
 } from "./assistant-chat";
 import { assistantChatHr } from "./messages.hr";
@@ -132,6 +132,22 @@ describe("ED-10 Asistent: the record", () => {
   it("offers only the purposes the notice allows, never transcription", () => {
     expect(askablePurposes(["translation", "transcription", "formatting"])).toEqual(["formatting", "translation"]);
     expect(askablePurposes([])).toEqual([]);
+  });
+});
+
+describe("F4-EDI-R08 Asistent: samo sažimanje", () => {
+  it("counts only a literal true", () => {
+    expect(summaryOnlyOf({ aiSummaryOnly: true })).toBe(true);
+    expect(summaryOnlyOf({ aiSummaryOnly: false })).toBe(false);
+    expect(summaryOnlyOf({ aiSummaryOnly: "true" })).toBe(false);
+    expect(summaryOnlyOf({})).toBe(false);
+    expect(summaryOnlyOf(null)).toBe(false);
+  });
+  it("counts words and asks under the summarising purpose", () => {
+    expect(wordCount("  ")).toBe(0);
+    expect(wordCount("jedna  dvije\ntri")).toBe(3);
+    expect(SUMMARY_MIN_WORDS).toBe(8);
+    expect(SUMMARY_PURPOSE).toBe("literature_search");
   });
 });
 

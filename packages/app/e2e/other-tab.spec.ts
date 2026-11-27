@@ -10,7 +10,7 @@ const ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c22";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d22";
 const SCOPE = "e".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0022";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 const SIGNED = "2026-11-26T13:32:00.000Z";
 
 const defaults = generatedDefaults();

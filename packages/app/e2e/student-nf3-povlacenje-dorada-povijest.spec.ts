@@ -56,7 +56,7 @@ for (const width of [390, 1280]) {
     test(`PR-13, PR-15: withdrawal with its deadline, the dialog, what comes next, and „Moje predaje” (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page, { withdrawal: WITHDRAWABLE });
-      await page.goto(`/app/web/rad/${T3}/predaja/potvrda`);
+      await page.goto(`/aplikacija/rad/${T3}/predaja/potvrda`);
       await setTheme(page, theme);
       await expect(main(page).getByText(/^Dok rok traje, predaju možete povući i predati ponovno\. Rok: \d{1,2}\. \d{1,2}\. \d{4}\. u \d{2}:\d{2}\.$/)).toBeVisible();
       // PR-15: the contract's history, newest first: the one in force and the withdrawn one.
@@ -80,7 +80,7 @@ for (const width of [390, 1280]) {
       await expect(main(page).getByRole("heading", { name: "Predaja je povučena" })).toBeVisible();
       await expect(main(page).getByRole("status").filter({ hasText: "Predaja je povučena. Potvrdu povlačenja možete preuzeti." })).toBeVisible();
       await expect(main(page).getByText(/^Rad možete ponovno mijenjati do .+\. Zatim ga predajte iznova\.$|^Rok je istekao /)).toBeVisible();
-      await expect(main(page).getByRole("link", { name: "Otvori radni prostor" }).last()).toHaveAttribute("href", `/app/web/rad/${T3}`);
+      await expect(main(page).getByRole("link", { name: "Otvori radni prostor" }).last()).toHaveAttribute("href", `/aplikacija/rad/${T3}`);
       await expect(main(page).getByText("Nastavnik u povijesti vidi i predaju i povlačenje.")).toBeVisible();
       // The sticky step bar covers the receipt's upper links at this scroll (frame, VIZ-S1, outside this lane):
       // axe counts a covered link as too small, so the check runs from the top of the page.
@@ -92,7 +92,7 @@ for (const width of [390, 1280]) {
 
 test("PR-13: a withdrawal switched off says that the teacher or the faculty does not allow it", async ({ page }, info) => {
   await student(page, { withdrawal: { withdrawable: false, receipts: [] }, history: (body) => ({ ...body, withdrawalAllowed: false }) });
-  await page.goto(`/app/web/rad/${T3}/predaja/potvrda`);
+  await page.goto(`/aplikacija/rad/${T3}/predaja/potvrda`);
   await expect(main(page).getByText("Nastavnik ili fakultet ne dopušta povlačenje za ovaj zadatak.")).toBeVisible();
   await expect(main(page).getByRole("button", { name: "Povuci predaju" })).toHaveCount(0);
   await axe(page, info, "povlacenje-iskljuceno");
@@ -102,7 +102,7 @@ test("PR-15: a history that cannot be read is said so, not shown as empty", asyn
   await student(page, { withdrawal: WITHDRAWABLE });
   await page.route("**/api/v1/student/assignments/*/submission/history", (route) =>
     route.fulfill({ status: 503, json: { error: "unavailable", code: "unavailable", messageKey: "errors.unavailable", status: 503, requestId: "00000000-0000-4000-8000-000000000000" } }));
-  await page.goto(`/app/web/rad/${T3}/predaja/potvrda`);
+  await page.goto(`/aplikacija/rad/${T3}/predaja/potvrda`);
   await expect(main(page).getByRole("alert").filter({ hasText: "Popis predaja trenutačno nije moguće učitati." })).toBeVisible();
 });
 
@@ -111,13 +111,13 @@ for (const width of [390, 1280]) {
     test(`PR-14: beside a submitted declaration, a note to it, tagged for legal review (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page);
-      await page.goto(`/app/web/rad/${T3}/predaja/izjava`);
+      await page.goto(`/aplikacija/rad/${T3}/predaja/izjava`);
       await setTheme(page, theme);
       await expect(main(page).getByText(/Izjava je predana s radom i više se ne mijenja\./)).toBeVisible();
       const section = main(page).locator("section").filter({ has: page.getByRole("heading", { name: "Ispravak izjave" }) });
       await expect(section).toContainText("za pravni pregled");
       await expect(section).toContainText("Tekst ovog odjeljka čeka pravni pregled.");
-      await expect(section.getByRole("link", { name: "Povlačenje predaje" })).toHaveAttribute("href", `/app/web/rad/${T3}/predaja/potvrda`);
+      await expect(section.getByRole("link", { name: "Povlačenje predaje" })).toHaveAttribute("href", `/aplikacija/rad/${T3}/predaja/potvrda`);
       await axe(page, info, `ispravak-izjave-${width}-${theme}`);
       const open = section.getByRole("link", { name: "Dodaj napomenu uz izjavu" });
       await open.focus();
@@ -135,19 +135,26 @@ for (const width of [390, 1280]) {
 
 for (const width of [390, 1280]) {
   for (const theme of ["light", "dark"] as const) {
-    test(`PR-16: the request for revision on the steps, with its deadline, comment and an unavailable „Pošalji doradu” (${width} px, ${theme})`, async ({ page }, info) => {
+    test(`PR-16: the request for revision on the steps, with its deadline, comment and a working „Pošalji doradu” (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page, { revision: REVISION(T1) });
+      const sends: unknown[] = [];
+      await page.route("**/api/v1/revision-send", (route) => { sends.push(route.request().postDataJSON()); return route.fulfill({ json: { round: 2 } }); });
       for (const step of ["izjava", "pregled", "slanje"] as const) {
-        await page.goto(`/app/web/rad/${T1}/predaja/${step}`);
+        await page.goto(`/aplikacija/rad/${T1}/predaja/${step}`);
         await setTheme(page, theme);
         const block = main(page).locator("section").filter({ has: page.getByRole("heading", { name: "Rad je kod Vas: dorada" }) });
         await expect(block).toContainText("Dorada do 15. 12. 2026. u 13:00");
         await expect(block).toContainText("Izmišljeni komentar: doradite uvod i ispravite navode.");
-        await expect(block.getByRole("button", { name: "Pošalji doradu" })).toHaveAttribute("aria-disabled", "true");
-        await expect(block).toContainText("Slanje dorade trenutačno nije dostupno.");
+        const send = block.getByRole("button", { name: "Pošalji doradu" });
+        await expect(send).not.toHaveAttribute("aria-disabled", "true");
         if (step === "izjava") await expect(block).toContainText("Prije predaje dorade pregledajte izjavu");
         await axe(page, info, `dorada-${step}-${width}-${theme}`);
+        if (step === "slanje") {
+          await send.click();
+          await expect(block).toContainText("Dorada je poslana nastavniku.");
+          expect(sends).toHaveLength(1);
+        }
       }
     });
   }
@@ -155,7 +162,7 @@ for (const width of [390, 1280]) {
 
 test("PR-16: without a request for this work the steps show no revision block", async ({ page }) => {
   await student(page, { revision: REVISION("00000000-0000-4000-8000-0000000000ff") });
-  await page.goto(`/app/web/rad/${T1}/predaja/izjava`);
+  await page.goto(`/aplikacija/rad/${T1}/predaja/izjava`);
   await expect(main(page).getByRole("list", { name: "Koraci predaje" })).toBeVisible();
   await expect(main(page).getByRole("heading", { name: "Rad je kod Vas: dorada" })).toHaveCount(0);
 });
@@ -169,7 +176,7 @@ const pressOn = async (page: Page, name: string) => {
   await page.keyboard.press("Enter");
 };
 const submitFromLastStep = async (page: Page) => {
-  await page.goto(`/app/web/rad/${T1}/predaja/slanje`);
+  await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
   await pressOn(page, "Predaj rad");
   await page.getByRole("dialog", { name: "Predati rad?" }).getByRole("button", { name: "Predaj rad" }).click();
   await expect(page).toHaveURL(new RegExp(`/rad/${T1}/predaja/potvrda(\\?|$)`));

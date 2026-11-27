@@ -54,8 +54,8 @@ describe("ruta /ustanova/etape", () => {
     expect(resolve("/ustanova/etape", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
     expect(resolve("/ustanova/etape", null)).toEqual({ kind: "redirect", to: "/" });
   });
-  it("stranica je montirana u app/[base]", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/ustanova/etape/page.tsx"), "utf8");
+  it("stranica je montirana u app/(host)", () => {
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/ustanova/etape/page.tsx"), "utf8");
     expect(page).toContain("admin/milestone-template/routes");
   });
 });

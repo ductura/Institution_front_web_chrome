@@ -34,7 +34,7 @@ async function mountAndAsk(kind: PackageKind | undefined) {
   root = createRoot(host);
   const props = { assignmentId: ASSIGNMENT, submissionId: SUBMISSION, call: () => server.call, ...(kind === undefined ? {} : { kind }) };
   await act(async () => {
-    root!.render(createElement(HostContext.Provider, { value: { base: "/app/web", page, role: "student" } }, createElement(SubmissionPackage, props)));
+    root!.render(createElement(HostContext.Provider, { value: { base: "/aplikacija", page, role: "student" } }, createElement(SubmissionPackage, props)));
   });
   const button = [...host.querySelectorAll("button")].find((b) => b.textContent !== "");
   await act(async () => {

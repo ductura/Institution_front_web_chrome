@@ -13,6 +13,8 @@ export type RevisionCall = (
 
 export type RevisionRequest = {
   readonly id: string;
+  /** The work the request is about; `collaboration.revision-send.post` takes it as `documentId`. */
+  readonly documentId: string;
   /** The teacher's comment, up to 2000 characters. */
   readonly comment: string;
   /** The deadline of the revision (obligatory by decision 2151; the contract still allows null). */
@@ -28,7 +30,7 @@ export type RevisionRead =
 const UNKNOWN = { kind: "nepoznato" } as const;
 const PAGE = migrationContracts["notifications.returned-for-revision.list.get"].responses["200"].content["application/json"].schema as Schema;
 
-type Raw = { id: string; targetId: string; comment: string; revisionDueAt: string | null; createdAt: string };
+type Raw = { id: string; targetId: string; documentId: string; comment: string; revisionDueAt: string | null; createdAt: string };
 
 export async function readRevisionRequest(call: RevisionCall, assignmentId: string): Promise<RevisionRead> {
   try {
@@ -41,7 +43,7 @@ export async function readRevisionRequest(call: RevisionCall, assignmentId: stri
     const newest = mine[0];
     return {
       kind: "ready",
-      request: newest === undefined ? null : { id: newest.id, comment: newest.comment, dueAt: newest.revisionDueAt, createdAt: newest.createdAt },
+      request: newest === undefined ? null : { id: newest.id, documentId: newest.documentId, comment: newest.comment, dueAt: newest.revisionDueAt, createdAt: newest.createdAt },
     };
   } catch {
     return UNKNOWN;

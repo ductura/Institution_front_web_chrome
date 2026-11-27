@@ -92,7 +92,8 @@ export const hr = {
     // Design v3 shell (#476 6314969336): only static labels and the role the
     // server read; no names or counts the app does not have.
     sideNav: "Bočna navigacija",
-    workNav: "Radni prostor",
+    // PAR2-A3: not the name of the fifth item, so a screen reader does not say "Radni prostor" twice.
+    workNav: "Glavna navigacija",
     home: `${APP_NAME}, početna`,
     space: { teacher: "Nastavnički prostor", student: "Studentski prostor", admin: "Administracija ustanove" },
     nav: {
@@ -955,6 +956,12 @@ export const hr = {
       reload: "Učitaj aktualnu verziju",
       missing: "Zadatak nije dostupan ovom računu.",
       unavailable: "Zadatak trenutačno nije moguće učitati. Pokušajte ponovno.",
+      confirm: {
+        title: "Objaviti verziju {n}?",
+        lead: "Mijenja se ono što student čita u obavijesti, pa će verziju {n} morati ponovno potvrditi prije nastavka pisanja. Već napisan tekst ostaje kakav jest. Mijenja se:",
+        publish: "Objavi verziju {n}",
+        cancel: "Natrag na izmjene",
+      },
       fields: {
         title: "Naslov",
         instructions: "Upute studentima",
