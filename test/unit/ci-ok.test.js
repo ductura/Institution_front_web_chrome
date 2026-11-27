@@ -299,6 +299,26 @@ test('changes: app-build equals app and client implies ui, for every case', () =
   }
 });
 
+// sistem runs on a pull request that changes the editor host, e2e/sistem/,
+// its config or the contract extract (ZEL-WEB-SISTEM-2711: a stale extract
+// refused the server's answer and only sistem saw it); other client files
+// leave it off.
+const sistemCases = [
+  [['src/client/migration-contracts.generated.json'], 'true'],
+  [['src/client/migration-contract-types.generated.ts'], 'true'],
+  [['src/client/migration-contract-vectors.generated.json'], 'true'],
+  [['e2e/sistem/a.sistem.ts'], 'true'],
+  [['playwright.sistem.config.ts'], 'true'],
+  [['packages/app/src/host/editor/a.tsx'], 'true'],
+  [['src/client/api.ts'], 'false'],
+  [['docs/x.md'], 'false'],
+];
+for (const [files, expected] of sistemCases) {
+  test(`changes: sistem ${expected === 'true' ? 'on' : 'off'} for ${files.join(', ')}`, () => {
+    assert.equal(changesFor(files).sistem, expected);
+  });
+}
+
 // CI-BRZINA (Daniel 25. 11. 2026): the report-only pixel baselines run on a
 // push, by hand and on the schedule (main only); on a pull request only when
 // it changes what they show, catalog/ or packages/ui/. Anything else on a
