@@ -4,10 +4,9 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import {
-  appHref, MentoredWorks, readMentoredWorks, readTeacherCourses, StudentHome, TeacherCourses,
-  type MentoredWorksCall, type MyAssignmentsRead, type TeacherCoursesCall,
+  appHref, MentoredWorks, readMentoredWorks, readTeacherCourses, TeacherCourses,
+  type MentoredWorksCall, type TeacherCoursesCall,
 } from "../../../../src/components/index.ts";
-import { readMyAssignments, type AssignmentsCall } from "../../../../src/components/student/my-assignments-read.ts";
 import { messagesHr as t } from "../../../../locales/hr.ts";
 import { createApi, goToSignIn, leaveFor, signInHref } from "../../../../src/client/api.ts";
 
@@ -23,8 +22,6 @@ import { TeacherPage, type TeacherRead } from "./teacher/shell/TeacherPage";
 import { CourseQuestionnaires } from "./teacher/questionnaire/Questionnaires";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { CourseRhythm } from "./teacher/input-rhythm/mounts";
-import { startWorkAction } from "./student/start-work/action";
-import { HomePage } from "./student/home/HomePage";
 import SignInScreen from "./signin/SignInScreen";
 import { signInViewOf } from "./signin/sign-in-view";
 
@@ -71,28 +68,6 @@ export function SignInPage() {
     leaveFor(href);
   };
   return <SignInScreen view={leaving ? "redirecting" : signInViewOf(query)} href={href} onStart={start} />;
-}
-
-/** S01 (E-2, WEB-2102) is its own page; S02 over student.assignments.get, read once per visit. */
-export function StudentPage({ view }: { view: "home" | "courses" }) {
-  return view === "home" ? <HomePage /> : <CoursesPage />;
-}
-
-function CoursesPage() {
-  const { base } = useHost();
-  const [read, setRead] = useState<MyAssignmentsRead | null>(null);
-  useEffect(() => {
-    let live = true;
-    void readMyAssignments(createApi() as unknown as AssignmentsCall).then((result) => {
-      if (live) setRead(result);
-    });
-    return () => {
-      live = false;
-    };
-  }, []);
-  if (read === null) return <p role="status">{hostText.loading}</p>;
-  return <StudentHome read={read} enroll={null} view="courses" signIn={(returnTo) => signInHref(appHref(base, returnTo))}
-    assignmentAction={startWorkAction} />;
 }
 
 export { TeacherPage, type TeacherRead } from "./teacher/shell/TeacherPage";

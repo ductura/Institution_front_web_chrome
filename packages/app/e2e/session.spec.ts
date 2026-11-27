@@ -119,7 +119,7 @@ test("a student lands on Vaš studentski prostor with the institution's name, wi
   await axe(page);
 
   // The shell's navigation opens in place, under the same base.
-  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Moji kolegiji" }).click();
+  await page.getByRole("navigation", { name: "Glavna navigacija" }).getByRole("link", { name: "Moji kolegiji" }).click();
   await expect(page).toHaveURL(/\/app\/web\/zadaci\/kolegiji$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji kolegiji");
   expect(seen.me).toBe(1);
@@ -151,7 +151,7 @@ test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({
   await expect(page.getByText(INSTITUTION)).toBeVisible();
   await axe(page);
 
-  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Radovi uz mentora" }).click();
+  await page.getByRole("navigation", { name: "Glavna navigacija" }).getByRole("link", { name: "Radovi uz mentora" }).click();
   await expect(page).toHaveURL(/\/app\/web\/nastavnik\/mentorstva$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radovi uz mentora");
   // WEB-NF6-PREGLED: the title also stands in "Moji studenti", so the works list is named.
@@ -302,7 +302,7 @@ test("a student's Ductus pages open at their addresses; the workspace without a 
   // Moji radovi is connected (HOST-S5): it reads an empty list.
   await page.route("**/api/v1/student/assignments", (route) => route.fulfill({ json: { courses: [] } }));
   await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({ json: { assignments: [] } }));
-  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Moji radovi" }).click();
+  await page.getByRole("navigation", { name: "Glavna navigacija" }).getByRole("link", { name: "Moji radovi" }).click();
   await expect(page).toHaveURL(/\/app\/chrome\/zadaci\/radovi$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji radovi");
   expect(seen.me).toBe(1);
@@ -339,7 +339,7 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pravila fakulteta");
   await expect(page.getByText("Za ovu vrstu rada pravilo još nije objavljeno.")).toBeVisible();
   await axe(page);
-  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Korisnici" }).click();
+  await page.getByRole("navigation", { name: "Glavna navigacija" }).getByRole("link", { name: "Korisnici" }).click();
   await expect(page).toHaveURL(/\/app\/web\/ustanova\/korisnici$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Korisnici");
   await expect(page.getByText("Ana Izmišljena")).toBeVisible();
@@ -347,7 +347,7 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   expect(seen.me).toBe(1);
   await page.goto("/app/web/ustanova");
   await expect(page.getByText("Potvrđeni nastavnici")).toBeVisible();
-  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Kolegiji" }).click();
+  await page.getByRole("navigation", { name: "Glavna navigacija" }).getByRole("link", { name: "Kolegiji" }).click();
   await expect(page).toHaveURL(/\/app\/web\/ustanova\/kolegiji$/);
   await expect(page.getByText("Izmišljeni seminar")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Novi kolegij" })).toBeVisible();
