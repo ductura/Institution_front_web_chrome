@@ -228,7 +228,7 @@ test("NZ-14: the card leads to the roles and the teaching team, and the holder a
   await page.keyboard.press("Space");
   await expect(member).toBeChecked();
   await page.getByRole("button", { name: "Spremi nastavni tim" }).click();
-  await expect(page.getByText("Nastavni tim je spremljen.")).toBeVisible();
+  await expect(page.getByText("Nastavni tim je spremljen na poslužitelju.")).toBeVisible();
   expect(calls.team).toEqual([[ASSISTANT]]);
 });
 

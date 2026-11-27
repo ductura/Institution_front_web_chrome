@@ -132,7 +132,7 @@ test("F4-NAS-R01: the edit page reads the late rule and saves a change through t
   await expect(dialog.getByText("Ova izmjena mijenja pravila koja su studenti već vidjeli.")).toBeVisible();
   expect(calls.filter((c) => c.startsWith("put"))).toEqual([]);
   await dialog.getByRole("button", { name: "Spremi izmjenu" }).click();
-  await expect(panel.getByText("Pravila predaje su spremljena.")).toBeVisible();
+  await expect(panel.getByText("Pravila predaje su spremljena na poslužitelju.")).toBeVisible();
   expect(calls.filter((c) => c.startsWith("put"))).toEqual(['put PUT {"lateSubmissionAllowed":false}']);
   expect(calls.filter((c) => c.startsWith("get"))).toEqual(["get GET"]);
 });
@@ -168,7 +168,7 @@ test("NZ-4: the edit page reads the switches, asks first and says saved only aft
   await expect(dialog.getByText("Ova izmjena mijenja pravila koja su studenti već vidjeli.")).toBeVisible();
   expect(puts).toEqual([]);
   await dialog.getByRole("button", { name: "Spremi izmjenu" }).click();
-  await expect(panel.getByText("Pravila predaje su spremljena.")).toBeVisible();
+  await expect(panel.getByText("Pravila predaje su spremljena na poslužitelju.")).toBeVisible();
   expect(puts).toEqual(['{"allowed":false}']);
 });
 
