@@ -3,8 +3,9 @@
 import { Button, TextField } from "@ductura/ui";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
+import { formatDateTimeHr } from "../../lib/i18n/hr";
+
 import LoadAlert from "../shell/LoadAlert";
-import { zagrebParts } from "../summary/zagreb-time";
 
 import { parseVerificationCode, readVerificationFields, type VerificationCode } from "./code";
 import { publicVerificationHr as t } from "./messages.hr";
@@ -14,9 +15,9 @@ import styles from "./verification.module.css";
 export type VerificationState = VerificationResult | { kind: "idle" | "invalid" | "pending" };
 const emptyCode: VerificationCode = { receiptId: "", fingerprint: "" };
 
+// Design alignment 27. 11. 2026. (J-02): the shared long form, "20. studenoga 2026. u 13:05".
 function ReceiptTime({ iso }: { iso: string }) {
-  const local = zagrebParts(iso);
-  return <time dateTime={iso}>{local ? `${local.date} ${local.time}` : iso}</time>;
+  return <time dateTime={iso}>{formatDateTimeHr(iso)}</time>;
 }
 
 export function VerificationFeedback({ state }: { state: VerificationState }) {

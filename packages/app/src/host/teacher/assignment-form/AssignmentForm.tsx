@@ -8,12 +8,11 @@ import {
 } from "@/components/teacher/assignment-create";
 import { createApi, leaveFor } from "@/client/api";
 import { publishAssignment } from "@/components/teacher/TeacherSetup/assignment-mutations";
-import { assignmentSetupMessages as setup } from "@/components/teacher/TeacherSetup/messages.hr";
 import type { TeacherCourse } from "@/components/teacher/teacher-courses-read";
 import { formatDateTimeHr } from "@/lib/i18n/hr";
 import { zagrebInstant } from "@/lib/i18n/zagreb";
 import { wordRangeHr } from "@/lib/i18n/length-line";
-import { messagesHr as t } from "@/lib/i18n/messages.hr";
+import { assignmentSetupHr as setup, messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { checkForm, errorSummary, withPractice, type FormErrors } from "./form-checks";
 import { DocumentKindField, withDocumentKind, kindOf, type DocumentKind } from "./DocumentKindField";
