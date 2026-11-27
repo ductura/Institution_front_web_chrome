@@ -30,3 +30,9 @@ Za spremanje su potrebni pohrana evidencije i registrirani razvojni ključ za po
 ## CI: workflow `Sistem` (INT-08, INT-10)
 
 `.github/workflows/sistem.yml` (samo workflow_dispatch (test `ci-ok.test.js` zabranjuje push i pull_request u drugim workflowima); nije required check i ne ulazi u `ci-ok`) na GitHub runneru kloni `ductura/Institution_server` i `ductura/Preloader` (javni repoi, bez tajni), diže PostgreSQL (Docker compose), migracije, seed, lažni OIDC i server (`pnpm lokalno --izvor=http://localhost:8000`), gradi i pokreće `packages/app` (`pnpm build` + `pnpm start`), gradi Preloader i pokreće njegov edge na `:8000`, preuzme stog bez nadzornika, učita `seed-int04.sql` i pokreće `pnpm test:sistem` (INT-02 do INT-05 i INT-13). `e2e/vs-run/vs-run.mjs` izrađuje `vs-run.json` (tri puna SHA-a, host, PID servera prije i poslije, svjež kontekst, četiri vrijednosti prije i poslije, ishod VS-1.1 do VS-1.13 i scenarija) i `tablica.md`. Artifact `sistem` sadrži njih, dnevnike stoga i Playwright tragove.
+
+### Pinovi servera i Preloadera za PR (WEB-SISTEM-PINS)
+
+Na pull requestu posao `sistem` ne uzima vrh grana `migracija/kopija-ductus-backend` i `migracija/nextjs`, nego commitove iz `e2e/sistem/pins.json` (`server`, `preloader`, puni SHA od 40 znakova). To su SHA-ovi servera i Preloadera iz koraka „SHAs” zadnjeg zelenog push runa `sistem` na bazi weba, pa ishod PR-a ne ovisi o tome što je u međuvremenu spojeno u server. Push u bazu, raspored i ručni pokret i dalje idu na vrh grana (ili na zadane `server_ref`/`preloader_ref`), pa baza prva vidi novi server. Zadani ulazi imaju prednost pred pinom.
+
+Pin se pomiče u istom PR-u koji treba novi server ili Preloader: u `pins.json` upiši puni SHA commita koji PR treba (već spojenog u granu servera ili Preloadera) i u opisu PR-a navedi zašto. Kad push run na bazi prođe s novijim serverom, pin se smije pomaknuti i zasebnim malim PR-om. Neispravan ili skraćeni SHA ruši korak `pins`.
