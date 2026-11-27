@@ -100,7 +100,7 @@ jobs:
           u="$(hit '^(packages/|catalog/|src/|scripts/forbidden-terms/|locales/)')"
           a="$(hit '^(packages/|src/|locales/)')"
           b="$(hit '^(catalog/|packages/ui/)')"
-          s="$(hit '^(packages/app/src/host/editor/|e2e/sistem/|playwright\.sistem\.config\.ts$)')"
+          s="$(hit '^(packages/app/src/host/editor/|e2e/sistem/|playwright\.sistem\.config\.ts$|src/client/migration-contract)')"
           emit "$t" "$c" "$u" "$a" "$b" "$s"
           # changes:end
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -616,7 +616,9 @@ jobs:
   # The system pass on the real stack (INT-08, INT-10): sistem.yml as a
   # reusable workflow (Daniel 25. 11. 2026, option 1 on WEB#682). It runs on
   # every push to the base, on a pull request that changes the editor host,
-  # e2e/sistem/ or its config, and on everything that runs every job.
+  # e2e/sistem/ or its config, the contract extract src/client/migration-contract*
+  # (ZEL-WEB-SISTEM-2711: a stale extract broke sistem unseen), and on
+  # everything that runs every job.
   # ci-ok needs it.
   sistem:
     needs: changes

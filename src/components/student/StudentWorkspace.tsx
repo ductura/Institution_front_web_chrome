@@ -105,7 +105,8 @@ function row(item: StudentWorkspaceItem) {
   return h("li", { key: item.assignmentId },
     h("article", { className: styles.item, "aria-labelledby": id },
       h("div", { className: styles.meta },
-        h("p", { className: styles.eyebrow }, `${item.courseName} · ${item.academicYear}`),
+        // Design alignment 27. 11. 2026. (A4): separate parts, 12 px apart, no dot.
+        h("p", { className: styles.eyebrow }, h("span", null, item.courseName), h("span", null, item.academicYear)),
         h("h2", { id, className: styles.itemTitle }, item.title),
         h("p", { className: styles.facts },
           h("span", { className: styles.stateText, "data-tone": tone }, text),

@@ -6,7 +6,7 @@ import type { createApi } from "@/client/api";
 // courses, as the server allows) and picks the assignment here.
 export type CourseRead =
   | { kind: "assignment"; assignmentId: string }
-  | { kind: "none" | "signedOut" | "notFound" | "unavailable" };
+  | { kind: "none" | "signedOut" | "denied" | "notFound" | "unavailable" };
 
 type Api = ReturnType<typeof createApi>;
 
@@ -45,7 +45,11 @@ export async function readCourse(api: Api, courseId: string, now: Date = new Dat
   } catch {
     return { kind: "unavailable" };
   }
-  if (!result.ok) return result.status === 401 ? { kind: "signedOut" } : { kind: "unavailable" };
+  if (!result.ok) {
+    if (result.status === 401) return { kind: "signedOut" };
+    // Design alignment 27. 11. 2026. (KU4): 403 is not a read error; the page shows the denied state.
+    return result.status === 403 ? { kind: "denied" } : { kind: "unavailable" };
+  }
   const { courses } = result.body as { courses: { id: string; assignments: AssignmentDue[] }[] };
   // Only a course the student is enrolled in is listed; anything else is not theirs.
   const course = courses.find((item) => item.id === courseId);

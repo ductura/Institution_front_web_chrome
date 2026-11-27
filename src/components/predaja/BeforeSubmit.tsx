@@ -9,6 +9,7 @@ import { addNote, readNotes, type LocalCall, type Read, type SubmissionNote } fr
 import { countHr } from "../../lib/i18n/hr";
 import { messagesHr } from "../../lib/i18n/messages.hr";
 
+import LoadAlert from "../shell/LoadAlert";
 import { ProcessSummaryView, type ProcessSummaryV1 } from "../summary/ProcessSummaryView";
 import { zagrebParts } from "../summary/zagreb-time";
 import styles from "./BeforeSubmit.module.css";
@@ -46,9 +47,10 @@ export function pastedText(summary: SummaryRead): string {
     + `${t.pastedSmaller}: ${pastes.smallerCount}. ${t.pastedInfo}`;
 }
 
-function dueText(iso: string): string {
+/** The deadline in Zagreb time, or null when it cannot be read: the raw value is never shown. */
+function dueText(iso: string): string | null {
   const parts = zagrebParts(iso);
-  return parts === null ? iso : `${parts.date} ${s.at} ${parts.time}`;
+  return parts === null ? null : `${parts.date} ${s.at} ${parts.time}`;
 }
 
 export type BeforeSubmitViewProps = {
@@ -84,8 +86,9 @@ export function BeforeSubmitView(props: BeforeSubmitViewProps) {
     <div className="page before-submit">
       <Steps currentStep={3} />
       <h1>{t.title}</h1>
-      {stage.kind === "closed" && <p role="note">{`${t.closed}: ${dueText(stage.dueAt)}.`}</p>}
-      {stage.kind === "unavailable" && <p role="alert">{t.unavailable}</p>}
+      {stage.kind === "closed" && <p role="note">{dueText(stage.dueAt) === null ? `${t.closed}.` : `${t.closed}: ${dueText(stage.dueAt)}.`}</p>}
+      {/* Design alignment 27. 11. 2026. (R8): the load alert frame, no link under it. */}
+      {stage.kind === "unavailable" && <LoadAlert>{t.unavailable}</LoadAlert>}
       {submitted && <p role="status">{t.submitted}</p>}
       {!online && !submitted && <p role="status">{t.offline}</p>}
       <div className={styles.layout}>
@@ -97,7 +100,8 @@ export function BeforeSubmitView(props: BeforeSubmitViewProps) {
               <dt>{t.placeholders}</dt>
               <dd>{t.placeholdersInfo}</dd>
               <dt>{t.pasted}</dt>
-              <dd>{pastedText(summary)}</dd>
+              {/* Design alignment 27. 11. 2026. (S-08): a count that cannot be read is in the error colour. */}
+              <dd className={summary.kind === "ready" ? undefined : styles.error}>{pastedText(summary)}</dd>
               <dt>{t.form}</dt>
               <dd>{t.formNotRun}</dd>
             </dl>

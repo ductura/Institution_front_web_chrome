@@ -45,7 +45,7 @@ async function student(page: Page, answers: Answers = {}) {
   await page.route("**/api/v1/**", (route) => {
     const req = route.request();
     const path = new URL(req.url()).pathname;
-    if (req.method() === "GET" && path.endsWith("/declaration") && answers.declaration !== undefined) {
+    if (req.method() === "GET" && path.endsWith("/declaration-v2") && answers.declaration !== undefined) {
       return route.fulfill({ json: answers.declaration });
     }
     if (req.method() === "GET" && path.endsWith("/source-proof-requests")) {
@@ -79,8 +79,8 @@ for (const width of [390, 1280]) {
       const link = submitLink(page);
       // The draft is one thing before the submission; the places left in the text add to it.
       await expect(link).toHaveAccessibleName(/^Predaja rada: \d+ stvari? prije predaje$/);
-      // The host leads the base-less address to /aplikacija/rad/<id>/predaja (Host.tsx), as before.
-      await expect(link).toHaveAttribute("href", `/rad/${T1}/predaja`);
+      // ED-81 (NF2-P23): the link itself carries the base the app is served under.
+      await expect(link).toHaveAttribute("href", `/aplikacija/rad/${T1}/predaja`);
       await expect(link).toBeInViewport({ ratio: 1 });
       await expect(link).toHaveText(width <= 640 ? /^Predaja\s*\d+$/ : /^Predaja rada\s*\d+$/, { useInnerText: true });
       await link.focus();

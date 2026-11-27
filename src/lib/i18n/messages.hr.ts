@@ -1400,6 +1400,8 @@ export const hr = {
     viewModes: "Prikaz",
     // #711 F1, za potvrdu: the name of the top bar region (course, assignment, view, submission).
     barLabel: "Zadatak i prikaz",
+    // Design alignment 27. 11. 2026. (text 2): the line under the title, "{kolegij}, {vrsta}, rok {rok}".
+    subtitleDue: "rok {time}",
     modeWriting: "Pisanje",
     modeTeacherView: "Kako vidi nastavnik",
     // #732 item 7 (owner 6397193676): the line above the teacher's view, and why the switch is off.
@@ -1965,6 +1967,8 @@ export const hr = {
     works: {
       title: "Moji radovi",
       lede: "Vaši radovi na svim kolegijima i njihovo stanje.",
+      // Design alignment 27. 11. 2026. (R5): the works' own expired sign-in.
+      signedOut: "Prijavite se da vidite svoje radove.",
       search: "Traži po naslovu ili kolegiju",
       year: "Akademska godina",
       allYears: "Sve godine",
@@ -2984,7 +2988,7 @@ export const hr = {
     dueAt: "Rok",
     assignmentVersion: "Verzija zadatka",
     revision: "Verzija teksta",
-    utc: "Točne vrijednosti iz potvrde (UTC)",
+    utc: "Točne vrijednosti iz potvrde",
     late: "Rad je predan nakon roka.",
     record: "Stanje zapisa",
     records: {
@@ -3143,4 +3147,28 @@ export const inputRhythmHr = {
     failed: "Poslužitelj nije potvrdio brisanje. Pokušaj ponovno.",
     signedOut: "Sesija je istekla. Prijavi se ponovno pa pokušaj opet.",
   },
+} as const;
+
+/** The new-assignment wizard in the Croatian teacher shell (design alignment 27. 11. 2026.). */
+export const assignmentSetupHr = {
+  choose: "Odaberi kolegij",
+  steps: ["Osnovno", "Rok i opseg", "Pomoć", "Što se bilježi", "Pregled i objava"],
+  next: "Nastavi",
+  back: "Natrag",
+  description: "Opis zadatka",
+  invalidTitle: "Upišite naslov zadatka do 160 znakova.",
+  help: "Uporaba AI alata",
+  courseHelp: "Prema pravilima kolegija",
+  noHelp: "Bez AI pomoći",
+  recorded: [
+    "Tekst rada i svaka promjena, s vremenom primitka na poslužitelj.",
+    "Sesije se sastoje od niza promjena bez prekida duljeg od 30 minuta. Prag P-01 postavlja fakultet.",
+    "Lijepljenja dulja od 200 znakova (P-02). Izvor se prikazuje kad je opažen.",
+    "Uvoz datoteke i prijenos teksta iz AI pomoćnika.",
+    "Poslane verzije, predaja i potvrda s otiskom teksta.",
+  ],
+  recordingScope: "Ductura ne bilježi ništa izvan rada, uključujući druge prozore, zaslon i kameru. Ne zna tko je tipkao.",
+  recordingNotice: "Bilježenje je jednako za sve radove. Student ga vidi u obavijesti prije početka rada.",
+  noNotifications: "Objavom se obavijesti ne šalju.",
+  publishedNotice: "Zadatak je objavljen. Upisani studenti vide ga u „Mojim zadacima”.",
 } as const;

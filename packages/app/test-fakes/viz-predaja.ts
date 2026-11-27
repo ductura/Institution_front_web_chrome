@@ -107,7 +107,8 @@ export function predaja(vectors: readonly Vector[], t1: { id: string; dueAt: str
     }
     if (assignmentId !== t1.id) return undefined;
     switch (operation) {
-      case "student.declaration.get": return { status: 200, body: declaration() };
+      // The step reads declaration-v2 (the extract has it); the confirmed declaration is the same text.
+      case "student.declaration-second.get": return { status: 200, body: declaration() };
       case "student.submission.get":
         if (state.receipt !== null) return { status: 200, body: { state: "potvrdeno", receipt: state.receipt } };
         return { status: 200, body: state.ceka === null ? { state: "none" } : { state: "ceka", revision: state.ceka, requestedAt: mikro(sada) } };

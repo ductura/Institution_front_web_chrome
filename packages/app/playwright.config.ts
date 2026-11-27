@@ -13,6 +13,8 @@ export default defineConfig({
   // e2e: the flows; tests/mobile: the 360 px view of the main screens (WEB-1806).
   testDir: ".",
   testMatch: ["e2e/**/*.spec.ts", "tests/mobile/**/*.spec.ts"],
+  // The reference report (DAN-1565) is a command of its own, not a test of this run.
+  testIgnore: "**/reference-report/**",
   retries: ci ? 1 : 0,
   // Every test has its own browser context and its own page.route fake, and
   // reads fixtures only; `next start` keeps no state between requests. So

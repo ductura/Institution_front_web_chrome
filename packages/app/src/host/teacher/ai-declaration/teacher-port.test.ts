@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // PIL-K-AI-PRILOZI: N-07 „Što je student predao” reads the declaration and its AI attachments
-// through the real teacher port (teacher.work.get, then teacher.declaration.get), on a recorded
+// through the real teacher port (teacher.work.get, then teacher.declaration-second.get), on a recorded
 // transport. Invented data only. A .ts file (createElement), so the host's vitest include runs it.
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -46,7 +46,7 @@ function server(answer: { work: () => Response; declaration: () => Response }) {
   const fetchImpl: typeof fetch = async (input) => {
     const path = new URL(String(input)).pathname;
     sent.push(path);
-    return path.endsWith("/declaration") ? answer.declaration() : answer.work();
+    return path.endsWith("/declaration-v2") ? answer.declaration() : answer.work();
   };
   return { sent, call: createApi({ baseUrl: "https://ductura.example.invalid", fetchImpl }) };
 }
@@ -79,7 +79,7 @@ describe("N-07 declaration through the teacher port (PIL-K-AI-PRILOZI)", () => {
     const el = await show(s.call);
     expect(s.sent).toEqual([
       `/api/v1/teacher/works/${DOCUMENT}`,
-      `/api/v1/teacher/assignments/${ASSIGNMENT}/students/${STUDENT}/declaration`,
+      `/api/v1/teacher/assignments/${ASSIGNMENT}/students/${STUDENT}/declaration-v2`,
     ]);
     expect(el.textContent).toContain("Izmišljena lektura");
     expect(el.textContent).toContain("Izmišljeni alat");

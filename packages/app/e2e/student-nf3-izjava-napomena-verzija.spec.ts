@@ -51,7 +51,7 @@ const OPENED = {
 const NOTE = { id: "00000000-0000-4000-8000-00000000b001", text: "Izmišljena napomena uz rad.", createdAt: "2026-11-05T10:15:00.123Z" };
 
 type Answers = {
-  /** student.declaration.get; after a confirming PUT, `after`. */
+  /** student.declaration-second.get; after a confirming PUT, `after`. */
   declaration?: unknown;
   after?: unknown;
   /** student.submission-notes.post: the status it answers with (201: the note). */
@@ -72,7 +72,7 @@ async function student(page: Page, answers: Answers = {}) {
   await page.route("**/api/v1/**", async (route) => {
     const req = route.request();
     const path = new URL(req.url()).pathname;
-    if (path.endsWith("/declaration")) {
+    if (/\/declaration(-v2)?$/.test(path)) {
       if (req.method() === "PUT") {
         puts.push(req.postDataJSON());
         declaration = answers.after ?? declaration;
@@ -213,7 +213,7 @@ async function workspace(page: Page) {
   await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({
     json: { assignments: [{ assignmentId: W_ID, workState: "in_progress" }] },
   }));
-  await page.route("**/api/v1/student/assignments/*/declaration", (route) => route.fulfill({ json: { ...CONFIRMED, payload: { ...PAYLOAD, assignmentId: W_ID } } }));
+  await page.route("**/api/v1/student/assignments/*/declaration-v2", (route) => route.fulfill({ json: { ...CONFIRMED, payload: { ...PAYLOAD, assignmentId: W_ID } } }));
   await page.route("**/api/v1/evidence/commit", () => { /* never answered: the change waits on this device */ });
 }
 

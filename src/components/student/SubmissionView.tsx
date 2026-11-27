@@ -15,6 +15,7 @@ import type { SubmissionRead, SubmitOutcome } from "../../client/submission";
 import { messagesHr } from "../../lib/i18n/messages.hr";
 
 import type { Stage } from "../predaja/stage";
+import LoadAlert from "../shell/LoadAlert";
 import { zagrebParts } from "../summary/zagreb-time";
 
 const t = messagesHr.submit;
@@ -111,9 +112,19 @@ export function Text({ nodes }: { readonly nodes: readonly TextNode[] }) {
   return <>{out}</>;
 }
 
-function dueText(iso: string): string {
+/**
+ * Design alignment 27. 11. 2026. (S-08): a line that reports a failure (blocked,
+ * incomplete, unknown, an error) is in the error colour; waiting (D9) and not
+ * recorded report a state and stay plain text.
+ */
+export function nextIsError(next: Extract<Next, { go: null }>): boolean {
+  return next.text !== t.waiting && next.text !== t.notRecorded;
+}
+
+/** The deadline in Zagreb time, or null when it cannot be read: the raw value is never shown. */
+function dueText(iso: string): string | null {
   const parts = zagrebParts(iso);
-  return parts === null ? iso : `${parts.date} ${messagesHr.summary.at} ${parts.time}`;
+  return parts === null ? null : `${parts.date} ${messagesHr.summary.at} ${parts.time}`;
 }
 
 export type SubmissionViewProps = {
@@ -142,11 +153,12 @@ export function SubmissionView(props: SubmissionViewProps) {
     <div className="page submission">
       <Steps currentStep={4} />
       <h1>{t.title}</h1>
-      {stage.kind === "closed" && <p role="note">{`${t.late}: ${dueText(stage.dueAt)}. ${t.lateNote}`}</p>}
-      {stage.kind === "unavailable" && <p role="note">{t.stageUnavailable}</p>}
+      {stage.kind === "closed" && <p role="note">{dueText(stage.dueAt) === null ? `${t.late}. ${t.lateNote}` : `${t.late}: ${dueText(stage.dueAt)}. ${t.lateNote}`}</p>}
+      {/* Design alignment 27. 11. 2026. (D13, D3): the load alert frame; "Učitaj ponovno" below stays, so no link. */}
+      {stage.kind === "unavailable" && <LoadAlert>{t.stageUnavailable}</LoadAlert>}
       {!online && <p role="status">{t.offline}</p>}
       {work.kind === "loading" && <p role="status">{t.loading}</p>}
-      {work.kind === "unavailable" && <p role="alert">{t.unavailable}</p>}
+      {work.kind === "unavailable" && <LoadAlert>{t.unavailable}</LoadAlert>}
       {work.kind === "empty" && <p role="status">{t.empty}</p>}
       {ready && (
         <Card title={`${t.textTitle} (${t.revision}: ${work.revision})`}>
@@ -156,7 +168,9 @@ export function SubmissionView(props: SubmissionViewProps) {
           </div>
         </Card>
       )}
-      {next !== null && <p id={OUTCOME_ID} tabIndex={-1} role="alert">{next.text}</p>}
+      {next !== null && (
+        <p id={OUTCOME_ID} tabIndex={-1} role="alert" className={nextIsError(next) ? "submission__outcome--error" : undefined}>{next.text}</p>
+      )}
       {next?.offer === "check" && <p><Button tone="quiet" busy={checking} onClick={props.onCheck}>{checking ? t.checking : t.check}</Button></p>}
       {(work.kind === "unavailable" || next?.offer === "reload") && <p><Button tone="quiet" onClick={props.onReload}>{t.reload}</Button></p>}
       <p>

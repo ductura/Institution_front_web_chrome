@@ -36,12 +36,12 @@ describe("process summary extras (F4-PRE-R04)", () => {
   it("shows the declaration's two blocks from the confirmed payload, none without a declaration", async () => {
     const body = { ownWork: { confirmed: true }, humanHelp: { received: true, entries: [{ kind: "language", text: "Izmišljena lektura." }] },
       ai: { use: "used", declaredTools: [{ toolLabel: "Alat A", purposeText: "ideje", phaseText: "početak" }], attachments: [], externalAttachmentIds: [] }, revision: 4 };
-    const read = await readDeclarationBlocks("a1", call({ "student.declaration.get": ok({ payload: { ...body, confirmedAt: "2026-11-05T20:00:00.000Z" }, draft: null }) }));
+    const read = await readDeclarationBlocks("a1", call({ "student.declaration-second.get": ok({ payload: { ...body, confirmedAt: "2026-11-05T20:00:00.000Z" }, draft: null }) }));
     expect(read).toEqual({ kind: "ready", value: {
       recorded: ["Izjava se odnosi na verziju 4.", "Izjava je potvrđena 5. 11. 2026. u 21:00."],
       student: ["Vlastiti rad: potvrđeno.", "Tuđa pomoć: primljena. jezik: Izmišljena lektura.", "Generativna umjetna inteligencija: korištena.", "Alat A · ideje · početak"],
     } });
-    expect(await readDeclarationBlocks("a1", call({ "student.declaration.get": ok({ payload: null, draft: null }) }))).toEqual({ kind: "ready", value: null });
+    expect(await readDeclarationBlocks("a1", call({ "student.declaration-second.get": ok({ payload: null, draft: null }) }))).toEqual({ kind: "ready", value: null });
   });
 
   it("labels the provenance shares and marks, and fails as a whole when one read fails", async () => {

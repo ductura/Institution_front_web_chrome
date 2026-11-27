@@ -11,7 +11,7 @@ import type { useLocalEditor } from "@/components/editor/LocalDocument";
 
 import { jumpToBlock } from "./jump";
 import { ReviewPanel } from "../../../../../../src/components/editor/review/ReviewPanel";
-import { readReviewDoc } from "../../../../../../src/components/editor/review/model";
+import { readReviewDoc, type ReviewDoc } from "../../../../../../src/components/editor/review/model";
 import { TextFixesPanel } from "../../../../../../src/components/editor/text-fixes/TextFixesPanel";
 import { createReadAloud, READ_ALOUD_MAX_RATE, READ_ALOUD_MIN_RATE, type ReadAloudController, type ReadAloudState } from "../read-aloud/controller";
 import { readAloudSupported } from "../read-aloud/support";
@@ -23,7 +23,8 @@ import type { EvidenceBySource } from "../stem/quote-check";
 import { loadQuoteEvidence, quotedSources } from "./quote-evidence";
 import { onPregledView, takePregledView, type PregledView } from "./pregled-view";
 
-import { pregledHr as t } from "./messages.hr";
+import { pregledHr as t, thousands } from "./messages.hr";
+import { consistency, nextUse, numbersWithoutSource, quotations, repeatedWords, seams, sentenceStarts } from "./pregled-tools";
 import nacrt from "./Nacrt.module.css";
 import {
   abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, outlineRows, removeTerm, saveTerms, termCounts,
@@ -32,9 +33,9 @@ import {
 import { blockTextAt, sentenceShape } from "./sentence-shape";
 
 type Editor = NonNullable<ReturnType<typeof useLocalEditor>>;
-// ED-73: "oblik" is a view of this group only; the menu (pregled-view) never asks for it.
-type View = PregledView | "oblik";
-const VIEWS: readonly View[] = ["nacrt", "pojmovnik", "provjere", "oblik"];
+// ED-73, ED-74: "oblik" and the five sub views are views of this group only; the Prikaz menu (pregled-view) asks for the first three.
+type View = PregledView | "oblik" | "savovi" | "ponavljanja" | "dosljednost" | "brojke" | "navodi";
+const VIEWS: readonly View[] = ["nacrt", "pojmovnik", "provjere", "oblik", "savovi", "ponavljanja", "dosljednost", "brojke", "navodi"];
 
 const browserStorage = (): TermStorage | null => { try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; } };
 
@@ -69,6 +70,11 @@ export function PregledGroup({ editor, documentId, assignmentId, enabledCheckIds
       </>}
       {view === "nacrt" && <Nacrt editor={editor} doc={doc} scope={scope} />}
       {view === "pojmovnik" && <Pojmovnik doc={doc} scope={scope} workId={documentId} />}
+      {view === "savovi" && <Savovi editor={editor} doc={doc} scope={scope} />}
+      {view === "ponavljanja" && <Ponavljanja editor={editor} doc={doc} scope={scope} />}
+      {view === "dosljednost" && <Dosljednost editor={editor} doc={doc} scope={scope} />}
+      {view === "brojke" && <Brojke editor={editor} doc={doc} scope={scope} />}
+      {view === "navodi" && <Navodi editor={editor} doc={doc} scope={scope} />}
       {view === "oblik" && <OblikRecenica text={blockTextAt(doc, snapshot.from)} />}
       {view === "provjere" && <>
         <ReviewPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />
@@ -268,6 +274,116 @@ function Pojmovnik({ doc, scope, workId }: { doc: NonNullable<ReturnType<typeof 
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+// ED-74: the five tools of the prototype's Pregled (tools.js, review2.js). Each row jumps to its paragraph.
+type ToolProps = { editor: Editor; doc: ReviewDoc; scope: PregledScope };
+
+function Savovi({ editor, doc, scope }: ToolProps) {
+  const list = useMemo(() => seams(doc, scope), [doc, scope]);
+  const side = (label: string, s: { sentence: string | null; pos: number | null }) => <>
+    <h4>{label}</h4>
+    {s.sentence !== null && s.pos !== null
+      ? <button type="button" onClick={() => jumpToBlock(editor, s.pos!)}>{s.sentence}</button>
+      : <p>{t.seamNoText}</p>}
+  </>;
+  return (
+    <div>
+      <p>{t.seamIntro}</p>
+      {list.length === 0 ? <p>{t.seamNone}</p> : list.map((seam) => (
+        <div key={seam.key} data-seam="">
+          {side(t.seamEnd(seam.end.chapter), seam.end)}
+          {side(t.seamStart(seam.start.chapter), seam.start)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Ponavljanja({ editor, doc, scope }: ToolProps) {
+  const starts = useMemo(() => sentenceStarts(doc, scope), [doc, scope]);
+  const words = useMemo(() => repeatedWords(doc, scope), [doc, scope]);
+  const find = (key: string) => {
+    const pos = nextUse(doc, key, editor.state.selection.from);
+    if (pos !== null) jumpToBlock(editor, pos);
+  };
+  return (
+    <div>
+      <p>{t.repIntro}</p>
+      <h3>{t.repStarts}</h3>
+      {starts.length === 0 ? <p>{t.repStartsNone}</p> : (
+        <ul>
+          {starts.map((s) => (
+            <li key={s.word}>
+              <button type="button" onClick={() => jumpToBlock(editor, s.pos)}><strong>{s.word}…</strong> <small>{t.repStartCount(s.count)}</small></button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <h3>{t.repWords}</h3>
+      {words.length === 0 ? <p>{t.repWordsNone}</p> : (
+        <div role="group" aria-label={t.repWords}>
+          {words.map((w) => <Button key={w.key} tone="quiet" title={t.repWordFind} onClick={() => find(w.key)}>{w.word} {t.times(w.count)}</Button>)}
+        </div>
+      )}
+      <p>{t.repWordsNote}</p>
+    </div>
+  );
+}
+
+function Dosljednost({ editor, doc, scope }: ToolProps) {
+  const { mixed, consistent } = useMemo(() => consistency(doc, scope), [doc, scope]);
+  return (
+    <div>
+      <p>{t.dosIntro}</p>
+      {mixed.length === 0 ? <p>{t.dosNone}</p> : mixed.map((c) => (
+        <div key={c.name} data-consistency="">
+          <h4>{c.name}</h4>
+          <p><small>{t.dosWays(c.forms.length)}</small></p>
+          <ul>
+            {c.forms.map((f) => (
+              <li key={f.form}><button type="button" onClick={() => jumpToBlock(editor, f.pos)}><strong>{f.form}</strong> <small>{t.times(f.count)}</small></button></li>
+            ))}
+          </ul>
+        </div>
+      ))}
+      {mixed.length > 0 && consistent.length > 0 && <p>{t.dosOk(consistent)}</p>}
+    </div>
+  );
+}
+
+function Brojke({ editor, doc, scope }: ToolProps) {
+  const rows = useMemo(() => numbersWithoutSource(doc, scope), [doc, scope]);
+  return (
+    <div>
+      <p>{t.numIntro}</p>
+      {rows.length === 0 ? <p>{t.numNone}</p> : (
+        <ul>
+          {rows.map((r) => (
+            <li key={r.key}><button type="button" onClick={() => jumpToBlock(editor, r.pos)}><strong>{r.number}</strong> <span>{r.sentence}</span></button></li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function Navodi({ editor, doc, scope }: ToolProps) {
+  const q = useMemo(() => quotations(doc, scope), [doc, scope]);
+  const row = (x: (typeof q.list)[number]) => (
+    <li key={x.key}><button type="button" onClick={() => jumpToBlock(editor, x.pos)}><strong>{t.quoWords(x.words, x.block)}</strong> <span>{x.text}</span></button></li>
+  );
+  return (
+    <div>
+      <div data-quote-share="">
+        <p><strong>{t.quoShare(thousands(q.quoted), thousands(q.total))}</strong></p>
+        <p>{t.quoCount(q.list.length)}</p>
+      </div>
+      {q.long.length > 0 && <><h3>{t.quoLong(q.long.length)}</h3><ul>{q.long.map(row)}</ul></>}
+      <h3>{t.quoLongest}</h3>
+      {q.longest.length === 0 ? <p>{t.quoNone}</p> : <ul>{q.longest.map(row)}</ul>}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
 import { leaveFor, readSession, signInHref } from "../../../../../../src/client/api.ts";
-import { appHref } from "../../../../../../src/components/index.ts";
+import { appHref } from "../../../../../../src/components/shell/nav.ts";
 import { nextPath } from "../../../bases";
 import { shellRole } from "../../../routes";
 import { useHost } from "../../context";

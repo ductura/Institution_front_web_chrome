@@ -1,7 +1,7 @@
 // F4-PRE-R04 (PD-1): the sections of the process summary that the summary route does not carry, each read
 // from its own existing route through the shared client: versions (work.versions.get), the assistant
 // (student.assignment-assistant.get, student.assistant-conversations.get), the declaration's blocks
-// (student.declaration.get) and the provenance map (work.origin-composition.get, work.origin-segments.get).
+// (student.declaration-second.get) and the provenance map (work.origin-composition.get, work.origin-segments.get).
 // Every read fails alone: a failed one says "unavailable" for its section and changes nothing else.
 import { createApi } from "../../../../../../../src/client/api.ts";
 import { readTimeMachineVersions } from "../../../../../../../src/client/time-machine.ts";
@@ -62,7 +62,7 @@ export async function readAssistant(assignmentId: string, call: Call): Promise<R
 
 export async function readDeclarationBlocks(assignmentId: string, call: Call): Promise<Read<DeclarationBlocks | null>> {
   try {
-    const result = await call("student.declaration.get", { params: { assignmentId }, query: undefined, body: undefined });
+    const result = await call("student.declaration-second.get", { params: { assignmentId }, query: undefined, body: undefined });
     if (!result.ok) return UNAVAILABLE;
     const { payload, draft } = result.body;
     const body = payload ?? draft;

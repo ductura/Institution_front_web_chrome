@@ -138,6 +138,12 @@ describe("BeforeSubmitView (WEB-25, S: E-8)", () => {
   it("the unavailable stage says so", () => {
     expect(render({ stage: { kind: "unavailable" } })).toContain("Podatke o zadatku trenutačno nije moguće učitati.");
   });
+
+  // Design alignment 27. 11. 2026. (R8, S-08): the load alert frame without a link; an unread paste count in red.
+  it("frames the unavailable stage as an alert and colours an unread paste count", () => {
+    expect(render({ stage: { kind: "unavailable" } })).toMatch(/role="alert"[^>]*>Podatke o zadatku trenutačno nije moguće učitati\.<\/p>/);
+    expect(render({ summary: { kind: "unavailable" } })).toMatch(/<dd class="[^"]*error[^"]*">Broj lijepljenja trenutačno nije moguće učitati\./);
+  });
 });
 
 describe("stageOf and pastedText", () => {
