@@ -331,7 +331,9 @@ test('every job except changes is gated by changes and needs it', () => {
   for (const [name, job] of Object.entries(jobsOf(workflow))) {
     if (name === 'changes' || REPORT_ONLY.includes(name)) continue;
     assert.ok(needsOf(job).includes('changes'), `${name} needs changes`);
-    if (name !== 'ci-ok') assert.equal(job.if, `\${{ needs.changes.outputs.${name} == 'true' }}`, name);
+    // CI-WEB-NOGE: app-build also runs for sistem, which downloads its build.
+    const alsoFor = name === 'app-build' ? " || needs.changes.outputs.sistem == 'true'" : '';
+    if (name !== 'ci-ok') assert.equal(job.if, `\${{ needs.changes.outputs.${name} == 'true'${alsoFor} }}`, name);
   }
 });
 
@@ -446,8 +448,14 @@ test('ui runs typecheck and unit tests in two blocking parts of its matrix', () 
   const [unit] = uiStep(/^pnpm -r --filter "\$PACKAGES" --filter "!\{\.\}" run test$/);
   assert.equal(unit?.env?.PACKAGES, '${{ matrix.packages }}');
   const withPackages = ui.strategy.matrix.include.filter((p) => p.packages !== undefined);
-  assert.deepEqual(withPackages.map((p) => `${p.part}:${p.packages}`), ['checks:./src/**', 'unit:!./src/**'], 'checks runs src/, unit its complement');
-  assert.ok(withPackages.every((p) => p.leg === undefined), 'one part each, no legs');
+  // CI-WEB-NOGE: checks keeps the typecheck only; the unit tests are two legs,
+  // packages/app and its complement, so every package runs in exactly one leg.
+  assert.deepEqual(
+    withPackages.map((p) => `${p.part} ${p.leg}/${p.of}:${p.packages}`),
+    ['unit 1/2:./packages/app', 'unit 2/2:!./packages/app'],
+    'unit leg 1 runs packages/app, leg 2 its complement',
+  );
+  assert.equal(ui.strategy.matrix.include.find((p) => p.part === 'checks').packages, undefined, 'checks runs no unit tests');
   assert.equal(typecheck?.if, "matrix.part == 'checks'");
   assert.equal(unit?.if, 'matrix.packages');
   // CI-BRZINA: both axe shells run in one part; the light shell runs also
@@ -543,4 +551,25 @@ test('concurrency cancels older pull request and base runs, never main', () => {
   assert.match(cancel, /github\.event_name == 'pull_request'/);
   assert.match(cancel, /github\.ref == 'refs\/heads\/migracija\/kopija-ductus-front'/);
   assert.doesNotMatch(cancel, /refs\/heads\/main/);
+});
+
+// CI-WEB-NOGE: the system pass takes the build of app-build instead of
+// building the host itself; the fake server URL baked into it is replaced.
+test('sistem downloads the build of app-build and does not build again', () => {
+  const jobs = jobsOf(workflow);
+  assert.deepEqual([...needsOf(jobs.sistem)].sort(), ['app-build', 'changes']);
+  assert.equal(jobs.sistem.with?.build_artifact, true);
+  const ifApp = jobs['app-build'].if;
+  assert.match(ifApp, /outputs\.app-build == 'true'/);
+  assert.match(ifApp, /outputs\.sistem == 'true'/);
+  const sistem = jobsOf(workflowOf(readFileSync(new URL('sistem.yml', dir), 'utf8'))).sistem;
+  const download = sistem.steps.find((s) => String(s.uses).startsWith('actions/download-artifact@'));
+  assert.equal(download.with.name, 'app-build');
+  assert.equal(download.with.path, 'Institution_front_web_chrome/packages/app/.next');
+  assert.equal(download.if, '${{ inputs.build_artifact }}');
+  const patch = sistem.steps.find((s) => /routes-manifest/.test(s.run ?? ''));
+  assert.match(patch.run, /routes-manifest\.json/);
+  assert.match(patch.run, /exit 1/);
+  const front = sistem.steps.find((s) => /pnpm start/.test(s.run ?? ''));
+  assert.match(front.run, /if \[ "\$BUILD_ARTIFACT" != "true" \]; then pnpm build; fi/);
 });
