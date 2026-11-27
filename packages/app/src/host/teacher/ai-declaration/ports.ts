@@ -15,7 +15,7 @@ export const unavailableDeclarationPort: DeclarationPort = {
 
 /**
  * The teacher's port on N-07 (PIL-K-AI-PRILOZI): the work id names the work (teacher.work.get),
- * whose assignment and student name the declaration (teacher.declaration.get, declaration-v1).
+ * whose assignment and student name the declaration (teacher.declaration-second.get, declaration-v2).
  * Read only: the teacher never writes the student's declaration, so the student half is unavailable.
  * A route that fails says „unavailable” or „signedOut”, never an empty declaration.
  */

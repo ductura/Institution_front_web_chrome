@@ -42,7 +42,7 @@ describe("step 3 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     window.sessionStorage.setItem(confirmationKey("tag-1", ASSIGNMENT), "1");
     const server = gateServer(() => DRAFT);
     const host = await mount(server.read, "tag-1");
-    expect(server.paths).toEqual([`/api/v1/student/assignments/${ASSIGNMENT}/declaration`]);
+    expect(server.paths).toEqual([`/api/v1/student/assignments/${ASSIGNMENT}/declaration-v2`]);
     // WEB-NUZ-PREDAJA-1 (PR-2): the draft is named as a draft, and "Što još fali" names the confirmation.
     expect(host.textContent).toContain(r.declarationDraft);
     expect(host.textContent).toContain(r.missingDeclaration);

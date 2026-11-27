@@ -65,7 +65,7 @@ async function fakeServer(page: Page) {
         { kind: "typed", percent: 86 }, { kind: "assistant_inserted", percent: 0 }, { kind: "assistant_match", percent: 4 },
         { kind: "imported_file", percent: 0 }, { kind: "pasted_known", percent: 0 }, { kind: "pasted_unknown", percent: 10 },
       ] } });
-      case `/api/v1/teacher/assignments/${assignmentId}/students/${studentId}/declaration`:
+      case `/api/v1/teacher/assignments/${assignmentId}/students/${studentId}/declaration-v2`:
         return route.fulfill({ json: { state: "none", payload: null, declarationSha256: null } });
       default: return route.fallback();
     }

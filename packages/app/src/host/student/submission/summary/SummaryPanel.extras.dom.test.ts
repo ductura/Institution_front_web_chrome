@@ -32,7 +32,7 @@ describe("process summary extras in the panel (F4-PRE-R04)", () => {
     document.body.append(host);
     root = createRoot(host);
     await act(async () => { root?.render(h(SummaryPanel, { ...base, declarationKey: 1 })); });
-    const declaration = () => urls.filter((u) => u.endsWith("/declaration")).length;
+    const declaration = () => urls.filter((u) => u.endsWith("/declaration-v2")).length;
     const before = urls.length;
     expect(declaration()).toBe(1);
     await act(async () => { root?.render(h(SummaryPanel, { ...base, declarationKey: 1 })); });

@@ -14,7 +14,7 @@ const schema = (id: string, status = "200") => RESPONSES.get(id)?.[status]?.cont
 const fits = (id: string, r: Result) => expect(matchesSchema(schema(id), body(r)), id).toBe(true);
 const SENT = JSON.stringify({ documentId: DOKUMENT_T1, revision: REVIZIJA_T1 });
 const paths = {
-  declaration: `/api/v1/student/assignments/${T1}/declaration`,
+  declaration: `/api/v1/student/assignments/${T1}/declaration-v2`,
   declarationV2: `/api/v1/student/assignments/${T1}/declaration-v2`,
   state: `/api/v1/student/assignments/${T1}/submission`,
   withdrawal: `/api/v1/student/assignments/${T1}/submission/withdrawal`,
@@ -26,7 +26,7 @@ describe("PR-19: the puno student submits T1 on the fake server", () => {
     const s = generatedServer("puno");
     const opened = body(s.answer("student", "POST", "/api/v1/evidence/open", JSON.stringify({ assignmentId: T1 })));
     const declaration = s.answer("student", "GET", paths.declaration);
-    fits("student.declaration.get", declaration);
+    fits("student.declaration-second.get", declaration);
     const second = s.answer("student", "GET", paths.declarationV2);
     fits("student.declaration-second.get", second);
     expect(body(second)).toMatchObject({ state: "confirmed" });

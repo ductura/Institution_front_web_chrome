@@ -1,6 +1,6 @@
 // The human-help statement and the attached conversation printout of the declaration step
 // (WEB-1503; plan M7.5, R-09, R-10, D-77) behind a port, and its real adapter over declaration-v1
-// (PIL-K-IZJAVA-PORT): read is student.declaration.get, saveHumanHelp the same whole-draft PUT
+// (PIL-K-IZJAVA-PORT): read is student.declaration-second.get, saveHumanHelp the same whole-draft PUT
 // with only humanHelp changed, attachPrintout student.declaration-attachments.post. The page
 // that mounts the view passes the port; the help kinds and limits are the contract's (OD-4, OD-12).
 // The client comes through the declaration adapter, so this file names no API module itself.
