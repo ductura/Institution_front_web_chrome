@@ -2,7 +2,7 @@
 
 import { formatDate } from "@ductura/ui";
 
-import { appHref } from "../../../../../src/components/index.ts";
+import { appHref } from "../../../../../src/components/shell/nav.ts";
 
 import { useLocale } from "../../../src/i18n";
 import { useHost } from "../../../src/host/context";

@@ -123,6 +123,36 @@ const safely = <T>(run: () => T): T | null => {
   try { return run(); } catch { return null; }
 };
 
+/**
+ * ED-106 (prototype copyCite): the in-text citation of one source, without a page, as "Kopiraj navod" copies it.
+ * Author-date styles keep the year letter the list gives (a source not yet cited is lettered as if it were);
+ * numeric styles copy the number of a cited source. Null when the source is unknown, cannot be formatted, or has
+ * no number yet.
+ */
+export function citationToCopy(doc: Json | null | undefined, style: CitationStyle, sourceId: string): string | null {
+  const rawSources = Array.isArray(doc?.attrs?.sources) ? (doc.attrs.sources as unknown[]) : [];
+  const rawOf = (id: string) => rawSources.find((item): item is Record<string, unknown> =>
+    typeof item === "object" && item !== null && (item as Record<string, unknown>).id === id);
+  const own = rawOf(sourceId);
+  const source = own ? toSource(own) : null;
+  if (source === null) return null;
+  const listed = styledLiterature(doc, style);
+  if (style.style === "numeric") {
+    const number = listed.entries.find((e) => e.sourceId === sourceId)?.number;
+    return number === undefined ? null : safely(() => formatNumericCitation(number, style, undefined));
+  }
+  const ids = listed.entries.map((e) => e.sourceId);
+  if (!ids.includes(sourceId)) ids.push(sourceId);
+  const keyed = ids.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).flatMap((id) => {
+    const s = id === sourceId ? source : toSource(rawOf(id) ?? {});
+    return s ? [{ ...s, sourceId: id }] : [];
+  });
+  const lettered = assignYearSuffixes(keyed).find((s) => s.sourceId === sourceId);
+  if (!lettered) return null;
+  const { sourceId: _id, ...rest } = lettered;
+  return safely(() => formatCitationInText(rest as Source, style, undefined));
+}
+
 /** The list and the in-text citations of a document (ProseMirror JSON) in `style`. */
 export function styledLiterature(doc: Json | null | undefined, style: CitationStyle): StyledLiterature {
   const rawSources = Array.isArray(doc?.attrs?.sources) ? (doc.attrs.sources as unknown[]) : [];
