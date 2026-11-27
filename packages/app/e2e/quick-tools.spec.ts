@@ -82,7 +82,8 @@ test.describe("ED-31 on a phone", () => {
     const bar = page.getByRole("toolbar", { name: "Brzi alati" });
     await expect(bar).toBeVisible();
     const names = (await bar.getByRole("button").allInnerTexts()).map((n) => n.trim());
-    expect(names).toEqual(["Poništi", "Za provjeru", "Više"]);
+    // ED-100: Navod opens the citation popover of the sources panel, so it is on the bar again.
+    expect(names).toEqual(["Poništi", "Navod", "Za provjeru", "Više"]);
 
     await page.keyboard.type("Izmišljena rečenica.");
     await bar.getByRole("button", { name: "Poništi" }).click();
