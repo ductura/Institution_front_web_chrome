@@ -61452,5 +61452,99 @@
         "unavailable"
       ]
     }
+  },
+  "teacher.work.submitted-version.get": {
+    "path": "/api/v1/teacher/works/{documentId}/submitted-versions/{revision}",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId",
+        "revision"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "revision": {
+          "pattern": "^[1-9][0-9]{0,15}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the submitted revision",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "revision",
+                "document"
+              ],
+              "properties": {
+                "revision": {
+                  "minimum": 1,
+                  "maximum": 9007199254740991,
+                  "type": "integer"
+                },
+                "document": {
+                  "minLength": 1,
+                  "maxLength": 2097152,
+                  "description": "Canonical JSON of the document.",
+                  "type": "string"
+                },
+                "documentKind": {
+                  "anyOf": [
+                    {
+                      "const": "text",
+                      "type": "string"
+                    },
+                    {
+                      "const": "slides",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "workKind": {
+                  "anyOf": [
+                    {
+                      "const": "text",
+                      "type": "string"
+                    },
+                    {
+                      "const": "slides",
+                      "type": "string"
+                    },
+                    {
+                      "const": "spreadsheet",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
