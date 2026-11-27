@@ -132,7 +132,14 @@ function Sections({ read, anchors }: { read: Extract<N10Read, { kind: "ready" }>
           : <p>{text.gapsNone}</p>}
       </Section>
       <Section title={text.notesTitle} observed={false}>
-        <Unavailable />
+        {read.notes === undefined ? <Unavailable /> : read.notes.length === 0 ? <p>{text.notesEmpty}</p> : (
+          <>
+            <ul className="list">{read.notes.map((note) => (
+              <li key={note.id} className="item"><span className="meta">{at(note.createdAt)}</span><p>{note.text}</p></li>
+            ))}</ul>
+            <p className="meta">{text.notesNote}</p>
+          </>
+        )}
       </Section>
       {read.thresholds === undefined ? null : <FacultyRules rows={read.thresholds} />}
       <Section title={text.stateTitle}>

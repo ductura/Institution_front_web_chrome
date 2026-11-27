@@ -21,16 +21,22 @@ export type ThresholdState = "in_line" | "for_review" | "exceeded";
 export type ThresholdRow = { readonly origin: OriginKind; readonly state: ThresholdState };
 export type ThresholdsOutcome = { readonly kind: "ok"; readonly rows: readonly ThresholdRow[] } | { readonly kind: "signedOut" | "notFound" | "unavailable" };
 
+/** The student's own notes at the submission (C-5), as teacher.submission-notes.get gives them; read only. */
+export type N10Note = { readonly id: string; readonly text: string; readonly createdAt: string };
+export type NotesOutcome = { readonly kind: "ok"; readonly notes: readonly N10Note[] } | { readonly kind: "signedOut" | "notFound" | "unavailable" };
+
 export interface N10Port {
   summary(documentId: string): Promise<SummaryOutcome>;
   details(documentId: string): Promise<DetailsOutcome>;
   versions(documentId: string): Promise<VersionsOutcome>;
   /** work.origin-thresholds.get; a port without it shows no faculty rules. */
   thresholds?(documentId: string): Promise<ThresholdsOutcome>;
+  /** teacher.submission-notes.get (NAS-51); a port without it says the notes are not available. */
+  notes?(documentId: string): Promise<NotesOutcome>;
 }
 
 export type N10Read =
-  | { readonly kind: "ready"; readonly summary: ProcessSummaryV1; readonly details: SummaryDetails | null; readonly versions: readonly N10Version[] | null; readonly thresholds?: readonly ThresholdRow[] }
+  | { readonly kind: "ready"; readonly summary: ProcessSummaryV1; readonly details: SummaryDetails | null; readonly versions: readonly N10Version[] | null; readonly thresholds?: readonly ThresholdRow[]; readonly notes?: readonly N10Note[] }
   | { readonly kind: "empty" }
   | { readonly kind: "signedOut" }
   | { readonly kind: "notFound" }
@@ -53,11 +59,12 @@ export const isEmpty = (s: ProcessSummaryV1): boolean =>
  * summary (its summary differs) is dropped, so two reads never mix into one screen.
  */
 export async function loadSummary(port: N10Port, documentId: string): Promise<N10Read> {
-  const [summary, details, versions, thresholds] = await Promise.all([
+  const [summary, details, versions, thresholds, notes] = await Promise.all([
     safe(() => port.summary(documentId), { kind: "unavailable" } as SummaryOutcome),
     safe(() => port.details(documentId), { kind: "unavailable" } as DetailsOutcome),
     safe(() => port.versions(documentId), { kind: "unavailable" } as VersionsOutcome),
     safe(async () => (port.thresholds === undefined ? NO_THRESHOLDS : port.thresholds(documentId)), NO_THRESHOLDS),
+    safe(async () => (port.notes === undefined ? NO_NOTES : port.notes(documentId)), NO_NOTES),
   ]);
   if (summary.kind !== "ok") return { kind: summary.kind };
   if (isEmpty(summary.summary)) return { kind: "empty" };
@@ -67,10 +74,13 @@ export async function loadSummary(port: N10Port, documentId: string): Promise<N1
     details: details.kind === "ok" ? details.details : null,
     versions: versions.kind === "ready" ? versions.versions : null,
     ...(thresholds.kind === "ok" && thresholds.rows.length > 0 ? { thresholds: thresholds.rows } : {}),
+    // Absent when the notes could not be read: the screen then says so instead of "no notes".
+    ...(notes.kind === "ok" ? { notes: notes.notes } : {}),
   };
 }
 
 const NO_THRESHOLDS: ThresholdsOutcome = { kind: "ok", rows: [] };
+const NO_NOTES: NotesOutcome = { kind: "unavailable" };
 
 /**
  * The comparison in the order of the closed list of origin kinds, so the screen never sorts kinds by their state.
