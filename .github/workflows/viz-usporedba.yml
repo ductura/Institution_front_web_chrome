@@ -46,7 +46,7 @@ jobs:
         run: |
           cd packages/app
           INSTITUTION_SERVER_URL=http://127.0.0.1:9 nohup pnpm exec next start -p 5191 > "$RUNNER_TEMP/next.log" 2>&1 &
-          for i in $(seq 1 60); do curl -fs http://127.0.0.1:5191/app/web/ > /dev/null && exit 0; sleep 1; done
+          for i in $(seq 1 60); do curl -fs http://127.0.0.1:5191/aplikacija/ > /dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/next.log"; exit 1
       # One pass per theme (VIZ-TAMNA): light shots go to viz-out/, dark ones to
       # viz-out/dark/. Both passes run even when the first fails the gate; the

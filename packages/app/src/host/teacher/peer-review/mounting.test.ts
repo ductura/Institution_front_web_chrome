@@ -18,7 +18,7 @@ describe("the teacher's peer-review page is mounted", () => {
     expect(resolve("/nastavnik/zadatak/a1/recenzija", null)).not.toMatchObject({ kind: "page" });
   });
   it("the Next page renders OverviewPage, which mounts both panels, and refuses a malformed id as not found", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/nastavnik/zadatak/[assignmentId]/recenzija/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/nastavnik/zadatak/[assignmentId]/recenzija/page.tsx"), "utf8");
     expect(page).toContain("OverviewPage");
     expect(page).toContain("notFound()");
     const overview = readFileSync(join(import.meta.dirname, "OverviewPage.tsx"), "utf8");

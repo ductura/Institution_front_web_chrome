@@ -42,7 +42,7 @@ async function mount(path: string, view: "settings" | "assistant") {
   document.body.append(host);
   root = createRoot(host);
   await act(async () => {
-    root!.render(createElement(HostContext.Provider, { value: { base: "/app/web", page, role: "admin" } }, createElement(FacultySettingsRoute, { view })));
+    root!.render(createElement(HostContext.Provider, { value: { base: "/aplikacija", page, role: "admin" } }, createElement(FacultySettingsRoute, { view })));
   });
   await settle();
 }
@@ -74,7 +74,7 @@ describe("Postavke fakulteta (OA-2)", () => {
     expect(text()).toContain(t.forms.workTypes.doctoral_thesis);
     expect(text()).toContain(t.thesisSettings.consentOn);
     const links = [...host!.querySelectorAll("a")].map((a) => a.getAttribute("href"));
-    expect(links).toEqual(expect.arrayContaining(["/app/web/ustanova/pravila", "/app/web/ustanova/pragovi", "/app/web/ustanova/cuvanje"]));
+    expect(links).toEqual(expect.arrayContaining(["/aplikacija/ustanova/pravila", "/aplikacija/ustanova/pragovi", "/aplikacija/ustanova/cuvanje"]));
     expect(urls.length).toBe(5);
   });
   it("obrasci i postavka završnih radova: prazan popis i isključen prekidač se razlikuju od greške, krivi oblik je nedostupan", async () => {

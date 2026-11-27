@@ -18,7 +18,7 @@ const documentId = "rad-izmisljeni-pregled";
 const previousId = "rad-izmisljeni-prethodni";
 const assignmentId = "00000000-0000-4000-8000-0000000000a1";
 const studentId = "00000000-0000-4000-8000-0000000000e1";
-const review = `/app/web/nastavnik/rad/${documentId}/pregled`;
+const review = `/aplikacija/nastavnik/rad/${documentId}/pregled`;
 const SUMMARY = {
   summaryFormat: "ductus-process-summary-v1",
   sessions: { evidenceKind: "observed", breakAboveMinutes: 30, count: 3, items: [] },
@@ -73,15 +73,15 @@ test("PG-1/PG-10: the review names the work, keeps the tab across works and says
   await expect(page.getByText("Kolegij A · zadatak „Lokalni mediji”")).toBeVisible();
   await expect(page.getByText(t.gradeExternal)).toBeVisible();
   await expect(page.getByRole("tab", { name: t.tabSummary })).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("link", { name: t.prev })).toHaveAttribute("href", `/app/web/nastavnik/rad/${previousId}/pregled?kartica=sazetak`);
-  await expect(page.getByRole("link", { name: t.backToTask })).toHaveAttribute("href", `/app/web/nastavnik/zadatak/${assignmentId}/predaje`);
+  await expect(page.getByRole("link", { name: t.prev })).toHaveAttribute("href", `/aplikacija/nastavnik/rad/${previousId}/pregled?kartica=sazetak`);
+  await expect(page.getByRole("link", { name: t.backToTask })).toHaveAttribute("href", `/aplikacija/nastavnik/zadatak/${assignmentId}/predaje`);
   // Keyboard: the tab list is one stop; arrows move and open.
   await page.getByRole("tab", { name: t.tabSummary }).focus();
   await page.keyboard.press("ArrowRight");
   await expect(page.getByRole("tab", { name: t.tabOrigin })).toBeFocused();
   await expect(page.getByRole("tab", { name: t.tabOrigin })).toHaveAttribute("aria-selected", "true");
   await expect(page).toHaveURL(`${review}?kartica=podrijetlo`);
-  await expect(page.getByRole("link", { name: t.prev })).toHaveAttribute("href", `/app/web/nastavnik/rad/${previousId}/pregled?kartica=podrijetlo`);
+  await expect(page.getByRole("link", { name: t.prev })).toHaveAttribute("href", `/aplikacija/nastavnik/rad/${previousId}/pregled?kartica=podrijetlo`);
 });
 
 test("PG-4: not given reads apart from an error, and the failed part recovers on its own", async ({ page }) => {
@@ -107,7 +107,7 @@ test("the live work links to the review", async ({ page }) => {
   await fakeServer(page);
   await page.goto(`${review}`);
   await expect(page.getByRole("tab", { name: t.tabText })).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("link", { name: t.textOpen })).toHaveAttribute("href", `/app/web/nastavnik/rad/${documentId}`);
+  await expect(page.getByRole("link", { name: t.textOpen })).toHaveAttribute("href", `/aplikacija/nastavnik/rad/${documentId}`);
 });
 
 for (const width of [390, 1280]) {

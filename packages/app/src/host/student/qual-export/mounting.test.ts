@@ -14,7 +14,7 @@ describe("the coding export page is mounted", () => {
     expect(resolve(PATH, "teacher")).not.toMatchObject({ kind: "page" });
   });
   it("the Next page renders QualExportPage", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/zadaci/kodiranje-izvoz/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/zadaci/kodiranje-izvoz/page.tsx"), "utf8");
     expect(page).toContain("QualExportPage");
   });
 });

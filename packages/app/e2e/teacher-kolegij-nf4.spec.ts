@@ -136,7 +136,7 @@ const shown = (page: Page) => page.getByTestId("n04-student").locator(".title");
 
 test("NZ-11: the roster filters by state, orders by surname or by state and counts who has not started", async ({ page }) => {
   await teacher(page);
-  await page.goto(`/app/web/nastavnik/kolegiji/${K1}/studenti`);
+  await page.goto(`/aplikacija/nastavnik/kolegiji/${K1}/studenti`);
   await expect(page.getByText(/poredan po prezimenu ili po stanju rada, nikad po brojevima/)).toBeVisible();
   await expect(page.getByTestId("n04-not-started")).toHaveText("Nije započelo: 1");
   await expect(shown(page)).toHaveText(["Ana Babić · Grupa 2", "Iva Horvat · Grupa 2", "Luka Zorić · Grupa 2"]);
@@ -160,7 +160,7 @@ test("NZ-11: the roster filters by state, orders by surname or by state and coun
 test("NZ-13: the holder sees the code's deadline, revokes it and issues a new one shown once, by keyboard", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   const calls = await teacher(page);
-  await page.goto("/app/web/nastavnik");
+  await page.goto("/aplikacija/nastavnik");
   const card = page.getByRole("region", { name: COURSE_NAME });
   await expect(card).toContainText("Vrijedi do 1. 12. 2099. u 23:59.");
   const revoke = card.getByRole("button", { name: `Opozovi kod: ${COURSE_NAME}` });
@@ -202,7 +202,7 @@ test("NZ-13: the holder sees the code's deadline, revokes it and issues a new on
 
 test("NZ-13: a collaborator is told who issues the code and the state is not read", async ({ page }) => {
   const calls = await teacher(page, { role: "assistant" });
-  await page.goto("/app/web/nastavnik");
+  await page.goto("/aplikacija/nastavnik");
   const card = page.getByRole("region", { name: COURSE_NAME });
   await expect(card).toContainText("Izdaje nositelj kolegija.");
   await expect(card.getByRole("button", { name: /Novi kod za upis|Opozovi kod/ })).toHaveCount(0);
@@ -211,7 +211,7 @@ test("NZ-13: a collaborator is told who issues the code and the state is not rea
 
 test("NZ-14: the card leads to the roles and the teaching team, and the holder adds an assistant", async ({ page }) => {
   const calls = await teacher(page);
-  await page.goto("/app/web/nastavnik");
+  await page.goto("/aplikacija/nastavnik");
   const toggle = page.getByRole("button", { name: `Nastavni tim i grupe · ${COURSE_NAME}` });
   await toggle.focus();
   await page.keyboard.press("Enter");
@@ -221,7 +221,7 @@ test("NZ-14: the card leads to the roles and the teaching team, and the holder a
   await expect(roles.getByRole("listitem")).toHaveText([
     /^Nositelj: vodi kolegij/, /^Suradnik: samo čita i komentira/, /^Mentor: prati radove studenata.*Radovi uz mentora$/,
   ]);
-  await expect(roles.getByRole("link", { name: "Radovi uz mentora" })).toHaveAttribute("href", "/app/web/nastavnik/mentorstva");
+  await expect(roles.getByRole("link", { name: "Radovi uz mentora" })).toHaveAttribute("href", "/aplikacija/nastavnik/mentorstva");
   await expect(roles).toContainText("Nastavnika kojeg nema na popisu dodaje administrator ustanove");
   const member = page.getByRole("checkbox", { name: "Marko Izmišljeni" }).first();
   await member.focus();
@@ -234,7 +234,7 @@ test("NZ-14: the card leads to the roles and the teaching team, and the holder a
 
 test("NZ-14: a collaborator sees the role and only the students of the own group", async ({ page }) => {
   await teacher(page, { role: "assistant" });
-  await page.goto("/app/web/nastavnik");
+  await page.goto("/aplikacija/nastavnik");
   await page.getByRole("button", { name: `Nastavni tim i grupe · ${COURSE_NAME}` }).click();
   const roles = page.getByRole("region", { name: "Uloge na kolegiju" });
   await expect(roles).toContainText("Vaša uloga: suradnik.");
@@ -245,7 +245,7 @@ test("NZ-14: a collaborator sees the role and only the students of the own group
 
 test("NZ-16: the package is prepared, becomes ready and is downloaded; the list downloads on its own", async ({ page }) => {
   const calls = await teacher(page);
-  await page.goto(`/app/web/nastavnik/zadatak/${A1}/merlin`);
+  await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/merlin`);
   const chooser = page.getByLabel("Zadatak");
   await expect(chooser.locator("option")).toHaveText([
     "Izmišljeni seminar · Seminarski rad · rok je prošao", "Izmišljeni završni rad · Završni rad",
@@ -280,12 +280,12 @@ test("NZ-16: the package is prepared, becomes ready and is downloaded; the list 
 
 test("NZ-16: choosing another assignment opens its export with the focus on the select, once", async ({ page }) => {
   await teacher(page);
-  await page.goto(`/app/web/nastavnik/zadatak/${A1}/merlin`);
+  await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/merlin`);
   const chooser = page.getByLabel("Zadatak");
   await expect(chooser).toHaveValue(A1);
   await expect(chooser).not.toBeFocused();
   await chooser.selectOption(A2);
-  await expect(page).toHaveURL(`/app/web/nastavnik/zadatak/${A2}/merlin`);
+  await expect(page).toHaveURL(`/aplikacija/nastavnik/zadatak/${A2}/merlin`);
   await expect(page.getByLabel("Zadatak")).toHaveValue(A2);
   await expect(page.getByLabel("Zadatak")).toBeFocused();
   await expect(page.getByText("Nema predanih radova")).toBeVisible();
@@ -303,14 +303,14 @@ for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 900 });
       await teacher(page);
 
-      await page.goto(`/app/web/nastavnik/kolegiji/${K1}/studenti`);
+      await page.goto(`/aplikacija/nastavnik/kolegiji/${K1}/studenti`);
       await setTheme();
       await page.getByLabel("Stanje").selectOption("late");
       await expect(shown(page)).toHaveText(["Ana Babić · Grupa 2"]);
       expect(await axe(page)).toEqual([]);
       await noScroll();
 
-      await page.goto("/app/web/nastavnik");
+      await page.goto("/aplikacija/nastavnik");
       await setTheme();
       const card = page.getByRole("region", { name: COURSE_NAME });
       await expect(card).toContainText("Vrijedi do 1. 12. 2099. u 23:59.");
@@ -327,7 +327,7 @@ for (const width of [390, 1280]) {
       expect(await axe(page)).toEqual([]);
       await noScroll();
 
-      await page.goto(`/app/web/nastavnik/zadatak/${A1}/merlin`);
+      await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/merlin`);
       await setTheme();
       await page.getByRole("button", { name: "Pripremi paket za Merlin" }).click();
       await expect(page.getByTestId("merlin-status")).toContainText("Paket je spreman.", { timeout: 10_000 });

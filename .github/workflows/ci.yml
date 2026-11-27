@@ -496,7 +496,7 @@ jobs:
           retention-days: 1
 
   # The institution front's host (#2028 c.6993786629 §1, §3.3): packages/app
-  # built and served by dev-server.mjs under /app/web/ and /app/chrome/, over a
+  # built and served by dev-server.mjs under /aplikacija/, over a
   # fake institution server (page.route), with axe.
   #
   # The browser tests run as six shards of one job (ZEL-W23; six since

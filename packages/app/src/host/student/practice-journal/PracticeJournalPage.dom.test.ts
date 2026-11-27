@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { practiceJournalText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 const { default: PracticeJournalPage } = await import("./PracticeJournalPage");
 
@@ -177,6 +177,6 @@ describe("PracticeJournalPage in the browser", () => {
   it("goes to sign-in when the session is gone", async () => {
     const { call } = apiOf({ "practice.placements.get": () => ({ ok: false, status: 401, code: "unauthorized" }) });
     await render(call);
-    expect(signIn).toHaveBeenCalledWith("/app/web/zadaci/dnevnik-prakse");
+    expect(signIn).toHaveBeenCalledWith("/aplikacija/zadaci/dnevnik-prakse");
   });
 });

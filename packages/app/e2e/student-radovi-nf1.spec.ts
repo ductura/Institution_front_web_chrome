@@ -58,7 +58,7 @@ for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme });
       const asked = await student(page, STATES, { status: 200, json: HISTORY });
-      await page.goto("/app/web/zadaci/radovi");
+      await page.goto("/aplikacija/zadaci/radovi");
       const rows = page.getByRole("list", { name: "Popis radova" }).getByRole("listitem");
       await expect(rows).toHaveCount(4);
 
@@ -90,12 +90,12 @@ for (const width of [390, 1280]) {
       await expect(rows.first()).toContainText("Sažetak izmišljenog članka");
       await axe(page);
 
-      await page.goto("/app/web/zadaci/radovi?stanje=zapredati");
+      await page.goto("/aplikacija/zadaci/radovi?stanje=zapredati");
       await expect(rows).toHaveCount(2);
-      await page.goto("/app/web/zadaci/radovi?stanje=obavijest");
+      await page.goto("/aplikacija/zadaci/radovi?stanje=obavijest");
       await expect(rows).toHaveCount(1);
       await expect(rows.first()).toContainText("Izlaganje o izmišljenom selu");
-      await page.goto("/app/web/zadaci/radovi?stanje=nesto");
+      await page.goto("/aplikacija/zadaci/radovi?stanje=nesto");
       await expect(rows).toHaveCount(4);
       await axe(page);
     });
@@ -104,7 +104,7 @@ for (const width of [390, 1280]) {
 
 test("P-5: no match under the state filter says so, and the reset link clears it", async ({ page }) => {
   await student(page, STATES.map((s) => (s.assignmentId === A_SENT ? { ...s, workState: "in_progress" } : s)));
-  await page.goto("/app/web/zadaci/radovi?stanje=predano");
+  await page.goto("/aplikacija/zadaci/radovi?stanje=predano");
   await expect(page.getByText("Nijedan rad ne odgovara odabiru.")).toBeVisible();
   await page.getByRole("link", { name: "Poništi odabir" }).click();
   await expect(page.getByRole("list", { name: "Popis radova" }).getByRole("listitem")).toHaveCount(4);
@@ -112,7 +112,7 @@ test("P-5: no match under the state filter says so, and the reset link clears it
 
 test("P-7: a history that cannot be read leaves the row with 'Produljeni rok' alone", async ({ page }) => {
   await student(page, STATES, { status: 503 });
-  await page.goto("/app/web/zadaci/radovi");
+  await page.goto("/aplikacija/zadaci/radovi");
   const ext = page.getByRole("listitem").filter({ hasText: "Osvrt na izmišljeni film" });
   await expect(ext.getByText("Produljeni rok", { exact: true })).toBeVisible();
   await expect(ext.getByText(/Prethodni rok/)).toHaveCount(0);
@@ -121,13 +121,13 @@ test("P-7: a history that cannot be read leaves the row with 'Produljeni rok' al
 test("P-6: a submission after the deadline says so, and an unreadable answer leaves Predano alone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await student(page, STATES, undefined, [{ assignmentId: A_SENT, submittedAt: "2026-11-02T09:15:00.000000Z", afterDeadline: true }]);
-  await page.goto("/app/web/zadaci/radovi");
+  await page.goto("/aplikacija/zadaci/radovi");
   const sent = page.getByRole("list", { name: "Popis radova" }).getByRole("listitem").filter({ hasText: "Sažetak izmišljenog članka" });
   await expect(sent.getByText("Predano 2. 11. 2026., 10:15, nakon roka")).toBeVisible();
   await axe(page);
 
   await student(page, STATES, undefined, null);
-  await page.goto("/app/web/zadaci/radovi");
+  await page.goto("/aplikacija/zadaci/radovi");
   const alone = page.getByRole("list", { name: "Popis radova" }).getByRole("listitem").filter({ hasText: "Sažetak izmišljenog članka" });
   await expect(alone.getByText("Predano", { exact: true })).toBeVisible();
 });
