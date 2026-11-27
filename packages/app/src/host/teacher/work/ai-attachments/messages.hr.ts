@@ -4,8 +4,8 @@ import type { TeacherAiAttachmentsLabels } from "@ductura/ui";
 export const teacherAiLabels: TeacherAiAttachmentsLabels = {
   title: "Uporaba AI-ja",
   confirmed: "Izjava potvrđena",
-  noUse: "Student je izjavio/izjavila da nije koristio/koristila AI alate. U radu nije zabilježena uporaba Asistenta i nema priloženih razgovora.",
-  aiDisabled: "Zadatak ne dopušta ugrađenog Asistenta. Student je izjavio/izjavila uporabu vanjskog alata.",
+  noUse: "Izjava: AI alati nisu korišteni. U radu nije zabilježena uporaba Asistenta i nema priloženih razgovora.",
+  aiDisabled: "Zadatak ne dopušta ugrađenog Asistenta. Izjava: korišten je vanjski alat.",
   pendingTag: "Dopuna na čekanju",
   pending:
     "Izjava o uporabi AI-ja pri predaji nije mogla biti sastavljena zbog tehničke greške u Ducturi. Izjava i priloženi razgovori pojavit će se ovdje kad student dopuni izjavu. Predaja i rad su dostupni kao i inače.",

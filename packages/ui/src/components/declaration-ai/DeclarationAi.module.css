@@ -6,7 +6,9 @@
 .text { margin: 0; font-size: 14.5px; color: var(--ink); overflow-wrap: anywhere; }
 .note { margin: 0; font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
 .meta { margin: 0; font-size: 12.5px; color: var(--ink-3); overflow-wrap: anywhere; }
-.alert { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--error); background: var(--error-soft); border-radius: var(--radius-control); overflow-wrap: anywhere; }
+.alert { margin: 0; padding: 10px 12px; font-size: 13.5px; color: var(--error); border: 1px solid var(--error); border-radius: 4px; overflow-wrap: anywhere; }
+.retryLink { justify-self: start; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13.5px; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.retryLink:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: 2px; }
 .group { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .uses { width: 100%; border-collapse: collapse; font-size: 13.5px; color: var(--ink-2); }
@@ -23,3 +25,5 @@
 .who { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
 .message { white-space: pre-wrap; }
 .skel { height: 14px; width: 70%; margin-bottom: 8px; background: var(--rule-2); border-radius: 4px; }
+.tag[data-tone="accent"] { color: var(--ink); background: var(--accent-soft); border-color: var(--accent); }
+.tag[data-tone="warn"] { color: var(--ink); background: var(--warn-soft); border-color: var(--warn); }
