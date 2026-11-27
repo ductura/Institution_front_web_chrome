@@ -22,7 +22,12 @@ const DRAFT = {
 // "%PDF-1.7 izmisljeno", as the contract's pattern asks (JVBERi0…).
 const PDF = Buffer.from("%PDF-1.7 izmisljeno").toString("base64");
 
-type Answers = { declaration?: unknown; pdf?: { status: number; body: unknown } };
+type Answers = {
+  declaration?: unknown;
+  pdf?: { status: number; body: unknown };
+  /** F4-PRE-R02: step 2 reads the conversations from the server; the contract's "none-yet" vector (no conversations). */
+  noConversations?: boolean;
+};
 
 async function student(page: Page, answers: Answers = {}) {
   const server = generatedServer("puno");
@@ -31,6 +36,9 @@ async function student(page: Page, answers: Answers = {}) {
     const req = route.request();
     const path = new URL(req.url()).pathname;
     if (req.method() === "GET" && path.endsWith("/declaration") && answers.declaration !== undefined) return route.fulfill({ json: answers.declaration });
+    if (req.method() === "GET" && path.endsWith("/assistant-conversations") && answers.noConversations) {
+      return route.fulfill({ json: { assignmentId: T1, conversations: [] } });
+    }
     if (req.method() === "GET" && path.endsWith("/submission/pdf") && answers.pdf !== undefined) {
       return route.fulfill({ status: answers.pdf.status, json: answers.pdf.body });
     }
@@ -46,7 +54,7 @@ for (const width of [390, 1280]) {
   for (const theme of ["light", "dark"] as const) {
     test(`PR-4: the declaration says honestly what Ductura recorded and shows no dead element (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
-      await student(page, { declaration: DRAFT });
+      await student(page, { declaration: DRAFT, noConversations: true });
       await page.goto(`/aplikacija/rad/${T1}/predaja/izjava`);
       await setTheme(page, theme);
       await expect(main(page).getByText("U ovom radu nije zabilježen razgovor s Asistentom.", { exact: true })).toBeVisible();

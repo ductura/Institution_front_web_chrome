@@ -29,7 +29,9 @@ type Put = { baseVersion: number; confirm: boolean; humanHelp: typeof STATE.draf
 function server(write?: (put: Put) => Response | null) {
   let state: typeof STATE = { ...STATE };
   const sent: { method: string; body: unknown; status: number }[] = [];
-  const fetchImpl: typeof fetch = async (_input, init) => {
+  const fetchImpl: typeof fetch = async (input, init) => {
+    // F4-PRE-R02: the assistant's list of conversations; none here (the v2 tests have their own).
+    if (String(input).includes("/assistant-conversations")) return json(200, { assignmentId: ASSIGNMENT, conversations: [] });
     const method = init?.method ?? "GET";
     const body = typeof init?.body === "string" ? JSON.parse(init.body) as Put : undefined;
     let res: Response;
