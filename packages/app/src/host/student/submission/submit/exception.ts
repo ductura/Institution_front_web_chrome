@@ -3,7 +3,7 @@
 // Asked only when the assignment's deadline has passed and a later one holds; any failure is null,
 // which leaves the ordinary "Rok produljen" and never holds the submission.
 import { createApi } from "../../../../../../../src/client/api";
-import { exceptionFrom } from "./timing";
+import { exceptionFrom, withLateRule, type Timing } from "./timing";
 
 export type HistoryCall = (assignmentId: string) => Promise<{ readonly ok: boolean; readonly body?: unknown }>;
 
@@ -22,4 +22,35 @@ export async function readException(
   } catch {
     return null;
   }
+}
+
+/** F4-PRE-R01: the two reads behind a closed submission; each answers its body, or null when it failed. */
+export type LateReads = {
+  readonly rule: (assignmentId: string) => Promise<{ readonly ok: boolean; readonly body?: unknown }>;
+  readonly exceptions: (assignmentId: string) => Promise<{ readonly ok: boolean; readonly body?: unknown }>;
+};
+
+const serverLate: LateReads = {
+  rule: (assignmentId) => createApi()("student.assignment-late-submission.get", { params: { assignmentId }, query: undefined, body: undefined }),
+  exceptions: (assignmentId) => createApi()("student.late-exceptions.get", { params: { assignmentId }, query: undefined, body: undefined }),
+};
+
+const bodyOf = async (read: Promise<{ readonly ok: boolean; readonly body?: unknown }>): Promise<unknown> => {
+  try {
+    const answer = await read;
+    return answer.ok ? answer.body : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * F4-PRE-R01: after the deadline, whether the assignment takes a late submission and whether this student
+ * holds an open exception, read only for a late timing. A failed read leaves the timing as it was.
+ */
+export async function withLateReads(timing: Timing, assignmentId: string, now: number, reads: LateReads = serverLate): Promise<Timing> {
+  if (timing.kind !== "late") return timing;
+  const [rule, exceptions] = await Promise.all([bodyOf(reads.rule(assignmentId)), bodyOf(reads.exceptions(assignmentId))]);
+  const allowed = (rule as { lateSubmissionAllowed?: unknown } | null)?.lateSubmissionAllowed;
+  return withLateRule(timing, typeof allowed === "boolean" ? allowed : null, exceptions, now);
 }

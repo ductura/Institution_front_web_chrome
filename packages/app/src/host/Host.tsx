@@ -10,7 +10,7 @@ import { HOW_IT_WORKS_HREF, homeHref, navFor } from "../../../../src/components/
 import ErrorScreen from "../../../../src/components/shell/ErrorScreen.ts";
 import { goToSignIn, readSession, type SessionRead } from "../../../../src/client/api.ts";
 
-import { nextPath, type Base } from "../bases";
+import { BASE_PATH, nextPath, type Base } from "../bases";
 import { internalRoute, publicPage, resolve, routeOf, shellRole } from "../routes";
 import { navLabel, useLocale } from "../i18n";
 import { isNarrow, withoutShell } from "./ljuska-po-ekranu";
@@ -26,7 +26,7 @@ import { shellMessagesFor } from "./teacher/shell/messages";
 
 /**
  * The institution front (#2028 c.6993786629 §3.3), as the layout of
- * app/[base]/: reads the session once, sends a signed-out browser to AAI@EduHr
+ * app/(host)/: reads the session once, sends a signed-out browser to AAI@EduHr
  * sign-in (D-09), and shows the page of the path for the session's role inside
  * the prototypes' shell (VIZ-0: no top bar, so no breadcrumb; the
  * institution's name moves to the side bar's foot). Links of the app open through the
@@ -34,7 +34,7 @@ import { shellMessagesFor } from "./teacher/shell/messages";
  */
 export default function Host({ base, children }: { base: Base; children: ReactNode }) {
   const router = useRouter();
-  const route = routeOf(`/app${usePathname()}`, base);
+  const route = routeOf(`${BASE_PATH}${usePathname()}`, base);
   const open = publicPage(route);
   const [session, setSession] = useState<SessionRead | null>(null);
   const catalogues = useLocale();

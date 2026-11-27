@@ -14,8 +14,8 @@ export function demoHref(value: string | undefined): string | null {
   }
 }
 
-/** The screenshots of the page, served from public/web/o-aplikaciji (invented data only). */
+/** The screenshots of the page, served from public/o-aplikaciji (invented data only). */
 export const SHOTS = ["studentTasks", "studentWriting", "teacherCourses", "teacherWork"] as const;
 export type Shot = (typeof SHOTS)[number];
 
-export const shotSrc = (shot: Shot) => `/app/web/o-aplikaciji/${shot}.png`;
+export const shotSrc = (shot: Shot) => `/aplikacija/o-aplikaciji/${shot}.png`;

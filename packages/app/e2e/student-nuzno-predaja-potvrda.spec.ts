@@ -47,7 +47,7 @@ for (const width of [390, 1280]) {
     test(`PR-4: the declaration says honestly what Ductura recorded and shows no dead element (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page, { declaration: DRAFT });
-      await page.goto(`/app/web/rad/${T1}/predaja/izjava`);
+      await page.goto(`/aplikacija/rad/${T1}/predaja/izjava`);
       await setTheme(page, theme);
       await expect(main(page).getByText("U ovom radu nije zabilježen razgovor s Asistentom.", { exact: true })).toBeVisible();
       await expect(main(page).getByText("Ovdje se bilježi ono što napravi sama Ductura, uključujući razgovore s Asistentom. Alate izvan Ducture navedite u „Vašoj izjavi”.", { exact: true })).toBeVisible();
@@ -70,7 +70,7 @@ for (const width of [390, 1280]) {
     test(`PR-11, PR-12, PR-18: the receipt says what was submitted, opens the summary and saves only the PDF (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page);
-      await page.goto(`/app/web/rad/${T3}/predaja/potvrda`);
+      await page.goto(`/aplikacija/rad/${T3}/predaja/potvrda`);
       await setTheme(page, theme);
       const given = main(page).locator("#sb-given");
       await expect(given.getByRole("heading", { name: "Što je predano" })).toBeVisible();
@@ -102,7 +102,7 @@ for (const width of [390, 1280]) {
 
 test("PR-18: the fingerprint is read as one string, the groups are for the eye only", async ({ page }) => {
   await student(page);
-  await page.goto(`/app/web/rad/${T3}/predaja/potvrda`);
+  await page.goto(`/aplikacija/rad/${T3}/predaja/potvrda`);
   const groups = main(page).locator("[aria-hidden=true]").filter({ hasText: /^([0-9a-f]{4} ){15}[0-9a-f]{4}$/ });
   await expect(groups).toHaveCount(1);
   const whole = (await groups.innerText()).replaceAll(" ", "");
@@ -111,7 +111,7 @@ test("PR-18: the fingerprint is read as one string, the groups are for the eye o
 
 test("PR-12: „Preuzmi zapis” saves the receipt's PDF from student.receipt-pdf.get", async ({ page }) => {
   await student(page, { pdf: { status: 200, body: { filename: "potvrda-predaje.pdf", pdfBase64: PDF } } });
-  await page.goto(`/app/web/rad/${T3}/predaja/potvrda`);
+  await page.goto(`/aplikacija/rad/${T3}/predaja/potvrda`);
   const download = page.waitForEvent("download");
   await main(page).getByRole("link", { name: "Preuzmi zapis (PDF s QR kodom)" }).click();
   expect((await download).suggestedFilename()).toBe("potvrda-predaje.pdf");
@@ -120,7 +120,7 @@ test("PR-12: „Preuzmi zapis” saves the receipt's PDF from student.receipt-pd
 
 test("PR-12: a failed download is one alert in the prototype's words", async ({ page }, info) => {
   await student(page, { pdf: { status: 503, body: { error: "unavailable", code: "unavailable", messageKey: "errors.x", status: 503, requestId: "00000000-0000-4000-8000-000000000000" } } });
-  await page.goto(`/app/web/rad/${T3}/predaja/potvrda`);
+  await page.goto(`/aplikacija/rad/${T3}/predaja/potvrda`);
   await main(page).getByRole("link", { name: "Preuzmi zapis (PDF s QR kodom)" }).click();
   await expect(main(page).getByRole("alert").filter({ hasText: "Zapis trenutačno nije moguće preuzeti. Pokušajte ponovno." })).toBeVisible();
   await axe(page, info, "potvrda-preuzimanje-greska");
@@ -131,7 +131,7 @@ for (const width of [390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await student(page, { declaration: DRAFT });
     for (const step of ["izjava", "pregled", "slanje"] as const) {
-      await page.goto(`/app/web/rad/${T1}/predaja/${step}`);
+      await page.goto(`/aplikacija/rad/${T1}/predaja/${step}`);
       await expect(main(page).getByRole("list", { name: "Koraci predaje" })).toBeVisible();
       await axe(page, info, `korak-${step}-${width}`);
     }
@@ -153,7 +153,7 @@ for (const theme of ["light", "dark"] as const) {
   test(`PR-18: the dialog „Predati rad?” is aria-modal, takes the focus and passes axe (${theme})`, async ({ page }, info) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await student(page, { declaration: CONFIRMED });
-    await page.goto(`/app/web/rad/${T1}/predaja/slanje`);
+    await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
     await setTheme(page, theme);
     const submit = main(page).getByRole("button", { name: "Predaj rad", exact: true });
     await submit.focus();

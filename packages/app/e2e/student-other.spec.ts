@@ -21,22 +21,22 @@ async function student(page: Page, workState: "not_started" | "in_progress" | "s
 
 test("Moji radovi lists the work, linked under the same base", async ({ page }) => {
   await student(page, "in_progress");
-  await page.goto("/app/chrome/zadaci/radovi");
+  await page.goto("/aplikacija/zadaci/radovi");
   await expect(page.getByRole("heading", { name: "Moji radovi" })).toBeVisible();
   await expect(page.getByText(TITLE).first()).toBeVisible();
-  await expect(page.locator(`a[href="/app/chrome/rad/${ID}"]`)).toBeVisible();
+  await expect(page.locator(`a[href="/aplikacija/rad/${ID}"]`)).toBeVisible();
 });
 
 test("the access log of a work in progress reads as unavailable, never an empty log", async ({ page }) => {
   await student(page, "in_progress");
-  await page.goto(`/app/web/rad/${ID}/dnevnik-pristupa`);
+  await page.goto(`/aplikacija/rad/${ID}/dnevnik-pristupa`);
   await expect(page.getByRole("heading", { name: "Tko je otvorio Vaš rad" })).toBeVisible();
   await expect(page.getByText("Dnevnik trenutačno nije moguće učitati.", { exact: false })).toBeVisible();
 });
 
 test("the replay of a work not started says so", async ({ page }) => {
   await student(page, "not_started");
-  await page.goto(`/app/web/rad/${ID}/reprodukcija`);
+  await page.goto(`/aplikacija/rad/${ID}/reprodukcija`);
   await expect(page.getByRole("heading", { name: "Reprodukcija Vašeg rada" })).toBeVisible();
   await expect(page.getByText("Rad još nije započet, pa nema reprodukcije.")).toBeVisible();
 });
@@ -46,7 +46,7 @@ test("a submitted work whose receipt fails to read shows the replay as unavailab
   await page.route(`**/api/v1/student/assignments/${ID}/submission`, (route) => route.fulfill({
     status: 500, json: { code: "internal" },
   }));
-  await page.goto(`/app/web/rad/${ID}/reprodukcija`);
+  await page.goto(`/aplikacija/rad/${ID}/reprodukcija`);
   await expect(page.getByText("Reprodukcija se trenutačno ne može učitati.")).toBeVisible();
 });
 
@@ -57,7 +57,7 @@ test("a 401 sends the student to AAI@EduHr, back to the access log", async ({ pa
     contentType: "text/html; charset=utf-8",
     body: '<!doctype html><html lang="hr"><title>AAI@EduHr</title><p>Lažni AAI@EduHr</p></html>',
   }));
-  await page.goto(`/app/web/rad/${ID}/dnevnik-pristupa`);
+  await page.goto(`/aplikacija/rad/${ID}/dnevnik-pristupa`);
   await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
-  expect(new URL(page.url()).searchParams.get("returnTo")).toBe(`/app/web/rad/${ID}/dnevnik-pristupa`);
+  expect(new URL(page.url()).searchParams.get("returnTo")).toBe(`/aplikacija/rad/${ID}/dnevnik-pristupa`);
 });

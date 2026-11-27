@@ -11,7 +11,7 @@ const t = messagesHr.workspace;
 const ID = "6e2f3a41-5b6c-4d7e-8f90-a1b2c3d4e5f7";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d1f";
 const TITLE = "Izmišljeni seminar o gradskim vrtovima";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 const SCOPE = "a".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0001";
 
@@ -45,8 +45,8 @@ async function server(page: Page, open: Answer[], frame?: Answer) {
 const alert = (page: Page) => page.locator("[data-open-failure]");
 
 const SHEET: ReadonlyArray<[string, Answer, "missing" | "closed" | "reload" | "server" | "offline", RegExp]> = [
-  ["404 not_found", refuse(404, "not_found"), "missing", /\/app\/web\/zadaci$/],
-  ["409 not_accepting", refuse(409, "not_accepting"), "closed", new RegExp(`/app/web/zadatak/${ID}$`)],
+  ["404 not_found", refuse(404, "not_found"), "missing", /\/aplikacija\/zadaci$/],
+  ["409 not_accepting", refuse(409, "not_accepting"), "closed", new RegExp(`/aplikacija/zadatak/${ID}$`)],
   ["426", refuse(426, "upgrade_required"), "reload", /./],
   ["503", refuse(503), "server", /./],
   ["no network", drop, "offline", /./],

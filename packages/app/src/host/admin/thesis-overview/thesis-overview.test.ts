@@ -56,8 +56,8 @@ describe("ruta /ustanova/zavrsni-radovi", () => {
     expect(resolve("/ustanova/zavrsni-radovi", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
     expect(resolve("/ustanova/zavrsni-radovi", null)).toEqual({ kind: "redirect", to: "/" });
   });
-  it("stranica je montirana u app/[base]", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/ustanova/zavrsni-radovi/page.tsx"), "utf8");
+  it("stranica je montirana u app/(host)", () => {
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/ustanova/zavrsni-radovi/page.tsx"), "utf8");
     expect(page).toContain("admin/thesis-overview/routes");
   });
 });

@@ -32,7 +32,7 @@ describe("RecoveryOffer", () => {
     const host = document.createElement("div");
     document.body.append(host);
     root = createRoot(host);
-    await act(async () => { root?.render(h(RecoveryOffer, { base: "/app/web" as never })); });
+    await act(async () => { root?.render(h(RecoveryOffer, { base: "/aplikacija" as never })); });
     return host;
   };
   const region = (host: HTMLElement) => host.querySelector<HTMLElement>("[data-recovery-offer]");
@@ -50,7 +50,7 @@ describe("RecoveryOffer", () => {
     const status = region(host)!;
     expect(status.getAttribute("role")).toBe("status");
     expect(status.textContent).toContain("Na ovom uređaju čuva se Vaš tekst od prethodne odjave.");
-    expect(status.querySelector("a")?.getAttribute("href")).toBe("/app/web/rad/a-1");
+    expect(status.querySelector("a")?.getAttribute("href")).toBe("/aplikacija/rad/a-1");
     expect(host.querySelectorAll('[role="status"]')).toHaveLength(1);
     const hide = [...status.querySelectorAll("button")].find((b) => b.textContent === "Sakrij obavijest")!;
     await act(async () => { hide.click(); });
