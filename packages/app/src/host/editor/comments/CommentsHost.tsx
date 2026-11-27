@@ -18,6 +18,7 @@ import type { HostSectionContext } from "../../../../../../src/components/editor
 
 import { SuggestionCard, acceptanceTransaction, editorSuggestionsHr, planAcceptance, type ActionOutcome, type Decision, type Suggestion } from "../../../../../../src/components/editor/suggestions/index.ts";
 
+import { useChapterScope } from "./chapter-scope";
 import { CommentsPanel } from "./CommentsPanel";
 import styles from "./comments.module.css";
 import { commentsHr as t } from "./messages.hr";
@@ -161,6 +162,8 @@ function SessionComments({ editor, documentId, session, submitted, signedOut = f
     return e && range ? e.state.doc.textBetween(range.from, range.to, " ") : null;
   }, [port]);
   const onSessionEnd = useCallback(() => setEnded(true), []);
+  // ED-97: the chapter under the cursor, for "Ovo poglavlje"; without an editor the card has no scope.
+  const chapter = useChapterScope(editor);
 
   // ED-42 („Novo”): the last visit is kept in this browser only. It is read once when the card opens,
   // so what was new stays marked while the card is open, and recorded when the card closes or the
@@ -177,7 +180,8 @@ function SessionComments({ editor, documentId, session, submitted, signedOut = f
     <>
       {submitted && <p className={styles.muted}>{t.submittedNote}</p>}
       <CommentsPanel workId={documentId} role="student" submitted={submitted} port={port} selection={selection} docSize={docSize} currentText={currentText}
-        seen={seen} onJump={onJump} onSessionEnd={onSessionEnd} onSeen={onSeen} changes={readMyChanges} />
+        seen={seen} onJump={onJump} onSessionEnd={onSessionEnd} onSeen={onSeen} changes={readMyChanges}
+        chapter={editor ? chapter : undefined} />
       <Proposals editorRef={editorRef} documentId={documentId} submitted={submitted} current={current} />
     </>
   );

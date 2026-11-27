@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 
-import { MARKER_PALETTE, safeMarker } from "./marker-palette";
+import { hslHex, MARKER_PALETTE, safeMarker } from "./marker-palette";
 import { MarkerPalette } from "./MarkerPalette";
 import { readAloud, speechSupport, startDictation } from "./speech";
 
@@ -12,6 +12,24 @@ it("has 51 unique colours and accepts only palette values or hex", () => {
   expect(safeMarker("#ffcc00")).toBe("#ffcc00");
   expect(safeMarker("red; background:url(x)")).toBeNull();
   expect(safeMarker(null)).toBeNull();
+});
+
+it("keeps every colour as lowercase hex, the only form the v4 highlight mark takes (ED-107)", () => {
+  for (const color of MARKER_PALETTE) expect(color.value).toMatch(/^#[0-9a-f]{6}$/);
+  expect(hslHex(0, 0, 100)).toBe("#ffffff");
+  expect(hslHex(0, 100, 50)).toBe("#ff0000");
+  expect(hslHex(120, 100, 25)).toBe("#008000");
+  expect(safeMarker("#FFCC00")).toBe("#ffcc00");
+  expect(safeMarker("hsl(54 90% 88%)")).toBeNull();
+});
+
+it("offers Druga boja… and says the marker is the student's own (ED-107)", () => {
+  const html = renderToStaticMarkup(<MarkerPalette onPick={() => {}} onRemove={() => {}} current="#123456" />);
+  expect(html).toContain("Druga boja…");
+  expect(html).toContain('type="color"');
+  expect(html).toContain('value="#123456"');
+  expect(html).toContain("Marker je Vaše označavanje. Mentor ga ne vidi i ne ide u izvoz.");
+  expect(renderToStaticMarkup(<MarkerPalette onPick={() => {}} onRemove={() => {}} />)).toContain('value="#ffd966"');
 });
 
 it("renders every colour with a name and the remove action", () => {

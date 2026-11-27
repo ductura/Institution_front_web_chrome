@@ -1,0 +1,23 @@
+// ED-108: texts of the "Zalijepljeno. Što je ovo?" offer (prototype toolbar2.js `X.hooks.paste`, `menu-pnote`).
+export const pasteWhatHr = {
+  title: "Zalijepljeno. Što je ovo?",
+  quote: "Doslovni navod",
+  quoteHint: "navodnici i izvor",
+  note: "Bilješka uz izvor",
+  noteHint: "ne ide u tekst rada",
+  stash: "Odloži za poslije",
+  stashHint: "miče iz teksta",
+  keep: "Ostavi u tekstu",
+  keepHint: "ostaje kako je",
+  whichSource: "Bilješka uz koji izvor?",
+  back: "Natrag",
+  close: "Zatvori",
+  quoted: "Tekst je u navodnicima. Upišite @ iza navodnika i odaberite izvor.",
+  stashed: "Odloženo. Tekst je u lijevom panelu pod Odloženo.",
+  noted: "Tekst je dodan kao bilješka uz izvor i maknut iz rada.",
+  notedKept: "Bilješka je dodana uz izvor. Tekst se u međuvremenu promijenio, pa je ostao u radu.",
+  noSources: "Najprije dodajte izvor kojem bilješka pripada.",
+  failed: "Bilješku nije moguće dodati. Pokušajte ponovno.",
+  stashFailed: "Tekst nije moguće odložiti na ovom uređaju.",
+  stale: "Tekst se u međuvremenu promijenio. Označite ga i odaberite ponovno.",
+} as const;
