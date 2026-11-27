@@ -20,11 +20,11 @@ export const teacherTeamText = {
     formationAssigned: "Timove oblikuje nastavnik",
     save: "Spremi postavku",
     saving: "Sprema se…",
-    saved: "Postavka je spremljena.",
+    saved: "Postavka je spremljena na poslužitelju.",
     conflict: "Postavka nije prihvaćena jer bi neki postojeći tim imao više članova od najvećeg dopuštenog. Stanje je osvježeno.",
     notFound: "Zadatak više nije dostupan. Stanje je osvježeno.",
     invalid: "Postavka nije ispravna. Provjerite veličine tima.",
-    unknown: "Nije poznato je li postavka spremljena. Osvježite stranicu prije novog pokušaja.",
+    unknown: "Nije poznato je li postavka spremljena na poslužitelju. Osvježite stranicu prije novog pokušaja.",
     errors: {
       sizeInvalid: "Veličina tima je cijeli broj od 2 do 6.",
       minAboveMax: "Najmanji broj članova ne smije biti veći od najvećeg.",

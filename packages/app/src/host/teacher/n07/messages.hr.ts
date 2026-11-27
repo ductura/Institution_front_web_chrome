@@ -24,7 +24,7 @@ export const n07Messages = {
   utc: "Točne vrijednosti iz potvrde (UTC)",
   fingerprintTitle: "Otisak predanog teksta",
   fingerprintNote: "Niz znakova izračunan iz točnog predanog teksta. Ako se tekst promijeni i za jedan znak, otisak više nije isti.",
-  copy: "Kopiraj otisak",
+  copy: "Stavi otisak u međuspremnik",
   copied: "Otisak je u međuspremniku (64 znaka, bez razmaka).",
   copyFailed: "Prijenos otiska u međuspremnik nije uspio.",
   record: "Stanje zapisa",

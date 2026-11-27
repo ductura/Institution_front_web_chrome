@@ -68,5 +68,5 @@ export const interviewMessages = {
   heldEmpty: "Odaberite datum razgovora.",
   outcomeNote: "Ishod razgovora se ne upisuje ovdje.",
   pdfReady: "PDF je spreman za preuzimanje.",
-  saved: "Spremljeno.",
+  saved: "Spremljeno na poslužitelju.",
 } as const;

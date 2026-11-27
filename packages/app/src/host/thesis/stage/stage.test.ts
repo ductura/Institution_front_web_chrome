@@ -110,7 +110,7 @@ describe("the section", () => {
     await change(host.querySelector("select")!, "defended");
     await act(async () => { host.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
     expect(call).toHaveBeenCalledWith("work.thesis-stage.put", { params: { documentId: DOC }, query: undefined, body: { stage: "defended" } });
-    expect(host.querySelector('[role="status"]')?.textContent).toBe("Spremljeno.");
+    expect(host.querySelector('[role="status"]')?.textContent).toBe("Spremljeno na poslužitelju.");
   });
   it("mentor: defense_scheduled without a date sends nothing and says why", async () => {
     const call = vi.fn();

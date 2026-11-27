@@ -6,9 +6,9 @@ export const tocHr = {
   moveUp: "Pomakni poglavlje gore",
   moveDown: "Pomakni poglavlje dolje",
   moveHint: "Alt+Shift+↑/↓ premješta poglavlje s kursorom.",
-  copy: "Kopiraj sadržaj rada",
-  copied: "Sadržaj rada je kopiran.",
-  copyFailed: "Sadržaj se nije mogao kopirati. Označite ga i kopirajte ručno.",
+  copy: "Stavi sadržaj rada u međuspremnik",
+  copied: "Sadržaj rada: kopirano u međuspremnik.",
+  copyFailed: "Sadržaj se nije mogao staviti u međuspremnik. Označite ga i upotrijebite prečac preglednika.",
   // ED-71: "Sadržaj na listu" (prototype features.js `#toc .tocbox`).
   sheetTitle: "Sadržaj",
   sheetEmpty: "Rad još nema naslova.",
