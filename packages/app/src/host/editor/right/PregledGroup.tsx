@@ -23,6 +23,7 @@ import type { EvidenceBySource } from "../stem/quote-check";
 import { loadQuoteEvidence, quotedSources } from "./quote-evidence";
 
 import { pregledHr as t } from "./messages.hr";
+import nacrt from "./Nacrt.module.css";
 import {
   abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, outlineRows, removeTerm, saveTerms, termCounts,
   WHOLE, MAX_DEFINITION_LENGTH, MAX_TERM_LENGTH, type PregledScope, type Term, type TermStorage,
@@ -165,12 +166,19 @@ function Nacrt({ editor, doc, scope }: { editor: Editor; doc: NonNullable<Return
       {fallback && active && <p role="status">{t.listenVoiceFallback}</p>}
       {note && <p role="status">{note}</p>}
       {rows.length === 0 ? <p>{t.nacrtEmpty}</p> : (
-        <ol>
+        <ol className={nacrt.list} data-nacrt>
           {rows.map((row, i) => (
             <li key={row.key}>
-              {row.chapter !== null && row.chapter !== rows[i - 1]?.chapter && <strong>{row.chapter}</strong>}
-              <button type="button" onClick={() => jumpToBlock(editor, row.pos)}>{row.sentence}</button>
-              <small> {t.words(row.words)}{row.long ? ` · ${t.longFirst}` : ""}</small>
+              {row.chapter !== null && row.chapter !== rows[i - 1]?.chapter && <strong className={nacrt.heading}>{row.chapter}</strong>}
+              <button type="button" className={nacrt.row} onClick={() => jumpToBlock(editor, row.pos)}>
+                {row.shown}
+                {row.long && <span className={nacrt.tag} title={t.longFirst(row.words)}>{t.longFirstTag(row.words)}</span>}
+                <span className={nacrt.meta}>
+                  <span>{t.words(row.paragraphWords)}</span>
+                  <span>{t.citations(row.citations)}</span>
+                  {row.flags.map((flag) => <span key={flag} className={nacrt.flag}>{t.flags[flag]}</span>)}
+                </span>
+              </button>
             </li>
           ))}
         </ol>
