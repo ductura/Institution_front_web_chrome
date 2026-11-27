@@ -146,8 +146,8 @@
 .contextAlerts button:hover { background: var(--hover); }
 .contextAlerts span { flex: 1; }
 .contextAlerts i { font-style: normal; color: var(--ink-3); }
-/* ED-96: the host's foot of the right panel (prototype #pfoot), kept in view at the bottom. */
-.rightFoot { position: sticky; bottom: 0; z-index: 1; background: var(--chrome); }
+/* ED-96: the host's foot of the right panel (prototype .pfoot), after the panel's content; it covers nothing. */
+.rightFoot { background: var(--chrome); }
 .workGroups { display: grid; }
 .workGroups button { justify-content: start; border-bottom: 1px solid var(--rule-2); border-radius: 0; }
 .iconStrip { display: flex; flex-direction: column; width: 66px; flex: none; gap: 4px; padding: 8px 4px; border-left: 1px solid var(--rule-2); }
@@ -158,7 +158,6 @@
   .rightLayout[data-layout="c"] .rightSettings { position: static; grid-area: 2 / 2; border-left: 1px solid var(--rule-2); text-align: center; }
   .iconStrip { grid-area: 1 / 2; }
   .rightLayout[data-layout="c"] .rightContent { grid-area: 1 / 1 / 3; }
-  .rightLayout[data-layout="c"] .rightFoot { grid-column: 1 / -1; }
 }
 @media (max-width: 1050px) {
   .iconStrip { flex-direction: row; width: auto; margin-right: 40px; border-left: 0; border-bottom: 1px solid var(--rule-2); overflow-x: auto; }

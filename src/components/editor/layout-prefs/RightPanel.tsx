@@ -68,7 +68,7 @@ function ChapterContext({ openGroup }: { openGroup: (group: PanelGroup) => void 
 export function RightPanel({ layout, sections = {}, foot, settings, selection, onSelect, drawer }: {
   layout: PanelLayout;
   sections?: RightSections;
-  /** ED-96: the host's line under every layout of the panel (prototype `#pfoot`). */
+  /** ED-96: the host's line under the panel (prototype `.pfoot`); layout C has none, as in the prototype. */
   foot?: ReactNode;
   settings: ReactNode;
   selection: PanelGroup | null;
@@ -111,6 +111,6 @@ export function RightPanel({ layout, sections = {}, foot, settings, selection, o
       </div>
       {shown && view(shown)}
     </>}
-    {foot ? <div className={styles.rightFoot}>{foot}</div> : null}
+    {foot && layout !== "c" ? <div className={styles.rightFoot}>{foot}</div> : null}
   </div></OpenCommentsReport.Provider>;
 }
