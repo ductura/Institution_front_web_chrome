@@ -151,6 +151,13 @@
   column-gap: 12px;
 }
 
+/* WCAG 2.2 target size: the work link is at least 24 px tall now that the parts sit apart. */
+.work > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
 .works .submission,
 .works .accommodation {
   display: inline-block;
