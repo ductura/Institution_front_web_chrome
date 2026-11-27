@@ -14,6 +14,11 @@ export function usePageTitle(detail: string | null): void {
   }, [set, detail]);
 }
 
+/** The public home page (/naslovnica) is titled by the app's name alone; every other page by its heading. */
+export function headingFor(path: string | null, label: string | null): string | null {
+  return path === "/naslovnica" ? null : label;
+}
+
 /** "<naziv rada> — <dio>": the heading of a work's page; null until the work's name is read. */
 export function workTitle(name: string | null | undefined, part: string): string | null {
   const text = name?.trim() ?? "";

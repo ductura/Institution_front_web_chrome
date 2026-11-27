@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
 
 import { hostText } from "../text";
-import { PageTitleContext, usePageTitle, workTitle } from "./page-title";
+import { PageTitleContext, headingFor, usePageTitle, workTitle } from "./page-title";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -17,6 +17,14 @@ describe("workTitle", () => {
   it("is null until the name is read (the route's label stays)", () => {
     expect(workTitle(null, "Pisanje")).toBeNull();
     expect(workTitle("  ", "Pisanje")).toBeNull();
+  });
+});
+
+describe("headingFor", () => {
+  it("leaves the public home page with the app's name alone, and every other page with its label", () => {
+    expect(headingFor("/naslovnica", "Ductura, početna")).toBeNull();
+    expect(headingFor("/zadaci", "Moji zadaci")).toBe("Moji zadaci");
+    expect(headingFor(null, null)).toBeNull();
   });
 });
 
