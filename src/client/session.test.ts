@@ -84,8 +84,8 @@ describe("readSession", () => {
 describe("goToSignIn", () => {
   it("leaves for the contract's login route with the app path as returnTo", () => {
     const went: string[] = [];
-    goToSignIn("/app/web/zadaci", (href) => went.push(href));
-    expect(went).toEqual(["/api/v1/auth/login?returnTo=%2Fapp%2Fweb%2Fzadaci"]);
+    goToSignIn("/aplikacija/zadaci", (href) => went.push(href));
+    expect(went).toEqual(["/api/v1/auth/login?returnTo=%2Faplikacija%2Fzadaci"]);
   });
 
   it("drops a returnTo the server would refuse", () => {

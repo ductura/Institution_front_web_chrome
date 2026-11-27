@@ -88,7 +88,7 @@ export type AppShellProps = {
    */
   drawer?: boolean;
   /**
-   * The path the app is served under (/app/web or /app/chrome, #2028
+   * The path the app is served under (/aplikacija or /aplikacija, #2028
    * c.6993786629 §1); every link of the shell starts with it. Empty by default.
    */
   base?: string;

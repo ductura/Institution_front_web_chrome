@@ -17,7 +17,7 @@ describe("the teacher's teams page is mounted", () => {
     expect(resolve("/nastavnik/zadatak/a1/timovi", "student")).not.toMatchObject({ kind: "page" });
   });
   it("the Next page renders TeamsPage and refuses a malformed id as not found", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/nastavnik/zadatak/[assignmentId]/timovi/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/nastavnik/zadatak/[assignmentId]/timovi/page.tsx"), "utf8");
     expect(page).toContain("TeamsPage");
     expect(page).toContain("notFound()");
   });

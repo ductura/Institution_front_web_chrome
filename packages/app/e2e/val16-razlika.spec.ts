@@ -195,7 +195,7 @@ async function skipGuide(page: Page) {
 async function studentPanel(page: Page, w: World, width = 1250) {
   w.role = "student";
   await page.setViewportSize({ width, height: 900 });
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const tab = page.getByRole("tab", { name: "Mentor" });
   await tab.focus();
@@ -207,7 +207,7 @@ async function studentPanel(page: Page, w: World, width = 1250) {
 async function adminPage(page: Page, w: World, width = 1250) {
   w.role = "institution_admin";
   await page.setViewportSize({ width, height: 900 });
-  await page.goto("/app/web/ustanova/zavrsni-radovi");
+  await page.goto("/aplikacija/ustanova/zavrsni-radovi");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(to.title);
   await expect(page.getByRole("table", { name: to.caption })).toBeVisible();
 }
@@ -215,7 +215,7 @@ async function adminPage(page: Page, w: World, width = 1250) {
 async function mentorPanel(page: Page, w: World, width = 1250) {
   w.role = "teacher";
   await page.setViewportSize({ width, height: 900 });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   // Both mentored works read at once; the second one answers 404 and drops out, so wait until one card is left.
   await expect(page.getByRole("region", { name: tf.title })).toHaveCount(1);
   await expect(page.getByRole("region", { name: tf.title })).toBeVisible();

@@ -11,7 +11,7 @@ import { fakeN13Port } from "./fake-port";
 import { n13Messages as t } from "./messages.hr";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 
 describe("N13Extensions filter (NZ-6)", () => {
   let root: Root | undefined;

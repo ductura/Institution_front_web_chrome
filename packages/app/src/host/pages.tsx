@@ -25,7 +25,7 @@ import { CourseRhythm } from "./teacher/input-rhythm/mounts";
 import SignInScreen from "./signin/SignInScreen";
 import { signInViewOf } from "./signin/sign-in-view";
 
-// The pages the host shows, one per route of app/[base]/. Each reads the
+// The pages the host shows, one per route of app/(host)/. Each reads the
 // institution server only through src/client.
 
 /** A page of the navigation not yet connected to the institution server: its heading and a note. */
@@ -53,7 +53,7 @@ export function PublicPendingPage() {
  * the prototype. Sign-in is AAI@EduHr only (D-09): the button, and "Pokušaj
  * ponovno" in the error states, show "preusmjeravanje" and leave for the login
  * of the institution server. A returnTo of the app ("/zadaci" or
- * "/app/web/zadaci") comes back under this base; any other goes to its home.
+ * "/aplikacija/zadaci") comes back under this base; any other goes to its home.
  * `?stanje=` and the login route's `?greska=` ask for a state.
  */
 export function SignInPage() {

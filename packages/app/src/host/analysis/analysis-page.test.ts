@@ -60,12 +60,12 @@ describe("koraci", () => {
 });
 
 describe("ruta je montirana", () => {
-  it("ima zapis u PAGES i Next stranicu u app/[base]", () => {
+  it("ima zapis u PAGES i Next stranicu u app/(host)", () => {
     const page = PAGES.find((p) => p.path === "/analiza");
     expect(page?.label).toBe("Statistička analiza");
     expect(page?.roles).toEqual(["teacher", "student"]);
     expect(page?.public).toBeUndefined();
-    expect(existsSync(join(__dirname, "../../../app/[base]/analiza/page.tsx"))).toBe(true);
+    expect(existsSync(join(__dirname, "../../../app/(host)/analiza/page.tsx"))).toBe(true);
   });
 
   it("bez sesije vodi na prijavu, administrator ide na svoj početak, nastavnik i student otvaraju", () => {
