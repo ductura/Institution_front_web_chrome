@@ -1,0 +1,4 @@
+/* S-08 R8: the value that could not be read (the number of pastes) is written in the error colour (token). */
+.error {
+  color: var(--color-error);
+}

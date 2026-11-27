@@ -1,6 +1,6 @@
 /** Interface text of the teacher's working criteria in the Mentor card (WEB-1112, E 3.5 mentor3). */
 export const workingCriteriaHr = {
-  title: "Kriteriji ocjene · {done} od {total}",
+  title: "Kriteriji ocjenjivanja, procijenjeno {done} od {total}",
   note: "Radna bilješka nastavnika. Student ne vidi kriterije ni procjene, a Ductura ne računa ocjenu.",
   loading: "Učitavanje kriterija…",
   unavailable: "Kriteriji trenutačno nisu dostupni. Pokušajte ponovno.",

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Card, Dialog, RouteLoading, TextArea } from "@ductura/ui";
 
+import { LoadAlert } from "../../states/States";
+
 import type { createApi } from "@/client/api";
 import { teacherPeerReviewText as t } from "./messages.hr";
 import { checkReason, fullName, inNameOrder, mayWithdraw, type ReasonError } from "./model";
@@ -17,8 +19,8 @@ type Api = ReturnType<typeof createApi>;
  * contract gives the teacher no text of a review, so none is shown and the page says so. The list is read again
  * after any answer. A standalone component, mounted by OverviewPage; `version` asks for a new read.
  */
-export function OverviewPanel({ assignmentId, call, version, onSignedOut }: {
-  assignmentId: string; call: () => Api; version: number; onSignedOut: () => void;
+export function OverviewPanel({ assignmentId, call, version, onSignedOut, onDenied }: {
+  assignmentId: string; call: () => Api; version: number; onSignedOut: () => void; onDenied: () => void;
 }) {
   const [read, setRead] = useState<Read<OverviewView> | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -34,6 +36,7 @@ export function OverviewPanel({ assignmentId, call, version, onSignedOut }: {
     void readOverview(call(), assignmentId).then((result) => {
       if (!live) return;
       if (result.kind === "signedOut") onSignedOut();
+      if (result.kind === "denied") onDenied();
       setRead(result);
     });
     return () => { live = false; };
@@ -63,11 +66,13 @@ export function OverviewPanel({ assignmentId, call, version, onSignedOut }: {
   }
 
   if (read === null || read.kind === "signedOut") return <Card level={2} title={t.overview.title}><RouteLoading label={t.loading} /></Card>;
+  if (read.kind === "denied") return null;
   if (read.kind !== "ok") {
     return (
       <Card level={2} title={t.overview.title}>
-        <p role="alert">{read.kind === "notFound" ? t.gone : t.unavailable}</p>
-        {read.kind === "unavailable" && <p><Button tone="quiet" onClick={() => { setRead(null); setAttempt((n) => n + 1); }}>{t.retry}</Button></p>}
+        {read.kind === "unavailable"
+          ? <LoadAlert body={t.unavailable} retry={{ label: t.retry, onRetry: () => { setRead(null); setAttempt((n) => n + 1); } }} />
+          : <LoadAlert body={t.gone} />}
       </Card>
     );
   }
@@ -77,12 +82,13 @@ export function OverviewPanel({ assignmentId, call, version, onSignedOut }: {
       {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
       <p>{t.overview.lead}</p>
       <p>{t.overview.unreadable}</p>
+      <p data-testid="overview-count">{t.overview.assigned.replace("{n}", String(rows.length))}</p>
       {rows.length === 0 ? <p data-testid="overview-none">{t.overview.none}</p> : (
         <ul>
           {rows.map((a, index) => (
             <li key={`${a.reviewer.id}-${a.author.id}-${index}`} data-testid="allocation">
-              <span>{t.overview.reviewer}: {fullName(a.reviewer)}</span>{" · "}
-              <span>{t.overview.author}: {fullName(a.author)}</span>{" · "}
+              <span>{t.overview.reviewer}: {fullName(a.reviewer)}</span>{", "}
+              <span>{t.overview.author}: {fullName(a.author)}</span>{", "}
               <span data-testid="allocation-state">{t.overview.state[a.state]}</span>{" "}
               {mayWithdraw(a) && (
                 <Button tone="quiet" aria-label={t.overview.withdrawAria.replace("{reviewer}", fullName(a.reviewer)).replace("{author}", fullName(a.author))}

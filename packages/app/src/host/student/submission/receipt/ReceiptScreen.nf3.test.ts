@@ -54,13 +54,23 @@ afterEach(() => {
   signIn.mockReset();
 });
 
-describe("PR-18: the fingerprint", () => {
-  it("shows sixteen groups to the eye and the whole string to a screen reader", async () => {
+describe("S-08 K1, K2: the fingerprint", () => {
+  it("is not shown in any form: the note and the button that copies it stay", async () => {
     const el = await render(screen());
-    const hidden = el.querySelector("[aria-hidden=true]")!;
-    expect(hidden.textContent).toBe(HEX.match(/.{4}/g)!.join(" "));
-    const spoken = [...el.querySelectorAll(".visually-hidden")].map((n) => n.textContent);
-    expect(spoken).toContain(HEX);
+    expect(el.textContent).not.toContain(HEX);
+    expect(el.textContent).not.toContain(HEX.slice(0, 4));
+    expect(el.querySelector("[aria-hidden=true] code, .visually-hidden:not([role=status])")).toBeNull();
+    expect(el.textContent).toContain(t.fingerprintNote);
+    expect([...el.querySelectorAll("button")].map((b) => b.textContent)).toContain(t.copy);
+  });
+
+  it("copies the whole string to the clipboard and says so in the toast", async () => {
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    const el = await render(screen());
+    await act(async () => [...el.querySelectorAll("button")].find((b) => b.textContent === t.copy)!.click());
+    expect(writeText).toHaveBeenCalledWith(HEX);
+    expect(el.textContent).toContain(t.copiedToast);
   });
 });
 

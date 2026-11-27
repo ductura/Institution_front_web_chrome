@@ -79,12 +79,20 @@ describe("reading settings dialog (WEB-V20-POSTAVKE-DIJALOG)", () => {
     expect([...host.querySelectorAll("button")].find((b) => b.textContent === t.reset)?.hasAttribute("disabled")).toBe(true);
   });
 
-  it("the reading-mode reset inside the dialog leaves the font and the speed alone", () => {
+  it("the dialog has exactly one \"Vrati na zadano\", and it also resets the reading mode", () => {
     const store = mount();
     press(t.font.dyslexia, t.font.label);
     press("Šira", "Širina retka");
+    expect([...host.querySelectorAll("button")].filter((b) => b.textContent === "Vrati na zadano")).toHaveLength(1);
     pressAction("Vrati na zadano");
-    expect(store.get()).toMatchObject({ font: "dyslexia", width: "standard" });
+    expect(store.get()).toEqual(DEFAULT_READING_PREFS);
+  });
+
+  it("shows the visible \"Način čitanja\" heading, the speed note and no word \"poslužitelj\"", () => {
+    mount();
+    expect([...host.querySelectorAll("h3")].some((h) => h.textContent === "Način čitanja")).toBe(true);
+    expect(host.textContent).toContain("Nova brzina vrijedi od sljedeće rečenice.");
+    expect(host.textContent?.toLowerCase()).not.toContain("poslužitelj");
   });
 
   it("refuses a value outside the closed sets", () => {

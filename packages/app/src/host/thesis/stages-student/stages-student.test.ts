@@ -67,8 +67,11 @@ describe("showDate", () => {
   });
   it("shows Zagreb time with the time of day, not the UTC date", () => {
     const shown = showDate("2027-02-28T23:00:00Z")!;
-    expect(shown).toMatch(/^1\. .+ 2027\./);
-    expect(shown).toMatch(/00:00/);
+    expect(shown).toBe("1. ožujka 2027. u 00:00");
+  });
+  it("writes the month in full and \"u\" before the time, never \"stu\" or a numeric date (A3)", () => {
+    expect(showDate("2026-11-10T22:59:00Z")).toBe("10. studenoga 2026. u 23:59");
+    expect(showDate("2026-12-08T22:59:00Z")).toBe("8. prosinca 2026. u 23:59");
   });
 });
 

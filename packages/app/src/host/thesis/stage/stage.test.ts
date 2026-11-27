@@ -37,7 +37,7 @@ describe("checkStage", () => {
 
 describe("display", () => {
   it("shows the defense date in Zagreb time and nothing for none", () => {
-    expect(formatDefense("2026-12-14T09:30:00.000Z")).toBe("14. 12. 2026. u 10:30");
+    expect(formatDefense("2026-12-14T09:30:00.000Z")).toBe("14. prosinca 2026. u 10:30");
     expect(formatDefense(null)).toBeNull();
   });
   it("marks the steps by the stage", () => {
@@ -100,7 +100,7 @@ describe("the section", () => {
   });
   it("student: sees the stage and the date, has no form and no control", async () => {
     const host = await view(stage("defense_scheduled", "2026-12-14T09:30:00.000Z"), "student", () => vi.fn());
-    expect(host.textContent).toContain("14. 12. 2026. u 10:30");
+    expect(host.textContent).toContain("14. prosinca 2026. u 10:30");
     expect(host.querySelector("form, select, input, button")).toBeNull();
   });
   it("mentor: the date field appears only for defense_scheduled and the write omits defenseAt for another stage", async () => {

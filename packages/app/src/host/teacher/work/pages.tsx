@@ -138,7 +138,8 @@ function OpenWork({ documentId, path, view, session }: {
   if (view === "interview") {
     // N-14 (WEB-1530): the teacher's preparation for a talk about the work.
     return <InterviewPage key={documentId} port={interviewPort} documentId={documentId} workHref={workHref}
-      summaryHref={`${workHref}${VIEWS.summary.suffix}`} />;
+      summaryHref={`${workHref}${VIEWS.summary.suffix}`}
+      originHref={workHref} />;
   }
   if (view === "review") {
     return <ReviewPage key={documentId} documentId={documentId} current={current} />;
