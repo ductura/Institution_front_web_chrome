@@ -4,13 +4,14 @@ import { act, createElement as h } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { BASE } from "../../../bases";
 import { HostContext, type HostValue } from "../../context";
 import { noticePreviewHr as text } from "../publish/messages.hr";
 import AssignmentForm from "./AssignmentForm";
 import { assignmentFormHr as f } from "./messages.hr";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: BASE, page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const course = { id: "c1", name: "Izmišljeni kolegij", academicYear: "2026./2027.", aiPolicy: "partially_allowed" } as const;
 
 describe("AssignmentForm review: the student's notice (F4-NAS-R09)", () => {
