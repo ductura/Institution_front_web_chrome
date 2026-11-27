@@ -74,12 +74,21 @@ export const pagesApprox = (words: number): number => (words > 0 ? Math.max(1, M
 export const groupDot = (n: number): string => String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
 /**
- * The length part of the bar (WEB-23, S: E-7): "340 riječi · opseg 1.200 do
- * 1.600 · vidite samo Vi". `words` counts the text of the work only (notes are
+ * The length part of the bar (WEB-23, S: E-7): "340 riječi, opseg 1.200 do
+ * 1.600, vidite samo Vi" (drawn as separate parts, ScopeParts). `words` counts the text of the work only (notes are
  * not counted) and is null while no editor counts it; `range` is null while
  * the assignment's range is not known. Null when there is nothing to say.
  */
 export function scopeLine(words: number | null, range: ScopeRange): string | null {
+  const parts = scopeParts(words, range);
+  return parts === null ? null : parts.join(", ");
+}
+
+/**
+ * S-07: the same line as separate parts. The bar draws each in its own element 12 px apart,
+ * so there is no "·" between them; `scopeLine` joins them with a comma for plain text.
+ */
+export function scopeParts(words: number | null, range: ScopeRange): string[] | null {
   const parts: string[] = [];
   if (words !== null) parts.push(`${groupDot(words)} ${pluralHr(words, "riječ", "riječi", "riječi")}`);
   if (range !== null) {
@@ -92,7 +101,12 @@ export function scopeLine(words: number | null, range: ScopeRange): string | nul
   if (standing !== null && words !== null && range !== null) parts.push(scopeFact(standing, words, range));
   if (parts.length === 0) return null;
   parts.push(t.workspace.scopePrivate);
-  return parts.join(" · ");
+  return parts;
+}
+
+/** The length line of the bar: one element per part (S-07), the parts 12 px apart. */
+export function ScopeParts({ parts, className }: { parts: readonly string[]; className?: string }) {
+  return <span className={`${styles.scopeParts} ${className ?? ""}`.trim()}>{parts.map((part) => <span key={part}>{part}</span>)}</span>;
 }
 
 /** ED-04 (NF2-P6): where the count stands against the assignment's range; null without either. */
@@ -147,7 +161,7 @@ export default function StatusBar({
   waiting?: string | null;
   said?: string | null;
 }) {
-  const scope = length === undefined ? null : scopeLine(length.words, length.range);
+  const scope = length === undefined ? null : scopeParts(length.words, length.range);
   const calm = online !== undefined;
   const waitingLine = online === false && waiting ? waiting : undefined;
   return (
@@ -161,7 +175,7 @@ export default function StatusBar({
           : <SaveState state={shownSaveState(save)} blocked={save.blocked} />
       )}
       {calm ? <span className={styles.said} role="status">{said ?? ""}</span> : null}
-      {scope === null ? null : <span className={styles.scope}>{scope}</span>}
+      {scope === null ? null : <ScopeParts parts={scope} className={styles.scope} />}
       {length === undefined ? null : <ScopeAnnounce words={length.words} range={length.range} />}
       {children}
     </footer>
