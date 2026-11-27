@@ -7,7 +7,8 @@ import { editorPanelLayoutsHr as t } from "@/lib/i18n/messages.hr";
 
 import { DEFAULT_SETTINGS, type PanelSize } from "../layout/layout-settings";
 import {
-  DEFAULT_PREFERENCES, LAYOUTS, partOrder, ROW_PARTS, rowShows, SUB_MODES, withPartMoved, withPartShown, withRowPart, withSubs,
+  DEFAULT_PREFERENCES, LAYOUTS, LIST_SCOPES, partOrder, ROW_PARTS, rowShows, SUB_MODES, withPartMoved, withPartShown, withRowPart,
+  withScope, withSubs,
   type LayoutPreferences, type Side,
 } from "./preferences";
 import styles from "../SidePanels.module.css";
@@ -58,6 +59,13 @@ export function PanelSettings({ side, value, onChange, width, onWidth }: {
             {mobile === "same" ? t.same : labels[mobile]}
           </Button>)}
         </fieldset>
+        {side === "right" && <fieldset className={styles.mobileChoices}>
+          <legend>{t.listScope}</legend>
+          {LIST_SCOPES.map((scope) => <Button key={scope} tone="quiet" aria-pressed={scope === (value.scope ?? "chapter")}
+            onClick={() => onChange(withScope(value, scope))}>
+            {t.listScopes[scope]}
+          </Button>)}
+        </fieldset>}
         <fieldset className={styles.mobileChoices}>
           <legend>{t.density}</legend>
           {([false, true] as const).map((dense) => <Button key={String(dense)} tone="quiet"
