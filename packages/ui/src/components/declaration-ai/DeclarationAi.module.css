@@ -26,4 +26,4 @@
 .message { white-space: pre-wrap; }
 .skel { height: 14px; width: 70%; margin-bottom: 8px; background: var(--rule-2); border-radius: 4px; }
 .tag[data-tone="accent"] { color: var(--ink); background: var(--accent-soft); border-color: var(--accent); }
-.tag[data-tone="warn"] { color: var(--ink); background: var(--warn-soft); border-color: var(--warn); }
+.tag[data-tone="warn"] { color: var(--ink); border-color: var(--warn); }
