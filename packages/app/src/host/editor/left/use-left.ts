@@ -24,7 +24,7 @@ export type WorkSnapshot = {
 const EMPTY: WorkSnapshot = { headings: [], words: [], total: 0, current: -1, figures: [], selected: "" };
 const KINDS: Readonly<Record<string, Figure["kind"]>> = { table: "table", image: "figure", footnote: "footnote" };
 
-/** What `select` reads from the editor, read again after every transaction and kept while it is equal. */
+/** What `select` reads from the editor, read again after every transaction and whenever writing is opened or closed, and kept while it is equal. */
 export function useEditorRead<T>(editor: Editor | null, select: (editor: Editor) => T, fallback: T): T {
   const read = () => (editor && !editor.isDestroyed ? select(editor) : fallback);
   const [value, setValue] = useState<T>(read);
@@ -37,7 +37,17 @@ export function useEditorRead<T>(editor: Editor | null, select: (editor: Editor)
     };
     update();
     editor.on("transaction", update);
-    return () => { editor.off("transaction", update); };
+    // EDI-R16: `setEditable(…, false)` (the provider's way to open or close writing) raises no event, but it flips the
+    // contenteditable of the view, so that is watched too: the state is right at once, not only after the first click.
+    let watch: MutationObserver | null = null;
+    try {
+      const dom = editor.view?.dom;
+      if (dom && typeof MutationObserver !== "undefined") {
+        watch = new MutationObserver(update);
+        watch.observe(dom, { attributes: true, attributeFilter: ["contenteditable"] });
+      }
+    } catch { /* a view that is not mounted yet: the transaction keeps the value current */ }
+    return () => { editor.off("transaction", update); watch?.disconnect(); };
     // select is a stable module-level function at every call site.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);

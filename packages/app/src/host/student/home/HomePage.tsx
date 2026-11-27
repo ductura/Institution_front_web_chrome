@@ -13,6 +13,7 @@ import { withMentoredAssignments } from "../../../../../../src/components/studen
 import { nextPath, type Base } from "../../../bases";
 import { useHost } from "../../context";
 import { CodeCard, CodeForm } from "./CodeForm";
+import { DeadlinesExport } from "./DeadlinesExport";
 import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
@@ -191,6 +192,7 @@ export function HomePage() {
               </ul>
             </div>
           ))}
+          <DeadlinesExport rows={rows} />
         </section>
         <CodeCard />
       </>

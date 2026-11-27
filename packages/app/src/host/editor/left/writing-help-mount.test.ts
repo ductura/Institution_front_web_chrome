@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { assistHr } from "../assist";
-import { leftSectionsFor, ThreadHelp, WritingHelp } from "./LeftSectionsHost";
+import { leftSectionsFor, StartWorkHost, ThreadHelp, WritingHelp } from "./LeftSectionsHost";
 
 // EDI-R16: the writing-help cards are mounted in the left panel's sections. Invented work id only; no editor is open
 // (what the sheet gets before it has loaded), so the cards show the empty work.
@@ -40,7 +40,7 @@ describe("writing help in the left panel (EDI-R16)", () => {
   });
 
   it("an empty work offers the wizard as the next step, and a work with no open editor cannot be written into", async () => {
-    const el = await mount(createElement(WritingHelp, { workId: "rad-2" }));
+    const el = await mount(createElement("div", null, createElement(WritingHelp, { workId: "rad-2" }), createElement(StartWorkHost, { workId: "rad-2" })));
     const next = el.querySelector<HTMLButtonElement>("[data-next-step] button");
     expect(next?.textContent).toBe(assistHr.next.empty);
     await act(async () => { next!.click(); });

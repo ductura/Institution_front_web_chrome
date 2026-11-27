@@ -94,7 +94,7 @@ export default function FacultySettingsPage() {
                 <ul>
                   {rows.map((row) => (
                     <li key={row.code}>
-                      {row.title} ({row.code}): {t.forms.version(row.version)}, {row.active ? t.forms.active : t.forms.withdrawn}, {t.forms.published(date.format(new Date(row.publishedAt)))}.
+                      {row.title} ({row.code}): {t.forms.version(row.version)}, {row.active ? t.forms.active : t.forms.withdrawn}, {t.forms.published(date.format(new Date(row.publishedAt)))}
                       {" "}{t.forms.forTypes}: {row.workTypes.map((w) => t.forms.workTypes[w]).join(", ")}.
                     </li>
                   ))}
