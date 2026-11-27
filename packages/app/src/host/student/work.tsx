@@ -12,7 +12,7 @@ import { notFound, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { appHref } from "../../../../../src/components/index.ts";
-import EditorPage, { SheetNote } from "../../../../../src/components/editor/EditorPage.tsx";
+import EditorPage, { SheetAlert, SheetNote, SheetRetry } from "../../../../../src/components/editor/EditorPage.tsx";
 import { editorWorkRead, frameFailureOf } from "../../../../../src/components/editor/EditorPage.read.ts";
 import EditorPageWork from "../../../../../src/components/editor/EditorPageWork.tsx";
 import { ReadOnlyMentor } from "../../../../../src/components/editor/mentor/work-state/ReadOnlyMentor.tsx";
@@ -23,6 +23,7 @@ import { workspaceFrame, type WorkspaceVariant } from "../../../../../src/compon
 import { browserTransport, createApi, goToSignIn } from "../../../../../src/client/api.ts";
 import { withMentoredAssignments } from "../../../../../src/components/student/mentored-assignments.ts";
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
+import { studentHostHr } from "./i18n/messages.hr.ts";
 
 import { SaveState } from "@ductura/ui";
 import { hostText } from "../../text";
@@ -83,6 +84,15 @@ function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: strin
       </>
     );
   }
+  // S-07 (E4): the read failed: the cause in a role=alert frame in the error colour, "Pokušaj ponovno" under it.
+  if (variant === "greska") {
+    return (
+      <>
+        <SheetAlert><p>{t.student.unavailable}</p></SheetAlert>
+        <SheetRetry label={t.workspace.openRetry} onRetry={reread} />
+      </>
+    );
+  }
   return (
     <SheetNote>
       {t.workspace.documentNotEditable} <span className="soon">{t.workspace.soon}</span>
@@ -115,7 +125,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const frame = workspaceFrame(read, undefined, { kind: "ready", wordRange });
       const title = read.kind === "ready" ? read.title : null;
-      const subtitle = read.kind === "ready" ? courseLine(read.course, read.dueAt) : null;
+      const subtitle = read.kind === "ready" ? courseLine(read.course, read.dueAt, read.workType === undefined ? undefined : (studentHostHr.teacher.assignment.workTypes as Record<string, string>)[read.workType]) : null;
       // WEB-NUZ-PREDAJA-1 (P-17): only the full editor has the text the count reads, so only it counts.
       const bar = <WorkspaceTopBar assignmentId={assignmentId} base={base} title={title} subtitle={subtitle}
         readOnly={frame.variant === "predano"} inert={frame.variant === "greska"}
