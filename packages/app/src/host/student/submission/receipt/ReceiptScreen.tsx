@@ -9,11 +9,12 @@ import type { ReceiptRead } from "../../../../../../../src/components/predaja/Re
 import { createApi, goToSignIn } from "../../../../../../../src/client/api";
 import { downloadBlob } from "../../../../../../../src/components/editor/EarlierDraft";
 import { verifyHref } from "../../../public/verify/model";
+import { LoadAlert } from "../../../states/States";
 import PortfolioExport from "../../portfolio/PortfolioExport";
 import type { PortfolioPort } from "../../portfolio/model";
 import { browserPortfolioPort } from "../../portfolio/port";
 import StepLink from "../steps/StepLink";
-import { fingerprintGroups, receiptPath, receiptView, type Row } from "./model";
+import { isFingerprint, receiptPath, receiptView, type Row } from "./model";
 import { receiptText as t } from "./messages.hr";
 import { receiptPdf, type PdfOutcome } from "./pdf";
 
@@ -104,8 +105,8 @@ export default function ReceiptScreen({
   if (view.kind === "error") {
     return (
       <StepPanel title={t.panelTitle}>
-        <p className="note" role="alert">{t.error}</p>
-        <StepActions>{onRetry ? <Button tone="secondary" onClick={onRetry}>{t.retry}</Button> : <a className="btn secondary" href={retryHref}>{t.retry}</a>}</StepActions>
+        {/* S-08 K5: the frame in the error colour, "Pokušaj ponovno" an underlined link under it. */}
+        <LoadAlert body={t.error} retry={onRetry ? { label: t.retry, onRetry } : { label: t.retry, href: retryHref }} />
       </StepPanel>
     );
   }
@@ -137,19 +138,17 @@ export default function ReceiptScreen({
   const copy = async () => {
     try { await navigator.clipboard.writeText(view.fingerprint); show(t.copiedToast); } catch { show(t.copyFailed); }
   };
-  const groups = fingerprintGroups(view.fingerprint);
+  const copyable = isFingerprint(view.fingerprint);
   return (
     <>
       <div><StepNav current={5} /></div>
       <StepPanel title={view.title} tag={kind}>
         {kvs(view.rows)}
         <Utc rows={view.utc} />
-        {groups !== null && (
+        {/* S-08 K1, K2: the SHA-256 string is not shown; the note and the button that copies it stay. */}
+        {copyable && (
           <>
             <StepSub>{t.fingerprintTitle}</StepSub>
-            {/* NF-3 PR-18: the groups are for the eye; a screen reader reads the whole string once, not sixteen words. */}
-            <div aria-hidden="true"><StepMono>{groups.join(" ")}</StepMono></div>
-            <p className="visually-hidden">{view.fingerprint}</p>
             <p className="meta">{t.fingerprintNote}</p>
             <StepActions><Button tone="secondary" onClick={() => { void copy(); }}>{t.copy}</Button></StepActions>
           </>

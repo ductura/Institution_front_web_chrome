@@ -94,7 +94,7 @@ export function DeclarationAi({ labels, state, onConfirm, onRetry }: Declaration
           <>
             <p className={styles.alert} role="alert">{labels.error}</p>
             <p className={styles.note}>{labels.errorNote}</p>
-            {onRetry && <div className={styles.acts}><InertButton onClick={onRetry}>{labels.retry}</InertButton></div>}
+            {onRetry && <button type="button" className={styles.retryLink} onClick={onRetry}>{labels.retry}</button>}
           </>
         );
       case "no_use":

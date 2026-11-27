@@ -17,6 +17,17 @@ export async function readProvenance(port: ProvenancePort, submissionId: string)
   return port.read(submissionId).catch((): ProvenanceRead => ({ kind: "error" }));
 }
 
-export function ProvenancePanel({ read }: { readonly read: ProvenanceRead }) {
-  return <ProvenanceShare labels={LABELS} state={read} />;
+/**
+ * `onRetry` shows the „Pokušaj ponovno” link under a failed read; without it the failure stays a
+ * bare role=alert frame (the student's step 5). `showMatch` is the faculty switch of the match
+ * mark (D-268 O6, off in the pilot): when it is off the record carries no mark, whatever the read
+ * holds. The default keeps the student's screen as it was.
+ */
+export function ProvenancePanel({ read, onRetry, showMatch = true }: {
+  readonly read: ProvenanceRead;
+  readonly onRetry?: () => void;
+  readonly showMatch?: boolean;
+}) {
+  const state: ProvenanceRead = read.kind === "ready" && !showMatch ? { ...read, aiMatch: undefined } : read;
+  return <ProvenanceShare labels={LABELS} state={state} onRetry={onRetry} />;
 }

@@ -1,4 +1,4 @@
-import { atOf, zonedOf } from "../steps/time";
+import { atOf, utcAtOf, zonedOf } from "../steps/time";
 import type { ReceiptRead } from "../../../../../../../src/components/predaja/ReceiptPanel";
 import { receiptText as t } from "./messages.hr";
 
@@ -25,6 +25,14 @@ export type ReceiptView =
     readonly rows: readonly Row[]; readonly utc: readonly Row[]; readonly fingerprint: string;
   };
 
+/** S-08: the exact values of the receipt on the UTC clock in Croatian words; a value that is no instant is left out. */
+function utcRows(rows: readonly (readonly [string, string, string])[]): readonly Row[] {
+  return rows.flatMap(([id, label, iso]) => {
+    const value = utcAtOf(iso);
+    return value === null ? [] : [{ id, label, value }];
+  });
+}
+
 /** What step 5 shows for one read: the same words for each variant of the prototype. */
 export function receiptView(read: ReceiptRead): ReceiptView {
   if (read.kind === "loading") return { kind: "loading" };
@@ -37,7 +45,7 @@ export function receiptView(read: ReceiptRead): ReceiptView {
         { id: "requested", label: t.submittedAt, value: zoned(read.requestedAt) },
         { id: "signed", label: t.signingStarted, value: t.notYetRecorded },
       ],
-      utc: [{ id: "requestedAt", label: "requestedAt", value: read.requestedAt }],
+      utc: utcRows([["requestedAt", t.submittedAt, read.requestedAt]]),
     };
   }
   const p = read.receipt.payload;
@@ -50,15 +58,14 @@ export function receiptView(read: ReceiptRead): ReceiptView {
       { id: "due", label: t.dueAt, value: zoned(p.dueAt) },
       { id: "signed", label: t.signingStarted, value: zoned(p.signedAt) },
     ],
-    utc: [
-      { id: "requestedAt", label: "requestedAt", value: p.requestedAt },
-      { id: "dueAt", label: "dueAt", value: p.dueAt },
-      { id: "signedAt", label: "signedAt", value: p.signedAt },
-    ],
+    utc: utcRows([["requestedAt", t.submittedAt, p.requestedAt], ["dueAt", t.dueAt, p.dueAt], ["signedAt", t.signingStarted, p.signedAt]]),
   };
 }
 
-/** Sixty-four hex characters in groups of four; anything else is not a fingerprint. */
-export function fingerprintGroups(value: string): readonly string[] | null {
-  return /^[0-9a-f]{64}$/i.test(value) ? (value.match(/.{4}/g) ?? null) : null;
+/**
+ * Sixty-four hex characters; anything else is not a fingerprint. S-08 K1, K2: the string itself is not
+ * shown any more, only copied; the button is offered only for a value that is one.
+ */
+export function isFingerprint(value: string): boolean {
+  return /^[0-9a-f]{64}$/i.test(value);
 }
