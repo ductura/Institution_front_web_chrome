@@ -19,12 +19,15 @@ import type { Stage } from "../../../../../../../src/components/predaja/stage.ts
 import { readWork } from "../../../../../../../src/components/student/Submission.tsx";
 
 import FormatCheck from "../../../editor/format-check/FormatCheck";
+import { LoadAlert } from "../../../states/States";
 import SheetSummary from "../sheet/SheetSummary";
 import StepLink from "../steps/StepLink";
 import { stepsText } from "../steps/messages.hr";
 import { checksText as c } from "./messages.hr";
+import styles from "./BeforeSubmitStep.module.css";
 import SummaryPanel from "./SummaryPanel";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "./declaration-gate";
+import { conversationsLine, serverAttachedCount, type AttachedCount, type AttachedCountRead } from "../declaration/attached-count";
 import { beforeSubmission, declarationText as declarationWords } from "./declaration-gate";
 import { readStepChecks, type SummaryPorts } from "./model";
 import { NOTES } from "./notes-port";
@@ -61,11 +64,15 @@ export type BeforeSubmitStepProps = {
   readonly timing?: Timing;
   /** NF-3 PR-10 (INT-16): whether this device holds text the server has not confirmed; the journal by default. */
   readonly hasNewer?: (documentId: string) => Promise<boolean>;
+  /** F4-PRE-R02: the conversations that go with the declaration; the server's by default. */
+  readonly attachedConversations?: AttachedCountRead;
 };
 
 export default function BeforeSubmitStep({
   assignmentId, stage, kind, hrefOf, workHref, onSignIn, declarationGate = serverGate, timing: given, hasNewer = deviceHasNewer,
+  attachedConversations = serverAttachedCount,
 }: BeforeSubmitStepProps) {
+  const [attached, setAttached] = useState<AttachedCount | null | "loading">("loading");
   const router = useRouter();
   const online = useOnline();
   const hint = useId();
@@ -86,6 +93,12 @@ export default function BeforeSubmitStep({
   // The declaration as the server holds it for the current revision (PIL-K-IZJAVA-VRATA).
   const { gate, reload: readGate } = useDeclarationGate(assignmentId, declarationGate);
   const confirmed = opensSending(gate);
+  // F4-PRE-R02: read again with the gate, so a change made in PD-10 shows here too.
+  useEffect(() => {
+    let live = true;
+    void attachedConversations(assignmentId).then((n) => { if (live) setAttached(n); }, () => { if (live) setAttached(null); });
+    return () => { live = false; };
+  }, [assignmentId, attachedConversations, gate]);
   // The latest sign-in callback, so a new one from the page does not read the summary again.
   const signIn = useRef(onSignIn);
   useEffect(() => { signIn.current = onSignIn; });
@@ -157,7 +170,8 @@ export default function BeforeSubmitStep({
         <StepNav current={3} />
         <p className="note">{stepsText.intro}</p>
         {late !== null && <p className="note" id="sb-late">{late}</p>}
-        {stage.kind === "unavailable" && <p className="note" role="alert">{c.unavailable}</p>}
+        {/* S-08 R8: the frame in the error colour, with no link under it. */}
+        {stage.kind === "unavailable" && <LoadAlert body={c.unavailable} />}
         {!online && <p className="note" role="status" id="sb-off">{c.offline}</p>}
         <StepSection label={c.missingTitle}>
           <span>{gate.kind === "loading" ? c.declarationChecking : missing.count === 0 ? c.missingNothing : missing.items.map((item) => item.text).join(" ")}</span>
@@ -180,7 +194,7 @@ export default function BeforeSubmitStep({
             <span className="meta">{c.newerMeta}</span>
           </StepSection>
         )}
-        <StepSection label={c.conversations}><span>{c.conversationsUnavailable}</span></StepSection>
+        <StepSection label={c.conversations}><span>{conversationsLine(attached)}</span></StepSection>
         <StepSection label={c.placeholders}>
           {places === "loading" ? <span>{c.placesLoading}</span>
             : places === null ? <span>{c.placeholdersUnknown}</span>
@@ -192,7 +206,7 @@ export default function BeforeSubmitStep({
         </StepSection>
         <StepSection label={c.pasted}>
           {summary.kind === "loading" ? <span>{c.pastedLoading}</span>
-            : pastes === null ? <span>{c.pastedUnknown}</span>
+            : pastes === null ? <span className={styles.error}>{c.pastedUnknown}</span>
             : <>
               {pastes.listed.length === 0 ? <span>{c.pastedNone}</span>
                 : <StepPlaces>{pastes.listed.map((paste, i) => <li key={`${paste.at.from}-${i}`}><a href={workHref}>{pasteWhen(paste.at)}</a></li>)}</StepPlaces>}

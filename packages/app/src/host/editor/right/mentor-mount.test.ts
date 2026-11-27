@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import type { RevisionRequest } from "../../../../../../src/client/revision-requests";
 import type { WorkMessage } from "../../../../../../src/client/work-messages";
 import { MentorMount } from "./MentorMount";
-import { abstractWords, reportSeen, seenAtOf, thesisShownOf, unreportedSeen, workStateOf } from "./mentor-mount";
+import { abstractWords, consentOf, reportSeen, seenAtOf, thesisShownOf, unreportedSeen, workStateOf } from "./mentor-mount";
 
 const req = (number: number, state: RevisionRequest["state"], instruction = "Izmišljena uputa za doradu.", window = "2026-11-10T09:00:00.000Z"): RevisionRequest => ({
   id: `00000000-0000-4000-8000-00000000000${number}`, number, state, rowSeq: 1, anchor: {} as RevisionRequest["anchor"],
@@ -42,6 +42,35 @@ describe("workStateOf", () => {
   });
   it("only closed requests: unavailable (accepted work or a new draft cannot be told apart)", () => {
     expect(workStateOf(false, [req(1, "accepted"), req(2, "withdrawn")])).toBeNull();
+  });
+});
+
+describe("workStateOf with the mentor's consent (MEN-R08)", () => {
+  const given = { state: "given", changedAt: "2026-11-20T09:00:00.000Z" } as const;
+  it("consent given and no round running: accepted, with the consent's time", () => {
+    expect(workStateOf(false, [], given)).toEqual({ kind: "accepted", consentAt: "2026-11-20T09:00:00.000Z" });
+    expect(workStateOf(false, [req(1, "accepted")], given)?.kind).toBe("accepted");
+  });
+  it("a running round, a submission or an unread list win over the consent", () => {
+    expect(workStateOf(false, [req(1, "open")], given)?.kind).toBe("revise");
+    expect(workStateOf(false, [req(1, "responded")], given)?.kind).toBe("review");
+    expect(workStateOf(true, [], given)?.kind).toBe("submitted");
+    expect(workStateOf(false, null, given)).toBeNull();
+  });
+  it("no consent, a withdrawn one or an unread one is not accepted", () => {
+    expect(workStateOf(false, [], { state: "none", changedAt: null })).toEqual({ kind: "draft" });
+    expect(workStateOf(false, [], { state: "withdrawn", changedAt: "2026-11-21T09:00:00.000Z" })).toEqual({ kind: "draft" });
+    expect(workStateOf(false, [], null)).toEqual({ kind: "draft" });
+  });
+});
+
+describe("consentOf", () => {
+  it("reads state and time; a failed or odd answer is null, never given", () => {
+    expect(consentOf({ ok: true, body: { state: "given", changedAt: null, history: [] } })).toEqual({ state: "given", changedAt: null });
+    expect(consentOf({ ok: false })).toBeNull();
+    expect(consentOf({ ok: true, body: null })).toBeNull();
+    expect(consentOf({ ok: true, body: { state: "yes", changedAt: null } })).toBeNull();
+    expect(consentOf({ ok: true, body: { state: "given", changedAt: 5 } })).toBeNull();
   });
 });
 
@@ -90,7 +119,7 @@ describe("MentorMount", () => {
     expect(mount).toMatch(/const studentCriteriaCall: StudentCriteriaCall = \(id, input\) => createApi\(\)\(id, \{ \.\.\.input, body: undefined \}\);/);
   });
   it("is mounted in the student's editor in the Mentor tab, above the round's actions", () => {
-    const work = readFileSync(join(import.meta.dirname, "..", "..", "student", "work.tsx"), "utf8");
+    const work = readFileSync(join(import.meta.dirname, "..", "..", "student", "WorkEditorPage.tsx"), "utf8");
     expect(work).toMatch(/import \{ MentorMount \} from "\.\.\/editor\/right\/MentorMount"/);
     // ED-60 (Ductus#2058 c.7185479035): the teacher's direct-edit setting sits between the card and the round's actions.
     expect(work).toMatch(/work: \(\{ editor, assignmentId: id, documentId, submitted \}\) => <>\s*<MentorMount editor=\{editor\} assignmentId=\{id\} documentId=\{documentId\} submitted=\{submitted\} \/>\s*(?:\{\/\*[^]*?\*\/\}\s*)?<DirectEditSettingHost [^>]*\/>\s*<RevisionActionsHost /);

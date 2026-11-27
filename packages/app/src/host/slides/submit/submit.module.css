@@ -1,0 +1,4 @@
+/* WEB-DIZ-B-V13 (Ductus#2059 c.7215579050, B): the error of the slide range is a field error, red text with no frame (like U3 and U4). */
+.rangeError {
+  color: var(--color-error);
+}

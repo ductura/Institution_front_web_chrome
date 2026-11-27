@@ -121,7 +121,7 @@ test("a student lands on Vaš studentski prostor with the institution's name, wi
   await axe(page);
 
   // The shell's navigation opens in place, under the same base.
-  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Moji kolegiji" }).click();
+  await page.getByRole("navigation", { name: "Glavna navigacija" }).getByRole("link", { name: "Moji kolegiji" }).click();
   await expect(page).toHaveURL(/\/aplikacija\/zadaci\/kolegiji$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji kolegiji");
   expect(seen.me).toBe(1);
@@ -153,7 +153,7 @@ test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({
   await expect(page.getByText(INSTITUTION)).toBeVisible();
   await axe(page);
 
-  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Radovi uz mentora" }).click();
+  await page.getByRole("navigation", { name: "Glavna navigacija" }).getByRole("link", { name: "Radovi uz mentora" }).click();
   await expect(page).toHaveURL(/\/aplikacija\/nastavnik\/mentorstva$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radovi uz mentora");
   // WEB-NF6-PREGLED: the title also stands in "Moji studenti", so the works list is named.
@@ -219,7 +219,9 @@ test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the
   await expect(page.locator("details", { hasText: "Prvi dolazak ili imate kod zadatka?" })).toHaveAttribute("open", "");
   await axe(page);
   expect(seen.login).toEqual([]);
-  expect(seen.me).toBe(0);
+  expect(seen.me).toBe(1); // KA-05-WEB: one read per visit, to skip the screen when signed in.
+  // KA-05-WEB: the footer of the concept, six links.
+  await expect(page.getByRole("contentinfo").getByRole("navigation").getByRole("link")).toHaveCount(6);
 
   await page.goto("/aplikacija/prijava?stanje=pomoc");
   await expect(page.locator("details", { hasText: "Trebate pomoć?" })).toHaveAttribute("open", "");
@@ -250,7 +252,36 @@ test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the
   await page.getByRole("link", { name: "Pokušaj ponovno" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/aplikacija/zadaci/kolegiji");
-  expect(errors).toEqual([]);
+  // A signed-out visitor's read of /me answers 401, which the browser logs; nothing else may be logged.
+  expect(errors.filter((e) => !e.includes("401 (Unauthorized)"))).toEqual([]);
+});
+
+test("/prijava is skipped when the session exists (KA-05-WEB)", async ({ page }) => {
+  await fakeServer(page, { status: 200, body: { role: "student", roles: ["student"], displayName: "Student Jedan" } });
+  await page.goto("/aplikacija/prijava");
+  await expect(page).toHaveURL((url) => url.pathname !== "/aplikacija/prijava");
+  await expect(page.getByText("Dobro došli")).toHaveCount(0);
+});
+
+// F4-STU-R01: the server returns a failed or refused sign-in to /prijava?greska=<code> at the ROOT.
+test("the root /prijava of the server's error codes reaches E-1 with the whole query", async ({ page }) => {
+  await fakeServer(page, { status: 401 });
+  const errors = errorsOf(page);
+  const cases: [string, RegExp][] = [
+    ["login_refused", /Prijava je odbijena/],
+    ["login_failed", /Prijava nije dovršena/],
+    ["provider_unavailable", /AAI@EduHr trenutačno ne odgovara|trenutačno ne odgovara/],
+  ];
+  for (const [code, heading] of cases) {
+    await page.goto(`/prijava?greska=${code}&returnTo=%2Fzadaci`, { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL((url) => url.pathname === "/aplikacija/prijava" && url.searchParams.get("greska") === code && url.searchParams.get("returnTo") === "/zadaci");
+    await expect(page.getByRole("main").getByRole("alert")).toContainText(heading);
+  }
+  // Without a code the root path still lands on the app's sign-in, with no query invented.
+  await page.goto("/prijava", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL((url) => url.pathname === "/aplikacija/prijava" && url.search === "");
+  // KA-05-WEB: the sign-in reads /me once per visit; a signed-out answer is a 401 the browser logs. Nothing else may be logged.
+  expect(errors.filter((e) => !e.includes("401 (Unauthorized)"))).toEqual([]);
 });
 
 test("an unanswering institution server shows a retry, not an empty app", async ({ page }) => {
@@ -304,7 +335,7 @@ test("a student's Ductus pages open at their addresses; the workspace without a 
   // Moji radovi is connected (HOST-S5): it reads an empty list.
   await page.route("**/api/v1/student/assignments", (route) => route.fulfill({ json: { courses: [] } }));
   await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({ json: { assignments: [] } }));
-  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Moji radovi" }).click();
+  await page.getByRole("navigation", { name: "Glavna navigacija" }).getByRole("link", { name: "Moji radovi" }).click();
   await expect(page).toHaveURL(/\/aplikacija\/zadaci\/radovi$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji radovi");
   expect(seen.me).toBe(1);
@@ -341,7 +372,7 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pravila fakulteta");
   await expect(page.getByText("Za ovu vrstu rada pravilo još nije objavljeno.")).toBeVisible();
   await axe(page);
-  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Korisnici" }).click();
+  await page.getByRole("navigation", { name: "Glavna navigacija" }).getByRole("link", { name: "Korisnici" }).click();
   await expect(page).toHaveURL(/\/aplikacija\/ustanova\/korisnici$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Korisnici");
   await expect(page.getByText("Ana Izmišljena")).toBeVisible();
@@ -349,7 +380,7 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   expect(seen.me).toBe(1);
   await page.goto("/aplikacija/ustanova");
   await expect(page.getByText("Potvrđeni nastavnici")).toBeVisible();
-  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Kolegiji" }).click();
+  await page.getByRole("navigation", { name: "Glavna navigacija" }).getByRole("link", { name: "Kolegiji" }).click();
   await expect(page).toHaveURL(/\/aplikacija\/ustanova\/kolegiji$/);
   await expect(page.getByText("Izmišljeni seminar")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Novi kolegij" })).toBeVisible();
@@ -462,9 +493,11 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   await expect(page.getByText("Trenutačno nema planiranih održavanja.")).toBeVisible();
   await expect(page.getByText("Nema zabilježenih prekida.")).toBeVisible();
   expect(seen.login).toEqual([]);
+  expect(seen.me).toBe(0);
   await axe(page);
   expect(errors).toEqual([]);
 
+  // KA-05-WEB: the sign-in reads the session once per visit (to skip itself when signed in); Stanje never does.
   await page.goto("/aplikacija/prijava?returnTo=%2Fzadaci%2Fkolegiji");
   await page.getByRole("link", { name: "Prijava sustavom AAI@EduHr" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
@@ -475,7 +508,7 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(seen.login).toHaveLength(2);
   expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/aplikacija/");
-  expect(seen.me).toBe(0);
+  expect(seen.me).toBe(2);
 });
 
 test("Stanje sustava has no horizontal scroll at 360 px", async ({ page }) => {

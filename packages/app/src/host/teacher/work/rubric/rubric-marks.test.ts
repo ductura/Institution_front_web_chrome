@@ -50,7 +50,10 @@ describe("marks model", () => {
     expect(isChanged(saved, 1, "")).toBe(true);
   });
   it("names no number, sum, grade or ranking", () => {
-    expect(JSON.stringify(rubricMarksHr)).not.toMatch(/ocjen|zbroj(?!\.)|bod(ov|a)?\b.*ukupn|rang|poredak/i);
+    // The heading "Kriteriji ocjenjivanja" is the one agreed name (V17); every other text stays free of grade words.
+    const { heading, ...rest } = rubricMarksHr;
+    expect(heading).toBe("Kriteriji ocjenjivanja");
+    expect(JSON.stringify(rest)).not.toMatch(/ocjen|zbroj(?!\.)|bod(ov|a)?\b.*ukupn|rang|poredak/i);
   });
 });
 

@@ -1,8 +1,6 @@
 import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr";
 
-import { appHref } from "../../../../../../src/components/shell/nav";
-
-import { EDGE_LINK } from "./edge";
+import { EDGE_DOWNLOADS_LINK, EDGE_HOME_LINK, EDGE_LINK } from "./edge";
 import { Mark } from "./Mark";
 import styles from "./SiteHeader.module.css";
 
@@ -13,14 +11,13 @@ const SECTIONS = [
   ["#nastavnik", t.forTeachers],
   ["#privatnost", t.privacy],
   ["#ustanove", t.forInstitutions],
-  ["#preuzmi", t.app],
 ] as const;
 
 /** The public header: mark and name on the left, the sections and sign-in on the right. */
-export function SiteHeader({ base }: { base: string }) {
+export function SiteHeader() {
   return (
     <header className={styles.header}>
-      <a className={styles.home} href={appHref(base, "/naslovnica")} aria-label={t.home}>
+      <a className={styles.home} {...EDGE_HOME_LINK} aria-label={t.home}>
         <Mark width={32} height={32} />
         {messagesHr.app.name}
       </a>
@@ -30,6 +27,9 @@ export function SiteHeader({ base }: { base: string }) {
             {label}
           </a>
         ))}
+        <a className={styles.section} {...EDGE_DOWNLOADS_LINK}>
+          {t.app}
+        </a>
         <a className={styles.signIn} {...EDGE_LINK}>
           {t.signIn}
         </a>

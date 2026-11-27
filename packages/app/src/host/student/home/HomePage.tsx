@@ -11,18 +11,24 @@ import { createApi, signInHref } from "../../../../../../src/client/api.ts";
 import { withMentoredAssignments } from "../../../../../../src/components/student/mentored-assignments.ts";
 
 import { nextPath, type Base } from "../../../bases";
+import { LoadAlert } from "../../states/States";
+import { StudentDenied } from "../read/denied";
 import { useHost } from "../../context";
-import { startWorkAction } from "../start-work/action";
 import { CodeCard, CodeForm } from "./CodeForm";
+import { DeadlinesExport } from "./DeadlinesExport";
 import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
 import { readHomeExtras, serverHistory } from "../courses/read";
-import { continueRow, coursesWithoutTask, deadlineTag, extensionLine, flatRows, nearTag, ORDERS, rowAction, rowRoute, sections, startsWork, submittedText, type Extras, type Order, type RowKind, type TaskRow } from "./model";
+import { continueRow, coursesWithoutTask, deadlineTag, extensionLine, flatRows, nearTag, ORDERS, rowAction, rowRoute, sections, submittedText, type Extras, type Order, type RowKind, type TaskRow } from "./model";
 
 const dueText = protoDateTime;
 
-function Row({ row, now, base, action }: { row: TaskRow; now: number; base: Base; action: ReturnType<typeof startWorkAction> }) {
+/**
+ * One primary button per row (STU-R07, P-13, PAR2-A4): "Započni rad" is not drawn here; it stays on the
+ * course's own task cards (E-3), and the row's one link leads to the task.
+ */
+export function Row({ row, now, base }: { row: TaskRow; now: number; base: Base }) {
   const { label, primary } = rowAction(row.kind);
   const near = row.kind === "predano" ? null : nearTag(row.dueAt, now);
   const deadline = deadlineTag(row, now);
@@ -35,7 +41,7 @@ function Row({ row, now, base, action }: { row: TaskRow; now: number; base: Base
         <span className={styles.eyebrow}>{row.course}</span>
         <span className={styles.title}>{row.title}</span>
         <span className={styles.when} id={whenId}>
-          {row.kind === "predano" ? <span>{submittedText(row, dueText)}</span> : <span>{(row.extended ? t.extendedDue : t.due).replace("{due}", dueText(row.dueAt))}</span>}
+          {row.kind === "predano" ? <span>{submittedText(row, dueText)}</span> : dueText(row.dueAt) === "" ? null : <span>{(row.extended ? t.extendedDue : t.due).replace("{due}", dueText(row.dueAt))}</span>}
           {near === null ? null : <Tag tone="warn">{near}</Tag>}
           {deadline === null ? null : <Tag tone={deadline.kind === "late" ? "warn" : "neutral"}>{deadline.text}</Tag>}
           {extension === null ? null : <span className={styles.meta}>{extension}</span>}
@@ -46,7 +52,6 @@ function Row({ row, now, base, action }: { row: TaskRow; now: number; base: Base
       <span className={styles.itemActions}>
         <a className={styles.open} data-tone={primary ? "primary" : "secondary"} aria-label={t.openFor.replace("{action}", label).replace("{title}", row.title)}
           aria-describedby={whenId} href={appHref(base, rowRoute(row))}>{label}</a>
-        {action}
       </span>
     </li>
   );
@@ -151,14 +156,10 @@ export function HomePage() {
         <p><a className="btn" href={signInHref(appHref(base, "/zadaci"))}>{t.signIn}</a></p>
       </div>
     );
-  } else if (read.kind === "unavailable") {
-    body = (
-      <div className={styles.card} role="alert">
-        <h2>{t.errorHeading}</h2>
-        <p className={styles.note}>{t.errorBody}</p>
-        <Button className={styles.start} onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button>
-      </div>
-    );
+  } else if (read.kind === "denied") body = <StudentDenied base={base} />;
+  else if (read.kind === "unavailable") {
+    // DIZ S-02 (Z4, K3): the alert frame with "Pokušaj ponovno" as the link under it.
+    body = <LoadAlert title={t.errorHeading} body={t.errorBody} retry={{ label: t.retry, onRetry: () => setAttempt((n) => n + 1) }} />;
   } else if (read.courses.length === 0) body = <Empty />;
   else {
     const rows = flatRows(read.courses, read.states, extras);
@@ -168,9 +169,9 @@ export function HomePage() {
       <>
         {current === null ? null : (
           <section className={styles.continue} aria-labelledby="po-n">
-            <span className={styles.eyebrow}>{current.typeLabel} · {current.course}</span>
+            <span className={styles.eyebrow}><span>{current.typeLabel}</span><span>{current.course}</span></span>
             <b id="po-n">{current.title}</b>
-            <span className={styles.meta}>{t.continueMeta.replace("{due}", dueText(current.dueAt))}</span>
+            <span className={`${styles.meta} ${styles.parts}`}><span>{t.continueMeta}</span>{dueText(current.dueAt) === "" ? null : <span>{t.due.replace("{due}", dueText(current.dueAt))}</span>}</span>
             <Button aria-label={t.openFor.replace("{action}", t.openWork).replace("{title}", current.title)}
               onClick={() => go(rowRoute(current))}>{t.openWork}</Button>
           </section>
@@ -184,12 +185,12 @@ export function HomePage() {
               {order === "rok" ? <h3 className={styles.groupHeading}>{t.sections[group.key]}</h3> : null}
               <ul className={styles.list}>
                 {group.rows.map((row) => (
-                  <Row key={row.id} row={row} now={now} base={base}
-                    action={startsWork(row.kind) ? startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false }) : null} />
+                  <Row key={row.id} row={row} now={now} base={base} />
                 ))}
               </ul>
             </div>
           ))}
+          <DeadlinesExport rows={rows} />
         </section>
         <CodeCard />
       </>

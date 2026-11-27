@@ -194,7 +194,7 @@ export function plan(wf, outputs) {
   const jobs = [];
   for (const [id, job] of Object.entries(wf.jobs)) {
     if (id === "ci-ok") continue;
-    const base = { needs: { changes: { outputs } }, github, matrix: {}, steps: {}, env: {} };
+    const base = { needs: { changes: { outputs } }, github, matrix: {}, steps: id === "changes" ? { paths: { outputs } } : {}, env: {} };
     const on = id === "changes" || job.if === undefined || truthy(evaluate(job.if, base));
     const { list, note } = localCombos(job.strategy);
     const runs = list.map((matrix) => {

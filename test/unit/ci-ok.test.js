@@ -331,7 +331,9 @@ test('every job except changes is gated by changes and needs it', () => {
   for (const [name, job] of Object.entries(jobsOf(workflow))) {
     if (name === 'changes' || REPORT_ONLY.includes(name)) continue;
     assert.ok(needsOf(job).includes('changes'), `${name} needs changes`);
-    if (name !== 'ci-ok') assert.equal(job.if, `\${{ needs.changes.outputs.${name} == 'true' }}`, name);
+    // CI-WEB-NOGE: app-build also runs for sistem, which downloads its build.
+    const alsoFor = name === 'app-build' ? " || needs.changes.outputs.sistem == 'true'" : '';
+    if (name !== 'ci-ok') assert.equal(job.if, `\${{ needs.changes.outputs.${name} == 'true'${alsoFor} }}`, name);
   }
 });
 
@@ -366,7 +368,7 @@ for (const [file, expected] of [['docs/x.md', ''], ['packages/ui/a.css', 'app,ui
     const outputs = changesFor([file]);
     assert.equal(on(outputs), expected);
     assert.equal(outputs.test, 'false', 'the job test is off, so only line-endings checks CRLF');
-    const results = Object.fromEntries(['test', 'ui', 'app-build', 'app'].map((j) => [j, outputs[j] === 'true' ? 'success' : 'skipped']));
+    const results = Object.fromEntries(['test', 'ui', 'app'].map((j) => [j, outputs[j] === 'true' ? 'success' : 'skipped']));
     assert.equal(run(withChanges(results, outputs)).code, 0, 'green with the check passing');
     const skippedAll = Object.fromEntries(Object.keys(results).map((j) => [j, 'skipped']));
     for (const r of ['failure', 'cancelled']) {
@@ -442,12 +444,18 @@ test('ui runs typecheck and unit tests in two blocking parts of its matrix', () 
   assert.ok(parts.includes('checks') && parts.includes('unit'), parts.join(','));
   assert.ok(needsOf(ciOk).includes('ui'), 'ci-ok needs ui');
   assert.equal(ui.strategy['fail-fast'], false);
-  const [typecheck] = uiStep(/^pnpm -r run typecheck$/);
+  const [typecheck] = uiStep(/^pnpm -r run typecheck --incremental --tsBuildInfoFile \.tsbuildinfo$/);
   const [unit] = uiStep(/^pnpm -r --filter "\$PACKAGES" --filter "!\{\.\}" run test$/);
   assert.equal(unit?.env?.PACKAGES, '${{ matrix.packages }}');
   const withPackages = ui.strategy.matrix.include.filter((p) => p.packages !== undefined);
-  assert.deepEqual(withPackages.map((p) => `${p.part}:${p.packages}`), ['checks:./src/**', 'unit:!./src/**'], 'checks runs src/, unit its complement');
-  assert.ok(withPackages.every((p) => p.leg === undefined), 'one part each, no legs');
+  // CI-WEB-NOGE: checks keeps the typecheck only; the unit tests are two legs,
+  // packages/app and its complement, so every package runs in exactly one leg.
+  assert.deepEqual(
+    withPackages.map((p) => `${p.part} ${p.leg}/${p.of}:${p.packages}`),
+    ['unit 1/2:./packages/app', 'unit 2/2:!./packages/app'],
+    'unit leg 1 runs packages/app, leg 2 its complement',
+  );
+  assert.equal(ui.strategy.matrix.include.find((p) => p.part === 'checks').packages, undefined, 'checks runs no unit tests');
   assert.equal(typecheck?.if, "matrix.part == 'checks'");
   assert.equal(unit?.if, 'matrix.packages');
   // CI-BRZINA: both axe shells run in one part; the light shell runs also
@@ -514,13 +522,16 @@ test('the client checks run in the ui part checks when changes says client', () 
   assert.equal(jobsOf(workflow).client, undefined, 'no separate client job');
 });
 
-// ZEL-CI-RED: the host is built once in app-build and every app shard starts
-// that build; no shard builds again.
-test('app shards download the one build of app-build', () => {
+// ZEL-CI-RED: the host is built once and every app shard starts that build;
+// no shard builds again. CI-RED-KARIKE: the build is a step of `changes`, not a
+// job of its own (one wait for a runner less), and runs only when app or
+// sistem needs it.
+test('app shards download the one build of changes', () => {
   const jobs = jobsOf(workflow);
-  const build = jobs['app-build'];
+  const build = jobs.changes;
   const app = jobs.app;
-  assert.deepEqual([...needsOf(app)].sort(), ['app-build', 'changes']);
+  assert.deepEqual(needsOf(app), ['changes']);
+  assert.equal(jobs['app-build'], undefined, 'no separate app-build job');
   const step = build.steps.find((s) => s.run === 'pnpm run build');
   assert.equal(step?.env?.INSTITUTION_SERVER_URL, 'http://127.0.0.1:9');
   const upload = build.steps.find((s) => String(s.uses).startsWith('actions/upload-artifact@'));
@@ -543,4 +554,32 @@ test('concurrency cancels older pull request and base runs, never main', () => {
   assert.match(cancel, /github\.event_name == 'pull_request'/);
   assert.match(cancel, /github\.ref == 'refs\/heads\/migracija\/kopija-ductus-front'/);
   assert.doesNotMatch(cancel, /refs\/heads\/main/);
+});
+
+// CI-WEB-NOGE: the system pass takes the build of changes instead of
+// building the host itself; the fake server URL baked into it is replaced.
+test('sistem downloads the build of changes and does not build again', () => {
+  const jobs = jobsOf(workflow);
+  assert.deepEqual(needsOf(jobs.sistem), ['changes']);
+  assert.equal(jobs.sistem.with?.build_artifact, true);
+  // Every step after the CRLF check is the build, on only when app or sistem
+  // needs it; the CRLF check itself has no if.
+  const steps = jobs.changes.steps;
+  const build = steps.slice(steps.findIndex((s) => String(s.run ?? '').includes('# line-endings:begin')) + 1);
+  assert.ok(build.some((s) => s.run === 'pnpm run build'), 'changes builds the host');
+  for (const s of build) {
+    const label = s.name ?? s.uses ?? s.run;
+    assert.match(String(s.if), /steps\.paths\.outputs\.app-build == 'true'/, label);
+    assert.match(String(s.if), /steps\.paths\.outputs\.sistem == 'true'/, label);
+  }
+  const sistem =jobsOf(workflowOf(readFileSync(new URL('sistem.yml', dir), 'utf8'))).sistem;
+  const download = sistem.steps.find((s) => String(s.uses).startsWith('actions/download-artifact@'));
+  assert.equal(download.with.name, 'app-build');
+  assert.equal(download.with.path, 'Institution_front_web_chrome/packages/app/.next');
+  assert.equal(download.if, '${{ inputs.build_artifact }}');
+  const patch = sistem.steps.find((s) => /routes-manifest/.test(s.run ?? ''));
+  assert.match(patch.run, /routes-manifest\.json/);
+  assert.match(patch.run, /exit 1/);
+  const front = sistem.steps.find((s) => /pnpm start/.test(s.run ?? ''));
+  assert.match(front.run, /if \[ "\$BUILD_ARTIFACT" != "true" \]; then pnpm build; fi/);
 });

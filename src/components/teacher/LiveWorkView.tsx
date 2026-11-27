@@ -17,7 +17,6 @@
  * not take away again.
  */
 
-import { Button } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
 import { browserTransport, SESSION_PATH } from "@/client/api";
@@ -27,6 +26,8 @@ import { sessionTagOf } from "@/components/editor/EditorPage.scope";
 import { WorkMentorSections } from "@/components/editor/mentor/milestones/WorkMentorSections";
 import { MentorWorkState } from "@/components/editor/mentor/work-state/MentorWorkState";
 import { editorPanelLayoutsHr, messagesHr } from "@/lib/i18n/messages.hr";
+
+import LoadAlert from "../shell/LoadAlert";
 
 import LiveText, { liveStopped, useLiveView } from "./LiveText";
 import LiveWorkFrame, { submissionHref, type LiveWorkFrameData } from "./LiveWorkFrame";
@@ -111,11 +112,7 @@ export default function LiveWorkView({ documentId, frame: given }: {
   const retry = () => { setSession(undefined); setAttempt((n) => n + 1); };
   const text = session === undefined
     ? <p role="status" className="manuscript__placeholder">{t.loading}</p>
-    : (
-      <>
-        <p role="alert">{tw.sessionUnavailable}</p>
-        <Button tone="quiet" onClick={retry}>{tw.retry}</Button>
-      </>
-    );
+    // Design alignment 27. 11. 2026. (N-10, P6): the alert box with the link "Pokušaj ponovno" under it, not a button.
+    : <LoadAlert retry={{ label: tw.retry, onRetry: retry }}>{tw.sessionUnavailable}</LoadAlert>;
   return <LiveWorkFrame documentId={documentId} frame={null} recordState={null} text={text} aside={<RecordLimits />} mentorInAside />;
 }

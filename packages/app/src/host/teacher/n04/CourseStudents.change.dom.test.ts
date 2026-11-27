@@ -4,6 +4,7 @@ import { act, createElement as h } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { BASE } from "../../../bases";
 import { HostContext, type HostValue } from "../../context";
 import CourseStudents from "./CourseStudents";
 import { courseStudentsMessages as t } from "./messages.hr";
@@ -12,7 +13,7 @@ import type { CourseStudentsPort, StudentChange } from "./model";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) { this.setAttribute("open", ""); };
 HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) { this.removeAttribute("open"); };
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: BASE, page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const STUDENTS = [{ studentId: "00000000-0000-4000-8000-0000000000b1", name: "Ana Šarić", group: null, works: [] }];
 
 describe("CourseStudents removal and return (F4-PM1-R09)", () => {
@@ -70,5 +71,23 @@ describe("CourseStudents removal and return (F4-PM1-R09)", () => {
   it("without a port change there are no buttons", async () => {
     await mount("done", false);
     expect(button(t.remove)).toBeUndefined();
+  });
+});
+
+describe("CourseStudents mounts the course's Asistent switch (F4-PM1-R07)", () => {
+  let root: Root | undefined;
+  afterEach(() => { act(() => root?.unmount()); document.body.innerHTML = ""; });
+  const roster = async () => ({ kind: "ready" as const, data: { courseName: "Izmišljeni kolegij", students: STUDENTS } });
+
+  it("shows the card with the server's state when a port is given, and not otherwise", async () => {
+    const assistant = { read: vi.fn(async () => ({ kind: "ready" as const, enabled: true })), write: vi.fn() };
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => { root?.render(h(HostContext.Provider, { value: HOST }, h(CourseStudents, { courseId: "c1", port: { read: roster }, assistant }))); });
+    expect(assistant.read).toHaveBeenCalledWith("c1");
+    expect(document.querySelector('[data-testid="course-assistant-state"]')).not.toBeNull();
+    await act(async () => { root?.render(h(HostContext.Provider, { value: HOST }, h(CourseStudents, { courseId: "c1", port: { read: roster } }))); });
+    expect(document.querySelector('[data-testid="course-assistant"]')).toBeNull();
   });
 });

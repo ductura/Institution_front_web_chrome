@@ -1,6 +1,8 @@
 /** WEB-2103 (paritet E-3/E-4): texts of the student's courses and works, as in INVENTAR-student.md. */
 export const coursesText = {
   signedOut: "Prijava nije valjana. Prijavite se ponovno.",
+  // Nacrt (DIZ S-04): the works page has its own wording, not the assignments one.
+  signedOutWorks: "Prijavite se da vidite svoje radove.",
   signIn: "Prijava sustavom AAI@EduHr",
   retry: "Pokušaj ponovno",
   loading: "Učitavanje…",
@@ -38,8 +40,9 @@ export const coursesText = {
   },
   openNamed: "{action}: {title}",
   notYet: "Podatak još nije dostupan.",
+  // PAR2-A3: the one map of the task row on E-2 and E-3; "Podnesak" as in the shared catalogue and the notice.
   workTypes: {
-    short_paper: "Kratki rad",
+    short_paper: "Podnesak",
     essay: "Esej",
     seminar_paper: "Seminarski rad",
     bachelor_thesis: "Završni rad",

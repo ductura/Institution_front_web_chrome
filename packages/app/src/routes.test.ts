@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH, ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
+import { SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH, ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole, browserRoute, hostRoute } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the app under /aplikacija only (D-318)", () => {
@@ -15,6 +15,33 @@ describe("baseOf and routeOf", () => {
     expect(routeOf("/aplikacija", "/aplikacija")).toBe("/");
     expect(routeOf("/aplikacija/zadaci/kolegiji/", "/aplikacija")).toBe("/zadaci/kolegiji");
     expect(routeOf("/aplikacija/ustanova", "/aplikacija")).toBe("/ustanova");
+  });
+});
+
+describe("browserRoute and hostRoute (edge addresses, D-318)", () => {
+  it("reads the edge's addresses as the front's routes", () => {
+    expect(browserRoute("/", "/aplikacija")).toBe("/naslovnica");
+    expect(browserRoute("/pomoc", "/aplikacija")).toBe("/pomoc");
+    expect(browserRoute("/stanje/", "/aplikacija")).toBe("/stanje");
+    expect(browserRoute("/aplikacija", "/aplikacija")).toBe("/");
+    expect(browserRoute("/aplikacija/", "/aplikacija")).toBe("/");
+    expect(browserRoute("/aplikacija/zadaci/kolegiji", "/aplikacija")).toBe("/zadaci/kolegiji");
+    expect(browserRoute("/aplikacijax", "/aplikacija")).toBe("/aplikacijax");
+  });
+
+  it("keeps the landing page public at the edge's root", () => {
+    expect(publicPage(browserRoute("/", "/aplikacija"))?.path).toBe("/naslovnica");
+  });
+
+  it("uses Next's path under the base and the browser's address otherwise", () => {
+    // Server render: the path the edge rewrote to; no browser address.
+    expect(hostRoute("/naslovnica", null, "/aplikacija")).toBe("/naslovnica");
+    // Hydration at "/": the address is outside the basePath, so it decides.
+    expect(hostRoute("/", "/", "/aplikacija")).toBe("/naslovnica");
+    expect(hostRoute("/pomoc", "/pomoc", "/aplikacija")).toBe("/pomoc");
+    // A page under the base: Next's pathname, as before.
+    expect(hostRoute("/zadaci", "/aplikacija/zadaci", "/aplikacija")).toBe("/zadaci");
+    expect(hostRoute("/", "/aplikacija", "/aplikacija")).toBe("/");
   });
 });
 

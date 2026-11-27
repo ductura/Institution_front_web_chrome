@@ -15,6 +15,7 @@ import { coursesText as t } from "./messages.hr";
 import { effectiveDue, matchesState, rowKind, STATE_FILTERS, stateFilterOf, submittedLine, type StateFilter } from "./model";
 import { EnrollLink, Frame, State, TaskItem, useExtensions, whenHr, yearLabel } from "./CoursesPages";
 import { readCourses, type CoursesCall } from "./read";
+import MyNumbers from "../my-numbers/MyNumbers";
 import own from "./courses.module.css";
 import { createApi } from "../../../../../../src/client/api.ts";
 import { useSearchParams } from "next/navigation";
@@ -52,7 +53,7 @@ export function MyWorksPage({ filter }: { filter: WorksFilter }) {
   const now = new Date();
   return (
     <Frame title={w.title} lede={w.lede}>
-      <State read={read} retry={retry} here="/zadaci/radovi" base={base} />
+      <State read={read} retry={retry} here="/zadaci/radovi" base={base} signedOut={t.signedOutWorks} />
       {ready && items.length === 0 ? (
         <section className={`${own.card} ${own.center}`} aria-labelledby="radovi-prazno">
           <h2 id="radovi-prazno">{w.emptyHeading}</h2>
@@ -79,12 +80,17 @@ export function MyWorksPage({ filter }: { filter: WorksFilter }) {
                 const due = effectiveDue(item.dueAt, item.extendedDueAt);
                 const text = kind === "submitted" ? submittedLine(submitted, whenHr) : kind === "notice" ? STATE_TEXT.notice
                   : item.state === null || item.state === "submitted" ? null : STATE_TEXT[item.state];
-                const course = item.academicYear === "" ? item.courseName : `${item.courseName} · ${yearLabel(item.academicYear)}`;
+                const course = (
+                  <>
+                    <span>{item.courseName}</span>
+                    {item.academicYear === "" ? null : <span>{yearLabel(item.academicYear)}</span>}
+                  </>
+                );
                 const a = { id: item.assignmentId, title: item.title, dueAt: item.dueAt, extendedDueAt: item.extendedDueAt, noticeFirst: item.noticeFirst };
                 const line = (
                   <>
                     {text === null ? null : <span>{text}</span>}
-                    {kind === "submitted" ? null : <span>{`Rok ${whenHr(due)}`}</span>}
+                    {kind === "submitted" || whenHr(due) === "" ? null : <span>{`Rok ${whenHr(due)}`}</span>}
                   </>
                 );
                 return <TaskItem key={item.assignmentId} a={a} course={course} kind={kind} now={now} line={line}
@@ -94,6 +100,8 @@ export function MyWorksPage({ filter }: { filter: WorksFilter }) {
           )}
         </>
       ) : null}
+      {/* F4-PM2-R20 (M7.13): the student's own figures, from saved versions. */}
+      {ready && items.length > 0 ? <MyNumbers here="/zadaci/radovi" /> : null}
     </Frame>
   );
 }

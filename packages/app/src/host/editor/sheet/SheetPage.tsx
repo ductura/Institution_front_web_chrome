@@ -1,6 +1,6 @@
 "use client";
 
-// WEB-V14-SHEET-PAGE: the work page of a spreadsheet work, mounted by host/student/work.tsx (one branch on the
+// WEB-V14-SHEET-PAGE: the work page of a spreadsheet work, mounted by host/student/WorkEditorPage.tsx (one branch on the
 // kind, see kind-port.ts). The document comes from the journal (SheetSaver over the verified opening), every change
 // of the grid is turned into steps of ductus-sheet-steps-v1 and recorded, and the status bar claims only the state
 // the session reached: SYNCED only after a drain step whose receipt the runner verified in this page session.
@@ -28,6 +28,7 @@ import type { QueuedTransaction } from "../../../../../editor-core/src/sync/jour
 import { createDrainRunner, type DrainJournal, type DrainRunner } from "../../../../../editor-core/src/sync/runner/drain-runner.ts";
 import { createEvidenceTransport, evidenceVerifierFor } from "../../../../../editor-core/src/sync/runner/evidence-transport.ts";
 import type { SyncState } from "../../../../../editor-core/src/sync/states.ts";
+import { LoadAlert } from "../../states/States";
 import SheetExport from "../sheet-export/SheetExport";
 import { SheetGrid } from "./SheetGrid";
 import { sheetPageHr as t } from "./messages.hr";
@@ -408,7 +409,7 @@ export function SheetPage({ unreadable, ...frame }: Frame & { unreadable: boolea
     return (
       <EditorPage course={frame.course} title={frame.title} topBar={frame.topBar} status={<StatusBar save={null} readOnly={false} length={frame.length} />}>
         <Card title={t.kindUnavailableTitle}>
-          <p role="alert">{t.kindUnavailableBody}</p>
+          <LoadAlert body={t.kindUnavailableBody} />
           <Button tone="secondary" onClick={frame.onRetry}>{t.retry}</Button>
         </Card>
       </EditorPage>
@@ -437,7 +438,7 @@ function Body({ session, retry, assignmentId, title }: { session: SheetSession; 
     case "signed-out": return <Card title={t.signedOutTitle}><p role="status">{t.signedOutBody}</p></Card>;
     case "unavailable": return (
       <Card title={t.unavailableTitle}>
-        <p role="alert">{t.unavailableBody}</p>
+        <LoadAlert body={t.unavailableBody} />
         <Button tone="secondary" onClick={retry}>{t.retry}</Button>
       </Card>
     );

@@ -12,6 +12,8 @@ export type ExportRead =
   /** 409: fewer responses than the least number the export holds. */
   | { readonly kind: "tooFew" }
   | { readonly kind: "notFound" }
+  /** 403: the role may not see this view (V18 F14: its own state, not "not found"). */
+  | { readonly kind: "denied" }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
 export type TitleRead =
@@ -22,7 +24,8 @@ export type TitleRead =
 
 const SIGNED_OUT: ReadonlySet<string> = new Set(["unauthorized", "session_expired"]);
 const signedOut = (r: { readonly code: string }) => SIGNED_OUT.has(r.code);
-const notFound = (r: { readonly status: number; readonly code: string }) => r.status === 404 || r.status === 403 || r.code === "not_found" || r.code === "forbidden";
+const denied = (r: { readonly status: number; readonly code: string }) => r.status === 403 || r.code === "forbidden";
+const notFound = (r: { readonly status: number; readonly code: string }) => r.status === 404 || r.code === "not_found";
 
 /** The client rejects when the connection drops or the body cannot be read. */
 async function attempt<T>(run: () => Promise<T>): Promise<T | null> {
@@ -39,6 +42,7 @@ export async function readExport(call: Api, questionnaireId: string, includeText
   if (r === null) return { kind: "unavailable" };
   if (!r.ok) {
     if (signedOut(r)) return { kind: "signedOut" };
+    if (denied(r)) return { kind: "denied" };
     if (notFound(r)) return { kind: "notFound" };
     return r.status === 409 || r.code === "conflict" ? { kind: "tooFew" } : { kind: "unavailable" };
   }
@@ -50,6 +54,6 @@ export async function readExport(call: Api, questionnaireId: string, includeText
 export async function readTitle(call: Api, questionnaireId: string): Promise<TitleRead> {
   const r = await attempt(() => call("teacher.questionnaire.get", { params: { id: questionnaireId }, query: undefined, body: undefined }));
   if (r === null) return { kind: "unavailable" };
-  if (!r.ok) return signedOut(r) ? { kind: "signedOut" } : notFound(r) ? { kind: "notFound" } : { kind: "unavailable" };
+  if (!r.ok) return signedOut(r) ? { kind: "signedOut" } : notFound(r) || denied(r) ? { kind: "notFound" } : { kind: "unavailable" };
   return { kind: "ok", title: r.body.title };
 }

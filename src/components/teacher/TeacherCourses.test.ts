@@ -14,7 +14,7 @@ import TeacherCourses from "./TeacherCourses";
 // Invented courses and assignments only.
 const t = messagesHr.teacherCourses;
 // DAN-386: every listed work ends with a link to its own language.
-const L = ` · ${messagesHr.teacher.workLanguageException.link}`;
+const L = ` ${messagesHr.teacher.workLanguageException.link}`;
 const assignment = (id: string, title: string, dueAt: string, enrolledStudents: number) => ({
   id, title, workType: "seminar_paper", opensAt: "2026-10-01T07:00:00.000Z", dueAt, currentVersion: 1, enrolledStudents,
 });
@@ -58,25 +58,31 @@ describe("TeacherCourses (Z3 A)", () => {
     expect(shown).toContain("rok 31. listopada 2026. u 23:59");
     expect(shown).toContain("rok 14. studenoga 2026. u 23:59");
     expect(shown).toContain("2026./2027.");
-    expect(shown).toContain("Seminarski rad ·");
+    expect(shown).toContain("Seminarski rad rok");
   });
 
-  it("offers a new course when there is none, and nothing else", () => {
+  // Design alignment 27. 11. 2026.: the faculty administrator creates a course.
+  it("says who creates a course when there is none, and offers no course of the teacher's own", () => {
     const html = render([]);
     expect(text(html)).toContain(t.empty);
-    expect(html).toContain('href="/nastavnik/zadatak/novi"');
+    expect(text(html)).toContain(t.emptyBody);
+    expect(text(html)).toContain(t.emptyNext);
+    expect(html).not.toContain('href="/nastavnik/zadatak/novi"');
     expect(text(html)).not.toContain(t.countNote);
   });
 
-  // DAN-1082 (owner, Z-01): the same button, text and route, in both states of the list.
-  it("offers a new course above a populated list too, with the same text and route", () => {
-    for (const courses of [[], COURSES]) {
-      const html = render(courses);
-      expect(html.match(/href="\/nastavnik\/zadatak\/novi"/g)).toHaveLength(1);
-      expect(html).toContain(`href="/nastavnik/zadatak/novi">${t.newCourse}</a>`);
-    }
+  // DAN-1082 (owner, Z-01): the button above a populated list keeps its text and route.
+  it("offers a new assignment above a populated list, with the same text and route", () => {
     const html = render(COURSES);
+    expect(html.match(/href="\/nastavnik\/zadatak\/novi"/g)).toHaveLength(1);
+    expect(html).toContain(`href="/nastavnik/zadatak/novi">${t.newCourse}</a>`);
     expect(html.indexOf("/nastavnik/zadatak/novi")).toBeLessThan(html.indexOf("Kolegij A"));
+  });
+
+  it("joins no part of a row with a dot", () => {
+    const works = { "00000000-0000-4000-8000-0000000000a2": [row("00000000-0000-4000-8000-0000000000e1", "d", false)] };
+    const html = render(COURSES, works, { "00000000-0000-4000-8000-0000000000a2": ["00000000-0000-4000-8000-0000000000e1"] });
+    expect(html).not.toContain("\u00b7");
   });
 
   it("links every work of an assignment to its live view, numbered in the order read, with no student id", () => {
@@ -91,7 +97,7 @@ describe("TeacherCourses (Z3 A)", () => {
     expect(html).toContain('href="/nastavnik/rad/izmisljeni-rad-b"');
     expect(html).toContain('href="/nastavnik/rad/izmisljeni%20rad%2Fa"');
     expect(html.indexOf("izmisljeni-rad-b")).toBeLessThan(html.indexOf("izmisljeni%20rad"));
-    expect(text(html)).toContain(`${t.work} 1 · ${t.submission.none}${L} ${t.work} 2 · ${t.submission.none}${L}`);
+    expect(text(html)).toContain(`${t.work} 1 ${t.submission.none}${L} ${t.work} 2 ${t.submission.none}${L}`);
     expect(text(html)).toContain(t.noWorks);
     expect(html).not.toContain(STUDENT);
   });
@@ -113,14 +119,14 @@ describe("TeacherCourses (Z3 A)", () => {
     const A1 = "00000000-0000-4000-8000-0000000000a1";
     const A2 = "00000000-0000-4000-8000-0000000000a2";
     const E = (n: number) => `00000000-0000-4000-8000-0000000000e${n}`;
-    const items = (html: string) => [...html.matchAll(/<li>(.*?)<\/li>/g)].map((m) => text(m[1]!).trim());
+    const items = (html: string) => [...html.matchAll(/<li(?![^>]*assignment)[^>]*>(.*?)<\/li>/g)].map((m) => text(m[1]!).trim());
 
     it("A1: says on time, after the deadline or not submitted beside each work, in the order read", () => {
       const html = render(COURSES, { [A2]: [row(E(1), "rad-1", false), row(E(2), "rad-2", true), row(E(3), "rad-3")] });
       expect(items(html)).toEqual([
-        `${t.work} 1 · ${t.submission.onTime}${L}`,
-        `${t.work} 2 · ${t.submission.afterDeadline}${L}`,
-        `${t.work} 3 · ${t.submission.none}${L}`,
+        `${t.work} 1 ${t.submission.onTime}${L}`,
+        `${t.work} 2 ${t.submission.afterDeadline}${L}`,
+        `${t.work} 3 ${t.submission.none}${L}`,
       ]);
       expect(html.indexOf("rad-1")).toBeLessThan(html.indexOf("rad-2"));
       expect(html.indexOf("rad-2")).toBeLessThan(html.indexOf("rad-3"));
@@ -138,14 +144,14 @@ describe("TeacherCourses (Z3 A)", () => {
       expect(text(render(COURSES, { [A2]: [row(E(1), null), row(E(2), null, false)], [A1]: [] })))
         .toContain(`${t.noWorks} `);
       expect(items(render(COURSES, { [A2]: [row(E(1), "rad-1"), row(E(2), null), row(E(3), "rad-3", true)] }))).toEqual([
-        `${t.work} 1 · ${t.submission.none}${L}`,
-        `${t.work} 2 · ${t.submission.afterDeadline}${L}`,
+        `${t.work} 1 ${t.submission.none}${L}`,
+        `${t.work} 2 ${t.submission.afterDeadline}${L}`,
       ]);
     });
 
     it("A5: after the deadline is said only of a submitted work", () => {
       const odd = { ...row(E(1), "rad-1"), afterDeadline: true };
-      expect(items(render(COURSES, { [A2]: [odd] }))).toEqual([`${t.work} 1 · ${t.submission.none}${L}`]);
+      expect(items(render(COURSES, { [A2]: [odd] }))).toEqual([`${t.work} 1 ${t.submission.none}${L}`]);
     });
 
     it("A6: shows no student id, revision, minute, tone or colour beside the state", () => {
@@ -158,7 +164,7 @@ describe("TeacherCourses (Z3 A)", () => {
 
     it("A7: the state of one assignment never moves to another", () => {
       const html = render(COURSES, { [A2]: [row(E(1), "rad-a2", true)], [A1]: [row(E(1), "rad-a1")] });
-      expect(items(html)).toEqual([`${t.work} 1 · ${t.submission.afterDeadline}${L}`, `${t.work} 1 · ${t.submission.none}${L}`]);
+      expect(items(html)).toEqual([`${t.work} 1 ${t.submission.afterDeadline}${L}`, `${t.work} 1 ${t.submission.none}${L}`]);
       expect(html.indexOf("rad-a2")).toBeLessThan(html.indexOf("rad-a1"));
     });
 
@@ -171,14 +177,14 @@ describe("TeacherCourses (Z3 A)", () => {
     const A1 = "00000000-0000-4000-8000-0000000000a1";
     const A2 = "00000000-0000-4000-8000-0000000000a2";
     const E = (n: number) => `00000000-0000-4000-8000-0000000000e${n}`;
-    const items = (html: string) => [...html.matchAll(/<li>(.*?)<\/li>/g)].map((m) => text(m[1]!).trim());
+    const items = (html: string) => [...html.matchAll(/<li(?![^>]*assignment)[^>]*>(.*?)<\/li>/g)].map((m) => text(m[1]!).trim());
     const works = { [A2]: [row(E(1), "rad-1", false), row(E(2), "rad-2"), row(E(3), "rad-3", true)] };
 
     it("M1: says beside a marked work that it is marked, after its state, and nothing beside the others", () => {
       expect(items(render(COURSES, works, { [A2]: [E(2)] }))).toEqual([
-        `${t.work} 1 · ${t.submission.onTime}${L}`,
-        `${t.work} 2 · ${t.submission.none} · ${t.accommodation}${L}`,
-        `${t.work} 3 · ${t.submission.afterDeadline}${L}`,
+        `${t.work} 1 ${t.submission.onTime}${L}`,
+        `${t.work} 2 ${t.submission.none} ${t.accommodation}${L}`,
+        `${t.work} 3 ${t.submission.afterDeadline}${L}`,
       ]);
     });
 
@@ -187,7 +193,7 @@ describe("TeacherCourses (Z3 A)", () => {
       expect(text(html)).toContain(t.accommodationsUnavailable);
       expect(html.split(t.accommodationsUnavailable).length - 1).toBe(1);
       expect(html).toMatch(/<p[^>]*role="status"[^>]*>Oznake/);
-      expect(text(html)).not.toContain(` · ${t.accommodation}`);
+      expect(text(html)).not.toContain(` ${t.accommodation}`);
       expect(items(html)).toHaveLength(3);
     });
 
@@ -205,7 +211,7 @@ describe("TeacherCourses (Z3 A)", () => {
     it("M4: a mark never moves to another assignment or to a student without a work", () => {
       const html = render(COURSES, { [A2]: [row(E(1), "rad-a2"), row(E(2), null)], [A1]: [row(E(1), "rad-a1")] },
         { [A1]: [E(1), E(2)], [A2]: [] });
-      expect(items(html)).toEqual([`${t.work} 1 · ${t.submission.none}${L}`, `${t.work} 1 · ${t.submission.none} · ${t.accommodation}${L}`]);
+      expect(items(html)).toEqual([`${t.work} 1 ${t.submission.none}${L}`, `${t.work} 1 ${t.submission.none} ${t.accommodation}${L}`]);
     });
 
     it("M5: shows only that the work is marked: no student id, reason, tone or colour", () => {

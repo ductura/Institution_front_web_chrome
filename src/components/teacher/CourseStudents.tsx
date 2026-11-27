@@ -9,6 +9,8 @@ import { courseStudentsHr as t } from "../../lib/i18n/messages.hr";
 import { isDocumentId } from "../../../packages/editor-core/src/document/collaboration/comment";
 import { compareHr } from "../../../packages/editor-core/src/document/text/compare-hr";
 
+import LoadAlert from "../shell/LoadAlert";
+
 import styles from "./kolegiji/CourseCodes.module.css";
 
 // TODO(ugovor): the WEB-30 roster has assignmentId and state. The course
@@ -70,7 +72,9 @@ function StudentRows({ students }: { students: readonly RosterStudent[] }) {
       <ul className={styles.list} role="list">
         {visible.map((student) => (
           <li key={student.studentId} style={{ borderBlockEnd: "1px solid var(--rule)", paddingBlockEnd: 12 }}>
-            <p><strong>{student.name ?? t.noName}</strong>{student.group && ` · ${student.group}`}</p>
+            <p style={{ display: "flex", flexWrap: "wrap", columnGap: 12 }}>
+              <strong>{student.name ?? t.noName}</strong>{student.group && <span>{student.group}</span>}
+            </p>
             {student.works.length === 0 && <p className={styles.note}>{t.noWorks}</p>}
             {student.works.map((work) => {
               const href = seminarHref(work);
@@ -96,10 +100,7 @@ export default function CourseStudents({ result }: { result: RosterResult }) {
       <h1>{courseTitle ? t.courseTitle.replace("{course}", () => courseTitle) : t.title}</h1>
       {result.kind === "loading" && <Skeleton label={t.loading} />}
       {result.kind === "unavailable" && (
-        <div>
-          <p role="alert">{t.unavailable}</p>
-          <a href={result.retryHref}>{t.retry}</a>
-        </div>
+        <LoadAlert retry={{ label: t.retry, href: result.retryHref }}>{t.unavailable}</LoadAlert>
       )}
       {result.kind === "ready" && (result.students.length === 0 ? (
         <div>

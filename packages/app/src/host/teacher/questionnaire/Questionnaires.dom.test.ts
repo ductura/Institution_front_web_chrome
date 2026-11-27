@@ -100,7 +100,8 @@ describe("questionnaire panel", () => {
     const out = vi.fn();
     await show(fake({ list: async () => ({ kind: "signedOut" }) }), out);
     expect(out).toHaveBeenCalled();
-    expect(host!.textContent).toContain(text.signedOut);
+    expect(host!.textContent).not.toContain(text.signedOut);
+    expect(host!.querySelector("[role=alert]")).toBeNull();
     expect([...host!.querySelectorAll("button")].some((b) => b.textContent === text.retry)).toBe(false);
   });
 

@@ -14,9 +14,9 @@ const running = (w, files) => plan(w, decide(w, files)).filter((j) => j.on).map(
 // Three kinds of change, as in the PR body.
 const cases = [
   [['docs/x.md'], 'changes'],
-  [['src/components/editor/a.tsx'], 'app,app-build,changes,test,ui'],
+  [['src/components/editor/a.tsx'], 'app,changes,test,ui'],
   [['catalog/src/a.ts'], 'changes,ui,ui-baselines'],
-  [['src/client/api.ts'], 'app,app-build,changes,ui'],
+  [['src/client/api.ts'], 'app,changes,ui'],
 ];
 for (const [files, expected] of cases) {
   test(`ci:local: ${files.join(', ')} runs [${expected}]`, () => {
@@ -40,7 +40,7 @@ test('ci:local: every check step of a needed job is in the plan; only runner set
   const jobs = plan(wf, decide(wf, ['any'], { event: 'workflow_dispatch' }));
   const ui = jobs.find((j) => j.id === 'ui');
   const names = ui.runs.flatMap((r) => r.steps.filter((s) => s.kind === 'check').map((s) => `${r.name} > ${s.name}`));
-  for (const want of ['ui (checks) > Typecheck', 'ui (checks) > Unit tests', 'ui (unit) > Unit tests', 'ui (behaviour 3/3) > Behaviour tests', 'ui (axe) > Axe tests of the catalogue (dark shell)', 'ui (axe) > Axe tests of the catalogue (light shell)']) {
+  for (const want of ['ui (checks) > Typecheck', 'ui (unit 1/2) > Unit tests', 'ui (unit 2/2) > Unit tests', 'ui (behaviour 3/3) > Behaviour tests', 'ui (axe) > Axe tests of the catalogue (dark shell)', 'ui (axe) > Axe tests of the catalogue (light shell)']) {
     assert.ok(names.some((n) => n.startsWith(want)), want);
   }
   const setup = jobs.flatMap((j) => j.runs.flatMap((r) => r.steps.filter((s) => s.kind === 'setup').map((s) => s.name)));

@@ -44,7 +44,7 @@ test("the operator lands on its own page from the app's home, inside the shell",
   await page.goto("/aplikacija/");
   await expect(page).toHaveURL(/\/aplikacija\/operater\/mjerila-pilota$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mjerila pilota");
-  await expect(page).toHaveTitle("Mjerila pilota · Ductura");
+  await expect(page).toHaveTitle("Mjerila pilota, Ductura");
   await expect(page.getByRole("complementary", { name: "Bočna navigacija" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Odjava" })).toBeVisible();
   await expect(page.getByText("Ovaj račun još nema ulogu", { exact: false })).toHaveCount(0);

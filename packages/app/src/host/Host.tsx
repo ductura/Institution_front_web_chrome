@@ -10,8 +10,8 @@ import { HOW_IT_WORKS_HREF, homeHref, navFor } from "../../../../src/components/
 import ErrorScreen from "../../../../src/components/shell/ErrorScreen.ts";
 import { goToSignIn, readSession, type SessionRead } from "../../../../src/client/api.ts";
 
-import { BASE_PATH, nextPath, type Base } from "../bases";
-import { internalRoute, publicPage, resolve, routeOf, shellRole } from "../routes";
+import { nextPath, type Base } from "../bases";
+import { browserRoute, hostRoute, internalRoute, publicPage, resolve, shellRole } from "../routes";
 import { navLabel, useLocale } from "../i18n";
 import { isNarrow, withoutShell } from "./ljuska-po-ekranu";
 import { HostContext } from "./context";
@@ -23,6 +23,8 @@ import { StudentToasts } from "./student/toast/StudentToasts";
 import { NoRoleScreen } from "./signin/SignInScreen";
 import ShellNotifications from "./shell/notifications/ShellNotifications";
 import { shellMessagesFor } from "./teacher/shell/messages";
+import { documentTitle } from "./states/document-title";
+import { PageTitleContext, headingFor } from "./page-title";
 
 /**
  * The institution front (#2028 c.6993786629 §3.3), as the layout of
@@ -33,8 +35,14 @@ import { shellMessagesFor } from "./teacher/shell/messages";
  * Next router, without a reload.
  */
 export default function Host({ base, children }: { base: Base; children: ReactNode }) {
+  const [detail, setDetail] = useState<string | null>(null);
+  return <PageTitleContext value={setDetail}><HostInner base={base} detail={detail}>{children}</HostInner></PageTitleContext>;
+}
+
+function HostInner({ base, detail, children }: { base: Base; detail: string | null; children: ReactNode }) {
   const router = useRouter();
-  const route = routeOf(`${BASE_PATH}${usePathname()}`, base);
+  // An edge address ("/", "/pomoc", D-318) is read from the browser (hostRoute).
+  const route = hostRoute(usePathname(), typeof window === "undefined" ? null : window.location.pathname, base);
   const open = publicPage(route);
   const [session, setSession] = useState<SessionRead | null>(null);
   const catalogues = useLocale();
@@ -43,7 +51,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   const load = useCallback(() => {
     setSession(null);
     void readSession().then((read) => {
-      if (read.kind === "signedOut") goToSignIn(appHref(base, routeOf(window.location.pathname, base)));
+      if (read.kind === "signedOut") goToSignIn(appHref(base, browserRoute(window.location.pathname, base)));
       setSession(read);
     });
   }, [base]);
@@ -90,8 +98,8 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
     const shown = open ?? (resolved?.kind === "page" ? resolved.page : null);
     const page = shown === null ? null : navLabel(shown, role, { ...catalogues, t: shellMessagesFor(t, role) });
     // WCAG 2.4.2: a path no page has keeps a title of its own too, the error's heading.
-    const heading = page ?? (resolved?.kind === "notFound" ? t.errorPage.notFoundTitle : null);
-    const title = heading === null ? t.app.name : `${heading} · ${t.app.name}`;
+    const heading = headingFor(shown?.path ?? null, page) ?? (resolved?.kind === "notFound" ? t.errorPage.notFoundTitle : null);
+    const title = documentTitle(detail ?? heading, t.app.name);
     // WCAG 2.4.2 (WEB-1805): Next streams the root layout's title after hydration on
     // public pages and on pages with async params, and would put back the bare app name.
     const keep = () => {
@@ -101,7 +109,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
     const watch = new MutationObserver(keep);
     watch.observe(document.head, { childList: true, subtree: true, characterData: true });
     return () => watch.disconnect();
-  }, [open, resolved, role, catalogues, t]);
+  }, [open, resolved, role, catalogues, t, detail]);
 
   if (open !== null) return <HostContext value={{ base, page: open, role: null }}>{children}</HostContext>;
 
@@ -125,7 +133,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
           role={role}
           name={t.app.name}
           homeHref={link(homeHref(role))}
-          homeLabel={ui.sideShell.home[role ?? "none"]}
+          homeLabel={{ student: hostText.homeLabelStudent, teacher: hostText.homeLabelTeacher, admin: hostText.homeLabelAdmin, none: ui.sideShell.home.none }[role ?? "none"]}
           sideLabel={shellText.shell.sideNav}
           navLabel={shellText.shell.workNav}
           items={navFor(role, shellText).map((item) => ({ href: link(item.href), label: item.label }))}

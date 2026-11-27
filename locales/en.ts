@@ -22,7 +22,7 @@ const en = {
   },
   shell: {
     skipToContent: "Skip to content",
-    demoBadge: "Demo · invented data",
+    demoBadge: "Demo, invented data",
     // Design v3 shell (#476 6314969336): only static labels and the role the
     // server read; no names or counts the app does not have.
     sideNav: "Side navigation",
@@ -723,7 +723,8 @@ const en = {
     lead: "Courses you teach and their assignments. Order: academic year, then name; assignments by deadline.",
     newCourse: "New course and assignment",
     empty: "You have no courses that you teach.",
-    emptyLead: "Create a course and publish the first assignment.",
+    emptyBody: "A course is created by the faculty administrator, who assigns it to its holder. Once you are added to a course, it appears here.",
+    emptyNext: "If you need a new course, contact your faculty administrator.",
     noAssignments: "No assignments yet.",
     unavailable: "Courses are not available right now. Please try again.",
     retry: "Try again",
@@ -750,7 +751,7 @@ const en = {
   mentoredWorks: {
     title: "Works you mentor",
     lead: "Bachelor's, master's and other theses you mentor. This view only reads; it changes nothing.",
-    listTitle: "Works · alphabetical",
+    listTitle: "Works, alphabetical",
     orderNote: "The list cannot be ordered by numbers.",
     empty: "You have no mentorships",
     emptyHint: "A mentorship begins when you approve a student's request.",
@@ -780,7 +781,7 @@ const en = {
     // #757 D1, za potvrdu: a student whose account has no name; never a number or an address.
     unnamed: "Name not available",
     studentsLabel: "Students",
-    studentsTitle: "Students · by surname",
+    studentsTitle: "Students, by surname",
     // #732 item 18, design pregled-radova-v2 (D-80): the list has no order by numbers.
     orderNote: "The list cannot be ordered by numbers.",
     work: {

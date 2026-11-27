@@ -26,8 +26,9 @@ jobs:
   # file included), or a diff that cannot be read, runs EVERY job. Otherwise a
   # job runs when a path it reads changed. src/ feeds ui (pnpm -r runs the
   # tests of every workspace package) and app (it imports src/), so a change
-  # there runs both. `app-build` follows `app`; the client checks run in the
-  # ui part `checks` and every path of `client` also turns `ui` on.
+  # there runs both. The build steps of this job (`app-build`) follow `app`
+  # and `sistem`; the client checks run in the ui part `checks` and every path
+  # of `client` also turns `ui` on.
   # `baselines` (report only, outside ci-ok) is on for a push, a run by hand
   # and the schedule (main only). On a pull request it is on only when the
   # pull request changes the catalogue or packages/ui/, what the baselines
@@ -48,7 +49,7 @@ jobs:
   # and ci-ok fails ("job changes result: failure").
   changes:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     permissions:
       contents: read
     outputs:
@@ -115,6 +116,40 @@ jobs:
           set -euo pipefail
           node --test test/unit/gitattributes.test.js
           # line-endings:end
+      # The host build for the app shards and the system pass, in this job
+      # since CI-RED-KARIKE (Daniel 27. 11. 2026: CI waits for runners, not
+      # for work): a job of its own was one more wait for a runner on the
+      # longest path changes -> build -> app -> ci-ok. The app shards
+      # download this build instead of building the host again; the system
+      # pass downloads it too (about 55 s) and patches the server URL baked
+      # into the rewrites. A failed build fails `changes`, and so ci-ok.
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        if: steps.paths.outputs.app-build == 'true' || steps.paths.outputs.sistem == 'true'
+        with: { version: 10.33.0 }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.paths.outputs.app-build == 'true' || steps.paths.outputs.sistem == 'true'
+        with: { node-version: 22, cache: pnpm }
+      - if: steps.paths.outputs.app-build == 'true' || steps.paths.outputs.sistem == 'true'
+        run: pnpm install --frozen-lockfile
+      - name: Install src/client
+        if: steps.paths.outputs.app-build == 'true' || steps.paths.outputs.sistem == 'true'
+        working-directory: src/client
+        run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
+      - name: Build
+        if: steps.paths.outputs.app-build == 'true' || steps.paths.outputs.sistem == 'true'
+        env:
+          INSTITUTION_SERVER_URL: http://127.0.0.1:9
+        run: pnpm run build
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.paths.outputs.app-build == 'true' || steps.paths.outputs.sistem == 'true'
+        with:
+          name: app-build
+          path: |
+            packages/app/.next
+            !packages/app/.next/cache
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
   test:
     needs: changes
     if: ${{ needs.changes.outputs.test == 'true' }}
@@ -202,12 +237,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The unit tests of ./src/** take about 25 s; as a job of their own
-          # they took a runner and about 45 s of setup for that. checks runs
-          # them after the typecheck and still ends before the longest
-          # behaviour leg. Every package still runs in exactly one part.
-          - { part: checks, packages: "./src/**" }
-          - { part: unit, packages: "!./src/**" }
+          # CI-WEB-NOGE: the unit tests are two legs of their own and `checks`
+          # keeps only the typecheck. Measured per package (4 cores, seconds):
+          # app 123, editor-core 45, components 31, client 19, forbidden-terms
+          # 10, ui 9, catalog 4, every other src/ package 1 to 3. Leg 1 is
+          # packages/app (about 123 s), leg 2 every other package (about 125
+          # s); before, `unit` ran all of them in about 190 s next to a
+          # `checks` that held the typecheck and the src/ tests. The two
+          # filters are each other's complement, so every package still runs
+          # in exactly one leg.
+          - { part: checks }
+          - { part: unit, leg: 1, of: 2, packages: "./packages/app" }
+          - { part: unit, leg: 2, of: 2, packages: "!./packages/app" }
           - { part: behaviour, leg: 1, of: 3, browser: true }
           - { part: behaviour, leg: 2, of: 3, browser: true }
           - { part: behaviour, leg: 3, of: 3, browser: true }
@@ -246,9 +287,28 @@ jobs:
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore tsbuildinfo
+      # CI-WEB-TSBUILD: tsc writes .tsbuildinfo (also with --noEmit) and on the
+      # next run re-checks only the files whose content or whose imports'
+      # content changed. The key holds the hash of the lockfile and of every
+      # tsconfig, so a change of dependencies or compiler options starts cold;
+      # tsc itself also drops the info when its options or version differ, and
+      # a stale file only costs time, never a missed error. The sha suffix makes
+      # every run save its own entry; restore-keys takes the newest of the same
+      # configuration. Nothing is skipped: the same `typecheck` script runs in
+      # every package, only with the two incremental flags added.
+        if: matrix.part == 'checks'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            **/.tsbuildinfo
+            !**/node_modules/**
+          key: tsbuildinfo-${{ runner.os }}-node22-${{ hashFiles('pnpm-lock.yaml', '**/tsconfig*.json', '!**/node_modules/**') }}-${{ github.sha }}
+          restore-keys: |
+            tsbuildinfo-${{ runner.os }}-node22-${{ hashFiles('pnpm-lock.yaml', '**/tsconfig*.json', '!**/node_modules/**') }}-
       - name: Typecheck
         if: matrix.part == 'checks'
-        run: pnpm -r run typecheck
+        run: pnpm -r run typecheck --incremental --tsBuildInfoFile .tsbuildinfo
       - name: Typecheck of src/client
         if: matrix.part == 'checks' && needs.changes.outputs.client == 'true'
         working-directory: src/client
@@ -460,41 +520,6 @@ jobs:
           name: catalog-baselines-${{ strategy.job-index }}
           path: catalog/test-results/
 
-  # The one build of the host for the e2e (ZEL-CI-RED): before, each of the
-  # three app shards built the same app (about 40 s each). `next build` runs
-  # once here and the shards download .next (without its cache). The rewrites
-  # read the server URL at build time, so it is the same fake one as in
-  # packages/app/playwright.config.ts. It follows `app` (`changes` gives
-  # `app-build` the same value), and ci-ok needs it.
-  app-build:
-    needs: changes
-    if: ${{ needs.changes.outputs.app-build == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with: { persist-credentials: false }
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-        with: { version: 10.33.0 }
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - name: Install src/client
-        working-directory: src/client
-        run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
-      - name: Build
-        env:
-          INSTITUTION_SERVER_URL: http://127.0.0.1:9
-        run: pnpm run build
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: app-build
-          path: |
-            packages/app/.next
-            !packages/app/.next/cache
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 1
-
   # The institution front's host (#2028 c.6993786629 §1, §3.3): packages/app
   # built and served by dev-server.mjs under /aplikacija/, over a
   # fake institution server (page.route), with axe.
@@ -506,7 +531,7 @@ jobs:
   # the whole workflow. ci-ok needs the job `app`, whose result is success
   # only when every shard succeeded.
   app:
-    needs: [changes, app-build]
+    needs: changes
     if: ${{ needs.changes.outputs.app == 'true' }}
     name: app (${{ matrix.shard }})
     runs-on: ubuntu-latest
@@ -525,7 +550,7 @@ jobs:
       - name: Install src/client
         working-directory: src/client
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
-      # The build of the job app-build: in CI the Playwright webServer only
+      # The build of the job changes: in CI the Playwright webServer only
       # starts it (packages/app/playwright.config.ts).
       - name: The built app
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -597,6 +622,8 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.sistem == 'true' }}
     uses: ./.github/workflows/sistem.yml
+    with:
+      build_artifact: true
     permissions:
       contents: read
 
@@ -606,7 +633,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: ${{ always() }}
-    needs: [changes, test, ui, app-build, app, sistem]
+    needs: [changes, test, ui, app, sistem]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

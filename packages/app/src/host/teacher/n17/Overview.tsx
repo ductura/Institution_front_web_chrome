@@ -94,6 +94,7 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
               ) : card.rows.length === 0 ? <p className="note">{text.noStudents}</p> : (
                 <>
                   <p className="meta">{summaryLine(card.rows)}</p>
+                  {card.accommodationsUnavailable === true ? <p className="note" role="status">{text.accommodationsUnavailable}</p> : null}
                   {shown(card.rows).length === 0 ? <p className="note" role="status">{text.filters.noMatch}</p> : narrow ? (
                     <ul className={cardStyles.cards} aria-label={text.tableLabel}>
                       {sortedRows(shown(card.rows)).map((row) => {
@@ -105,7 +106,10 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
                         ];
                         return (
                           <li key={row.studentId} className={`panel ${cardStyles.card}`} data-testid="n17-row-card">
-                            <p>{href === null ? who : <a href={appHref(base, href)}>{who}</a>}</p>
+                            <p>
+                              {href === null ? who : <a href={appHref(base, href)}>{who}</a>}
+                              {row.accommodation === true ? <> <span>{text.accommodation}</span></> : null}
+                            </p>
                             <dl className={cardStyles.fields}>
                               {fields.map(([name, value]) => (
                                 <div key={name} className={cardStyles.field}><dt className="meta">{name}</dt><dd>{value}</dd></div>
@@ -127,7 +131,10 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
                           const who = row.name ?? text.noName;
                           return (
                             <tr key={row.studentId}>
-                              <td>{href === null ? who : <a href={appHref(base, href)}>{who}</a>}</td>
+                              <td>
+                                {href === null ? who : <a href={appHref(base, href)}>{who}</a>}
+                                {row.accommodation === true ? <> <span>{text.accommodation}</span></> : null}
+                              </td>
                               <td>{stateText(row)}</td>
                               <td>{timeText(row)}</td>
                               <td>{afterDeadlineText(row)}</td>

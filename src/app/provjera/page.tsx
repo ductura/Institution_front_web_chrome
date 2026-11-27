@@ -5,7 +5,7 @@ import { PublicVerification } from "@/components/public-verification/Verificatio
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 export const metadata: Metadata = {
-  title: `${publicVerificationHr.title} · ${messagesHr.app.name}`,
+  title: `${publicVerificationHr.title}, ${messagesHr.app.name}`,
   referrer: "no-referrer",
 };
 

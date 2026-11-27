@@ -19,6 +19,12 @@ export type Chat = {
   /** Text from it entered the work: it cannot be left out. */
   readonly required: boolean;
   readonly entries: readonly ChatEntry[];
+  /** F4-PRE-R02: the server's conversation; absent on the catalogue's fake chats. */
+  readonly conversationId?: string;
+  /** Whether the declaration's draft attaches it; null when the attachments cannot be read (nothing is offered). */
+  readonly attached?: boolean | null;
+  /** Its messages could not be read when it was opened. */
+  readonly unreadable?: boolean;
 };
 
 export type FormChoice = "no_use" | "used";
@@ -42,7 +48,15 @@ export type DeclarationRead =
       readonly chats: readonly Chat[];
       /** The teacher's question; null when the teacher asked none. */
       readonly question: string | null;
+      /** F4-PRE-R02: the list of conversations could not be read, so "none" is not claimed. */
+      readonly chatsUnavailable?: boolean;
     };
+
+/** F4-PRE-R02: how many conversations the draft attaches; null when unknown. */
+export function attachedOf(chats: readonly Chat[]): number | null {
+  if (chats.some((c) => c.attached === null || c.attached === undefined)) return null;
+  return chats.filter((c) => c.attached === true).length;
+}
 
 export type DeclarationReader = (assignmentId: string) => Promise<DeclarationRead>;
 
@@ -56,6 +70,15 @@ export function stepView(workState: string, read: DeclarationRead): StepView {
   if (workState === "submitted") return "submitted";
   if (read.kind !== "ready") return read.kind;
   return read.recorded.length === 0 && read.chats.length === 0 ? "empty" : "full";
+}
+
+/**
+ * F4-PRE-R06 (R-34): the "Obrazac izjave" menu only serves the mismatch line against what Ductura recorded.
+ * While the server fills no `recorded` block, the menu would change nothing, so it is not shown; the
+ * conversations alone do not bring it back.
+ */
+export function formMenuShown(recorded: readonly RecordedItem[]): boolean {
+  return recorded.length > 0;
 }
 
 /** The transfer the record holds, which the "no use" form contradicts. */
@@ -77,7 +100,7 @@ export function entryLabel(entry: ChatEntry): string {
   const who = entry.who === "you" ? chatDialogText.you
     : entry.who === "ai" ? chatDialogText.ai
       : chatDialogText.transfer;
-  return `${who} · ${entry.time}`;
+  return `${who}, ${entry.time}`;
 }
 
 /**

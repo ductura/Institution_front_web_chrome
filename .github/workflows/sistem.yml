@@ -16,12 +16,20 @@ name: Sistem
 on:
   workflow_call:
     inputs:
+      # WEB-SISTEM-PINS: no default here. Empty means "not given": a pull
+      # request then takes e2e/sistem/pins.json, a push the branch tip.
       server_ref:
         type: string
-        default: migracija/kopija-ductus-backend
+        required: false
       preloader_ref:
         type: string
-        default: migracija/nextjs
+        required: false
+      # CI-WEB-NOGE: ci.yml passes true and the job takes the build of the
+      # build step of its job `changes` instead of building the host again
+      # (about 55 s).
+      build_artifact:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       server_ref:
@@ -46,17 +54,37 @@ jobs:
         with:
           path: Institution_front_web_chrome
           persist-credentials: false
+      # WEB-SISTEM-PINS (Ductus #835): a pull request runs against the server
+      # and Preloader commits of the last green push run on the base, read
+      # from e2e/sistem/pins.json, so its result does not depend on what was
+      # merged into the server meanwhile. A push to the base, a schedule and a
+      # manual run keep the branch tips (or the given inputs); given inputs
+      # win over the pins. Moving a pin: README in e2e/sistem.
+      - name: Pins
+        id: pins
+        if: ${{ github.event_name == 'pull_request' }}
+        working-directory: Institution_front_web_chrome
+        run: |
+          set -euo pipefail
+          server="$(jq -er '.server' e2e/sistem/pins.json)"
+          preloader="$(jq -er '.preloader' e2e/sistem/pins.json)"
+          for sha in "$server" "$preloader"; do
+            [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "::error file=e2e/sistem/pins.json::not a full commit SHA: $sha"; exit 1; }
+          done
+          echo "server=$server" >> "$GITHUB_OUTPUT"
+          echo "preloader=$preloader" >> "$GITHUB_OUTPUT"
+          echo "Pinned: server $server, Preloader $preloader"
       # Public repos, no token.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ductura/Institution_server
-          ref: ${{ inputs.server_ref || 'migracija/kopija-ductus-backend' }}
+          ref: ${{ inputs.server_ref || steps.pins.outputs.server || 'migracija/kopija-ductus-backend' }}
           path: Institution_server
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ductura/Preloader
-          ref: ${{ inputs.preloader_ref || 'migracija/nextjs' }}
+          ref: ${{ inputs.preloader_ref || steps.pins.outputs.preloader || 'migracija/nextjs' }}
           path: Preloader
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -99,6 +127,27 @@ jobs:
           curl -fsS http://127.0.0.1:4000/api/v1/health || { echo "::error::server se nije podigao"; tail -n 200 "$RUNNER_TEMP/stog.log"; exit 1; }
       # INT-10: isporučeni host je packages/app (`pnpm build` i `pnpm start` u
       # korijenu idu na @ductura/app), ne Next u src/app.
+      # app-build builds with the fake server URL of the e2e (http://127.0.0.1:9),
+      # which `next build` bakes into the rewrites of three files in .next. The
+      # stack's server is :4000, so the URL is replaced there; the step fails if
+      # the marker is missing or still present. OIDC_ISSUER is read when
+      # `next start` runs (src/middleware.ts), so it needs no patch.
+      - name: Front build from app-build
+        if: ${{ inputs.build_artifact }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: app-build
+          path: Institution_front_web_chrome/packages/app/.next
+      - name: Point the downloaded build at the stack server
+        if: ${{ inputs.build_artifact }}
+        working-directory: Institution_front_web_chrome/packages/app/.next
+        run: |
+          set -euo pipefail
+          for f in routes-manifest.json required-server-files.json required-server-files.js; do
+            grep -q 'http://127.0.0.1:9\b' "$f" || { echo "::error::$f has no fake server URL"; exit 1; }
+            sed -i 's#http://127.0.0.1:9\b#http://127.0.0.1:4000#g' "$f"
+          done
+          if grep -rIq 'http://127.0.0.1:9\b' .; then echo "::error::fake server URL left in the build"; exit 1; fi
       - name: "Front: packages/app (pnpm build + pnpm start)"
         working-directory: Institution_front_web_chrome
         env:
@@ -106,8 +155,9 @@ jobs:
           # CSP form-action pušta 303 odjave na end_session lažnog OIDC-a (INT-20).
           OIDC_ISSUER: http://localhost:8090
           NEXT_TELEMETRY_DISABLED: "1"
+          BUILD_ARTIFACT: ${{ inputs.build_artifact }}
         run: |
-          pnpm build
+          if [ "$BUILD_ARTIFACT" != "true" ]; then pnpm build; fi
           nohup pnpm start > "$RUNNER_TEMP/front.log" 2>&1 &
           for i in $(seq 1 40); do curl -fsS -o /dev/null http://127.0.0.1:5173/aplikacija/stanje && break; sleep 3; done
           curl -fsS -o /dev/null http://127.0.0.1:5173/aplikacija/stanje || { tail -n 100 "$RUNNER_TEMP/front.log"; exit 1; }

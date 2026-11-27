@@ -1,11 +1,13 @@
 // WEB-2102 (E-2 Početna): the text of the student's home, as in the prototype
 // (Ductura_student.html, `pocetna`) and INVENTAR-student §E-2.
+import { coursesText } from "../courses/messages.hr";
+
 export const homeText = {
   heading: "Vaš studentski",
   headingEm: "prostor",
   lede: "Zadaci na kolegijima.",
   continueHeading: "Nastavak rada",
-  continueMeta: "Rad je započet, nije predan · Rok: {due}",
+  continueMeta: "Rad je započet, nije predan",
   openWork: "Otvori rad",
   openTask: "Otvori zadatak",
   readNotice: "Pročitaj upute",
@@ -16,9 +18,6 @@ export const homeText = {
   coursesWithoutTask: "Kolegiji bez zadatka",
   due: "Rok: {due}",
   submitted: "Predano",
-  nearOne: "Rok za 1 dan",
-  nearMany: "Rok za {n} dana",
-  nearToday: "Rok je danas",
   noticeFirst: "Prvo pročitajte obavijest",
   extendedDue: "Produljeni rok: {due}",
   codeHeading: "Imate kod novog kolegija?",
@@ -40,12 +39,18 @@ export const homeText = {
     { title: "Pročitajte upute", body: "Svaki zadatak dolazi s jasnim uputama i očekivanjima." },
     { title: "Otvorite rad", body: "Nakon što ste spremni, započinjete pisanje u uređivaču." },
   ],
-  signedOut: "Prijavite se da vidite svoje zadatke.",
-  signIn: "Prijavi se",
-  workTypes: {
-    short_paper: "Podnesak", essay: "Esej", seminar_paper: "Seminarski rad", bachelor_thesis: "Završni rad",
-    master_thesis: "Diplomski rad", specialist_thesis: "Specijalistički rad", doctoral_thesis: "Doktorski rad",
-  },
+  // PAR2-A3: an expired sign-in reads the same on E-2 as on E-3 and E-4.
+  signedOut: coursesText.signedOut,
+  signIn: coursesText.signIn,
+  // PAR2-A3: one map of work types for the task row.
+  workTypes: coursesText.workTypes,
   taskFallback: "Zadatak",
+  // NF-1 P-14 (E-2f, R-49): the deadlines as a calendar file made in the browser.
+  icsButton: "Dodaj rokove u kalendar",
+  icsNote: "Datoteka (.ics) nastaje u Vašem pregledniku i ne šalje se poslužitelju. Sadrži samo naslov zadatka, kolegij i rok. Ako se rok promijeni, kalendar se ne ažurira sam.",
+  icsAllSubmitted: "Nema rokova za izvoz: svi zadaci su predani.",
+  icsDone: "Datoteka rokova je preuzeta ({n}).",
+  icsNone: "Nema rokova za izvoz.",
+  icsFailed: "Datoteku rokova nije moguće napraviti u ovom pregledniku.",
   openFor: "{action}: {title}",
 } as const;

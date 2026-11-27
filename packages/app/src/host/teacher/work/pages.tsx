@@ -52,6 +52,8 @@ import ChangesSinceReview from "../changes-since-review/ChangesSinceReview";
 import { changesPort } from "../changes-since-review/port";
 import CommentBank from "../comment-bank/CommentBank";
 import { commentBankPort, draftCommentsPort } from "../comment-bank/port";
+import TeacherDirectEdit from "../direct-edit/TeacherDirectEdit";
+import { TEACHER_EDIT_WRITABLE, teacherEditPort } from "../direct-edit/port";
 import { RubricMarks } from "./rubric/RubricMarks";
 import { teacherWorkMessages as workText } from "./messages.hr";
 import { useShownRevision } from "./shown-revision";
@@ -60,6 +62,8 @@ import { reviewMessages } from "./review/messages.hr";
 import { SlidesOrWork } from "../slides/SlidesReview";
 import { SheetOrWork } from "./sheet/SheetReview";
 import linkStyles from "./links.module.css";
+
+const editPort = teacherEditPort();
 
 const VIEWS = {
   live: { suffix: "", title: t.liveView.context },
@@ -138,7 +142,8 @@ function OpenWork({ documentId, path, view, session }: {
   if (view === "interview") {
     // N-14 (WEB-1530): the teacher's preparation for a talk about the work.
     return <InterviewPage key={documentId} port={interviewPort} documentId={documentId} workHref={workHref}
-      summaryHref={`${workHref}${VIEWS.summary.suffix}`} />;
+      summaryHref={`${workHref}${VIEWS.summary.suffix}`}
+      originHref={workHref} />;
   }
   if (view === "review") {
     return <ReviewPage key={documentId} documentId={documentId} current={current} />;
@@ -209,6 +214,8 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
         aside={<>
           {!stopped && <>
             <ReadOnlyMentor documentId={documentId} role="teacher" receiptHref={receiptHref} />
+            {/* PM2-R04 (M6.4): direct edits; the setting is read from the server, writing waits for a route (TODO(ugovor)). */}
+            <TeacherDirectEdit key={`direct:${documentId}`} assignmentId={documentId} port={editPort} segments={[]} writable={TEACHER_EDIT_WRITABLE} />
             <TeacherComments documentId={documentId} outcome={comments.outcome} placed={placed}
               nodeOrder={view.document?.nodes ?? []} current={current} readOnly={view.document === null}
               draft={placeAnchor(view.document, draft) ? draft : null} revision={revision} insert={insertion}
