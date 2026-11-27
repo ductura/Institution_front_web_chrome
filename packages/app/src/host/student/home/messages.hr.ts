@@ -47,5 +47,12 @@ export const homeText = {
     master_thesis: "Diplomski rad", specialist_thesis: "Specijalistički rad", doctoral_thesis: "Doktorski rad",
   },
   taskFallback: "Zadatak",
+  // NF-1 P-14 (E-2f, R-49): the deadlines as a calendar file made in the browser.
+  icsButton: "Dodaj rokove u kalendar",
+  icsNote: "Datoteka (.ics) nastaje u Vašem pregledniku i ne šalje se poslužitelju. Sadrži samo naslov zadatka, kolegij i rok. Ako se rok promijeni, kalendar se ne ažurira sam.",
+  icsAllSubmitted: "Nema rokova za izvoz: svi zadaci su predani.",
+  icsDone: "Datoteka rokova je preuzeta ({n}).",
+  icsNone: "Nema rokova za izvoz.",
+  icsFailed: "Datoteku rokova nije moguće napraviti u ovom pregledniku.",
   openFor: "{action}: {title}",
 } as const;
