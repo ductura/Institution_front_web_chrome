@@ -67,7 +67,7 @@ async function student(page: Page, answers: Answers = {}) {
   await page.route("**/api/v1/**", async (route) => {
     const req = route.request();
     const path = new URL(req.url()).pathname;
-    if (req.method() === "GET" && path.endsWith("/declaration")) return route.fulfill({ json: CONFIRMED });
+    if (req.method() === "GET" && path.endsWith("/declaration-v2")) return route.fulfill({ json: CONFIRMED });
     if (req.method() === "POST" && path === "/api/v1/evidence/open") return route.fulfill({ json: OPENED });
     // WEB-V17-FORMAT-CHECK: invented format rules for the form check of step 3.
     if (req.method() === "GET" && path.endsWith("/format-rules")) return route.fulfill({ json: { wordMin: 100, wordMax: null, minSources: 0, requiredSections: [], citationStyle: "fpzg", font: null, size: null, spacing: null } });

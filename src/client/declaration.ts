@@ -1,6 +1,7 @@
 // The AI part of the declaration (S31-AI, N-AI-ATT) behind a port, and the real adapter over
-// declaration-v1 (SRV-1210..1214): student.declaration.get/put and teacher.declaration.get, all
-// through createApi (PIL-K-IZJAVA-PORT). declaration-fake.ts implements the same port for tests
+// declaration-v2 (WEB-IZJAVA-V2): student.declaration-second.get/put and teacher.declaration-second.get,
+// all through createApi (PIL-K-IZJAVA-PORT). v2 also carries `ai.recorded` (the server's record of
+// transfers); it is only ever read, never sent, so a write cannot drop it. declaration-fake.ts implements the same port for tests
 // and the catalogue only. The student routes are keyed by assignment, so the student's
 // `submissionId` here is the assignment id; the teacher's names a student too (`teacherTarget`).
 import { browserTransport, createApi, responseMatches, type ApiResult } from "./api";
@@ -103,8 +104,13 @@ export type Call = ReturnType<typeof createApi>;
 /** Re-exported for statement.ts, the other half of the declaration step. */
 export { browserTransport, createApi, responseMatches };
 
-type StudentState = MigrationOperations["student.declaration.get"]["success"]["body"];
-type PutBody = MigrationOperations["student.declaration.put"]["body"];
+/** The declaration-v2 operations (WEB-IZJAVA-V2). The declaration-v1 routes stay on the server; the web no longer calls them. */
+export const STUDENT_GET = "student.declaration-second.get";
+export const STUDENT_PUT = "student.declaration-second.put";
+export const TEACHER_GET = "teacher.declaration-second.get";
+
+type StudentState = MigrationOperations["student.declaration-second.get"]["success"]["body"];
+type PutBody = MigrationOperations["student.declaration-second.put"]["body"];
 type WireHelp = NonNullable<StudentState["draft"]>["humanHelp"];
 type WireAi = NonNullable<StudentState["draft"]>["ai"];
 
@@ -133,7 +139,7 @@ export type StudentRead =
 /** The student's declaration as the server holds it, kept as the version the view writes on. */
 export async function readStudentState(call: Call, session: DeclarationSession, assignmentId: string): Promise<StudentRead> {
   try {
-    const result = await call("student.declaration.get", { params: { assignmentId }, query: undefined, body: undefined });
+    const result = await call(STUDENT_GET, { params: { assignmentId }, query: undefined, body: undefined });
     if (!result.ok) return { kind: result.status === 401 ? "signedOut" : "unavailable" };
     session.states.set(assignmentId, result.body);
     return { kind: "ok", state: result.body };
@@ -176,7 +182,7 @@ export function declarationDetailOf(gate: DeclarationGate): DeclarationDetail | 
 }
 
 /**
- * The gate as one read of student.declaration.get gives it. This is the one selector of the
+ * The gate as one read of student.declaration-second.get gives it. This is the one selector of the
  * declaration's state (WEB-NUZ-PREDAJA-1, PR-2): the steps of the submission, the rehearsal and
  * the workspace's top bar all read it, so none of them can say "confirmed" while another refuses.
  */
@@ -225,10 +231,16 @@ export function heldAnswer(state: StudentState): AnswerWrite | undefined {
   return { questionId: answer.questionId, text: answer.text };
 }
 
+/** The conversation attachments a draft holds (the printouts travel as externalAttachmentIds). */
+function conversationRefsOf(draft: StudentState["draft"]): PutBody["ai"]["attachments"] {
+  return (draft?.ai.attachments ?? []).filter((a) => "conversationId" in a);
+}
+
 /**
  * The next whole draft on top of `state`, or null when the server gives nothing to write on
  * (no current form or revision, or the work is submitted). The change replaces only its parts;
- * ai.attachments is always empty, as declaration-v1 has it (maxItems 0).
+ * the draft's conversation attachments are carried on unchanged (declaration-v2), and `recorded`
+ * is not part of the body at all: the server keeps it.
  */
 export function nextDraft(state: StudentState, change: Change): PutBody | null {
   const form = state.currentForm;
@@ -243,13 +255,13 @@ export function nextDraft(state: StudentState, change: Change): PutBody | null {
     form: { formId: form.formId, formVersion: form.formVersion, formSha256: form.formSha256 },
     ownWork: { confirmed: change.ownWork ?? draft?.ownWork.confirmed ?? false },
     humanHelp: { received: help.received, entries: help.entries },
-    ai: { use: ai.use, declaredTools: ai.declaredTools, attachments: [], externalAttachmentIds: ai.externalAttachmentIds },
+    ai: { use: ai.use, declaredTools: ai.declaredTools, attachments: conversationRefsOf(draft), externalAttachmentIds: ai.externalAttachmentIds },
     confirm: change.confirm ?? false,
     ...(answer === undefined ? {} : { questionAnswer: answer }),
   };
 }
 
-/** declaration-v1: at most this many external printouts in a draft (externalAttachmentIds maxItems). */
+/** declaration-v1 and v2: at most this many external printouts in a draft (externalAttachmentIds maxItems). */
 export const MAX_LINKED_PRINTOUTS = 10;
 
 /**
@@ -282,9 +294,9 @@ export async function writeDraft(call: Call, session: DeclarationSession, assign
   const uploaded = session.uploaded.get(assignmentId) ?? [];
   const body = nextDraft(state, { ...change, ai: { ...change.ai, externalAttachmentIds: linkedUploads(state, uploaded) } });
   if (body === null) return { kind: state.submitted || state.state === "bound" ? "readOnly" : "unavailable" };
-  let result: ApiResult<"student.declaration.put">;
+  let result: ApiResult<typeof STUDENT_PUT>;
   try {
-    result = await call("student.declaration.put", { params: { assignmentId }, query: undefined, body });
+    result = await call(STUDENT_PUT, { params: { assignmentId }, query: undefined, body });
   } catch {
     return { kind: "unavailable" };
   }
@@ -321,7 +333,7 @@ export function createDeclarationPort(call: Call = createApi(), options: Declara
   async function confirmOnce(assignmentId: string, attachments: readonly Attachment[]): Promise<ConfirmResult> {
     const draft = session.states.get(assignmentId)?.draft ?? null;
     const tools = draft?.ai.declaredTools ?? [];
-    // The reviewed conversations are not sent: declaration-v1 keeps ai.attachments empty.
+    // The reviewed conversations are not sent from here: the draft keeps the ones the student attached.
     const use = draft?.ai.use ?? (tools.length > 0 || attachments.length > 0 ? "used" : "not_used");
     const write = await writeDraft(call, session, assignmentId, { ownWork: true, ai: { use }, confirm: true });
     switch (write.kind) {
@@ -360,9 +372,9 @@ export function createDeclarationPort(call: Call = createApi(), options: Declara
     async readTeacher(submissionId) {
       const target = options.teacherTarget?.(submissionId) ?? null;
       if (target === null) return { kind: "unavailable" };
-      let result: ApiResult<"teacher.declaration.get">;
+      let result: ApiResult<typeof TEACHER_GET>;
       try {
-        result = await call("teacher.declaration.get", { params: { assignmentId: target.assignmentId, studentId: target.studentId }, query: undefined, body: undefined });
+        result = await call(TEACHER_GET, { params: { assignmentId: target.assignmentId, studentId: target.studentId }, query: undefined, body: undefined });
       } catch {
         return { kind: "unavailable" };
       }
@@ -383,7 +395,7 @@ export function createDeclarationPort(call: Call = createApi(), options: Declara
         uses: payload.ai.declaredTools.map((t) => ({ purpose: t.purposeText, provider: t.toolLabel, phase: t.phaseText })),
         transfers: [],
         conversations: [],
-        external: payload.ai.attachments.map((a) => ({ id: a.externalAttachmentId, title: printoutName(a.externalAttachmentId, a.format) })),
+        external: payload.ai.attachments.flatMap((a) => ("externalAttachmentId" in a ? [{ id: a.externalAttachmentId, title: printoutName(a.externalAttachmentId, a.format) }] : [])),
       };
     },
   };

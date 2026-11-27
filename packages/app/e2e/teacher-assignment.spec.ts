@@ -1,9 +1,8 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "./fixtures/test";
 
-import { assignmentSetupMessages as wizard } from "../../../src/components/teacher/TeacherSetup/messages.hr";
 import type { TeacherCourse } from "../../../src/components/teacher/teacher-courses-read";
-import { messagesHr } from "../../../src/lib/i18n/messages.hr";
+import { assignmentSetupHr as wizard, messagesHr } from "../../../src/lib/i18n/messages.hr";
 import { publishHr } from "../src/host/teacher/publish/messages.hr";
 
 const fixtures = JSON.parse(readFileSync(new URL("./fixtures/teacher.json", import.meta.url), "utf8")) as {

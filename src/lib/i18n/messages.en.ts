@@ -2855,7 +2855,7 @@ const en = {
     dueAt: "Deadline",
     assignmentVersion: "Assignment version",
     revision: "Text version",
-    utc: "Exact values from the receipt (UTC)",
+    utc: "Exact values from the receipt",
     late: "The work was submitted after the deadline.",
     record: "Record state",
     records: {

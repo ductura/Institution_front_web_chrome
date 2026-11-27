@@ -103,7 +103,7 @@ export type SubmissionRehearsalProps = {
   onComments?: () => void;
   onPrintPreview?: () => void;
   onJumpToDocument?: () => void;
-  /** The declaration's read; the server's by default (student.declaration.get), a recorded one in tests. */
+  /** The declaration's read; the server's by default (student.declaration-second.get), a recorded one in tests. */
   declarationGate?: GateRead;
 };
 

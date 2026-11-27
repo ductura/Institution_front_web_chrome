@@ -120,7 +120,7 @@ async function teacher(page: Page, declaration: unknown) {
       case `/api/v1/teacher/works/${documentId}`: return route.fulfill({ json: {
         documentId, studentId, studentName: "Student A", assignmentId, state: "predano", prevDocumentId: null, nextDocumentId: null,
       } });
-      case `/api/v1/teacher/assignments/${assignmentId}/students/${studentId}/declaration`: return route.fulfill({ json: declaration });
+      case `/api/v1/teacher/assignments/${assignmentId}/students/${studentId}/declaration-v2`: return route.fulfill({ json: declaration });
       default: return route.fallback();
     }
   });

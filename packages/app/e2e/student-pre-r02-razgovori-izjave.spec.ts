@@ -37,7 +37,7 @@ async function student(page: Page, { listFails = false, v2Fails = false } = {}) 
     if (path.endsWith("/declaration-v2") && req.method() === "GET") {
       return v2Fails ? route.fulfill({ status: 503, json: { status: "unavailable" } }) : route.fulfill({ json: DRAFT });
     }
-    if (path.endsWith("/declaration") && req.method() === "GET") return route.fulfill({ json: DRAFT });
+    if (path.endsWith("/declaration-v2") && req.method() === "GET") return route.fulfill({ json: DRAFT });
     if (req.method() === "GET" && path.endsWith("/assistant-conversations")) {
       if (listFails) return route.fulfill({ status: 503, json: { status: "unavailable" } });
       return route.fulfill({ json: { assignmentId: T1, conversations: CONVERSATIONS } });

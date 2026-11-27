@@ -127,7 +127,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createApi } from "./api";
-import { createDeclarationPort, createDeclarationSession } from "./declaration";
+import { createDeclarationPort, createDeclarationSession, readStudentState, writeDraft } from "./declaration";
 import contracts from "./migration-contracts.generated.json" with { type: "json" };
 import { matchesSchema, type Schema } from "./schema-check";
 import { createDeclarationStepPorts } from "./statement";
@@ -147,7 +147,7 @@ const STATE = {
   },
   payload: null, declarationSha256: null, uploads: [],
 };
-const DRAFT_SCHEMA = (contracts["student.declaration.get"].responses["200"].content["application/json"].schema.properties.draft.anyOf[0]) as Schema;
+const DRAFT_SCHEMA = (contracts["student.declaration-second.get"].responses["200"].content["application/json"].schema.properties.draft.anyOf[0]) as Schema;
 const ATTACHMENT = { conversationId: CONVERSATION, reason: "transfer" as const, throughSeq: 2, messagesSha256: "c".repeat(64) };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const error = (status: number, code: string) => json(status, { error: code, code, messageKey: "errors.x", status, requestId: "00000000-0000-4000-8000-000000000000" });
@@ -183,13 +183,31 @@ describe("declaration adapter (PIL-K-IZJAVA-PORT)", () => {
     expect(await port.confirm(ASSIGNMENT, [ATTACHMENT])).toEqual({ kind: "confirmed" });
     expect(s.sent.map((r) => r.method)).toEqual(["GET", "PUT"]);
     const put = s.sent[1];
-    expect(put?.path).toBe(`/api/v1/student/assignments/${ASSIGNMENT}/declaration`);
-    expect(matchesSchema(contracts["student.declaration.put"].body as Schema, put?.body)).toBe(true);
+    expect(put?.path).toBe(`/api/v1/student/assignments/${ASSIGNMENT}/declaration-v2`);
+    expect(matchesSchema(contracts["student.declaration-second.put"].body as Schema, put?.body)).toBe(true);
     expect(matchesSchema(DRAFT_SCHEMA, put?.body)).toBe(true);
     expect(put?.body).toMatchObject({
       baseVersion: 4, revision: 2, form: FORM, ownWork: { confirmed: true }, confirm: true,
       humanHelp: STATE.draft.humanHelp, ai: { use: "used", attachments: [], externalAttachmentIds: [PRINTOUT] },
     });
+  });
+
+  it("a v2 write keeps the draft's conversation attachments, never sends `recorded`, and holds what the server answers with it (WEB-IZJAVA-V2)", async () => {
+    const REF = { conversationId: CONVERSATION, throughSeq: 2, messagesSha256: "c".repeat(64) };
+    const RECORDED = [{ aiTransferId: "00000000-0000-4000-8000-0000000000d2", aiTransferSha256: "d".repeat(64) }];
+    const withRef = { ...STATE, draft: { ...STATE.draft, ai: { ...STATE.draft.ai, attachments: [REF] } } };
+    const confirmed = { ...CONFIRMED_STATE, payload: { ...CONFIRMED_STATE.payload, ai: { ...CONFIRMED_STATE.payload.ai, use: "used", attachments: [{ ...REF, reason: "transferred" }], recorded: RECORDED } } };
+    const s = server((method) => (method === "GET" ? json(200, withRef) : json(200, confirmed)));
+    const session = createDeclarationSession();
+    await readStudentState(s.call, session, ASSIGNMENT);
+    const write = await writeDraft(s.call, session, ASSIGNMENT, { ownWork: true, confirm: true });
+    const put = s.sent[1];
+    expect(matchesSchema(contracts["student.declaration-second.put"].body as Schema, put?.body)).toBe(true);
+    expect(JSON.stringify(put?.body)).not.toContain("recorded");
+    expect(put?.body).toMatchObject({ ai: { attachments: [REF] } });
+    expect(write.kind).toBe("saved");
+    if (write.kind === "saved") expect(write.state.payload?.ai.recorded).toEqual(RECORDED);
+    expect(session.states.get(ASSIGNMENT)?.payload?.ai.recorded).toEqual(RECORDED);
   });
 
   it("writes nothing without a read: there is no version to write on", async () => {
@@ -253,7 +271,7 @@ describe("declaration adapter (PIL-K-IZJAVA-PORT)", () => {
     const none = server(() => json(200, { state: "none", payload: null, declarationSha256: null }));
     const target = { teacherTarget: () => ({ assignmentId: ASSIGNMENT, studentId: ASSIGNMENT }) };
     expect(await createDeclarationPort(none.call, target).readTeacher("s-1")).toEqual({ kind: "pending" });
-    expect(none.sent[0]?.path).toBe(`/api/v1/teacher/assignments/${ASSIGNMENT}/students/${ASSIGNMENT}/declaration`);
+    expect(none.sent[0]?.path).toBe(`/api/v1/teacher/assignments/${ASSIGNMENT}/students/${ASSIGNMENT}/declaration-v2`);
     expect(await createDeclarationPort(none.call).readTeacher("s-1")).toEqual({ kind: "unavailable" });
     const bound = server(() => json(200, { state: "bound", declarationSha256: "b".repeat(64), payload: {
       declarationSchema: "ductura-declaration-v1", declarationId: "d1000000-0000-4000-8000-000000000001", declarationVersion: 1,
@@ -289,7 +307,7 @@ describe("declaration adapter (PIL-K-IZJAVA-PORT)", () => {
 // PIL-K-IZJAVA-VRATA: whether steps 3 and 4 may send is read only from the server.
 import { declarationGateFrom, readDeclarationGate } from "./declaration";
 
-/** An invented declaration confirmed for revision 2, as student.declaration.get gives it. */
+/** An invented declaration confirmed for revision 2, as student.declaration-second.get gives it. */
 const CONFIRMED_STATE = {
   ...STATE, state: "confirmed", version: 5, draft: null,
   payload: {
@@ -309,7 +327,7 @@ describe("declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     // WEB-NUZ-PREDAJA-1 (PR-2): the gate also carries which state it is and the form, for the words.
     const REF = { formId: FORM.formId, formVersion: FORM.formVersion };
     expect(await readDeclarationGate(s.call, ASSIGNMENT)).toEqual({ kind: "confirmed", detail: "confirmed", confirmedAt: "2026-11-20T10:00:00.000000Z", form: REF });
-    expect(s.sent).toEqual([{ method: "GET", path: `/api/v1/student/assignments/${ASSIGNMENT}/declaration`, body: undefined }]);
+    expect(s.sent).toEqual([{ method: "GET", path: `/api/v1/student/assignments/${ASSIGNMENT}/declaration-v2`, body: undefined }]);
     const older = server(() => json(200, { ...CONFIRMED_STATE, currentRevision: 3 }));
     expect(await readDeclarationGate(older.call, ASSIGNMENT)).toEqual({ kind: "missing", detail: "stale", form: REF });
     const bound = server(() => json(200, { ...CONFIRMED_STATE, state: "bound", submitted: true }));

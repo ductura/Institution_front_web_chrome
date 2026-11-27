@@ -45,7 +45,7 @@ async function student(page: Page, answers: Answers = {}) {
   await page.route("**/api/v1/**", (route) => {
     const req = route.request();
     const path = new URL(req.url()).pathname;
-    if (req.method() === "GET" && path.endsWith("/declaration") && answers.declaration !== undefined) {
+    if (req.method() === "GET" && path.endsWith("/declaration-v2") && answers.declaration !== undefined) {
       return route.fulfill({ json: answers.declaration });
     }
     if (req.method() === "GET" && path.endsWith("/source-proof-requests")) {

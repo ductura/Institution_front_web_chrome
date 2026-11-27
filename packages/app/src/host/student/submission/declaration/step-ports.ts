@@ -14,7 +14,7 @@ import {
   type ConversationRef, type ConversationsRead, type SecondCall,
 } from "../../../../../../../src/client/declaration-attachments.ts";
 import {
-  createDeclarationPort, createDeclarationSession, writeDraft, type ConfirmResult, type StudentDeclarationRead,
+  createDeclarationPort, createDeclarationSession, STUDENT_GET, STUDENT_PUT, writeDraft, type ConfirmResult, type StudentDeclarationRead,
 } from "../../../../../../../src/client/declaration.ts";
 import { createStatementPort, type StatementPort, type StatementRead } from "../../../../../../../src/client/statement.ts";
 import { statementMessages } from "../../statement/messages.hr";
@@ -61,15 +61,14 @@ const TECHNICAL = (status: number | null) => status === null || status === 0 || 
 type Answer = { readonly ok: boolean; readonly status?: number; readonly code?: string; readonly body?: { readonly state?: string } };
 type Input = { readonly params: { readonly assignmentId: string }; readonly query?: undefined; readonly body?: unknown };
 
-const V1_GET = "student.declaration.get";
-const V1_PUT = "student.declaration.put";
 
 /** The step's ports over `call` (createApi by default). */
 export function createStepPorts(call: Call = createApi()): StepPorts {
   const send = call as unknown as (op: string, input: unknown) => Promise<Answer>;
   // The v2 operations go through the narrow SecondCall shape of declaration-attachments.
   const second = call as unknown as SecondCall;
-  // Whether the client knows declaration-v2: unknown until the first read tries it.
+  // Whether the client knows declaration-v2: unknown until the first read tries it. Since WEB-IZJAVA-V2
+  // the extract has it, so `unsupported` is only a stale extract: the step then says unavailable.
   let onSecond: boolean | null = null;
   // The refs the server holds, by assignment, from the last v2 answer.
   const refs = new Map<string, readonly ConversationRef[]>();
@@ -93,11 +92,12 @@ export function createStepPorts(call: Call = createApi()): StepPorts {
       }
       onSecond = false;
     }
-    return send(V1_GET, { params: { assignmentId }, query: undefined, body: undefined });
+    // A stale extract without declaration-v2: nothing is sent, the step says it cannot read.
+    return { ok: false, status: 0, code: "unsupported" };
   }
 
   async function put(input: Input): Promise<Answer> {
-    if (onSecond !== true) return send(V1_PUT, input);
+    if (onSecond !== true) return { ok: false, status: 0, code: "unsupported" };
     const assignmentId = input.params.assignmentId;
     const body = input.body as { readonly ai: Record<string, unknown> };
     const attachments = pending ?? refs.get(assignmentId) ?? [];
@@ -107,8 +107,8 @@ export function createStepPorts(call: Call = createApi()): StepPorts {
   }
 
   const shared = (async (op: string, input: Input) => {
-    if (op === V1_GET) return held ?? getDeclaration(input.params.assignmentId);
-    if (op !== V1_PUT) return send(op, input);
+    if (op === STUDENT_GET) return held ?? getDeclaration(input.params.assignmentId);
+    if (op !== STUDENT_PUT) return send(op, input);
     if ((input.body as { confirm?: boolean } | undefined)?.confirm !== true) return put(input);
     confirmStatus = 0;
     const result = await put(input);
