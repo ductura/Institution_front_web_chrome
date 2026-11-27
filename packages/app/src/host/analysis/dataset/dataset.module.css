@@ -8,3 +8,9 @@
   flex-wrap: wrap;
   gap: var(--space-2);
 }
+
+/* B3: the whole list of a refused set is in the error colour. */
+.refused,
+.refused h3 {
+  color: var(--color-error);
+}
