@@ -13,6 +13,11 @@ import { selectionBubbleHr as t } from "./messages.hr";
 import { SelectionBubble } from "./SelectionBubbleHost";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+// jsdom has no layout: the editor's scrollIntoView after U blok-citat asks the view for rects.
+const rects = () => ({ length: 0, item: () => null, [Symbol.iterator]: function* () {} });
+Range.prototype.getClientRects = rects as never;
+Range.prototype.getBoundingClientRect = (() => ({ top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 })) as never;
+Element.prototype.getClientRects = rects as never;
 
 const TEXT = "Kišni vrt zadržava vodu s krova.";
 const memory = () => {
