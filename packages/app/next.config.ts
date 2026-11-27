@@ -3,7 +3,7 @@ import path from "node:path";
 import type { NextConfig } from "next";
 
 import { BASE_PATH } from "./src/bases.ts";
-import { institutionRewrites, institutionServerUrl } from "./src/rewrites.ts";
+import { institutionRewrites, institutionServerUrl, legacyAuthRedirects } from "./src/rewrites.ts";
 
 // The institution front under /aplikacija/ (D-318, DAN-1574): basePath
 // "/aplikacija", the pages in the route group app/(host)/. The edge routes
@@ -38,6 +38,9 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: root,
   async headers() {
     return [{ source: "/code-run/:path*", headers: [{ key: "Content-Security-Policy", value: CODE_RUN_FRAME_CSP }] }];
+  },
+  async redirects() {
+    return legacyAuthRedirects();
   },
   async rewrites() {
     return institutionRewrites(institutionServer, process.env.NODE_ENV);
