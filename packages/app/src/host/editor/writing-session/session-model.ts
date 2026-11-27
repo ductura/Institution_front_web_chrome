@@ -51,8 +51,8 @@ export type TopChapter = { readonly key: string; readonly title: string; readonl
 /** The chapters of the highest level present, with the words of their body (subchapters included). */
 export function topChapters(doc: ReviewDoc): TopChapter[] {
   if (doc.chapters.length === 0) return [];
-  const top = Math.min(...doc.chapters.map((c) => c.level));
-  return doc.chapters.filter((c) => c.level === top).map((chapter, i) => {
+  const highest = Math.min(...doc.chapters.map((c) => c.level));
+  return doc.chapters.filter((c) => c.level === highest).map((chapter, i) => {
     let words = 0;
     for (let b = chapter.block + 1; b < chapter.end; b += 1) words += wordCount(doc.blocks[b]!.text);
     const title = [chapter.number, chapter.title].filter((part) => part !== "").join(" ");
