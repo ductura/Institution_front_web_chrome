@@ -93,3 +93,14 @@ describe("states", () => {
     expect([takesManualEntry("draft"), takesManualEntry("open"), takesManualEntry("closed")]).toEqual([false, true, true]);
   });
 });
+
+// WEB-DIZ-B-V18: dates are written for people (A4), with the full month name.
+import { longDay } from "./Questionnaires";
+describe("longDay (V18 A4)", () => {
+  it("writes the full month and keeps what it cannot read", () => {
+    expect(longDay("2026-11-12")).toBe("12. studenoga 2026.");
+    expect(longDay("2026-12-08")).toBe("8. prosinca 2026.");
+    expect(longDay("nije datum")).toBe("nije datum");
+    expect(longDay("2026-13-45")).toBe("2026-13-45");
+  });
+});

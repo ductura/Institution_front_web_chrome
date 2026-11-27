@@ -6,7 +6,7 @@ import { Button, Card, Dialog, TextArea } from "@ductura/ui";
 import { createApi, goToSignIn } from "@/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
-import { Marks, notAnswer } from "./Frame";
+import { Marks, Denied, notAnswer } from "./Frame";
 import { peerReviewText as t } from "./messages.hr";
 import { buildReview, EMPTY_DRAFT, grouped, MAX_TEXT, type Draft, type TextError } from "./model";
 import { readWork, sendReview, type Read, type SendOutcome, type WorkView } from "./read";
@@ -53,6 +53,7 @@ export default function ReviewPage({ assignmentId, taskId, call = defaultCall }:
 
   const back = <p><a href={list}><span aria-hidden="true">← </span>{t.backToList}</a></p>;
   const head = <header><h1>{t.work.title}</h1><p>{t.work.lead}</p></header>;
+  if (read?.kind === "denied") return <Denied />;
   const pending = notAnswer(read, t.work.title, retry);
   if (pending !== null || read === null || read.kind !== "ok") return <div className="page">{back}{head}{pending}</div>;
   const work = read.view;

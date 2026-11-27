@@ -3,6 +3,7 @@
 import { Button, OptionGroup, TextArea } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { LoadAlert } from "../../../states/States";
 import { rubricMarksHr as t } from "./messages.hr";
 import { readRubricMarks, saveMark, type Call, type MarksRead } from "./port";
 import { isChanged, joinRows, noteValue, NOTE_MAX, withMark, type Level, type Mark } from "./rubric-marks-model";
@@ -35,9 +36,9 @@ export function RubricMarks({ documentId, call, onSessionEnd }: { documentId: st
   if (read === null) return <p role="status">{t.loading}</p>;
   if (read.kind === "none") return null;
   if (read.kind === "signedOut") return <p role="status">{t.signedOut}</p>;
-  if (read.kind === "notFound") return <p role="alert">{t.notFound}</p>;
+  if (read.kind === "notFound") return <LoadAlert body={t.notFound} />;
   if (read.kind === "unavailable") {
-    return <section aria-label={t.heading}><p role="alert">{t.unavailable}</p><Button onClick={() => void load()}>{t.retry}</Button></section>;
+    return <section aria-label={t.heading}><LoadAlert body={t.unavailable} retry={{ label: t.retry, onRetry: () => void load() }} /></section>;
   }
 
   const form = (m: Mark): Form => (Object.hasOwn(forms, m.criterionId) ? forms[m.criterionId] : undefined) ?? { level: m.level, note: m.note ?? "", busy: false, message: null };
@@ -70,7 +71,7 @@ export function RubricMarks({ documentId, call, onSessionEnd }: { documentId: st
       <ul>
         {joinRows(read.rubric, marks).map(({ criterion, mark }) => {
           const f = form(mark);
-          const title = criterion?.title ?? mark.criterionId;
+          const title = criterion?.title ?? t.unknownCriterion;
           return (
             <li key={mark.criterionId}>
               <OptionGroup legend={title} name={`rubric-${mark.criterionId}`} disabled={f.busy}
@@ -83,7 +84,9 @@ export function RubricMarks({ documentId, call, onSessionEnd }: { documentId: st
               <TextArea label={t.noteLabel(title)} rows={2} value={f.note} maxLength={NOTE_MAX}
                 onChange={(event) => patch(mark, { note: event.target.value, message: null })} />
               <Button type="button" disabled={f.busy || !isChanged(mark, f.level, f.note)} onClick={() => void save(mark)}>{t.save}</Button>
-              <p role="status" aria-live="polite">{f.message}</p>
+              {f.message !== null && f.message !== t.saved
+                ? <LoadAlert body={f.message} />
+                : <p role="status" aria-live="polite">{f.message}</p>}
             </li>
           );
         })}

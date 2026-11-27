@@ -4,7 +4,9 @@
 .subtitle { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
 .note { margin: 0; font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
 .notice { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--ink); border: 1px solid var(--rule-2); border-radius: var(--radius-control); overflow-wrap: anywhere; }
-.alert { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--error); background: var(--error-soft); border-radius: var(--radius-control); overflow-wrap: anywhere; }
+.alert { margin: 0; padding: 10px 12px; font-size: 13.5px; color: var(--error); border: 1px solid var(--error); border-radius: 4px; overflow-wrap: anywhere; }
+.retryLink { justify-self: start; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13.5px; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.retryLink:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: 2px; }
 .acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .group { display: grid; gap: 8px; min-width: 0; }
 .share { display: grid; gap: 0; margin: 0; }
@@ -14,4 +16,4 @@
 .text { display: grid; gap: 8px; min-width: 0; }
 .block { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--ink); overflow-wrap: anywhere; }
 /* Marked by an underline as well as the tint, so the mark does not rest on colour alone. */
-.mark { color: inherit; background: var(--rule-2); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.mark { color: var(--ink); background: var(--accent-soft); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }

@@ -101,6 +101,7 @@ describe("TeamPage in the browser", () => {
     });
     await render(d.call);
     expect(host.querySelectorAll("[data-testid=open-team]")).toHaveLength(1);
+    expect(host.querySelector("[data-testid=open-team]")!.textContent).toContain("Tim 1, članova: 2");
     await click(host.querySelector("[data-testid=open-team] button"));
     expect(d.calls.find((c) => c.id === "student.work-team.post")!.input.body).toEqual({ action: "join", teamId: TEAM });
     expect(text()).toContain(t.outcome.joined);

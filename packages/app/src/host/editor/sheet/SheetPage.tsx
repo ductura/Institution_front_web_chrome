@@ -1,6 +1,6 @@
 "use client";
 
-// WEB-V14-SHEET-PAGE: the work page of a spreadsheet work, mounted by host/student/work.tsx (one branch on the
+// WEB-V14-SHEET-PAGE: the work page of a spreadsheet work, mounted by host/student/WorkEditorPage.tsx (one branch on the
 // kind, see kind-port.ts). The document comes from the journal (SheetSaver over the verified opening), every change
 // of the grid is turned into steps of ductus-sheet-steps-v1 and recorded, and the status bar claims only the state
 // the session reached: SYNCED only after a drain step whose receipt the runner verified in this page session.

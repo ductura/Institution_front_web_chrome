@@ -3,7 +3,8 @@
 export const readingSettingsHr = {
   menu: "Prikaz i čitanje",
   title: "Prikaz i čitanje",
-  intro: "Osobne postavke samo za ovaj preglednik. Tekst rada ostaje isti, a ništa se ne šalje na poslužitelj.",
+  intro: "Osobne postavke samo za ovaj preglednik. Tekst rada ostaje isti i ništa se ne šalje iz preglednika.",
+  modeTitle: "Način čitanja",
   font: {
     label: "Font teksta rada",
     standard: "Zadani",
@@ -16,8 +17,9 @@ export const readingSettingsHr = {
     standard: "Zadana",
     fast: "Brže",
     faster: "Najbrže",
+    note: "Nova brzina vrijedi od sljedeće rečenice.",
   },
-  reset: "Zadano",
+  reset: "Vrati na zadano",
   resetDone: "Prikaz i čitanje vraćeni su na zadano.",
   done: "Gotovo",
 } as const;
