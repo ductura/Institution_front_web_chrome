@@ -84,8 +84,11 @@ test('PM2-R10: nastavnik stvara zadatak i kod, student se upisuje i piše, oba v
     });
 
     const documentId = await test.step('Student piše odlomak, a poslužitelj potvrđuje snimku', async () => {
+      // A new assignment has no work yet: "Započni rad" on its page makes it (one work per student
+      // and assignment) and only the server's answer opens the editor.
+      await student.getByRole('button', { name: /^Započni rad/ }).click();
       const editor = student.getByRole('textbox', { name: 'Tekst rada', exact: true });
-      await expect(editor).toBeEditable();
+      await expect(editor).toBeEditable({ timeout: 30_000 });
       await editor.click();
       const [commit] = await Promise.all([
         student.waitForResponse((response) => {
