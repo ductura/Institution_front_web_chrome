@@ -10,7 +10,8 @@
  */
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
-export type SlashCommand = "fusnota" | "ref";
+// ED-111: "/fraza" opens the toolbar's "Fraze" dialog.
+export type SlashCommand = "fusnota" | "ref" | "fraza";
 export type SlashCommands = Partial<Record<SlashCommand, () => void>>;
 
 const NONE: SlashCommands = Object.freeze({});

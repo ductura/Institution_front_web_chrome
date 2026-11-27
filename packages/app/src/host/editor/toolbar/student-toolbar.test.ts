@@ -116,6 +116,8 @@ describe("student toolbar over the editor", () => {
     const items = withPendingInserts([
       { id: "footnote", label: "Fusnota" },
       { id: "hole", label: "Za provjeru" },
+      // ED-111: the host inserts phrases itself ("Fraze").
+      { id: "phrase", label: "Fraza" },
       { id: "workParts", label: "Dijelovi rada", disabled: true },
     ]);
     expect(items.map((i) => i.label)).toEqual([
@@ -125,6 +127,7 @@ describe("student toolbar over the editor", () => {
       expect(items.find((i) => i.id === id)).toMatchObject({ disabled: true, hint: "nedostupno" });
     }
     expect(items.find((i) => i.id === "footnote")!.disabled).toBeUndefined();
+    expect(items.find((i) => i.id === "phrase")!.disabled).toBeUndefined();
     expect(items.find((i) => i.id === "workParts")!.disabled).toBe(true);
   });
 
