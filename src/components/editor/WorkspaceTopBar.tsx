@@ -89,7 +89,8 @@ export function WorkspaceTopBarView({
           <Button size="small" className={styles.primary} aria-disabled="true" aria-label={t.workspace.submitWork}>{label}</Button>
         ) : online ? (
           <span className={styles.submit}>
-            <a className={styles.link} href={`/rad/${encodeURIComponent(assignmentId)}/predaja`}
+            {/* ED-81 (NF2-P23): like the mark, under the base the app is served under. */}
+            <a className={styles.link} href={appHref(base, `/rad/${encodeURIComponent(assignmentId)}/predaja`)}
               aria-label={things === null ? t.workspace.submitWork : `${t.workspace.submitWork}: ${things}`}>
               {label}
               {count === null ? null : <b className={styles.count} aria-hidden="true">{count}</b>}
