@@ -9,7 +9,7 @@ import { goToSignIn } from "@/client/api";
 
 import { useHost } from "../../context";
 import { facultySettingsMessages as t } from "./messages.hr";
-import { assistantRows, readRulesPart, type AssistantRow, type Part } from "./read";
+import { assistantRows, readAssistantSettingPart, readRulesPart, type AssistantRow, type AssistantSetting, type Part } from "./read";
 import type { RuleRow } from "../institution-config/rules";
 
 const copy = messagesHr.facultyRuleVersions;
@@ -24,29 +24,48 @@ const columns: DataTableColumn<AssistantRow>[] = [
 ];
 
 /**
- * NF-7 OA-9: the faculty's assistant settings, read only. The faculty switch is a constant (C15, OC-1: off in phase A),
- * so it is stated, not read; what the rules allow per work type comes from the faculty rules. No provider or model is named.
+ * NF-7 OA-9 / OPE-09: the faculty's assistant settings, read only. The switch comes from institution.assistant-setting.get;
+ * when it cannot be read the page says so and never claims "off". What the rules allow per work type comes from the
+ * faculty rules. No provider or model is named.
  */
 export default function AssistantSettingsPage() {
   const { base } = useHost();
   const [part, setPart] = useState<Part<readonly RuleRow[]> | null>(null);
+  const [setting, setSetting] = useState<Part<AssistantSetting> | null>(null);
   const load = useCallback(() => {
     setPart(null);
+    setSetting(null);
     void readRulesPart().then(setPart);
+    void readAssistantSettingPart().then(setSetting);
   }, []);
   useEffect(load, [load]);
   useEffect(() => {
-    if (part?.kind === "signedOut") goToSignIn(appHref(base, "/ustanova/postavke/asistent"));
-  }, [part, base]);
+    if (part?.kind === "signedOut" || setting?.kind === "signedOut") goToSignIn(appHref(base, "/ustanova/postavke/asistent"));
+  }, [part, setting, base]);
 
   return (
     <>
       <p>{t.assistant.lead}</p>
       <Card level={2} title={t.assistant.status}>
-        <SummaryList rows={[{ id: "state", label: t.assistant.status, value: t.assistant.off }]} />
-        <p>{t.assistant.offNote}</p>
-        <p>{t.assistant.studentSees}</p>
-        <Notice tone="info">{t.assistant.switchUnknown}</Notice>
+        {setting === null && <p role="status">{t.loading}</p>}
+        {setting !== null && setting.kind !== "ready" && (
+          <>
+            <SummaryList rows={[{ id: "state", label: t.assistant.status, value: t.assistant.unread }]} />
+            <Notice tone="info">{setting.kind === "denied" ? t.denied : setting.kind === "signedOut" ? t.signedOut : t.assistant.switchUnknown}</Notice>
+            {setting.kind === "unavailable" && <ActionRow><Button tone="secondary" onClick={load}>{t.retry}</Button></ActionRow>}
+          </>
+        )}
+        {setting !== null && setting.kind === "ready" && (
+          <>
+            <SummaryList rows={[
+              { id: "state", label: t.assistant.status, value: setting.value.assistant ? t.assistant.on : t.assistant.off },
+              { id: "transcription", label: t.assistant.transcription, value: setting.value.transcription ? t.assistant.transcriptionOn : t.assistant.transcriptionOff },
+              { id: "tools", label: t.assistant.toolsLabel, value: setting.value.tools ? t.assistant.toolsOn : t.assistant.toolsOff },
+            ]} />
+            <p>{setting.value.assistant ? t.assistant.onNote : t.assistant.offNote}</p>
+            <p>{t.assistant.studentSees}</p>
+          </>
+        )}
       </Card>
       {part === null && <Card level={2} title={t.assistant.byTypeHeading} busy />}
       {part !== null && part.kind !== "ready" && (
