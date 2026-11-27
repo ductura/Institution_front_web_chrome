@@ -1,0 +1,10 @@
+/* ED-110: the writing session row (prototype .rp-foot) and its dialogs. */
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.row > span:first-of-type { flex: 1; min-width: 0; }
+.muted { color: var(--ink-2); }
+.goal { display: grid; gap: 6px; margin-top: 12px; }
+.goal > span { font-size: 13px; font-weight: 500; }
+.heading { margin: 16px 0 6px; font-size: 13px; }
+.list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.list li { display: flex; justify-content: space-between; gap: 12px; }
+.list li span:last-child { font-variant-numeric: tabular-nums; color: var(--ink-2); }

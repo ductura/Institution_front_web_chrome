@@ -80,6 +80,8 @@ export type HostSections = {
   instructions?: (ctx: HostSectionContext) => ReactNode;
   /** ED-71: what the host shows on the sheet above the text (prototype `#toc`, "Sadržaj na listu"). */
   sheetTop?: (ctx: HostSectionContext) => ReactNode;
+  /** ED-110: the row at the foot of the right panel (prototype `RP.HK.foot`, "Sesija pisanja"). */
+  panelFooter?: (ctx: HostSectionContext) => ReactNode;
 };
 
 export type OpenRead =
@@ -305,7 +307,8 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
           supplements={supplements} onPrintPreview={() => setPrintOpen(true)} />}
         <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} />
         {hostSections?.work?.(ctx)}
-      </>}>
+      </>}
+      rightFooter={hostSections?.panelFooter?.(ctx)}>
       <EditorNotices notices={!online
         ? [{ kind: "offline", savingLocally, resumesSync: true, waiting: pending ? offlineWaitingText(pending) : null }]
         : reconnected ? [{ kind: "reconnected", sending: reconnectText(pending) }] : []} />

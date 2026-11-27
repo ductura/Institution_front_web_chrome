@@ -65,8 +65,10 @@ function ChapterContext({ openGroup }: { openGroup: (group: PanelGroup) => void 
   </>;
 }
 
-export function RightPanel({ layout, sections = {}, settings, selection, onSelect, drawer }: {
+export function RightPanel({ layout, sections = {}, settings, selection, onSelect, drawer, footer }: {
   layout: PanelLayout;
+  /** ED-110: the row at the foot of the panel (prototype `RP.HK.foot`), the same in every layout. */
+  footer?: ReactNode;
   sections?: RightSections;
   settings: ReactNode;
   selection: PanelGroup | null;
@@ -109,5 +111,6 @@ export function RightPanel({ layout, sections = {}, settings, selection, onSelec
       </div>
       {shown && view(shown)}
     </>}
+    {footer ? <div className={styles.rightFooter}>{footer}</div> : null}
   </div></OpenCommentsReport.Provider>;
 }

@@ -135,6 +135,8 @@
 .rightLayout :global(.panel-tabs__list) { margin-right: 40px; }
 .contextHeading { min-height: 42px; padding-inline: 12px 42px; border-bottom: 1px solid var(--rule-2); }
 .rightContent { flex: 1; min-width: 0; padding: 12px; }
+/* ED-110: the panel's foot row (prototype .rp-foot), kept in view at the bottom. */
+.rightFooter { position: sticky; bottom: 0; z-index: 1; grid-column: 1 / -1; padding: 8px 12px; border-top: 1px solid var(--rule-2); background: var(--chrome); font-size: 12px; }
 .rightContent h2 { font-size: 13px; }
 .chapterContext { display: grid; gap: 4px; padding: 10px 12px; background: var(--well); border-radius: var(--radius); }
 .chapterContext span { font-size: 12px; color: var(--ink-2); }

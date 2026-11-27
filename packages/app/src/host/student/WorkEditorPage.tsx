@@ -58,6 +58,7 @@ import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
 import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
 import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
+import { WritingSessionHost } from "../editor/writing-session/WritingSessionHost";
 import { SheetToc } from "../editor/toc/SheetToc";
 import { SheetAbbreviations, type AbbreviationsEditor } from "../editor/abbreviations/SheetAbbreviations";
 import type { TocEditor } from "../../../../editor-core/src/outline/index.ts";
@@ -198,6 +199,8 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
                 <SheetToc editor={editor as unknown as TocEditor | null} scope={scope} documentId={documentId} />
                 <SheetAbbreviations editor={editor as unknown as AbbreviationsEditor | null} scope={scope} documentId={documentId} />
               </>,
+              // ED-110: "Sesija pisanja" at the foot of the right panel, only while the work can be written.
+              panelFooter: ({ submitted, signedOut }) => <WritingSessionHost workId={assignmentId} readOnly={submitted || signedOut} />,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId, read.dueAt), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></>,
               footer: <RailFooter range={frame.range} dueAt={read.dueAt} />,
