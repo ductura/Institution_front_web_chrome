@@ -88,7 +88,7 @@ export default function IsvuPage({ onDenied }: { readonly onDenied?: () => void 
     setShown({ kind: "busy" }); setResult(null);
     const r = await previewImport(courseId, sourceKey);
     if (!alive.current || mine !== previewTicket.current) return; // the choice changed meanwhile: this answer is for another course
-    if (r.kind === "signedOut") { setLoad("signedOut"); return; }
+    if (r.kind === "signedOut" || r.kind === "denied") { setLoad(r.kind); return; }
     setShown(r.kind === "ok" ? { kind: "preview", value: r.value } : { kind: "failed", failure: r.kind });
   };
 
@@ -99,7 +99,7 @@ export default function IsvuPage({ onDenied }: { readonly onDenied?: () => void 
     sending.current = false;
     if (!alive.current) return;
     setConfirming(false);
-    if (r.kind === "signedOut") { setAsking(false); setLoad("signedOut"); return; }
+    if (r.kind === "signedOut" || r.kind === "denied") { setAsking(false); setLoad(r.kind); return; }
     if (r.kind === "ok") { setAsking(false); setResult(r.value); setShown({ kind: "none" }); return; }
     if (r.kind === "expired") { setAsking(false); setShown({ kind: "failed", failure: "expired" }); return; }
     if (r.kind === "disabled") { setAsking(false); setShown({ kind: "failed", failure: "disabled" }); return; }

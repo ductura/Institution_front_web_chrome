@@ -253,4 +253,15 @@ describe("Povezivanje s ISVU-om", () => {
     expect(frames).toHaveLength(1);
     expect(frames[0]!.textContent).toBe("Upis nije uspio. Pregled je sačuvan; pokušajte ponovno.");
   });
+
+  it("a 403 on the preview or on the confirmation also shows the no-access state", async () => {
+    stub((c) => (isPreview(c) ? Response.json({ error: "forbidden" }, { status: 403 }) : undefined));
+    await mount(); await pick(); await click("Pregledaj popis");
+    expect(host!.querySelector("h1")?.textContent).toBe("Nemate pristup ovom prikazu");
+    expect(text()).not.toContain("Čitanje nije uspjelo");
+    act(() => root!.unmount()); root = null; host!.remove();
+    stub((c) => (isPreview(c) ? Response.json(mixed) : isConfirm(c) ? Response.json({ error: "forbidden" }, { status: 403 }) : undefined));
+    await mount(); await pick(); await click("Pregledaj popis"); await click("Potvrdi upis…"); await click("Potvrdi upis");
+    expect(host!.querySelector("h1")?.textContent).toBe("Nemate pristup ovom prikazu");
+  });
 });
