@@ -29,7 +29,7 @@ async function openNotice(page: Page, body: object) {
     json: { role: "student", institution: { displayName: "Izmišljeni fakultet" } },
   }));
   await page.route(API, (route) => route.fulfill({ json: body }));
-  await page.goto(`/app/web/zadatak/${ID}`);
+  await page.goto(`/aplikacija/zadatak/${ID}`);
   await expect(page.getByRole("heading", { name: TITLE })).toBeVisible();
   return writes;
 }
