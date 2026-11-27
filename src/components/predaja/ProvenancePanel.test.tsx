@@ -25,6 +25,15 @@ describe("WEB-1220 provenance panel", () => {
     expect(html).toContain("<mark");
   });
 
+  it("S-08 K5: a failed read is a role=alert frame without a retry link or button, as on N-04", async () => {
+    const failing: ProvenancePort = { read: async () => { throw new Error("izmišljena greška"); } };
+    const html = await render(failing, "rad-izmisljeni-1");
+    expect(html).toContain('role="alert"');
+    expect(html).toContain(provenanceShareHr.error);
+    expect(html).not.toContain(provenanceShareHr.retry);
+    expect(html).not.toContain("<button");
+  });
+
   it("renders the same view for the student's and the teacher's screen", async () => {
     const student = await render(screenProvenance, "rad-izmisljeni-1");
     const teacher = await render(screenProvenance, "doc-izmisljeni-2");

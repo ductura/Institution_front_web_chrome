@@ -54,11 +54,11 @@ describe("WorkspaceTopBarView", () => {
   it("shows the course line and hides Predaja rada on a read only work", () => {
     const html = renderToStaticMarkup(
       createElement(WorkspaceTopBarView, {
-        assignmentId: ID, title: "Izmišljeni rad", subtitle: "Izmišljeni kolegij · rok 8. 11. 2026., 23:59",
+        assignmentId: ID, title: "Izmišljeni rad", subtitle: "Izmišljeni kolegij, Esej, rok 8. studenoga 2026. u 23:59",
         readOnly: true, online: true, theme: "dark", onTheme: () => {},
       }),
     );
-    expect(html).toContain("Izmišljeni kolegij · rok 8. 11. 2026., 23:59");
+    expect(html).toContain("Izmišljeni kolegij, Esej, rok 8. studenoga 2026. u 23:59");
     expect(html).not.toContain(t.workspace.submitWork);
   });
 });

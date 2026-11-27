@@ -4,7 +4,7 @@ import { expect, it } from "vitest";
 
 import type { ReceiptRead } from "../../../../../../../src/components/predaja/ReceiptPanel";
 import ReceiptScreen from "./ReceiptScreen";
-import { fingerprintGroups, receiptView, when, zoned } from "./model";
+import { isFingerprint, receiptView, when, zoned } from "./model";
 
 const HEX = "0123456789abcdef".repeat(4);
 const receipt = (afterDeadline: boolean, evidenceRecord = "continuous"): ReceiptRead => ({
@@ -22,21 +22,27 @@ it("zone and time are Zagreb's, with the offset", () => {
   expect(when("2026-11-12T20:15:00Z")).toBe("12. 11. 2026. u 21:15");
 });
 
-it("puno: title, rows, UTC values and the fingerprint in groups of four", () => {
+it("puno: title, rows, UTC times in words and the fingerprint only copied, never shown", () => {
   const v = receiptView(receipt(false));
   expect(v.kind === "potvrdeno" && v.title).toBe("Predano 12. 11. 2026. u 21:15");
   const out = html(receipt(false));
   expect(out).toContain("Vrijeme predaje");
   expect(out).toContain("12. 11. 2026. u 21:15 (UTC+1)");
-  expect(out).toContain("2026-11-12T20:15:00.123456Z");
+  // S-08: the UTC block gives the same instants in words, not as ISO text, and no SHA-256 string is shown.
+  expect(out).toContain("Točna vremena iz potvrde (UTC)");
+  expect(out).toContain("Vrijeme predaje 12. studenoga 2026. u 20:15");
+  expect(out).toContain("Rok 12. studenoga 2026. u 20:02");
+  expect(out).not.toContain("2026-11-12T20:15:00.123456Z");
+  expect(out).not.toContain(HEX);
+  expect(out).not.toContain("0123 4567");
   expect(out).toContain("Otisak predanog teksta");
-  expect(out).toContain("Kopiraj otisak");
+  expect(out).toContain("Otisak u međuspremnik");
   expect(out).toContain("Preuzmi zapis (PDF s QR kodom)");
   expect(out).toContain("Na početnu");
   expect(out).toContain('aria-expanded="false"');
   expect(out).not.toContain("Zapis ima praznine.");
-  expect(fingerprintGroups(HEX)?.length).toBe(16);
-  expect(fingerprintGroups("xyz")).toBeNull();
+  expect(isFingerprint(HEX)).toBe(true);
+  expect(isFingerprint("xyz")).toBe(false);
 });
 
 it("nakonroka and praznine add only their own words", () => {
@@ -52,6 +58,20 @@ it("ceka, prazno, ucitavanje and greska say what the prototype says", () => {
   expect(html({ kind: "error" })).toContain("Ako je rad predan, predaja i vrijeme predaje time se ne mijenjaju.");
 });
 
+it("K5: the load error is a role=alert frame in the error colour with a link, never an outlined button", () => {
+  const out = html({ kind: "error" });
+  expect(out).toMatch(/role="alert"[^>]*>.*Potvrdu trenutačno nije moguće učitati/s);
+  expect(out).toContain('href="/r"');
+  expect(out).toContain("Pokušaj ponovno");
+  expect(out).not.toContain("btn secondary");
+});
+
+it("a pending receipt holds its UTC time in words, and leaves out a value that is no instant", () => {
+  const v = receiptView({ kind: "ceka", revision: 2, requestedAt: "2026-11-27T14:32:00Z" });
+  expect(v.kind === "ceka" && v.utc).toEqual([{ id: "requestedAt", label: "Vrijeme predaje", value: "27. studenoga 2026. u 14:32" }]);
+  const bad = receiptView({ kind: "ceka", revision: 2, requestedAt: "nije vrijeme" });
+  expect(bad.kind === "ceka" && bad.utc).toEqual([]);
+});
 it("verification is stated as unavailable and links nowhere", () => {
   expect(html(receipt(false))).toContain("Provjera potvrde još nije dostupna.");
 });
