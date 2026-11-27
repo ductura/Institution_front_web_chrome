@@ -11,6 +11,7 @@ import { publishAssignment } from "@/components/teacher/TeacherSetup/assignment-
 import { assignmentSetupMessages as setup } from "@/components/teacher/TeacherSetup/messages.hr";
 import type { TeacherCourse } from "@/components/teacher/teacher-courses-read";
 import { formatDateTimeHr } from "@/lib/i18n/hr";
+import { zagrebInstant } from "@/lib/i18n/zagreb";
 import { wordRangeHr } from "@/lib/i18n/length-line";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
@@ -30,6 +31,7 @@ import { checkRubric, type Rubric, type RubricErrors } from "../rubric/rubric-mo
 import { publishHr } from "../publish/messages.hr";
 import { CheckListLink, PublishDone } from "../publish/PublishDone";
 import { isUncertain, publishOutcome } from "../publish/publish-outcome";
+import { NoticePreview } from "../publish/NoticePreview";
 
 type Course = Pick<TeacherCourse, "id" | "name" | "academicYear" | "aiPolicy">;
 /** `isPractice` is the contract's practice-assignment flag (WEB-1901); the server stores it and returns it, no grade field exists for it. */
@@ -176,6 +178,16 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
       { id: "withdrawal", label: f.labels.withdrawal, value: choices.withdrawal ? f.values.withdrawalOn : f.values.withdrawalOff },
       { id: "declaration", label: f.labels.declaration, value: choices.declarationRequired ? f.values.declarationOn : f.values.declarationOff },
     ];
+    // NAS-R09: the notice the student will read, built from this form (version 1); the due time is read as Zagreb time.
+    const noticeFields = {
+      versionNo: 1,
+      dueAt: zagrebInstant(draft.dueAt) ?? draft.dueAt,
+      aiPolicy: course.aiPolicy,
+      aiPurposes: allowsHelp ? draft.aiPurposes : [],
+      importAllowed: draft.importAllowed === true,
+      wordMin: draft.wordMin.trim() ? Number(draft.wordMin) : null,
+      wordMax: draft.wordMax.trim() ? Number(draft.wordMax) : null,
+    };
     return (
       <>
         <p className="lede">{f.reviewIntro}</p>
@@ -183,6 +195,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
         <section className="card" aria-labelledby="po-h2">
           <h2 id="po-h2">{f.reviewHeading}</h2>
           <SummaryList rows={rows} />
+          <NoticePreview fields={noticeFields} />
           <p className="note">{seesLine(choices)}</p>
           <p className="note">{publishHr.reviewNote}</p>
           {failure && <p className="note" role="alert">{failure}</p>}
