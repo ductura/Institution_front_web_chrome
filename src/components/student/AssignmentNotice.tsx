@@ -142,7 +142,7 @@ export default function AssignmentNotice({ view, timing }: { view: NoticeView; t
     : timing === "pastDue" ? s.pastDue.replace("{time}", time(view.dueAt)) : null;
   // Only what readNotice returned: a known work type, a range wordRangeHr can say.
   const kindLine = [workTypes[view.workType], wordRangeHr({ min: view.wordMin, max: view.wordMax })]
-    .filter(Boolean);
+    .filter((part): part is string => Boolean(part));
 
   return (
     <article className={styles.notice} aria-labelledby="zadatak">
