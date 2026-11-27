@@ -61396,6 +61396,174 @@
       ]
     }
   },
+  "mentorship.working-style.get": {
+    "path": "/api/v1/student/mentors/{teacherId}/working-style",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "teacherId"
+      ],
+      "properties": {
+        "teacherId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the text, or nulls",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "text",
+                    "updatedAt"
+                  ],
+                  "properties": {
+                    "text": {
+                      "pattern": "^(?=[\\s\\S]*[^ \\t\\r\\n])(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000\\uD800-\\uDFFF]){1,1000}(?![\\s\\S])",
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z(?![\\s\\S])",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "text",
+                    "updatedAt"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "null"
+                    },
+                    "updatedAt": {
+                      "type": "null"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "mentorship.working-style.put": {
+    "path": "/api/v1/teacher/mentor-working-style",
+    "method": "PUT",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "text"
+      ],
+      "properties": {
+        "text": {
+          "pattern": "^(?=[\\s\\S]*[^ \\t\\r\\n])(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000\\uD800-\\uDFFF]){1,1000}(?![\\s\\S])",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the stored text",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "text",
+                "updatedAt"
+              ],
+              "properties": {
+                "text": {
+                  "pattern": "^(?=[\\s\\S]*[^ \\t\\r\\n])(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000\\uD800-\\uDFFF]){1,1000}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z(?![\\s\\S])",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
   "notifications.messages-and-slots.list.get": {
     "path": "/api/v1/notifications/messages-and-slots",
     "method": "GET",
@@ -64222,6 +64390,174 @@
       ],
       "404": [
         "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "work.ai-transfer.post": {
+    "path": "/api/v1/works/{documentId}/ai-transfers",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "responseId",
+        "text"
+      ],
+      "properties": {
+        "responseId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "maxLength": 40000,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the record of the transfer",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "aiTransferId",
+                "aiTransferSha256",
+                "record"
+              ],
+              "properties": {
+                "aiTransferId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "aiTransferSha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "record": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "transferSchema",
+                    "transferId",
+                    "documentId",
+                    "conversationId",
+                    "responseId",
+                    "providerId",
+                    "modelId",
+                    "purposeCatalogVersion",
+                    "purposeId",
+                    "phaseId",
+                    "textSha256",
+                    "transferredAt"
+                  ],
+                  "properties": {
+                    "transferSchema": {
+                      "const": "ductus-ai-transfer-v1",
+                      "type": "string"
+                    },
+                    "transferId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    },
+                    "documentId": {
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    "conversationId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    },
+                    "responseId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    },
+                    "providerId": {
+                      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+                      "type": "string"
+                    },
+                    "modelId": {
+                      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+                      "type": "string"
+                    },
+                    "purposeCatalogVersion": {
+                      "minimum": 1,
+                      "maximum": 2147483647,
+                      "type": "integer"
+                    },
+                    "purposeId": {
+                      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+                      "type": "string"
+                    },
+                    "phaseId": {
+                      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+                      "type": "string"
+                    },
+                    "textSha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    "transferredAt": {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00\\.000Z$",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
       ],
       "503": [
         "unavailable"
