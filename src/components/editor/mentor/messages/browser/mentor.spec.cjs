@@ -42,11 +42,11 @@ test("the teacher changes a deadline and both accounts read the same saved time"
   });
 
   await student.goto(`${fixture}?role=student`);
-  await student.getByText("Etape · 0 od 1 odobreno").click();
+  await student.getByText("Etape, 0 od 1 odobreno").click();
   await expect(student.locator("time")).toHaveText("27. studenoga 2026. 17:00");
 
   await teacher.goto(`${fixture}?role=teacher`);
-  await teacher.getByText("Etape · 0 od 1 odobreno").click();
+  await teacher.getByText("Etape, 0 od 1 odobreno").click();
   await expect(teacher.locator("time")).toHaveText("27. studenoga 2026. 17:00");
   await teacher.getByRole("button", { name: "Uredi etape" }).click();
   const editor = teacher.getByRole("dialog", { name: "Uredi etape" });
@@ -57,12 +57,12 @@ test("the teacher changes a deadline and both accounts read the same saved time"
   expect(writes).toBe(1);
 
   await student.reload();
-  await student.getByText("Etape · 0 od 1 odobreno").click();
+  await student.getByText("Etape, 0 od 1 odobreno").click();
   await expect(student.locator("time")).toHaveText("1. prosinca 2026. 15:30");
   await expect(student.getByRole("button", { name: "Uredi etape" })).toHaveCount(0);
 
   await teacher.goto(`${fixture}?role=teacher&submitted`);
-  await teacher.getByText("Etape · 0 od 1 odobreno").click();
+  await teacher.getByText("Etape, 0 od 1 odobreno").click();
   await expect(teacher.locator("time")).toHaveText("1. prosinca 2026. 15:30");
   await expect(teacher.getByRole("button", { name: "Uredi etape" })).toHaveCount(0);
   await teacher.close();

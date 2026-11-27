@@ -284,7 +284,7 @@ test("the whole flow of a thesis: topic, stage, forms and consent, committee, de
   expect(w.sent.filter((s) => s.path.endsWith("/submit"))).toHaveLength(1);
   await mentorPanel(page, w);
   const plan = page.getByTestId("mentor-work-plan").first();
-  await plan.getByText(/Etape · 0 od 1 odobreno/).click();
+  await plan.getByText(/Etape, 0 od 1 odobreno/).click();
   await plan.getByRole("button", { name: "Odobri", exact: true }).click();
   await page.getByRole("dialog", { name: "Odobri etapu" }).getByRole("button", { name: "Odobri etapu" }).click();
   await expect.poll(() => w.milestone.state).toBe("approved");
