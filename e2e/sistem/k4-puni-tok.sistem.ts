@@ -77,8 +77,10 @@ test('PM2-R10: nastavnik stvara zadatak i kod, student se upisuje i piše, oba v
       await expect(student).toHaveURL(`${webOrigin}${app(`/zadatak/${assignmentId}`)}`, { timeout: 30_000 });
       await student.getByRole('checkbox', { name: /Pročitao\/la sam obavijest/ }).check();
       await student.getByRole('button', { name: 'Potvrdi i otvori editor', exact: true }).click();
-      await student.getByRole('link', { name: 'Otvori editor', exact: true }).click();
-      await expect(student).toHaveURL(`${webOrigin}${app(`/rad/${assignmentId}`)}`);
+      // After the acknowledgment the app goes on to the editor by itself; the "Otvori editor" link
+      // is only there when it stays on the notice, so it is used only if it is shown.
+      await student.getByRole('link', { name: 'Otvori editor', exact: true }).click({ timeout: 3_000 }).catch(() => undefined);
+      await expect(student).toHaveURL(`${webOrigin}${app(`/rad/${assignmentId}`)}`, { timeout: 30_000 });
     });
 
     const documentId = await test.step('Student piše odlomak, a poslužitelj potvrđuje snimku', async () => {
