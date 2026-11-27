@@ -1,7 +1,8 @@
 "use client";
 
-import { Button, Card, RouteLoading } from "@ductura/ui";
+import { Card, RouteLoading } from "@ductura/ui";
 
+import { LoadAlert } from "../../states/States";
 import { workTeamText as t } from "./messages.hr";
 import { byName, categoriesInOrder, countOf, fullName, isReady } from "./model";
 import type { ContributionRead } from "./read";
@@ -20,8 +21,8 @@ export function ContributionCard({ read, retry }: { read: ContributionRead | nul
   if (read.kind === "unavailable" || read.kind === "notFound") {
     return (
       <Card level={2} title={t.contribution.title}>
-        <p role="alert">{read.kind === "notFound" ? t.gone : t.contribution.unavailable}</p>
-        {read.kind === "unavailable" && <p><Button tone="quiet" onClick={retry}>{t.retry}</Button></p>}
+        <LoadAlert body={read.kind === "notFound" ? t.gone : t.contribution.unavailable}
+          retry={read.kind === "unavailable" ? { label: t.retry, onRetry: retry } : undefined} />
       </Card>
     );
   }
@@ -29,8 +30,9 @@ export function ContributionCard({ read, retry }: { read: ContributionRead | nul
   if (!isReady(view)) {
     return (
       <Card level={2} title={t.contribution.title}>
-        <p role={view.state === "failed" ? "alert" : "status"} data-testid="contribution-state">{t.contribution[view.state]}</p>
-        {view.state === "failed" && <p><Button tone="quiet" onClick={retry}>{t.retry}</Button></p>}
+        {view.state === "failed"
+          ? <div data-testid="contribution-state"><LoadAlert body={t.contribution.failed} retry={{ label: t.retry, onRetry: retry }} /></div>
+          : <p role="status" data-testid="contribution-state">{t.contribution[view.state]}</p>}
       </Card>
     );
   }
