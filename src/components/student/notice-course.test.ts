@@ -51,11 +51,12 @@ describe("S03-a header", () => {
   });
 
   it("shows only the work type and range readNotice returned, then the due line", () => {
-    const both = renderToStaticMarkup(createElement(NoticeMeta, { kind: "Seminarski rad · 1500–2000 riječi", due: "Rok: x" }));
-    expect(both).toContain("Seminarski rad · 1500–2000 riječi");
+    const both = renderToStaticMarkup(createElement(NoticeMeta, { kind: ["Seminarski rad", "1500–2000 riječi"], due: "Rok: x" }));
+    expect(both).toContain("<span>Seminarski rad</span><span>1500–2000 riječi</span>");
+    expect(both).not.toContain("·");
     expect(both).toContain("Rok: x");
     expect(both.match(/aria-hidden="true"/g)).toHaveLength(2);
-    const dueOnly = renderToStaticMarkup(createElement(NoticeMeta, { kind: "", due: "Rok: x" }));
+    const dueOnly = renderToStaticMarkup(createElement(NoticeMeta, { kind: [], due: "Rok: x" }));
     expect(dueOnly.match(/<svg/g)).toHaveLength(1);
   });
 

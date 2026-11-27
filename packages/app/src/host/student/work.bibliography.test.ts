@@ -17,7 +17,7 @@ vi.mock("../../../../../src/client/api.ts", async (importOriginal) => ({
   goToSignIn: () => {},
   createApi: () => async (op: string) => {
     if (op === "student.assignments.get") {
-      return { ok: true, status: 200, body: { courses: [{ name: "Kolegij A", assignments: [{ id: ID, title: "Rad", dueAt: "2026-12-01T10:00:00Z", noticeFirst: false }] }] } };
+      return { ok: true, status: 200, body: { courses: [{ id: "course-1", name: "Kolegij A", assignments: [{ id: ID, title: "Rad", dueAt: "2026-12-01T10:00:00Z", noticeFirst: false }] }] } };
     }
     if (op === "student.assignment-work.get") return { ok: true, status: 200, body: { assignments: [{ assignmentId: ID, workState: "in_progress" }] } };
     return { ok: false, status: 404, code: "not_found" };
@@ -35,8 +35,8 @@ vi.mock("../../../../../src/components/editor/LocalDocument.tsx", async (importO
 }));
 vi.mock("../editor/sources-mention/LiteratureList", () => ({ LiteratureList: () => null }));
 vi.mock("../editor/bibliography/student/StudentBibliographyHost", () => ({
-  StudentBibliographyHost: (p: { documentId: string; assignmentId?: string; editor: object }) =>
-    createElement("p", null, `POPIS ${p.documentId} ${p.assignmentId} ${p.editor === editorState.editor}`),
+  StudentBibliographyHost: (p: { documentId: string; assignmentId?: string; courseId?: string | null; editor: object }) =>
+    createElement("p", null, `POPIS ${p.documentId} ${p.assignmentId} ${p.courseId} ${p.editor === editorState.editor}`),
 }));
 vi.mock("./work/requirements", () => ({ readWordRange: async () => null }));
 
@@ -56,8 +56,8 @@ async function open() {
 }
 
 describe("WorkPage mounts the bibliography host", { timeout: 30000 }, () => {
-  it("passes the document, the assignment and the live editor", async () => {
-    expect((await open()).textContent).toBe(`POPIS doc-1 ${ID} true`);
+  it("passes the document, the assignment, its course and the live editor", async () => {
+    expect((await open()).textContent).toBe(`POPIS doc-1 ${ID} course-1 true`);
   });
   it("mounts nothing while the editor is not there", async () => {
     editorState.editor = null;

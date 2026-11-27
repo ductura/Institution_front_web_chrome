@@ -23,7 +23,7 @@ import type { SessionMark } from "@/client/session-marks";
 import SessionObserver from "@/components/shell/SessionObserver";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
-import EditorPage, { SheetNote } from "./EditorPage";
+import EditorPage, { SheetAlert, SheetNote } from "./EditorPage";
 import { openFailureExit, openFailureText, type OpenFailure } from "./open-failure";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
@@ -140,7 +140,7 @@ function Note({ read, assignmentId, base, onRetry }: {
   const exit = openFailureExit(read.failure, { assignmentId, base });
   return (
     <div role="alert" data-open-failure={read.failure}>
-      <p>{openFailureText(read.failure)}</p>
+      <SheetAlert announce={false}><p>{openFailureText(read.failure)}</p></SheetAlert>
       {exit.kind === "link"
         ? <a className="btn" href={exit.href}>{exit.label}</a>
         : <button type="button" className="btn" onClick={exit.kind === "retry" ? onRetry : () => globalThis.location.reload()}>{exit.label}</button>}

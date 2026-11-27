@@ -13,6 +13,8 @@ Ispis sadrži pune Git SHA-ove weba, servera i Preloadera. Checkouti se zadano t
 
 - INT-13 (N07, DAN-887) je tok editora iz vala 1 (WEB-16: prihvaćanje WEB-14 i WEB-15), prije `e2e/editor-val1.spec.js` koji se pokretao samo uz `DUCTURA_STOG=1` na starom Nextu. `editor-val1.sistem.ts` ulazi kroz Preloader i piše u isporučenom `packages/app`: pisanje do „Spremljeno na poslužitelju”, osvježavanje, rad bez mreže, blokada druge kartice, svaki gumb statične trake, Poništi i Ponovi te axe na 1250 i 400 px. Prema G3 oznaka „Spremljeno na poslužitelju” vrijedi samo za potvrdu provjerenu u istoj sesiji stranice, pa nakon osvježavanja piše „Spremljeno na uređaju”; da je tekst na poslužitelju, test provjerava svježim kontekstom preglednika bez lokalnog dnevnika. Datoteka se po abecedi izvodi prije VS-1 i INT-03, dok je zajednički demo rad još otvoren. Za samostalno pokretanje koristi `pnpm test:sistem editor-val1`.
 
+- PM2-R10 (F4, A4) `k4-puni-tok.sistem.ts` je puni K-4 tok bez seed rada: nastavnik izrađuje izmišljeni kolegij, zadatak i kod za upis (kroz `/api/v1`), student se upisuje tim kodom na „Upis”, otvara zadatak i piše odlomak do „Spremljeno na poslužitelju”, a student i nastavnik čitaju isti `process-summary` (jednaki odgovori). Samostalno: `pnpm test:sistem k4-puni-tok`. `sistem.yml` je već posao `sistem` u `ci.yml` i u `ci-ok` (retci `needs` i okidač `e2e/sistem/`), pa ovaj test ulazi u obveznu provjeru.
+
 Za INT-04 nakon redovnog seeda učitaj `e2e/sistem/seed-int04.sql` u lokalnu ili CI bazu preko PostgreSQL socketa, istom administratorskom ulogom kao redovni seed. Za zadani Compose stog iz korijena web repoa na Linuxu ili u CI-ju pokreni:
 
 ```sh
@@ -30,3 +32,9 @@ Za spremanje su potrebni pohrana evidencije i registrirani razvojni ključ za po
 ## CI: workflow `Sistem` (INT-08, INT-10)
 
 `.github/workflows/sistem.yml` (samo workflow_dispatch (test `ci-ok.test.js` zabranjuje push i pull_request u drugim workflowima); nije required check i ne ulazi u `ci-ok`) na GitHub runneru kloni `ductura/Institution_server` i `ductura/Preloader` (javni repoi, bez tajni), diže PostgreSQL (Docker compose), migracije, seed, lažni OIDC i server (`pnpm lokalno --izvor=http://localhost:8000`), gradi i pokreće `packages/app` (`pnpm build` + `pnpm start`), gradi Preloader i pokreće njegov edge na `:8000`, preuzme stog bez nadzornika, učita `seed-int04.sql` i pokreće `pnpm test:sistem` (INT-02 do INT-05 i INT-13). `e2e/vs-run/vs-run.mjs` izrađuje `vs-run.json` (tri puna SHA-a, host, PID servera prije i poslije, svjež kontekst, četiri vrijednosti prije i poslije, ishod VS-1.1 do VS-1.13 i scenarija) i `tablica.md`. Artifact `sistem` sadrži njih, dnevnike stoga i Playwright tragove.
+
+### Pinovi servera i Preloadera za PR (WEB-SISTEM-PINS)
+
+Na pull requestu posao `sistem` ne uzima vrh grana `migracija/kopija-ductus-backend` i `migracija/nextjs`, nego commitove iz `e2e/sistem/pins.json` (`server`, `preloader`, puni SHA od 40 znakova). To su SHA-ovi servera i Preloadera iz koraka „SHAs” zadnjeg zelenog push runa `sistem` na bazi weba, pa ishod PR-a ne ovisi o tome što je u međuvremenu spojeno u server. Push u bazu, raspored i ručni pokret i dalje idu na vrh grana (ili na zadane `server_ref`/`preloader_ref`), pa baza prva vidi novi server. Zadani ulazi imaju prednost pred pinom.
+
+Pin se pomiče u istom PR-u koji treba novi server ili Preloader: u `pins.json` upiši puni SHA commita koji PR treba (već spojenog u granu servera ili Preloadera) i u opisu PR-a navedi zašto. Kad push run na bazi prođe s novijim serverom, pin se smije pomaknuti i zasebnim malim PR-om. Neispravan ili skraćeni SHA ruši korak `pins`.

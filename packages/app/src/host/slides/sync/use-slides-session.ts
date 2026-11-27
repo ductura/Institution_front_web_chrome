@@ -85,7 +85,8 @@ export type SlidesSession =
   | { phase: "signed-out" }
   | { phase: "recovery"; document: SlidesDocument | null; state: SlidesSnapshot["state"]; adopt: (confirmed: boolean) => Promise<AdoptResult> }
   | {
-      phase: "ready"; document: SlidesDocument; readOnly: boolean; snapshot: SlidesSnapshot;
+      /** `documentId` is the opened work's own, for the reads that name it (the slides export). */
+      phase: "ready"; documentId: string; document: SlidesDocument; readOnly: boolean; snapshot: SlidesSnapshot;
       onSteps: (steps: SlideStep[], after: SlidesDocument) => void;
     };
 
@@ -125,7 +126,7 @@ export function useSlidesSession(assignmentId: string, attempt = 0): SlidesSessi
         setSession({ phase: "recovery", document: result.document, state: mine.snapshot().state, adopt: (confirmed) => mine.adoptServer(confirmed) });
       } else {
         setSession({
-          phase: "ready", document: result.document, readOnly: result.readOnly, snapshot: mine.snapshot(),
+          phase: "ready", documentId, document: result.document, readOnly: result.readOnly, snapshot: mine.snapshot(),
           onSteps: (steps, after) => mine.record(steps, after),
         });
         unsubscribe = mine.subscribe((snapshot) => {

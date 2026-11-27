@@ -12,7 +12,7 @@ import { notFound, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { appHref } from "../../../../../src/components/index.ts";
-import EditorPage, { SheetNote } from "../../../../../src/components/editor/EditorPage.tsx";
+import EditorPage, { SheetAlert, SheetNote, SheetRetry } from "../../../../../src/components/editor/EditorPage.tsx";
 import { editorWorkRead, frameFailureOf } from "../../../../../src/components/editor/EditorPage.read.ts";
 import EditorPageWork from "../../../../../src/components/editor/EditorPageWork.tsx";
 import { ReadOnlyMentor } from "../../../../../src/components/editor/mentor/work-state/ReadOnlyMentor.tsx";
@@ -23,6 +23,7 @@ import { workspaceFrame, type WorkspaceVariant } from "../../../../../src/compon
 import { browserTransport, createApi, goToSignIn } from "../../../../../src/client/api.ts";
 import { withMentoredAssignments } from "../../../../../src/components/student/mentored-assignments.ts";
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
+import { studentHostHr } from "./i18n/messages.hr.ts";
 
 import { SaveState } from "@ductura/ui";
 import { hostText } from "../../text";
@@ -54,7 +55,7 @@ import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
 import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
 import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
-import { leftSectionsFor, RailFooter } from "../editor/left/LeftSectionsHost";
+import { leftSectionsFor, RailFooter, StartWorkHost } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
 import { SlidesWork } from "../slides/editor/SlidesWork";
 import { workKindOf } from "../slides/editor/work-kind";
@@ -80,6 +81,15 @@ function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: strin
         <SheetNote>{workText.notStarted}</SheetNote>
         <p aria-hidden="true">{workText.placeholder}</p>
         <StartWork assignmentId={assignmentId} title={title ?? ""} onOpened={reread} spreadsheet={spreadsheet} />
+      </>
+    );
+  }
+  // S-07 (E4): the read failed: the cause in a role=alert frame in the error colour, "Pokušaj ponovno" under it.
+  if (variant === "greska") {
+    return (
+      <>
+        <SheetAlert><p>{t.student.unavailable}</p></SheetAlert>
+        <SheetRetry label={t.workspace.openRetry} onRetry={reread} />
       </>
     );
   }
@@ -115,7 +125,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const frame = workspaceFrame(read, undefined, { kind: "ready", wordRange });
       const title = read.kind === "ready" ? read.title : null;
-      const subtitle = read.kind === "ready" ? courseLine(read.course, read.dueAt) : null;
+      const subtitle = read.kind === "ready" ? courseLine(read.course, read.dueAt, read.workType === undefined ? undefined : (studentHostHr.teacher.assignment.workTypes as Record<string, string>)[read.workType]) : null;
       // WEB-NUZ-PREDAJA-1 (P-17): only the full editor has the text the count reads, so only it counts.
       const bar = <WorkspaceTopBar assignmentId={assignmentId} base={base} title={title} subtitle={subtitle}
         readOnly={frame.variant === "predano"} inert={frame.variant === "greska"}
@@ -143,7 +153,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
             triggers={({ documentId }) => <SourcesMention documentId={documentId}
               openOrigin={() => router.push(nextPath(base, `/rad/${encodeURIComponent(assignmentId)}/podrijetlo`))} />}
-            literature={({ documentId }) => <><LiteratureList courseId={courseIdOf(assignments, assignmentId)} /><BibliographyMount documentId={documentId} assignmentId={assignmentId} /></>}
+            literature={({ documentId }) => <><LiteratureList courseId={courseIdOf(assignments, assignmentId)} /><BibliographyMount documentId={documentId} assignmentId={assignmentId} courseId={courseIdOf(assignments, assignmentId)} /></>}
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
@@ -176,6 +186,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               <RulesHost role="student" />
               <MarksHost />
               <ReadAloudHost />
+              {/* EDI-R16: the "Započnite rad" wizard lives here, outside the closable Napredak section, so its dialog is never hidden. */}
+              <StartWorkHost workId={assignmentId} />
             </>} />,
         });
       }
@@ -234,7 +246,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
 }
 
 /** V18-22-R02 (V20-11, V20-14): the list of literature in the institution's style, under the sources of the work. */
-function BibliographyMount({ documentId, assignmentId }: { documentId: string; assignmentId: string }) {
+function BibliographyMount({ documentId, assignmentId, courseId }: { documentId: string; assignmentId: string; courseId: string | null }) {
   const editor = useLocalEditor();
-  return editor ? <StudentBibliographyHost documentId={documentId} editor={editor} assignmentId={assignmentId} /> : null;
+  return editor ? <StudentBibliographyHost documentId={documentId} editor={editor} assignmentId={assignmentId} courseId={courseId} /> : null;
 }

@@ -3,7 +3,7 @@ import path from "node:path";
 import type { NextConfig } from "next";
 
 import { BASE_PATH } from "./src/bases.ts";
-import { institutionRedirects, institutionRewrites, institutionServerUrl } from "./src/rewrites.ts";
+import { institutionRedirects, institutionRewrites, institutionServerUrl, legacyAuthRedirects } from "./src/rewrites.ts";
 
 // The institution front under /aplikacija/ (D-318, DAN-1574): basePath
 // "/aplikacija", the pages in the route group app/(host)/. The edge routes
@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
   turbopack: { root },
   outputFileTracingRoot: root,
   async redirects() {
-    return institutionRedirects();
+    return [...institutionRedirects(), ...legacyAuthRedirects()];
   },
   async headers() {
     return [{ source: "/code-run/:path*", headers: [{ key: "Content-Security-Policy", value: CODE_RUN_FRAME_CSP }] }];

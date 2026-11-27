@@ -40,7 +40,7 @@ test("the statement opens without reading the session, with every section of the
   await expect(page.getByText("Izjava je sastavljena 21. studenoga 2026.")).toBeVisible();
   await expect(page.getByRole("link", { name: ENFORCEMENT_BODY.email })).toHaveAttribute("href", `mailto:${ENFORCEMENT_BODY.email}`);
   await expect(page.getByRole("link", { name: "Na početnu" })).toHaveAttribute("href", "/aplikacija/");
-  await expect(page).toHaveTitle("Izjava o pristupačnosti · Ductura");
+  await expect(page).toHaveTitle("Izjava o pristupačnosti, Ductura");
   expect(seen.me).toBe(0);
 });
 
@@ -50,7 +50,7 @@ test("English text, from the saved interface language", async ({ page }) => {
   await page.goto("/aplikacija/pristupacnost");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Accessibility statement");
   await expect(page.getByText("This statement was prepared on 21 November 2026.")).toBeVisible();
-  await expect(page).toHaveTitle("Accessibility statement · Ductura");
+  await expect(page).toHaveTitle("Accessibility statement, Ductura");
 });
 
 for (const role of ["student", "teacher", "institution_admin"] as const) {
