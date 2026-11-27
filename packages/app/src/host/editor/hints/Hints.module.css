@@ -1,0 +1,13 @@
+/* ED-82: a hint is a quiet dotted line under the words (prototype editor.css .hint), never a colour of
+   the text; "Čisti tekst", focus mode and print leave the text without it. */
+.hint { text-decoration: underline dotted var(--ink-muted); text-decoration-thickness: 1.5px; text-underline-offset: 4px; cursor: help; }
+:global(:root[data-clean-text="on"]) .hint,
+:global([data-focus="true"]) .hint { text-decoration: none; cursor: auto; }
+@media print { .hint { text-decoration: none; } }
+.pop { position: fixed; z-index: 60; min-width: 240px; max-width: min(340px, calc(100vw - 16px)); max-height: 60vh; overflow: auto; padding: 6px 0; background: var(--raised); color: var(--ink); border: 1px solid var(--raised-rule); border-radius: var(--radius); box-shadow: var(--lift); }
+.pop h3 { margin: 0; padding: 6px 12px 2px; font-size: 13px; font-weight: 600; }
+.pop p { margin: 0; padding: 6px 12px 0; font-size: 13px; }
+.muted { color: var(--ink-muted); }
+.quote { margin: 4px 12px 0; padding-left: 8px; border-left: 2px solid var(--rule); font-size: 13px; color: var(--ink-2, var(--ink)); }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 4px; }
+.phrases { margin: 0; padding: 4px 12px 0; list-style: none; display: grid; gap: 2px; }

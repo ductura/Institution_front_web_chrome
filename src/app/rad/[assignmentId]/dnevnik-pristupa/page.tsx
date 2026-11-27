@@ -1,11 +1,12 @@
 import Link from "next/link";
 
 import RoleShell from "@/components/shell/RoleShell";
+import { AccessLogUnavailable } from "@/components/student/AccessLogView";
 import { assignmentIdOf } from "@/components/student/access-log-read";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${t.accessLog.context} · ${t.app.name}` };
+export const metadata = { title: `${t.accessLog.context}, ${t.app.name}` };
 
 /**
  * S-42 (DAN-294; WEB-13 over /api/v1): the student's own access log (PRODUCT
@@ -32,7 +33,8 @@ export default async function StudentAccessLogPage({
         ) : (
           <>
             <p><Link href={`/rad/${assignmentId}`}>{t.accessLog.backToWork}</Link></p>
-            <p className="access-log__note" role="status">{t.accessLog.unavailable}</p>
+            {/* Design alignment 27. 11. 2026. (S-42): the load alert with "Pokušaj ponovno", not a status line. */}
+            <AccessLogUnavailable retryHref={here} />
           </>
         )}
       </div>

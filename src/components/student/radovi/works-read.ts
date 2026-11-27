@@ -22,7 +22,7 @@ export type WorksRead = MyAssignmentsRead & {
 };
 
 /**
- * The courses first: signed out or unavailable there is the page's state,
+ * The courses first: signed out, denied (403) or unavailable there is the page's state,
  * never an empty list. The states only add a line to a row, so a failed
  * states read (the route without a handler included) leaves the rows without
  * one: a state is never guessed.

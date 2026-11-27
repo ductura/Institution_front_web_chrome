@@ -1157,6 +1157,13 @@ main:focus {
 }
 
 /* Length in the status bar (FE-D6, editor-v11): the count stands out. */
+/* Design alignment 27. 11. 2026. (S-07): its parts 12 px apart, never joined by a dot. */
+.status-length {
+  display: inline-flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+}
+
 .status-length__count {
   font-weight: 600;
   color: var(--ink);
@@ -1388,6 +1395,18 @@ main:focus {
 
 .access-log__what {
   color: var(--ink-2);
+}
+
+/* Design alignment 27. 11. 2026. (S-08): the outcome line of step 4 when it reports a failure. */
+.submission__outcome--error {
+  color: var(--error);
+}
+
+/* Design alignment 27. 11. 2026. (S-42): name and role 12 px apart, no dot. */
+.access-log__who {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
 }
 
 .access-log__more {

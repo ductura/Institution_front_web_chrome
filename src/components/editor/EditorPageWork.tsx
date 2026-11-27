@@ -20,10 +20,11 @@ import type { Editor } from "@tiptap/react";
 import { openWork, type OpenOutcome } from "@/client/evidence-ingest";
 import { useOnline } from "@/client/online-status";
 import type { SessionMark } from "@/client/session-marks";
+import loadAlert from "@/components/shell/LoadAlert.module.css";
 import SessionObserver from "@/components/shell/SessionObserver";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
-import EditorPage, { SheetAlert, SheetNote } from "./EditorPage";
+import EditorPage, { SheetNote } from "./EditorPage";
 import { openFailureExit, openFailureText, type OpenFailure } from "./open-failure";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
@@ -142,7 +143,8 @@ function Note({ read, assignmentId, base, onRetry }: {
   const exit = openFailureExit(read.failure, { assignmentId, base });
   return (
     <div role="alert" data-open-failure={read.failure}>
-      <SheetAlert announce={false}><p>{openFailureText(read.failure)}</p></SheetAlert>
+      {/* Design alignment 27. 11. 2026. (E5): the cause in the error frame of LoadAlert; the way out stays under it. */}
+      <p className={loadAlert.alert}>{openFailureText(read.failure)}</p>
       {exit.kind === "link"
         ? <a className="btn" href={exit.href}>{exit.label}</a>
         : <button type="button" className="btn" onClick={exit.kind === "retry" ? onRetry : () => globalThis.location.reload()}>{exit.label}</button>}

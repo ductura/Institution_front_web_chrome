@@ -19,7 +19,7 @@ export type WorkspaceTopBarProps = {
   readonly base?: string;
   /** The assignment's title, or null when the read could not give it. */
   readonly title: string | null;
-  /** The line under the title ("Kolegij, vrsta, rok 30. studenoga 2026. u 23:59"), or null when it is not known. */
+  /** The line under the title ("Uvod u znanstveno pisanje, Esej, rok 30. studenoga 2026. u 23:59"), or null when it is not known. */
   readonly subtitle?: string | null;
   /** A work that is read only has no "Predaja rada" (the prototype hides it). */
   readonly readOnly?: boolean;
@@ -89,7 +89,8 @@ export function WorkspaceTopBarView({
           <Button size="small" className={styles.primary} aria-disabled="true" aria-label={t.workspace.submitWork}>{label}</Button>
         ) : online ? (
           <span className={styles.submit}>
-            <a className={styles.link} href={`/rad/${encodeURIComponent(assignmentId)}/predaja`}
+            {/* ED-81 (NF2-P23): like the mark, under the base the app is served under. */}
+            <a className={styles.link} href={appHref(base, `/rad/${encodeURIComponent(assignmentId)}/predaja`)}
               aria-label={things === null ? t.workspace.submitWork : `${t.workspace.submitWork}: ${things}`}>
               {label}
               {count === null ? null : <b className={styles.count} aria-hidden="true">{count}</b>}

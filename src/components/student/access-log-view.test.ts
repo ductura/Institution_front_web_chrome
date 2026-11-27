@@ -51,10 +51,12 @@ describe("DAN-294 S-42 view", () => {
       row(1, "2026-11-09T10:40:00Z", { reader_role: "teacher", reader_family_name: "C", surface: "process_summary" }),
       row(2, "2026-11-10T13:10:00Z"),
     ]);
-    expect(out.indexOf("Utorak, 10. 11. 2026.")).toBeLessThan(out.indexOf("Ponedjeljak, 9. 11. 2026."));
+    // Design alignment 27. 11. 2026. (S-42): full month; name and role two parts, no dot.
+    expect(out.indexOf("Utorak, 10. studenoga 2026.")).toBeLessThan(out.indexOf("Ponedjeljak, 9. studenoga 2026."));
     expect(out).toContain('<time class="access-log__time" dateTime="2026-11-10T13:10:00.000Z">14:10–14:15</time>');
-    expect(out).toContain(`Nastavnik B · ${a.roles.mentor}`);
-    expect(out).toContain(`Nastavnik C · ${a.roles.teacher}`);
+    expect(out).toContain(`<span>Nastavnik B</span><span>${a.roles.mentor}</span>`);
+    expect(out).toContain(`<span>Nastavnik C</span><span>${a.roles.teacher}</span>`);
+    expect(out).not.toContain("·");
     expect(out).toContain(a.surfaces.process_summary);
     expect(out.match(/<li /g)).toHaveLength(2);
     expect(out).toMatch(/<section[^>]*aria-labelledby="dan-2026-11-10"/);
@@ -74,7 +76,7 @@ describe("DAN-294 S-42 view", () => {
       row(2, "2026-11-10T13:05:00Z", { reader_role: "unknown", surface: "unknown" }),
     ]);
     expect(out).toContain(`<span>${a.roleAlone.seminar_teacher}</span>`);
-    expect(out).toContain(`Nastavnik B · ${a.roles.unknown}`);
+    expect(out).toContain(`<span>Nastavnik B</span><span>${a.roles.unknown}</span>`);
     expect(out).toContain(a.surfaces.unknown);
   });
 
@@ -109,14 +111,16 @@ describe("DAN-294 S-42 view", () => {
 
   it("error: an alert and a retry link", () => {
     const out = renderToStaticMarkup(createElement(AccessLogUnavailable, { retryHref: "/rad/x/dnevnik-pristupa" }));
-    expect(out).toContain(`role="alert">${a.unavailable}`);
+    // Design alignment 27. 11. 2026. (S-42): the shared load alert, the retry link under the frame.
+    expect(out).toMatch(new RegExp(`role="alert"[^>]*>${a.unavailable}</p>`));
     expect(out).toContain(`href="/rad/x/dnevnik-pristupa">${a.retry}</a>`);
   });
 
   it("headings and labels", () => {
-    expect(dayHeading(days([row(1, "2026-03-29T00:55:00Z")])[0]!)).toBe("Nedjelja, 29. 3. 2026.");
+    expect(dayHeading(days([row(1, "2026-03-29T00:55:00Z")])[0]!)).toBe("Nedjelja, 29. ožujka 2026.");
+    expect(dayHeading(days([row(1, "2026-11-26T10:00:00Z")])[0]!)).toBe("Četvrtak, 26. studenoga 2026.");
     const [entry] = days([row(1, "2026-11-10T13:10:00Z", { reader_given_name: null, reader_family_name: null })])[0]!.entries;
-    expect(readerLabel(entry!)).toBe(a.roleAlone.mentor);
+    expect(readerLabel(entry!)).toEqual([a.roleAlone.mentor]);
   });
 
   it("no catalogue text of the screen uses a forbidden term", () => {

@@ -160,6 +160,7 @@ describe("scopeLine", () => {
     const range = { min: 1200, max: 1600 };
     expect(render2({ words: 0, range })).toContain("<span>0 riječi</span><span>opseg 1.200 do 1.600</span>");
     expect(render2({ words: 1201, range })).toContain("<span>1.201 riječ</span><span>opseg 1.200 do 1.600</span>");
+    expect(render2({ words: 1201, range })).not.toContain("·");
   });
 
   it("says read only for a submitted work, never a save state", () => {

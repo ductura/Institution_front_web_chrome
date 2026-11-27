@@ -2,7 +2,7 @@
 
 /**
  * The length part of the status bar on /rad (FE-D6, design editor-v11):
- * "označeno 12 riječi · 210 / 2 000–2 500 riječi · ≈ 1 str.". It reads the
+ * "označeno 12 riječi", "210 / 2 000–2 500 riječi", "≈ 1 str.". It reads the
  * provider and the editor and writes nothing. While the journal is still
  * being read it says so instead of showing a count it does not have yet.
  *
@@ -45,10 +45,11 @@ export function LocalStatusLength({ range }: { range: WordRange | null }) {
   if (loading) return <span className="status-length">{t.workspace.statusLoading}</span>;
   const line = lengthLine(words, selectedWords, range);
   return (
+    // Design alignment 27. 11. 2026. (S-07): the parts 12 px apart (globals.css), never joined by a dot.
     <span className="status-length">
-      {line.selected ? <span className="status-length__selected">{line.selected} · </span> : null}
-      <b className="status-length__count">{line.count}</b>
-      {line.rest}
+      {line.selected ? <span className="status-length__selected">{line.selected}</span> : null}
+      <span><b className="status-length__count">{line.count}</b>{line.rest}</span>
+      {line.pages === null ? null : <span>{line.pages}</span>}
     </span>
   );
 }

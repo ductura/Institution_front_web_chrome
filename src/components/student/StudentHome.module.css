@@ -39,7 +39,7 @@
 .title {
   margin: 0;
   font-family: var(--ff-display);
-  font-size: 64px;
+  font-size: var(--fs-h1);
   font-weight: 500;
   line-height: 1.08;
   letter-spacing: -0.025em;
@@ -48,7 +48,7 @@
 
 .lede {
   margin: 8px 0 0;
-  font-size: 26px;
+  font-size: 25px;
   line-height: 1.25;
   color: var(--ink-2);
 }
@@ -63,7 +63,7 @@
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
   color: var(--ink);
-  font-size: 18px;
+  font-size: 15px;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -80,14 +80,14 @@
 
 .plus {
   color: var(--accent);
-  font-size: 24px;
+  font-size: 25px;
   line-height: 1;
 }
 
 .sectionTitle {
   margin: 20px 0 16px;
   font-family: var(--ff-display);
-  font-size: 42px;
+  font-size: var(--fs-h2);
   font-weight: 500;
   line-height: 1.08;
   letter-spacing: -0.025em;
@@ -106,27 +106,27 @@
   margin: 0;
 }
 
+/*
+ * Design alignment 27. 11. 2026. (Z4, K3): heading and text inside the one
+ * role=alert frame (LoadAlert), both in its error colour and ui face.
+ */
 .stateTitle {
-  margin: 0;
-  font-family: var(--ff-display);
-  font-size: 40px;
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  display: block;
+  font-weight: 600;
 }
 
 .stateBody {
-  font-size: 19px;
-  color: var(--ink-2);
+  display: block;
 }
 
+/* Design alignment 27. 11. 2026. (A5): every size is a step of the existing type scale. */
 @media (max-width: 1250px) {
   .title {
-    font-size: 54px;
+    font-size: var(--fs-h2);
   }
 
   .enroll {
-    font-size: 15px;
+    font-size: 13.5px;
     padding-inline: 16px;
   }
 }
@@ -141,12 +141,12 @@
   }
 
   .title {
-    font-size: 44px;
-    line-height: 1.1;
+    font-size: 32px;
+    line-height: 1.15;
   }
 
   .lede {
-    font-size: 21px;
+    font-size: 20px;
     line-height: 1.45;
   }
 
@@ -155,8 +155,7 @@
     min-height: 46px;
   }
 
-  .sectionTitle,
-  .stateTitle {
-    font-size: 33px;
+  .sectionTitle {
+    font-size: 32px;
   }
 }

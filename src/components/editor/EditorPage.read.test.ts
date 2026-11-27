@@ -47,6 +47,11 @@ describe("editorWorkRead", () => {
     expect(editorWorkRead(ID, { ok: false, status: 0 }, works("in_progress"), refusals)).toEqual({ kind: "unavailable" });
   });
 
+  it("carries an extended deadline and the work type only when the read has them", () => {
+    const read = editorWorkRead(ID, courses({ ...assignment, extendedDueAt: "2027-01-20T22:59:00.000Z", workType: "essay" } as typeof assignment), works("in_progress"));
+    expect(read).toMatchObject({ kind: "ready", dueAt: assignment.dueAt, extendedDueAt: "2027-01-20T22:59:00.000Z", workType: "essay" });
+  });
+
   it("opens the notice first when it is not acknowledged", () => {
     expect(editorWorkRead(ID, courses({ ...assignment, noticeFirst: true }), works("in_progress"))).toEqual({ kind: "noticeFirst" });
   });
