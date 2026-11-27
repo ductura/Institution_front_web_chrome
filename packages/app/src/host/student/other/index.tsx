@@ -23,6 +23,8 @@ import { AccessLogDays, AccessLogUnavailable } from "../access-log/AccessLogView
 import { browserTransport, createApi, goToSignIn } from "../../../../../../src/client/api.ts";
 import type { SessionMark } from "../../../../../../src/client/session-marks.ts";
 import { studentHostHr as t } from "../i18n/messages.hr.ts";
+import { messagesHr as shared } from "../../../../../../src/lib/i18n/messages.hr.ts";
+import { DeniedState } from "../../states/States";
 
 import { nextPath } from "../../../bases";
 import { hostText } from "../../../text";
@@ -37,6 +39,8 @@ const workPath = (assignmentId: string) => `/rad/${encodeURIComponent(assignment
 export type WorkDocument =
   | { readonly kind: "invalid" }
   | { readonly kind: "notFound" }
+  /** 403 from either read: not a read error (design alignment 27. 11. 2026., A3). */
+  | { readonly kind: "denied" }
   | { readonly kind: "notStarted" }
   | { readonly kind: "unavailable" }
   | { readonly kind: "document"; readonly assignmentId: string; readonly documentId: string };
@@ -84,6 +88,11 @@ export function useWorkDocument(raw: string, suffix: string): WorkDocument | nul
   return shown;
 }
 
+/** A3, 403: the heading and the way back to one's own space, no further text. */
+function Denied({ base }: { base: string }) {
+  return <div className="page"><DeniedState title={shared.access.deniedTitle} backLabel={shared.access.backToOwn} backHref={appHref(base, "/")} /></div>;
+}
+
 function Page({ title, back, children }: { title: string; back: ReactNode; children: ReactNode }) {
   return (
     <div className="page access-log">
@@ -114,6 +123,7 @@ export function AccessLogPage({ assignmentId: raw, cursor }: { assignmentId: str
   }, [documentId, cursor?.beforeAt, cursor?.beforeId]);
 
   if (work?.kind === "notFound") notFound();
+  if (work?.kind === "denied") return <Denied base={base} />;
   const id = assignmentIdOf(raw);
   const here = id === null ? "" : appHref(base, `${workPath(id)}/dnevnik-pristupa`);
   if (log?.kind === "signedOut") goToSignIn(here);
@@ -166,6 +176,7 @@ export function ReplayPage({ assignmentId: raw }: { assignmentId: string }) {
   const work = useWorkDocument(raw, "reprodukcija");
   const session = useSessionMark();
   if (work?.kind === "notFound") notFound();
+  if (work?.kind === "denied") return <Denied base={base} />;
   const id = assignmentIdOf(raw);
   const back = id === null ? null : <p><a href={appHref(base, workPath(id))}>{t.replay.backToWork}</a></p>;
 

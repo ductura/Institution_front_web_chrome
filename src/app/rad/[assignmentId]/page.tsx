@@ -11,11 +11,13 @@ import { ReadOnlyMentor } from "../../../components/editor/mentor/work-state/Rea
 import { readSubmittedWork } from "../../../components/editor/mentor/work-state/submitted-work-read";
 import StatusBar from "../../../components/editor/StatusBar";
 import WorkspaceTopBar from "../../../components/editor/WorkspaceTopBar";
+import { workspaceSubtitle } from "../../../components/editor/workspace-subtitle";
+import LoadAlert, { DeniedState } from "../../../components/shell/LoadAlert";
 import { workspaceFrame, type WorkspaceVariant } from "../../../components/editor/workspace-variant";
 import { messagesHr as t } from "../../../lib/i18n/messages.hr";
 
 export const metadata = {
-  title: `${t.workspace.title} · ${t.app.name}`,
+  title: `${t.workspace.title}, ${t.app.name}`,
 };
 
 /** Both reads take no input. */
@@ -26,9 +28,10 @@ const UNREACHED = { ok: false, status: 0 } as const;
 export const dynamic = "force-dynamic";
 
 /** What the sheet holds when no editor is mounted. */
-function sheetBody(variant: WorkspaceVariant) {
+function sheetBody(variant: WorkspaceVariant, here: string) {
   // The server could not answer: say so, never that the assignment is not this account's.
-  if (variant === "greska") return <SheetNote>{t.student.unavailable}</SheetNote>;
+  // Design alignment 27. 11. 2026. (E4): the role=alert frame, "Pokušaj ponovno" the link under it.
+  if (variant === "greska") return <LoadAlert retry={{ label: t.workspace.openRetry, href: here }}>{t.student.unavailable}</LoadAlert>;
   if (variant === "predano") return <SheetNote>{t.editor.submittedReadOnly}</SheetNote>;
   if (variant === "prazno") return <SheetNote>{t.workspace.notStarted}</SheetNote>;
   return (
@@ -70,9 +73,12 @@ export default async function WorkPage({ params }: { params: Promise<{ assignmen
   if (read.kind === "signedOut") redirect(signInHref(here));
   if (read.kind === "noticeFirst") redirect(`/zadatak/${assignmentId}`);
   if (read.kind === "notFound") notFound();
+  // Design alignment 27. 11. 2026.: 403 is not a read error; the heading and the way back only.
+  if (read.kind === "denied") return <div className="page"><DeniedState /></div>;
   const frame = workspaceFrame(read);
   const title = read.kind === "ready" ? read.title : null;
-  const topBar = <WorkspaceTopBar assignmentId={assignmentId} title={title} />;
+  const subtitle = read.kind === "ready" ? workspaceSubtitle(read) : null;
+  const topBar = <WorkspaceTopBar assignmentId={assignmentId} title={title} subtitle={subtitle} />;
   const length = { words: null, range: frame.range };
   // "not_started" waits for the read of work-document-plan over /api/v1.
   if (read.kind === "ready" && frame.variant === "puno") {
@@ -92,7 +98,7 @@ export default async function WorkPage({ params }: { params: Promise<{ assignmen
       aside={frame.variant === "predano" && <ReadOnlyMentor role="student" submitted
         documentId={receipt?.documentId} submittedAt={receipt?.requestedAt} />}
     >
-      {sheetBody(frame.variant)}
+      {sheetBody(frame.variant, here)}
     </EditorPage>
   );
 }

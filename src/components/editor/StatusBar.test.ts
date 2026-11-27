@@ -111,20 +111,21 @@ describe("statusSaveOf", () => {
 
 // WEB-23 (S: E-7): the scope line beside the save state, and the read-only bar.
 describe("scopeLine", () => {
+  // Design alignment 27. 11. 2026. (S-07): the parts, each its own element 12 px apart, never joined by a dot.
   it("writes the count and the range as E-7 does", () => {
-    expect(scopeLine(340, { min: 1200, max: 1600 })).toBe("340 riječi · opseg 1.200 do 1.600 · ≈ 1 str. · još 860 do donje granice · vidite samo Vi");
-    expect(scopeLine(1, null)).toBe("1 riječ · ≈ 1 str. · vidite samo Vi");
-    expect(scopeLine(12500, null)).toBe("12.500 riječi · ≈ 36 str. · vidite samo Vi");
+    expect(scopeLine(340, { min: 1200, max: 1600 })).toEqual(["340 riječi", "opseg 1.200 do 1.600", "≈ 1 str.", "još 860 do donje granice", "vidite samo Vi"]);
+    expect(scopeLine(1, null)).toEqual(["1 riječ", "≈ 1 str.", "vidite samo Vi"]);
+    expect(scopeLine(12500, null)).toEqual(["12.500 riječi", "≈ 36 str.", "vidite samo Vi"]);
   });
 
   it("estimates the pages from the count, never before the first word (ED-48, P2-24)", () => {
-    expect(scopeLine(0, null)).toBe("0 riječi · vidite samo Vi");
+    expect(scopeLine(0, null)).toEqual(["0 riječi", "vidite samo Vi"]);
     expect(scopeLine(1, null)).toContain("≈ 1 str.");
     expect(scopeLine(900, null)).toContain("≈ 3 str.");
     // As the prototype: 350 words a page, rounded up.
     expect(scopeLine(350, null)).toContain("≈ 1 str.");
     expect(scopeLine(351, null)).toContain("≈ 2 str.");
-    expect(scopeLine(null, { min: 1200, max: 1600 })).not.toContain("str.");
+    expect(scopeLine(null, { min: 1200, max: 1600 })?.join(" ")).not.toContain("str.");
   });
 
   it("names the standing against the range as a fact about the task, never about the student (ED-04, NF2-P6)", () => {
@@ -135,9 +136,9 @@ describe("scopeLine", () => {
     expect(scopeStanding(1601, range)).toBe("above");
     expect(scopeStanding(null, range)).toBeNull();
     expect(scopeStanding(500, null)).toBeNull();
-    expect(scopeLine(1400, range)).toBe("1.400 riječi · opseg 1.200 do 1.600 · ≈ 4 str. · unutar opsega · vidite samo Vi");
-    expect(scopeLine(1640, range)).toBe("1.640 riječi · opseg 1.200 do 1.600 · ≈ 5 str. · iznad gornje granice za 40 · vidite samo Vi");
-    expect(scopeLine(0, { min: 2000, max: 2500 })).toBe("0 riječi · opseg 2.000 do 2.500 · još 2.000 do donje granice · vidite samo Vi");
+    expect(scopeLine(1400, range)).toEqual(["1.400 riječi", "opseg 1.200 do 1.600", "≈ 4 str.", "unutar opsega", "vidite samo Vi"]);
+    expect(scopeLine(1640, range)).toEqual(["1.640 riječi", "opseg 1.200 do 1.600", "≈ 5 str.", "iznad gornje granice za 40", "vidite samo Vi"]);
+    expect(scopeLine(0, { min: 2000, max: 2500 })).toEqual(["0 riječi", "opseg 2.000 do 2.500", "još 2.000 do donje granice", "vidite samo Vi"]);
   });
 
   it("says a crossing of a limit in one sentence, the same for every direction (NF2-P6)", () => {
@@ -149,7 +150,7 @@ describe("scopeLine", () => {
   });
 
   it("shows the range alone while no editor counts", () => {
-    expect(scopeLine(null, { min: 1200, max: 1600 })).toBe("opseg 1.200 do 1.600 · vidite samo Vi");
+    expect(scopeLine(null, { min: 1200, max: 1600 })).toEqual(["opseg 1.200 do 1.600", "vidite samo Vi"]);
   });
 
   it("says nothing without a count or a range", () => {
@@ -158,8 +159,9 @@ describe("scopeLine", () => {
 
   it("grows with the count the bar is given", () => {
     const range = { min: 1200, max: 1600 };
-    expect(render2({ words: 0, range })).toContain("0 riječi · opseg 1.200 do 1.600");
-    expect(render2({ words: 1201, range })).toContain("1.201 riječ · opseg 1.200 do 1.600");
+    expect(render2({ words: 0, range })).toContain("<span>0 riječi</span><span>opseg 1.200 do 1.600</span>");
+    expect(render2({ words: 1201, range })).toContain("<span>1.201 riječ</span><span>opseg 1.200 do 1.600</span>");
+    expect(render2({ words: 1201, range })).not.toContain("·");
   });
 
   it("says read only for a submitted work, never a save state", () => {

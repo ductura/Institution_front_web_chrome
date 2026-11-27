@@ -119,8 +119,12 @@
   margin: 0;
 }
 
+/* Design alignment 27. 11. 2026. (A4): course and year are separate parts, 12 px apart, no dot. */
 .eyebrow {
-  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+  font-size: 12.5px;
   color: var(--ink-2);
   overflow-wrap: anywhere;
 }
@@ -200,6 +204,19 @@
 .stateBody {
   font-size: 18px;
   color: var(--ink-2);
+}
+
+/*
+ * Design alignment 27. 11. 2026. (R6): heading and text inside the one role=alert
+ * frame (LoadAlert), both in its error colour and ui face.
+ */
+.alertTitle {
+  display: block;
+  font-weight: 600;
+}
+
+.alertBody {
+  display: block;
 }
 
 @media (max-width: 700px) {

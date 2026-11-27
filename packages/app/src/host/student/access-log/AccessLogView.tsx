@@ -1,6 +1,9 @@
 // WEB-2113: the student host's own copy of src/components/student/AccessLogView.tsx, on the host catalogue.
 import type { AccessLogDay, AccessLogRow } from "./days";
+import { MONTHS_GENITIVE_HR } from "../../../../../../src/lib/i18n/hr.ts";
 import { studentHostHr as t } from "../i18n/messages.hr.ts";
+import { LoadAlert } from "../../states/States";
+import styles from "./AccessLogView.module.css";
 
 /**
  * DAN-294 (S-42, contract on #1836, c.6814737263): the student's own access
@@ -12,13 +15,15 @@ import { studentHostHr as t } from "../i18n/messages.hr.ts";
 
 const a = t.accessLog;
 
+/** Design alignment 27. 11. 2026. (S-42): the full date, "Utorak, 10. studenoga 2026.". */
 export function dayHeading(day: AccessLogDay): string {
-  return `${a.weekdays[day.weekday]}, ${day.day}. ${day.month}. ${day.year}.`;
+  return `${a.weekdays[day.weekday]}, ${day.day}. ${MONTHS_GENITIVE_HR[day.month - 1]} ${day.year}.`;
 }
 
-export function readerLabel(row: AccessLogRow): string {
-  if (row.reader === null) return a.roleAlone[row.role];
-  return `${row.reader.givenName} ${row.reader.familyName} · ${a.roles[row.role]}`;
+/** The reader's parts, name then role, each shown as its own element (never joined by a dot); the role alone without a name. */
+export function readerLabel(row: AccessLogRow): readonly string[] {
+  if (row.reader === null) return [a.roleAlone[row.role]];
+  return [`${row.reader.givenName} ${row.reader.familyName}`, a.roles[row.role]];
 }
 
 // `datetime` is the UTC instant: on the autumn change two windows share a Zagreb wall clock.
@@ -26,7 +31,7 @@ function Row({ row }: { row: AccessLogRow }) {
   return (
     <li className="access-log__row">
       <time className="access-log__time" dateTime={new Date(row.at).toISOString()}>{`${row.from}–${row.to}`}</time>
-      <span>{readerLabel(row)}</span>
+      <span className={styles.who}>{readerLabel(row).map((part) => <span key={part}>{part}</span>)}</span>
       <span className="access-log__what">{a.surfaces[row.surface]}</span>
     </li>
   );
@@ -62,10 +67,6 @@ export function AccessLogDays({ days, olderHref, newestHref = null }: { days: Ac
 }
 
 export function AccessLogUnavailable({ retryHref }: { retryHref: string }) {
-  return (
-    <>
-      <p className="access-log__note" role="alert">{a.unavailable}</p>
-      <p><a className="access-log__more" href={retryHref}>{a.retry}</a></p>
-    </>
-  );
+  // Design alignment 27. 11. 2026. (A2): the load alert frame, "Pokušaj ponovno" as the link under it.
+  return <LoadAlert body={a.unavailable} retry={{ label: a.retry, href: retryHref }} />;
 }

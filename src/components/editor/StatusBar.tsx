@@ -74,12 +74,14 @@ export const pagesApprox = (words: number): number => (words > 0 ? Math.max(1, M
 export const groupDot = (n: number): string => String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
 /**
- * The length part of the bar (WEB-23, S: E-7): "340 riječi · opseg 1.200 do
- * 1.600 · vidite samo Vi". `words` counts the text of the work only (notes are
+ * The length part of the bar (WEB-23, S: E-7): "340 riječi", "opseg 1.200 do
+ * 1.600", "vidite samo Vi". `words` counts the text of the work only (notes are
  * not counted) and is null while no editor counts it; `range` is null while
  * the assignment's range is not known. Null when there is nothing to say.
+ * Design alignment 27. 11. 2026. (S-07): the parts, each its own element 12 px
+ * apart, never joined by a dot.
  */
-export function scopeLine(words: number | null, range: ScopeRange): string | null {
+export function scopeLine(words: number | null, range: ScopeRange): readonly string[] | null {
   const parts: string[] = [];
   if (words !== null) parts.push(`${groupDot(words)} ${pluralHr(words, "riječ", "riječi", "riječi")}`);
   if (range !== null) {
@@ -92,7 +94,7 @@ export function scopeLine(words: number | null, range: ScopeRange): string | nul
   if (standing !== null && words !== null && range !== null) parts.push(scopeFact(standing, words, range));
   if (parts.length === 0) return null;
   parts.push(t.workspace.scopePrivate);
-  return parts.join(" · ");
+  return parts;
 }
 
 /** ED-04 (NF2-P6): where the count stands against the assignment's range; null without either. */
@@ -161,7 +163,7 @@ export default function StatusBar({
           : <SaveState state={shownSaveState(save)} blocked={save.blocked} />
       )}
       {calm ? <span className={styles.said} role="status">{said ?? ""}</span> : null}
-      {scope === null ? null : <span className={styles.scope}>{scope}</span>}
+      {scope === null ? null : <span className={styles.scope}>{scope.map((part) => <span key={part}>{part}</span>)}</span>}
       {length === undefined ? null : <ScopeAnnounce words={length.words} range={length.range} />}
       {children}
     </footer>

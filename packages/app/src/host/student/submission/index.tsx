@@ -20,9 +20,11 @@ import { readSubmittedWork } from "../../../../../../src/components/editor/mento
 import { studentReceiptRead, type ReceiptRead } from "../../../../../../src/components/predaja/ReceiptPanel.tsx";
 import { stageOf, type Stage } from "../../../../../../src/components/predaja/stage.ts";
 import { browserTransport, createApi, goToSignIn } from "../../../../../../src/client/api.ts";
+import { messagesHr as shared } from "../../../../../../src/lib/i18n/messages.hr.ts";
 
 import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
+import { DeniedState } from "../../states/States";
 import DeclarationStep from "./declaration/DeclarationStep";
 import { createStepPorts, type StepPorts } from "./declaration/step-ports";
 import { stepsText } from "./steps/messages.hr";
@@ -53,7 +55,7 @@ type Checked =
   | { readonly kind: "ready"; readonly course: string; readonly title: string; readonly workState: string; readonly stage: Stage; readonly dueAt: string; readonly extendedDueAt: string | null; readonly slides: boolean }
   | { readonly kind: "unavailable" };
 
-type Shown<T> = { kind: "loading" } | { kind: "notFound" } | { kind: "ready"; value: T };
+type Shown<T> = { kind: "loading" } | { kind: "notFound" } | { kind: "denied" } | { kind: "ready"; value: T };
 
 function stepPath(assignmentId: string, step: Step): string {
   const base = `/rad/${encodeURIComponent(assignmentId)}/predaja`;
@@ -88,6 +90,8 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
       if (read.kind === "signedOut") return goToSignIn(appHref(base, stepPath(assignmentId, step)));
       if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
+      // Design alignment 27. 11. 2026. (A3): a 403 is not a read error, so no step opens on it.
+      if (read.kind === "denied") return setShown({ kind: "denied" });
       const checked: Checked = read.kind === "ready"
         ? { kind: "ready", course: read.course, title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()), dueAt: read.dueAt, extendedDueAt: extendedDueOf(assignments.ok ? assignments.body : null, assignmentId), slides: workKindOf(assignments, assignmentId) === "slides" }
         : { kind: "unavailable" };
@@ -104,7 +108,11 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
 type Loading = { readonly title: string; readonly message: string; readonly label: string; readonly workHref: string };
 
 function Shown<T>({ shown, loading, children }: { shown: Shown<T>; loading: Loading; children: (value: T) => ReactNode }) {
+  const { base } = useHost();
   if (shown.kind === "notFound") notFound();
+  if (shown.kind === "denied") {
+    return <div className="page"><DeniedState title={shared.access.deniedTitle} backLabel={shared.access.backToOwn} backHref={appHref(base, "/")} /></div>;
+  }
   if (shown.kind === "loading") return <StepsLoading {...loading} />;
   return <>{children(shown.value)}</>;
 }

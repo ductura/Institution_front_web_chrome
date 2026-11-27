@@ -6,11 +6,12 @@ import { serverApi } from "../../../../../client/server";
 import { assignmentIdOf, editorWorkRead } from "../../../../../components/editor/EditorPage.read";
 import { readAssignmentsWithMentored } from "../../../../../components/student/mentored-assignments";
 import Declaration, { type RecordedRead } from "../../../../../components/predaja/Declaration";
+import LoadAlert, { DeniedState } from "../../../../../components/shell/LoadAlert";
 import RoleShell from "../../../../../components/shell/RoleShell";
 import { messagesHr as t } from "../../../../../lib/i18n/messages.hr";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${t.declaration.title} · ${t.app.name}` };
+export const metadata = { title: `${t.declaration.title}, ${t.app.name}` };
 
 /** Both reads take no input. */
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
@@ -49,12 +50,21 @@ export default async function DeclarationPage({ params }: { params: Promise<{ as
   if (read.kind === "signedOut") redirect(signInHref(here));
   if (read.kind === "noticeFirst") redirect(`/zadatak/${assignmentId}`);
   if (read.kind === "notFound") notFound();
+  // Design alignment 27. 11. 2026. (S-08): 403 is no access (X1), never the load alert.
+  if (read.kind === "denied") {
+    return (
+      <RoleShell here={here} crumbs={[t.declaration.title]}>
+        <div className="page"><DeniedState /></div>
+      </RoleShell>
+    );
+  }
   if (read.kind !== "ready") {
+    // Design alignment 27. 11. 2026. (I6): the load alert, "Pokušaj ponovno" a plain reload under it.
     return (
       <RoleShell here={here} crumbs={[t.declaration.title]}>
         <div className="page declaration">
           <h1>{t.declaration.title}</h1>
-          <p role="status">{t.student.unavailable}</p>
+          <LoadAlert retry={{ label: t.declaration.retry, href: here }}>{t.student.unavailable}</LoadAlert>
         </div>
       </RoleShell>
     );

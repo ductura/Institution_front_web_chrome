@@ -9,7 +9,7 @@ import { messagesHr as t } from "../../../lib/i18n/messages.hr";
 
 // The session cookie is read per request: nothing of a student's list is built in.
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${t.student.works.title} · ${t.app.name}` };
+export const metadata = { title: `${t.student.works.title}, ${t.app.name}` };
 
 const HERE = "/zadaci/radovi";
 

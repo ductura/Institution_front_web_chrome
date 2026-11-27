@@ -33,11 +33,6 @@ export function momentHr(iso: string): string | null {
   return `${day}. ${month}. ${year}., ${hour}:${minute}`;
 }
 
-/** The line under the title: "Kolegij A · rok 8. 11. 2026., 23:59". */
-export function courseLine(course: string, dueAt: string): string {
-  const due = momentHr(dueAt);
-  return due === null ? course : workText.courseLine.replace("{course}", course).replace("{due}", due);
-}
 
 export function Banner({ lead, children }: { lead?: string; children: ReactNode }) {
   return (
@@ -125,7 +120,8 @@ export function FrameStatus({ chip, note, length, withNet = false }: {
     <footer className={statusStyles.bar} aria-label={t.workspace.status}>
       {chip}
       {note === undefined ? null : <span className={statusStyles.scope}>{note}</span>}
-      {scope === null ? null : <span className={statusStyles.scope}>{scope}</span>}
+      {/* Design alignment 27. 11. 2026. (S-07): each part its own element, 12 px apart, never joined by a dot. */}
+      {scope === null ? null : <span className={statusStyles.scope}>{scope.map((part) => <span key={part}>{part}</span>)}</span>}
       {withNet && !online ? <span className={statusStyles.net}>{workText.offlineNet}</span> : null}
     </footer>
   );

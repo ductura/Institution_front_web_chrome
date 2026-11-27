@@ -109,6 +109,9 @@ describe("readMyWorks (WEB-10)", () => {
     expect(signedOut.asked).toEqual(["student.assignments.get"]);
     expect(await readMyWorks(fakeCall({ "student.assignments.get": { ok: false, status: 503, code: "unavailable" } }).call))
       .toEqual({ kind: "unavailable" });
+    // Design alignment 27. 11. 2026. (S-04): 403 is no access, not a read error.
+    expect(await readMyWorks(fakeCall({ "student.assignments.get": { ok: false, status: 403, code: "forbidden" } }).call))
+      .toEqual({ kind: "denied" });
   });
 });
 
@@ -127,7 +130,9 @@ describe("MyWorks (WEB-10)", () => {
 
   it("shows each row with its course, year, state, deadline and link to /rad/<id>", () => {
     const html = render(ready);
-    expect(html).toContain("Izmišljeni seminar iz ekologije grada · 2026./2027.");
+    // Design alignment 27. 11. 2026. (S-04): course and year as two parts 12 px apart, no dot.
+    expect(html).toContain("<span>Izmišljeni seminar iz ekologije grada</span><span>2026./2027.</span>");
+    expect(html).not.toContain("·");
     expect(html).toContain(t.state.notice);
     expect(html).toContain(t.state.inProgress);
     expect(html).toContain(t.state.submittedNoTime);
@@ -156,5 +161,7 @@ describe("MyWorks (WEB-10)", () => {
     expect(render({ kind: "ready", courses: [], states: null })).toContain(t.emptyHeading);
     expect(render({ kind: "signedOut" })).toContain(`/prijava?returnTo=${encodeURIComponent(HERE)}`);
     expect(render({ kind: "unavailable" })).toContain('role="alert"');
+    expect(render({ kind: "unavailable" })).toContain(`href="${HERE}"`);
+    expect(render({ kind: "denied" })).toContain("Nemate pristup ovom prikazu");
   });
 });
