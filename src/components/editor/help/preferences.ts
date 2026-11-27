@@ -10,6 +10,8 @@ const presets: Record<Exclude<Level, "custom">, readonly Warning[]> = {
   all: warningKeys,
 };
 export const settingsKey = "ductura:editor-help";
+/** ED-82: told on the window when the settings change, so the hints in the text follow at once. */
+export const HELP_CHANGED = "ductura:editor-help-changed";
 export type HelpSettings = { enabled: readonly Warning[]; level: Level };
 export const defaultHelp: HelpSettings = { enabled: presets.basic, level: "basic" };
 
