@@ -280,7 +280,8 @@ test("the root /prijava of the server's error codes reaches E-1 with the whole q
   // Without a code the root path still lands on the app's sign-in, with no query invented.
   await page.goto("/prijava", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL((url) => url.pathname === "/aplikacija/prijava" && url.search === "");
-  expect(errors).toEqual([]);
+  // KA-05-WEB: the sign-in reads /me once per visit; a signed-out answer is a 401 the browser logs. Nothing else may be logged.
+  expect(errors.filter((e) => !e.includes("401 (Unauthorized)"))).toEqual([]);
 });
 
 test("an unanswering institution server shows a retry, not an empty app", async ({ page }) => {
