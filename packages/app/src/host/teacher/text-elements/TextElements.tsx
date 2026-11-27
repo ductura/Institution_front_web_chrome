@@ -15,10 +15,10 @@ function piece(p: Piece, i: number): ReactNode {
       if (p.marks.includes("bold")) content = <strong>{content}</strong>;
       return <span key={i}>{content}</span>;
     }
-    case "cite": return <span key={i} className={styles.cite} title={text.citationTitle}>{p.label}</span>;
-    case "open": return <span key={i} className={styles.open} title={text.openSourceTitle}>{text.openSource}</span>;
-    case "note": return <sup key={i} id={`fn-ref-${p.number}`}><a href={`#fn-${p.number}`} aria-label={text.noteMark(p.number)}>{p.number}</a></sup>;
-    case "ref": return null;
+    case "cite": return <span key={i} data-atom="citation" className={styles.cite} title={text.citationTitle}>{p.label}</span>;
+    case "open": return <span key={i} data-atom="citation" className={styles.open} title={text.openSourceTitle}>{text.openSource}</span>;
+    case "note": return <sup key={i} data-atom="footnote" id={`fn-ref-${p.number}`}><a href={`#fn-${p.number}`} aria-label={text.noteMark(p.number)}>{p.number}</a></sup>;
+    case "ref": return <span key={i} data-atom="crossReference">{text.crossReference(p.heading)}</span>;
   }
 }
 
