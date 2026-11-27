@@ -56,7 +56,7 @@ for (const width of [390, 1280]) {
     test(`MK-1: the whole Mentor card in the editor's Mentor tab (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page);
-      await page.goto(`/app/web/rad/${T1}`);
+      await page.goto(`/aplikacija/rad/${T1}`);
       await setTheme(page, theme);
       await skipGuide(page);
       const card = await openMentor(page, width);
@@ -86,7 +86,7 @@ test("MK-1: an open revision request says dorada with the mentor's instruction",
   };
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, { requests: { requests: [row] } });
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const card = await openMentor(page, 1280);
   await expect(card.getByText("Rad je kod Vas: dorada", { exact: true })).toBeVisible();
@@ -97,7 +97,7 @@ test("MK-1: an open revision request says dorada with the mentor's instruction",
 test("MK-1: a revision list the client cannot read says the state is unavailable, never a guess", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, { requests: { requests: [{ request_id: "nije-ispravno" }] } });
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const card = await openMentor(page, 1280);
   await expect(card.getByText("Stanje rada trenutačno nije dostupno.", { exact: true })).toBeVisible();
@@ -106,7 +106,7 @@ test("MK-1: a revision list the client cannot read says the state is unavailable
 test("MK-1: a message read that fails leaves no badge and keeps the rest of the card", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, { failMessages: true });
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const card = await openMentor(page, 1280);
   await expect(card.getByText("Rad je kod Vas", { exact: true })).toBeVisible();

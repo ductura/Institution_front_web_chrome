@@ -53,7 +53,7 @@ test("switching to English saves it and changes the shell at once, without a new
   const errors = errorsOf(page);
   const fake: Fake = { saved: null, posts: [], me: 0, login: 0 };
   await fakeServer(page, fake);
-  await page.goto("/app/web/profil");
+  await page.goto("/aplikacija/profil");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Postavke profila");
   await expect(page.locator("html")).toHaveAttribute("lang", "hr");
   await expect(page.getByText("Iva Izmišljena")).toBeVisible();
@@ -88,11 +88,11 @@ test("switching to English saves it and changes the shell at once, without a new
 test("the language saved on the server is used on another device", async ({ page }) => {
   const fake: Fake = { saved: "en", posts: [], me: 0, login: 0 };
   await fakeServer(page, fake);
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   await expect(page.getByRole("navigation", { name: "Workspace" }).getByRole("link", { name: "My assignments" })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await page.getByRole("link", { name: "Profile settings" }).click();
-  await expect(page).toHaveURL(/\/app\/web\/profil$/);
+  await expect(page).toHaveURL(/\/aplikacija\/profil$/);
   await expect(page.getByLabel("Language", { exact: true })).toHaveValue("en");
   expect(fake.posts).toEqual([]);
 });
@@ -100,7 +100,7 @@ test("the language saved on the server is used on another device", async ({ page
 test("a save the server refuses keeps the language and says so", async ({ page }) => {
   const fake: Fake = { saved: null, posts: [], me: 0, login: 0, failSave: 503 };
   await fakeServer(page, fake);
-  await page.goto("/app/web/profil");
+  await page.goto("/aplikacija/profil");
   await page.getByLabel("Jezik", { exact: true }).selectOption("en");
   await page.getByRole("button", { name: "Spremi jezik" }).click();
   // PD-7 (#361) keeps an empty role="alert" toast list in the student shell; the page's own alert is the one with text.
@@ -117,7 +117,7 @@ test("no saved language means Croatian, whatever the browser kept from another a
   await page.addInitScript(() => { try { localStorage.setItem("ductura.interface-locale", "en"); } catch { /* blocked */ } });
   const fake: Fake = { saved: null, posts: [], me: 0, login: 0 };
   await fakeServer(page, fake);
-  await page.goto("/app/web/profil");
+  await page.goto("/aplikacija/profil");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Postavke profila");
   await expect(page.locator("html")).toHaveAttribute("lang", "hr");
   expect(await page.evaluate(() => localStorage.getItem("ductura.interface-locale"))).toBe("hr");
@@ -126,7 +126,7 @@ test("no saved language means Croatian, whatever the browser kept from another a
 test("a slow first read does not undo a language saved meanwhile", async ({ page }) => {
   const fake: Fake = { saved: "hr", posts: [], me: 0, login: 0, readDelayMs: 2500 };
   await fakeServer(page, fake);
-  await page.goto("/app/web/profil");
+  await page.goto("/aplikacija/profil");
   await page.getByLabel("Jezik", { exact: true }).selectOption("en");
   await page.getByRole("button", { name: "Spremi jezik" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Profile settings");
@@ -140,10 +140,10 @@ test("on a narrow screen the settings link closes the navigation drawer", async 
   await page.setViewportSize({ width: 400, height: 800 });
   const fake: Fake = { saved: null, posts: [], me: 0, login: 0 };
   await fakeServer(page, fake);
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   await page.getByRole("button", { name: "Izbornik" }).click();
   await page.getByRole("link", { name: "Postavke profila" }).click();
-  await expect(page).toHaveURL(/\/app\/web\/profil$/);
+  await expect(page).toHaveURL(/\/aplikacija\/profil$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Postavke profila");
   await expect(page.locator("main#sadrzaj")).not.toHaveAttribute("inert", /.*/);
   await page.getByLabel("Jezik", { exact: true }).selectOption("en");
@@ -152,7 +152,7 @@ test("on a narrow screen the settings link closes the navigation drawer", async 
 test("an expired sign-in on save asks to sign in again instead of pretending", async ({ page }) => {
   const fake: Fake = { saved: null, posts: [], me: 0, login: 0, failSave: 401 };
   await fakeServer(page, fake);
-  await page.goto("/app/web/profil");
+  await page.goto("/aplikacija/profil");
   await page.getByLabel("Jezik", { exact: true }).selectOption("en");
   await page.getByRole("button", { name: "Spremi jezik" }).click();
   await expect(page.getByRole("main").getByRole("alert").filter({ hasText: /\S/ })).toContainText("AAI@EduHr");

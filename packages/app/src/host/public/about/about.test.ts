@@ -10,18 +10,18 @@ import { AboutView } from "./AboutView";
 import { demoHref, SHOTS, shotSrc } from "./demo-link";
 
 const render = (demoUrl: string | null) =>
-  renderToStaticMarkup(createElement(AboutView, { t: messagesHr.landing, signInHref: "/app/web/prijava", demoUrl }));
+  renderToStaticMarkup(createElement(AboutView, { t: messagesHr.landing, signInHref: "/aplikacija/prijava", demoUrl }));
 
 describe("demoHref (DEMO-1)", () => {
   it("takes an absolute http(s) address", () => {
-    expect(demoHref("https://demo.example.test/app/web")).toBe("https://demo.example.test/app/web");
+    expect(demoHref("https://demo.example.test/aplikacija")).toBe("https://demo.example.test/aplikacija");
     expect(demoHref("  http://localhost:8000/  ")).toBe("http://localhost:8000/");
   });
   it("hides the button when the build has no demo or a wrong address", () => {
     expect(demoHref(undefined)).toBeNull();
     expect(demoHref("")).toBeNull();
     expect(demoHref("   ")).toBeNull();
-    expect(demoHref("/app/web")).toBeNull();
+    expect(demoHref("/aplikacija")).toBeNull();
     expect(demoHref("javascript:alert(1)")).toBeNull();
   });
 });
@@ -43,7 +43,7 @@ describe("AboutView (DEMO-1)", () => {
       expect(html).toContain(`src="${shotSrc(shot)}"`);
       expect(html).toContain(`alt="${messagesHr.landing.demo.shots[shot]}"`);
     }
-    expect(html).toContain('href="/app/web/prijava"');
+    expect(html).toContain('href="/aplikacija/prijava"');
   });
   it("uses no forbidden term in either language", () => {
     expect(findForbiddenTerms(JSON.stringify(messagesHr.landing.demo))).toEqual([]);

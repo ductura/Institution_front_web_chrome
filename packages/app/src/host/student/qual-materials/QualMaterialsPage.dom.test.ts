@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { qualMaterialsText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 const { default: QualMaterialsPage } = await import("./QualMaterialsPage");
 
@@ -72,7 +72,7 @@ describe("QualMaterialsPage in the browser", () => {
 
   it("goes to sign-in when the session is gone", async () => {
     await render(apiOf({ "student.qual-materials.get": () => fail(401, "unauthorized") }).call);
-    expect(signIn).toHaveBeenCalledWith("/app/web/zadaci/gradivo-kodiranja");
+    expect(signIn).toHaveBeenCalledWith("/aplikacija/zadaci/gradivo-kodiranja");
   });
 
   it("refuses a bad material without calling the server, and says success only after the server answers", async () => {

@@ -9,7 +9,7 @@ import AssignmentForm from "./AssignmentForm";
 import { assignmentFormHr as f } from "./messages.hr";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const course = { id: "c1", name: "Izmišljeni kolegij", academicYear: "2026./2027.", aiPolicy: "partially_allowed" } as const;
 const groups = { kind: "ready", groups: [{ id: "g1", name: "Grupa A" }, { id: "g2", name: "Grupa B" }] } as const;
 

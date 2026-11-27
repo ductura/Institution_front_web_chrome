@@ -7,7 +7,7 @@ import { expect, test, type Page } from "./fixtures/test";
 
 const ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c15";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d15";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 
 const notice = {
   assignmentId: ID, versionNo: 1, templateVersion: 1, title: "Izmišljeni esej o starim kartama",
