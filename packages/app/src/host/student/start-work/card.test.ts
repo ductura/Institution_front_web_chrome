@@ -4,7 +4,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import StudentHome from "../../../../../../src/components/student/StudentHome";
-import type { MyAssignmentsRead } from "../read/assignments";
+// The card under test is the shared one, so the read is typed as the shared one (the host's has a "denied" state of its own).
+import type { MyAssignmentsRead } from "../../../../../../src/components/student/my-assignments-read";
 
 const read: MyAssignmentsRead = {
   kind: "ready",

@@ -47,7 +47,8 @@ export function portfolioPort(deps: PortfolioDeps): PortfolioPort {
   return {
     async read(): Promise<PortfolioRead> {
       const courses = await readCourses(deps.call, true, false);
-      if (courses.kind !== "ready") return { kind: courses.kind };
+      // The portfolio has no state of its own for 403 (DIZ S-02 gave the courses read one): it stays "unavailable" here.
+      if (courses.kind !== "ready") return { kind: courses.kind === "denied" ? "unavailable" : courses.kind };
       if (courses.states === null) return { kind: "unavailable" };
       const states = courses.states;
       const submitted = courses.courses.flatMap((c) => c.assignments).filter((a) => states.get(a.id) === "submitted");
