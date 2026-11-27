@@ -1,7 +1,7 @@
 // WEB-V19-RECENZIJA-NASTAVNIK: the texts of the teacher's peer-review screens. Invented examples only. A review
 // has no number, no mark and no rank, and nothing here sorts or scores by quality (val19-razlika V19-10, V19-11).
 export const teacherPeerReviewText = {
-  title: "Recenzija radova",
+  title: "Recenzija među studentima",
   lead: "Postavite krug anonimne recenzije za ovaj zadatak, dodijelite recenzije i pratite tko je što predao. Studenti ne vide tko koga recenzira, a Vi vidite oba kraja. Recenzija ne ulazi u ocjenu.",
   back: "Natrag na kolegije",
   loading: "Učitavanje…",
