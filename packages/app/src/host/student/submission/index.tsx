@@ -23,6 +23,8 @@ import { browserTransport, createApi, goToSignIn } from "../../../../../../src/c
 
 import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
+import { usePageTitle, workTitle } from "../../page-title";
+import { hostText } from "../../../text";
 import DeclarationStep from "./declaration/DeclarationStep";
 import { createStepPorts, type StepPorts } from "./declaration/step-ports";
 import { stepsText } from "./steps/messages.hr";
@@ -69,6 +71,9 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
   const router = useRouter();
   const [shown, setShown] = useState<Shown<T>>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
+  // WEB-NASLOVI-SVE: every step of the submission reads "<naziv rada> — Predaja".
+  const [name, setName] = useState<string | null>(null);
+  usePageTitle(workTitle(name, hostText.titleSubmission));
   useEffect(() => {
     let live = true;
     setShown({ kind: "loading" });
@@ -88,6 +93,7 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
       if (read.kind === "signedOut") return goToSignIn(appHref(base, stepPath(assignmentId, step)));
       if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
+      setName(read.kind === "ready" ? read.title : null);
       const checked: Checked = read.kind === "ready"
         ? { kind: "ready", course: read.course, title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()), dueAt: read.dueAt, extendedDueAt: extendedDueOf(assignments.ok ? assignments.body : null, assignmentId), slides: workKindOf(assignments, assignmentId) === "slides" }
         : { kind: "unavailable" };
