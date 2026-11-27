@@ -2,8 +2,8 @@
 // The one list (Ctrl+/, "?" and the "Prečaci" button), the toolbar's aria-keyshortcuts and the
 // palette hints all read it, so a command's shortcut cannot differ between them. A row is here only
 // while the editor answers it (e2e shortcut-list.spec.ts presses every row). ED-33 (P2-2) wired the
-// sentence and chapter moves; the comment (Ctrl+Alt+M) and outline keys come back when the student editor
-// has those actions. Command ids match WEB-6D.
+// sentence and chapter moves and ED-112 the outline key; the comment key (Ctrl+Alt+M) comes back when the
+// student editor has that action. Command ids match WEB-6D.
 import type { ShortcutListGroup } from "@ductura/ui";
 
 export type ShortcutDefinition = {
@@ -36,6 +36,8 @@ export const SHORTCUTS: readonly ShortcutDefinition[] = [
   { id: "moveSentence", group: "moving", label: "Rečenica gore ili dolje u odlomku", keys: "Alt+↑ ili Alt+↓", writes: true },
   { id: "moveChapter", group: "moving", label: "Poglavlje gore ili dolje", keys: "Alt+Shift+↑ ili Alt+Shift+↓", writes: true },
   { id: "focus", group: "view", label: "Način fokusa", keys: "Mod+." },
+  // ED-112: the structure rail answers Ctrl+\ (EditorPanelLayout, structure-rail.ts).
+  { id: "outline", group: "view", label: "Struktura rada", keys: "Mod+\\" },
   { id: "shortcuts", group: "view", label: "Ovaj popis", keys: "Mod+/ ili ?" },
   { id: "close", group: "view", label: "Zatvara prozor ili izbornik", keys: "Esc" },
 ];
