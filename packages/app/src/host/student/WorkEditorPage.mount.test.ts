@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// WEB-V13-UREDNIK: the branch of WorkPage by kind of work is really mounted: a slides work in
+// WEB-V13-UREDNIK: the branch of WorkEditorPage by kind of work is really mounted: a slides work in
 // progress shows the slides editor, an unreadable kind its error with a retry, a text work the
 // text editor as before.
 import { createElement, act } from "react";
@@ -59,11 +59,11 @@ afterEach(() => {
 });
 
 async function open() {
-  const { WorkPage } = await import("./work.tsx");
+  const { WorkEditorPage } = await import("./WorkEditorPage.tsx");
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => root!.render(createElement(WorkPage, { assignmentId: ID })));
+  await act(async () => root!.render(createElement(WorkEditorPage, { assignmentId: ID })));
   // The page reads asynchronously: wait until it shows an editor, an error or the text editor.
   for (let n = 0; n < 100 && !/Uređivač slajdova|ne mogu otvoriti|TEKSTNI-UREDNIK/.test(host.innerHTML); n += 1) {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 30)); });
@@ -71,7 +71,7 @@ async function open() {
   return host;
 }
 
-describe("WorkPage by kind of work", { timeout: 30000 }, () => {
+describe("WorkEditorPage by kind of work", { timeout: 30000 }, () => {
   it("documentKind slides mounts the slides editor", async () => {
     kinds.documentKind = "slides";
     const el = await open();
