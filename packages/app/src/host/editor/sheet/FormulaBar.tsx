@@ -52,7 +52,7 @@ export function FormulaBar({ cellRef, value, readOnly = false, onChange, onCommi
         <Button tone="ghost" size="dense" disabled={readOnly} onClick={onCancel}>{t.formulaBar.cancel}</Button>
       </div>
       <p id={hintId} className="visually-hidden">{t.formulaBar.hint}</p>
-      {problem !== null ? <p role="alert" data-sheet-problem>{problem}</p> : null}
+      {problem !== null ? <p role="alert" data-sheet-problem style={{ color: "var(--color-error)" }}>{problem}</p> : null}
     </div>
   );
 }

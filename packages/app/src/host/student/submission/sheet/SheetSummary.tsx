@@ -6,6 +6,7 @@
 import { Button, StepSection } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
+import { LoadAlert } from "../../../states/States";
 import { sheetsWord } from "./model.ts";
 import { sheetSummaryText as t } from "./messages.hr.ts";
 import { readSheetWork, type SheetWorkRead } from "./read.ts";
@@ -33,7 +34,7 @@ export default function SheetSummary({ assignmentId, revision, read = readSheetW
   return (
     <StepSection label={t.title}>
       {state === "loading" ? <span role="status">{t.loading}</span>
-        : state.kind === "unavailable" ? <><span role="alert">{t.unavailable}</span><Button tone="secondary" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button></>
+        : state.kind === "unavailable" ? <><LoadAlert body={t.unavailable} /><Button tone="secondary" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button></>
         : state.kind !== "sheet" ? <span>{t.empty}</span>
         : <>
           <span>{t.kind}</span>
