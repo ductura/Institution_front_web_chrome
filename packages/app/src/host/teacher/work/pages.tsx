@@ -20,6 +20,7 @@ import TeacherComments, { type BankInsertion } from "../comments/TeacherComments
 import ProposalsPanel from "../proposals/ProposalsPanel";
 import { TextElementsView } from "../text-elements/TextElements";
 import { textElementsMessages } from "../text-elements/messages.hr";
+import { elementsOfLive } from "../text-elements/model";
 import { useTextElements } from "../text-elements/useTextElements";
 import ProvenanceMap from "../provenance/ProvenanceMap";
 import { proposalsPort } from "../proposals/port";
@@ -164,6 +165,9 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   const textRef = useRef<HTMLDivElement>(null);
   // WEB-2153: the shared reader shows only document v1; a v2/v3 text is read here, with citations and footnotes.
   const elementsState = useTextElements(documentId, !stopped && view.document === null && view.connection === "retrying", current);
+  // NAS-R19: a v3 text with citations or footnotes is drawn as elements whenever the shared reader holds it.
+  const liveElements = useMemo(() => (stopped ? null : elementsOfLive(view.document)), [stopped, view.document]);
+  const shownElements = liveElements ?? elementsState.elements;
   const [draft, setDraft] = useState<TextAnchor | null>(null);
   // WEB-V17-BANK-INSERT: a bank text on its way into the new comment.
   const [insertion, setInsertion] = useState<BankInsertion | null>(null);
@@ -182,8 +186,12 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
     <MobileReview>
       <WorkFrame documentId={documentId} current={current} gaps={gaps}
         text={<>
-          {elementsState.elements !== null
-            ? <div ref={textRef}><TextElementsView elements={elementsState.elements} /></div>
+          {shownElements !== null
+            ? <>
+              {liveElements !== null && <p><span className="sync-chip" data-tone={view.submitted ? "ok" : view.connection === "live" ? "ok" : "warn"} role="status">
+                <span className="sync-chip__dot" aria-hidden="true" />{view.submitted ? t.liveView.submitted : t.liveView.connection[view.connection]}</span></p>}
+              <div ref={textRef} onMouseUp={select} onKeyUp={select}><TextElementsView elements={shownElements} /></div>
+            </>
             : <>
               {view.connection === "retrying" && view.document === null && <p role="alert">{workText.liveUnavailable}</p>}
               {elementsState.unavailable && <p role="status">{textElementsMessages.unavailable}</p>}
