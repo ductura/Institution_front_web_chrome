@@ -33,3 +33,25 @@ export function signInViewOf(query: { get(name: string): string | null }): SignI
   if (asked !== null && Object.hasOwn(STANJE, asked)) return STANJE[asked]!;
   return "signIn";
 }
+
+/** One link of the sign-in footer (koncepti/prijava): its label key and where it goes under the app's base. */
+export type FooterLink = { readonly key: "help" | "contact" | "privacy" | "terms" | "accessibility" | "status"; readonly path: string };
+
+/**
+ * The six links of the footer. Help opens the help of this screen; contact,
+ * privacy and terms have no page of their own yet, so they lead to "O aplikaciji"
+ * (assumption of KA-05-WEB); accessibility and status are the public pages.
+ */
+export const FOOTER_LINKS: readonly FooterLink[] = [
+  { key: "help", path: "/prijava?stanje=pomoc" },
+  { key: "contact", path: "/o-aplikaciji" },
+  { key: "privacy", path: "/o-aplikaciji" },
+  { key: "terms", path: "/o-aplikaciji" },
+  { key: "accessibility", path: "/pristupacnost" },
+  { key: "status", path: "/stanje" },
+];
+
+/** Where an already signed-in visitor goes instead of the screen: never back to the sign-in itself. */
+export function skipTarget(route: string | null): string {
+  return route === null || route === "/prijava" ? "/" : route;
+}

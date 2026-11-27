@@ -8,7 +8,7 @@ import {
   type MentoredWorksCall, type TeacherCoursesCall,
 } from "../../../../src/components/index.ts";
 import { messagesHr as t } from "../../../../locales/hr.ts";
-import { createApi, goToSignIn, leaveFor, signInHref } from "../../../../src/client/api.ts";
+import { createApi, goToSignIn, leaveFor, readSession, signInHref } from "../../../../src/client/api.ts";
 
 import type { Base } from "../bases";
 import { internalRoute, routeOf } from "../routes";
@@ -23,7 +23,7 @@ import { CourseQuestionnaires } from "./teacher/questionnaire/Questionnaires";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { CourseRhythm } from "./teacher/input-rhythm/mounts";
 import SignInScreen from "./signin/SignInScreen";
-import { signInViewOf } from "./signin/sign-in-view";
+import { signInViewOf, skipTarget } from "./signin/sign-in-view";
 
 // The pages the host shows, one per route of app/(host)/. Each reads the
 // institution server only through src/client.
@@ -67,7 +67,19 @@ export function SignInPage() {
     setLeaving(true);
     leaveFor(href);
   };
-  return <SignInScreen view={leaving ? "redirecting" : signInViewOf(query)} href={href} onStart={start} />;
+  // KA-05-WEB: a visitor who already has a session does not see the screen.
+  const asked = signInViewOf(query);
+  useEffect(() => {
+    if (asked === "noRole" || asked === "refused") return;
+    let live = true;
+    void readSession().then((result) => {
+      if (live && result.kind === "signedIn") leaveFor(appHref(base, skipTarget(route)));
+    });
+    return () => {
+      live = false;
+    };
+  }, [base, route, asked]);
+  return <SignInScreen view={leaving ? "redirecting" : asked} href={href} onStart={start} base={base} />;
 }
 
 export { TeacherPage, type TeacherRead } from "./teacher/shell/TeacherPage";
