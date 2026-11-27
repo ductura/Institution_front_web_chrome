@@ -21,6 +21,7 @@ import { takePublished } from "../publish/published-handoff";
 import { LateException, type LateResult } from "./LateException";
 import { offersLate } from "./late-exception";
 import { assignmentFactsMessages as text } from "./messages.hr";
+import { codeTestsText } from "../code-tests/messages.hr";
 import { factsOf, interruptedOf, publishedIn, type AssignmentReads } from "./model";
 import { readCourseFacts, type CourseFactsRead } from "./read";
 import { AssignmentRhythm } from "../input-rhythm/mounts";
@@ -104,6 +105,9 @@ export function CourseTasks({ course }: { course: TeacherCourse }) {
           {/* WEB-V19-RECENZIJA-NASTAVNIK: the way into the peer-review round of this task. */}
           <p className="note"><a href={appHref(base, `/nastavnik/zadatak/${encodeURIComponent(assignment.id)}/recenzija`)} data-testid="peer-review-link"
             aria-label={`${teacherPeerReviewText.link}: ${assignment.title}`}>{teacherPeerReviewText.link}</a></p>
+          {/* WEB-DIZ-B-V21: the way into the code tests of this task. */}
+          <p className="note"><a href={appHref(base, `/nastavnik/zadatak/${encodeURIComponent(assignment.id)}/testovi`)} data-testid="code-tests-link"
+            aria-label={`${codeTestsText.link}: ${assignment.title}`}>{codeTestsText.link}</a></p>
           <AssignmentRhythm courseId={course.id} assignmentId={assignment.id} title={assignment.title} />
           <TaskActions assignment={assignment} />
         </div>

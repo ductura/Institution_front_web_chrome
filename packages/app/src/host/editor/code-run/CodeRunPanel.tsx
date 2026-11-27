@@ -35,9 +35,10 @@ export function CodeRunResult({ shown, onClose, onRetry }: { shown: Shown | null
             {outcome.results.map((r, i) => (
               <li key={r.id}>
                 <strong>{shown.tests[i]!.title}</strong>: {t.status[r.status]}
-                {r.status === "failed" ? <div>{t.expected}: <code>{show(shown.tests[i]!.expected)}</code>; {t.actual}: <code>{show(r.actual)}</code></div> : null}
+                <div>{t.input}: <code>{show(shown.tests[i]!.input)}</code></div>
+                {r.status === "failed" ? <><div>{t.expected}: <code>{show(shown.tests[i]!.expected)}</code></div><div>{t.actual}: <code>{show(r.actual)}</code></div></> : null}
                 {r.status === "timeout" ? <div>{t.timedOut(RUN_TIMEOUT_MS / 1000)}</div> : null}
-                {r.status === "error" && r.message ? <div>{r.message}</div> : null}
+                {r.status === "error" && r.message ? <div>{t.errorIn} <code lang="en">{r.message}</code></div> : null}
               </li>
             ))}
           </ul>

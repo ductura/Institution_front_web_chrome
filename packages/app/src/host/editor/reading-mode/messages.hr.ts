@@ -2,7 +2,7 @@
 // A personal view of the sheet in this browser; nothing here goes to the server.
 export const readingModeHr = {
   title: "Način čitanja",
-  help: "Mijenja samo prikaz lista na ovom uređaju. Tekst rada ostaje isti.",
+  help: "Mijenja samo prikaz lista u ovom pregledniku. Tekst rada ostaje isti.",
   reset: "Vrati na zadano",
   width: {
     label: "Širina retka",
