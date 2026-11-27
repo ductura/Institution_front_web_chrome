@@ -28,6 +28,7 @@ import {
   convertBlock, glyphOf, insertChar, insertHole, pushRecent, readRecent, SPECIAL_CHARS, writeRecent,
 } from "@/components/editor/toolbar-menu";
 import { askPrintPreview } from "@/components/editor/print-export/print-event";
+import { insertSourceAction } from "../sources-mention/new-source-request";
 import { textWithFootnotes } from "@/lib/document/text-with-footnotes";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
@@ -57,12 +58,15 @@ import { EditorToolbarHost } from "./EditorToolbarHost";
 import { toolbarBehaviourHr } from "./messages.hr";
 import { insertPhrase } from "../phrases/phrases";
 import { PhrasesDialog } from "../phrases/PhrasesDialog";
+import { listenCommentKey } from "./comment-key";
 import { MOBILE_MORE, type QuickTool } from "./quick-tools";
 import { canStep, DEFAULT_ZOOM, loadZoom, saveZoom, snapZoom, stepZoom, zoomPercent, zoomToast } from "./text-size";
 import { MobileQuickBar } from "./ToolbarBehaviour";
+import { ToolbarCounters } from "./ToolbarCounters";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 import { DEFAULT_PREFS, loadPrefs, savePrefs, type ToolbarPrefs } from "./toolbar-prefs";
-import { currentShell, pendingViewItems, readClean, setClean, setShell, shellItems, viewItems } from "./view-menu";
+import { currentShell, pendingViewItems, readClean, setClean, setShell, shellItems, typoItem, viewItems } from "./view-menu";
+import { setTypingTypography, subscribeTypingTypography, typingTypographyOn } from "../../../../../editor-core/src/typography/typing-switch.ts";
 import { DraftPanelHost } from "../draft-panel/DraftPanelHost";
 import { requestPanel } from "@/components/editor/layout-prefs/open-panel";
 import { readSheetToc, setSheetToc, sheetTocKeyOf, subscribeSheetToc } from "../toc/sheet-toc";
@@ -202,7 +206,7 @@ function useEditorFocused(editor: Editor | null): boolean {
 type Item = { id: string; label: string; disabled?: boolean; /** The reason an item is off, shown beside it. */ hint?: string };
 
 /** ED-44 (P2-16): the prototype's "Umetni" items the host cannot insert yet; shown, never hidden (Val 6). */
-export const PENDING_INSERTS = ["cite", "newSource", "table", "image", "phrase", "variant"] as const;
+export const PENDING_INSERTS = ["table", "image", "phrase", "variant"] as const;
 /** The prototype's order of "Umetni"; the host's own items not in the prototype follow. */
 const INSERT_ORDER = ["cite", "newSource", "table", "image", "footnote", "xref", "formula", "inlineFormula", "codeBlock", "hole", "phrase", "variant"];
 
@@ -286,6 +290,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   // ED-71: "Sadržaj na listu", kept for this person and work (sheet-toc); off on the server's markup.
   const tocKey = sheetTocKeyOf(workPartsKey);
   const sheetToc = useSyncExternalStore(subscribeSheetToc, () => readSheetToc(tocKey), () => false);
+  // ED-99: "Tipografija dok tipkam", on until switched off; the server's markup shows it on.
+  const typo = useSyncExternalStore(subscribeTypingTypography, () => typingTypographyOn(), () => true);
   const focused = useEditorFocused(editor);
   const [quickMore, setQuickMore] = useState<MenuPoint | null>(null);
   const openCrossReference = v3.openInsert ? () => v3.openInsert?.("crossReference") : undefined;
@@ -295,8 +301,16 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     ...(writeOk && v3.openInsert ? { fusnota: () => v3.openInsert?.("footnote"), ref: () => v3.openInsert?.("crossReference") } : {}),
     ...(writeOk ? { fraza: () => setDialog("phrases") } : {}),
   });
+  // ED-93: Ctrl+Alt+M, the comment on the selection the tool tip and the right-click menu name.
+  useEffect(() => {
+    if (!writeOk || !editor) return;
+    return listenCommentKey(editor, () => toast(toolbarBehaviourHr.commentNeedsSelection));
+  }, [writeOk, editor, toast]);
 
   const insert: Item[] = withPendingInserts([
+    // ED-92: Navod opens the source list at the caret (as "@"), Novi izvor the quick source dialog (as "@ › Dodaj").
+    { id: "cite", label: t.toolbar.insertItems.cite, disabled: !writeOk },
+    { id: "newSource", label: t.toolbar.insertItems.newSource, disabled: !writeOk },
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
     { id: "xref", label: crossReferenceMessages.title, disabled: !writeOk || !v3.openInsert },
     { id: "formula", label: formulaHostHr.insertBlock, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
@@ -323,6 +337,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "pageFormat", label: pagesMessages.formatTitle },
     ...textSizeItems(zoom),
     ...viewItems(clean, sheetToc),
+    typoItem(typo),
     ...pendingViewItems(),
   ];
   return (
@@ -334,7 +349,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
           onContextAction: (id) => runContextAction(editor, id, openCrossReference),
         }} />
       <Menu label={t.toolbar.insert} items={insert} onSelect={(id) => {
-        if (id === "footnote") v3.openInsert?.("footnote");
+        if (id === "cite" || id === "newSource") { if (writeOk) insertSourceAction(editor, id); }
+        else if (id === "footnote") v3.openInsert?.("footnote");
         else if (id === "xref") v3.openInsert?.("crossReference");
         else if (id === "workParts" && writeOk) setDialog("parts");
         else if (id === "formula" || id === "inlineFormula") formula.open(id === "formula" ? "block" : "inline");
@@ -363,6 +379,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         else if (id === "structure") setDialog("structure");
         else if (id === "cleanText") setCleanText(setClean(document.documentElement, localStore, !clean));
         else if (id === "viewToc") setSheetToc(tocKey, !sheetToc);
+        else if (id === "viewTypo") toast(setTypingTypography(!typo) ? toolbarBehaviourHr.typoOn : toolbarBehaviourHr.typoOff);
         else if (id === "viewFirstLines") { requestPanel("review"); requestPregledView("nacrt"); }
         else if (id === "textSmaller" || id === "textLarger") onZoom(id === "textSmaller" ? -1 : 1);
         else if (id === "shell:dark" || id === "shell:light") setShellTheme(setShell(document.documentElement, localStore, id === "shell:light" ? "light" : "dark"));
@@ -374,6 +391,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
           else if (id === "latex") toast(downloadLatex(editor, confirmedWorkSchemaVersion, latexStyle) ? stemHr.latex.done : stemHr.latex.failed);
           else if (id === "copy") void copyWorkText(editor).then((ok) => toast(copyToastText(ok)));
         }} />
+      {/* ED-101: what still waits in the text, and "Pošalji mentoru" with the list before sending. */}
+      <ToolbarCounters editor={editor} />
       <ReadAloudControls editor={editor} />
       {/* ED-R18: dictation into the document; reading aloud is the menu above, so only "Diktiraj" shows. */}
       <SpeechControls reading={false} editable={writeOk} getText={() => ""} onPhrase={(phrase) => { insertDictatedPhrase(editor, phrase); }} />
