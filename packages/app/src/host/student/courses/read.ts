@@ -17,6 +17,7 @@ export type WorkState = "not_started" | "in_progress" | "submitted";
 export type CoursesRead =
   | { kind: "ready"; courses: Course[]; states: ReadonlyMap<string, WorkState> | null; submitted?: ReadonlyMap<string, Submitted> }
   | { kind: "signedOut" }
+  | { kind: "denied" }
   | { kind: "unavailable" };
 
 type Result<B> = { ok: true; status: 200; body: B } | { ok: false; status: number };
@@ -31,12 +32,12 @@ export type CoursesCall = {
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 
-/** 401 is signed out; anything else that fails is unavailable, never an empty list. States only when asked and proven; the submission times only when `withTimes` (a reader that shows none, as the portfolio, passes false). */
+/** 401 is signed out and 403 denied (DIZ S-02, Z7/R8); anything else that fails is unavailable, never an empty list. States only when asked and proven; the submission times only when `withTimes` (a reader that shows none, as the portfolio, passes false). */
 export async function readCourses(call: CoursesCall, withStates: boolean, withTimes = true): Promise<CoursesRead> {
   let courses: Course[];
   try {
     const r = await call("student.assignments.get", NONE);
-    if (!r.ok) return r.status === 401 ? { kind: "signedOut" } : { kind: "unavailable" };
+    if (!r.ok) return r.status === 401 ? { kind: "signedOut" } : r.status === 403 ? { kind: "denied" } : { kind: "unavailable" };
     courses = r.body.courses;
   } catch {
     return { kind: "unavailable" };

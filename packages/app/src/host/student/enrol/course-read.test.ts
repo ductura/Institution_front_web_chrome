@@ -45,6 +45,8 @@ describe("WEB-11 the course after the enrollment", () => {
   it("reads 401 as signed out and anything else as unavailable", async () => {
     expect(await readCourse(apiWith(() => json({ error: "unauthorized" }, 401)), COURSE)).toEqual({ kind: "signedOut" });
     expect(await readCourse(apiWith(() => json({ error: "unavailable" }, 503)), COURSE)).toEqual({ kind: "unavailable" });
+    // DIZ S-05 (KU4): 403 is its own state; a course that is not the student's stays notFound (KU2).
+    expect(await readCourse(apiWith(() => json({ error: "forbidden" }, 403)), COURSE)).toEqual({ kind: "denied" });
     expect(await readCourse(apiWith(() => json({ courses: "x" })), COURSE)).toEqual({ kind: "unavailable" });
   });
 
