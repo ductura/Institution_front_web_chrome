@@ -36,7 +36,7 @@ test("P-14: the open deadlines go to a calendar file made in the browser", async
     task(STARTED, "Sažetak; drugi dio", "2099-12-20T10:00:00.000Z"),
     task(DONE, "Predani izmišljeni rad", "2099-12-01T22:59:00.000Z"),
   ], [{ assignmentId: STARTED, workState: "in_progress" }, { assignmentId: DONE, workState: "submitted" }]);
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   const button = page.getByRole("button", { name: "Dodaj rokove u kalendar" });
   await expect(button).toBeVisible();
   await expect(button).toHaveAccessibleDescription(/nastaje u Vašem pregledniku i ne šalje se poslužitelju/);
@@ -58,7 +58,7 @@ test("P-14: the open deadlines go to a calendar file made in the browser", async
 
 test("P-14: with every task submitted the button says there is nothing to export", async ({ page }) => {
   await session(page, [task(DONE, "Predani izmišljeni rad", "2099-12-01T22:59:00.000Z")], [{ assignmentId: DONE, workState: "submitted" }]);
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   const button = page.getByRole("button", { name: "Dodaj rokove u kalendar" });
   await expect(button).toHaveAttribute("aria-disabled", "true");
   await expect(button).toHaveAccessibleDescription("Nema rokova za izvoz: svi zadaci su predani.");
