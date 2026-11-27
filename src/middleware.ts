@@ -25,5 +25,9 @@ export const config = {
   // files and the icon run no markup. /_next/image stays in: its own error
   // answers keep the page policy, the optimizer puts its own sandbox policy on
   // images, and any path below it is an HTML 404 that needs the nonce.
-  matcher: ["/((?!api/|_next/static/|favicon\\.ico$).*)"],
+  // /code-run/* stays out (F4-V18-22-R04-MW): the sandboxed code-run frame is
+  // embedded by the app itself and carries its own policy (worker-src blob:,
+  // frame-ancestors 'self') from packages/app/next.config.ts; the page policy
+  // here (worker-src 'none', frame-ancestors 'none') would block the frame.
+  matcher: ["/((?!api/|code-run/|_next/static/|favicon\\.ico$).*)"],
 };
