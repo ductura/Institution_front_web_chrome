@@ -54,6 +54,15 @@ export const assistantChatHr = {
   assistant: "Asistent",
   noAnswer: "Asistent nije odgovorio na ovaj upit.",
   questions: (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "upit" : "upita"}`,
+  // ED-80 (prototype assist2.js `.aipii`): personal data in the question, before it is sent.
+  pii: {
+    title: "U tekstu su osobni podaci",
+    kinds: { email: "E-adresa", longNumber: "OIB ili dugi broj", phone: "Broj telefona" },
+    body: (found: string) => `${found}. Pružatelju ih ne treba slati.`,
+    cut: "Ukloni ih i pošalji",
+    go: "Pošalji svejedno",
+    cancel: "Odustani",
+  },
   say: {
     asking: "Asistent odgovara.",
     answered: "Asistent je odgovorio. Odgovor je u razgovoru niže. Razgovor je zabilježen u Ducturi.",
