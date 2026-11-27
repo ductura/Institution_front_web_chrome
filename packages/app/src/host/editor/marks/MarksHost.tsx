@@ -19,6 +19,7 @@ import { marksHr as t } from "./messages.hr";
 import styles from "./Marks.module.css";
 import { reportAlert } from "../../../../../../src/components/editor/layout-prefs/context-alerts.ts";
 import { GHOST_KEY, ghostPlugin } from "./ghost";
+import { cardFits, requestCommentCard } from "../comments/comment-card";
 import { askSourceInstead, holeNeedsSource, linkHoleToSource, sourcesOf } from "./hole-source";
 
 const NEED_ALERT = "marks-need-proof";
@@ -135,6 +136,12 @@ export function MarksHost() {
     const onClick = (event: MouseEvent) => {
       const hit = editor.view.posAtCoords({ left: event.clientX, "top": event.clientY });
       const at = hit ? placesAt(places, hit.pos) : [];
+      // ED-98: on a phone a comment alone opens its card, not a popover (prototype text2.js).
+      if (hit && cardFits(window.innerWidth) && at.length > 0 && at.every((p) => p.kind === "cmt")) {
+        setPick(null);
+        requestCommentCard(hit.pos);
+        return;
+      }
       setPick(at.length ? { x: event.clientX, y: event.clientY + 12, at } : null);
     };
     dom.addEventListener("click", onClick);
@@ -152,6 +159,8 @@ export function MarksHost() {
   if (!editor || editor.isDestroyed) return null;
   const go = (p: Place) => {
     setPick(null);
+    // ED-98: on a phone a comment chosen in the list „Na ovom mjestu” opens its card.
+    if (p.kind === "cmt" && cardFits(window.innerWidth)) { requestCommentCard(p.from); return; }
     editor.chain().setTextSelection({ from: p.from, to: p.to }).scrollIntoView().focus().run();
   };
   const jump = (kind: MarkKind) => {
