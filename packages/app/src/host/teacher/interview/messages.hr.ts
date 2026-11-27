@@ -1,12 +1,13 @@
 // N-14 "Priprema za razgovor" (WEB-1530), teacher side. The fixed notice follows the draft word for
 // word; nothing here states a verdict, suspicion, grade, sanction or authorship.
+import { oneDot } from "../../../i18n/date-dot";
 export const interviewMessages = {
   open: "Pripremi razgovor",
   title: "Priprema za razgovor",
   backToWork: "Natrag na rad",
   exportPdf: "Izvezi PDF",
   invite: "Pošalji studentu poziv",
-  invited: (when: string): string => `Poziv je poslan ${when}.`,
+  invited: (when: string): string => oneDot(`Poziv je poslan ${when}.`),
   notInvited: "Poziv još nije poslan. Pitanja do poziva vidi samo autor.",
   notice: "Ovo je priprema za razgovor, ne optužba ni disciplinski postupak.",
   loading: "Učitavam pripremu za razgovor…",
@@ -57,7 +58,7 @@ export const interviewMessages = {
   heldTitle: "Razgovor održan",
   heldLabel: "Datum razgovora",
   markHeld: "Razgovor održan",
-  heldOn: (date: string): string => `Razgovor je održan ${date}.`,
+  heldOn: (date: string): string => oneDot(`Razgovor je održan ${date}.`),
   heldEmpty: "Odaberi datum razgovora.",
   outcomeNote: "Ishod razgovora se ne upisuje ovdje.",
   pdfReady: "PDF je spreman za preuzimanje.",
