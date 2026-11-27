@@ -80,7 +80,7 @@ export function DatasetLoader({ onLoaded, onCleared }: { onLoaded: (dataset: Dat
       </div>
       {state.kind === "reading" && <p role="status">{t.reading}</p>}
       {refused && (
-        <div role="alert">
+        <div role="alert" className={styles.refused}>
           <h3>{t.errorsTitle}</h3>
           <ul>{refused.errors.map((line, index) => <li key={index}>{line}</li>)}</ul>
           {refused.more > 0 && <p>{t.errorsMore.replace("{count}", String(refused.more))}</p>}
