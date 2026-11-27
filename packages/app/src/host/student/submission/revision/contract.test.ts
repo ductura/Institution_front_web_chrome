@@ -21,7 +21,7 @@ describe("notifications.returned-for-revision.list.get (PO-40)", () => {
   it("finds the request for this assignment with its comment and deadline", async () => {
     expect(await readRevisionRequest(answering("inbox"), TARGET)).toEqual({
       kind: "ready",
-      request: { id: "00000000-0000-4000-8000-000000001711", comment: "Doradi uvod i ispravi navode.", dueAt: "2026-12-15T12:00:00.000Z", createdAt: "2026-11-21T09:00:00.000Z" },
+      request: { id: "00000000-0000-4000-8000-000000001711", documentId: expect.any(String), comment: "Doradi uvod i ispravi navode.", dueAt: "2026-12-15T12:00:00.000Z", createdAt: "2026-11-21T09:00:00.000Z" },
     });
   });
 
