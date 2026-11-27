@@ -254,8 +254,10 @@ if (process.env.DUCTURA_VAL5_FIXTURE === '1') test.describe('WEB-36 · prikazi s
       expect(fingerprint).toBe(receipt.payload.artifactSha256);
       await axe(page);
       await page.goto(origin + fixturePaths.studentReceipt);
-      await expect(page.getByText('Otisak predanog teksta (SHA-256)', { exact: true })).toBeVisible();
-      expect(await shownFingerprint(page)).toBe(fingerprint);
+      // S-08 K1, K2 (Ductus#2059): the student's receipt no longer shows the SHA-256 string; it offers the copy button.
+      await expect(page.getByRole('button', { name: 'Otisak u međuspremnik' })).toBeVisible();
+      await expect(page.getByText(fingerprint, { exact: false })).toHaveCount(0);
+      expect(await shownFingerprint(page)).toBe('');
       await axe(page);
       await page.goto(origin + fixturePaths.accessLog);
       const entry = page.getByRole('listitem').filter({ hasText: 'Izmišljeni Nastavnik · nastavnik kolegija' });
