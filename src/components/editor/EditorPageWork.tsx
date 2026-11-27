@@ -80,6 +80,8 @@ export type HostSections = {
   instructions?: (ctx: HostSectionContext) => ReactNode;
   /** ED-71: what the host shows on the sheet above the text (prototype `#toc`, "Sadržaj na listu"). */
   sheetTop?: (ctx: HostSectionContext) => ReactNode;
+  /** ED-96: the foot of the right panel (prototype `#pfoot`, "Sesija pisanja"). */
+  panelFoot?: (ctx: HostSectionContext) => ReactNode;
 };
 
 export type OpenRead =
@@ -299,6 +301,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         comments: hostSections?.comments ? hostSections.comments(ctx) : <CommentPanel documentId={documentId} session={session} />,
         review: hostSections?.review?.(ctx),
         assistant: hostSections?.assistant ? hostSections.assistant(ctx) : <AssistantComingSoonCard /> }}
+      rightFoot={hostSections?.panelFoot?.(ctx)}
       renderWork={(closeDrawer) => <>
         {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
           sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer}

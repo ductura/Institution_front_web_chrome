@@ -59,6 +59,7 @@ import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
 import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { SheetToc } from "../editor/toc/SheetToc";
+import { WritingSessionFoot } from "../editor/writing-session/WritingSessionFoot";
 import { SheetAbbreviations, type AbbreviationsEditor } from "../editor/abbreviations/SheetAbbreviations";
 import type { TocEditor } from "../../../../editor-core/src/outline/index.ts";
 import { leftSectionsFor, RailFooter, StartWorkHost } from "../editor/left/LeftSectionsHost";
@@ -194,6 +195,9 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
               instructions: () => <><NoticeInstructions assignmentId={assignmentId} /><RubricCard assignmentId={assignmentId} here={here} /></>,
               // ED-71: "Prikaz › Sadržaj na listu" puts the table of contents on the sheet above the text.
               // ED-79: "Dijelovi rada › Popis kratica" puts the list of abbreviations under it.
+              // ED-96: "Sesija pisanja" in the right panel's foot, on this device only.
+              panelFoot: ({ editor, submitted, signedOut }) =>
+                <WritingSessionFoot editor={editor} workId={assignmentId} hidden={submitted || signedOut} />,
               sheetTop: ({ editor, scope, documentId }) => <>
                 <SheetToc editor={editor as unknown as TocEditor | null} scope={scope} documentId={documentId} />
                 <SheetAbbreviations editor={editor as unknown as AbbreviationsEditor | null} scope={scope} documentId={documentId} />

@@ -48,9 +48,11 @@ export type EditorPanelLayoutProps = {
   leftSections?: LeftSections;
   rightSections?: RightSections;
   renderWork?: (closeDrawer: () => void) => ReactNode;
+  /** ED-96: the host's foot of the right panel. */
+  rightFoot?: ReactNode;
 };
 
-export function EditorPanelLayout({ header, tools, status, title, children, leftSections, rightSections, renderWork }: EditorPanelLayoutProps) {
+export function EditorPanelLayout({ header, tools, status, title, children, leftSections, rightSections, renderWork, rightFoot }: EditorPanelLayoutProps) {
   const theme = useSheetTheme();
   const narrowRail = useSyncExternalStore(railQuery.subscribe, railQuery.snapshot, serverSnapshot);
   const narrowPanel = useSyncExternalStore(panelQuery.subscribe, panelQuery.snapshot, serverSnapshot);
@@ -136,7 +138,7 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
     settings={<PanelSettings side="left" value={prefs.left} onChange={(value) => setSide("left", value)}
       width={sizes.rail} onWidth={pickWidth("rail")} />} />);
   const sections = renderWork ? { ...rightSections, work: renderWork(close) } : rightSections;
-  const right = withDensity("right", <RightPanel layout={rightLayout} sections={sections} drawer={narrowPanel}
+  const right = withDensity("right", <RightPanel layout={rightLayout} sections={sections} foot={rightFoot} drawer={narrowPanel}
     selection={rightLayout === "b" ? contextView : selection} onSelect={rightLayout === "b" ? setContextView : setSelection}
     settings={<PanelSettings side="right" value={prefs.right} onChange={(value) => setSide("right", value)}
       width={sizes.panel} onWidth={pickWidth("panel")} />} />);
