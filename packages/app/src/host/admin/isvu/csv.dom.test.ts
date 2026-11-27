@@ -147,4 +147,11 @@ describe("Uvoz popisa iz CSV-a", () => {
     expect(text()).toContain("Pregled je istekao");
     expect(button("Napravi novi pregled")).toBeTruthy();
   });
+
+  it("Odustani does nothing while the confirmation is in flight", async () => {
+    stub((c) => (isPreview(c) ? Response.json(mixed) : isConfirm(c) ? new Promise<Response>(() => undefined) as unknown as Response : undefined));
+    await mount(); await fill(); await click("Pregledaj CSV"); await click("Potvrdi upis…"); await click("Potvrdi upis");
+    await click("Odustani");
+    expect(host!.ownerDocument.querySelector("dialog")?.hasAttribute("open")).toBe(true);
+  });
 });

@@ -70,7 +70,7 @@ export const isvuPageMessages = {
   newPreview: "Napravi novi pregled",
 } as const;
 
-/** F4-OPE-R05: text of the CSV roster import (invented data only); the review texts are the model's. */
+/** F4-OPE-R05: text of the CSV roster import, invented data only; the review texts are the model's. */
 export const csvImportMessages = {
   heading: "Uvoz popisa iz CSV-a",
   lead: "Zalijepite popis studenata iz izvoza, pregledajte ga i tek onda potvrdite upis. Pregled nikoga ne upisuje.",

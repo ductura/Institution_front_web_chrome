@@ -173,7 +173,7 @@ export default function CsvImport({ onDenied }: { readonly onDenied?: () => void
           <Dialog open={asking && shown.kind === "preview"} title={t.dialogTitle} dismissible={!confirming}
             onClose={() => setAsking(false)}
             actions={<>
-              <Button tone="secondary" onClick={() => setAsking(false)} aria-disabled={confirming || undefined}>{t.dialogCancel}</Button>
+              <Button tone="secondary" onClick={() => { if (!confirming) setAsking(false); }} aria-disabled={confirming || undefined}>{t.dialogCancel}</Button>
               <Button busy={confirming} onClick={() => void runConfirm()}>{confirming ? t.confirming : t.dialogConfirm}</Button>
             </>}>
             <p>{shown.kind === "preview" ? t.dialogBody(countByStatus(shown.value.rows).new) : ""}</p>
