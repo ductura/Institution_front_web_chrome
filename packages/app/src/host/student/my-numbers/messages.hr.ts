@@ -1,0 +1,23 @@
+/** F4-PM2-R20 (M7.13, A-10): "Moj rad u brojkama". Student only; figures from saved versions, no rhythm, no comparison (D-63). */
+export const myNumbersText = {
+  title: "Moj rad u brojkama",
+  lead: "Brojke iz vaših spremljenih verzija. Vidite ih samo vi; ne ulaze u predaju, izvoz ni nastavnički prikaz.",
+  loading: "Učitavam brojke…",
+  empty: "Još nemate rada. Brojke se pojave kad počnete pisati.",
+  signedOut: "Sesija je istekla. Prijavite se ponovno.",
+  unavailable: "Brojke trenutačno nisu dostupne.",
+  retry: "Pokušaj ponovno",
+  notAvailable: "Nije dostupno",
+  versions: "Spremljene verzije",
+  versionsMore: (n: number) => `${n} ili više`,
+  days: "Dani s spremljenom verzijom",
+  daysMore: (n: number) => `${n} ili više`,
+  daysLeft: "Dani do roka",
+  dueToday: "Rok je danas",
+  duePassed: "Rok je prošao",
+  daysLeftValue: (n: number) => String(n),
+  submitted: "Predano",
+  milestones: "Poglavlja i koraci",
+  milestonesValue: (done: number, total: number) => `${done} od ${total} odobreno`,
+  stateSubmitted: "Predano",
+} as const;
