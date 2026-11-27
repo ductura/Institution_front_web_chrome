@@ -4,7 +4,7 @@ name: Sistem
 # Institution_server, lažni OIDC (simulator AAI@EduHr), izgradnja
 # packages/app ovog repoa (`pnpm build` + `pnpm start`, ista izgradnja kao
 # isporuka) i lokalni edge Preloadera na :8000 (`/` = Preloader, `/api/v1` =
-# server, `/app/web` = packages/app). Student ulazi kroz `/`. Zatim
+# server, `/aplikacija` = packages/app). Student ulazi kroz `/`. Zatim
 # `pnpm test:sistem` (INT-02..05 i INT-13, tok editora iz vala 1).
 # Prijava je samo lažni OIDC (D-09), svi podaci su izmišljeni (demo seed),
 # bez tajni.
@@ -21,7 +21,7 @@ on:
         default: migracija/kopija-ductus-backend
       preloader_ref:
         type: string
-        default: main
+        default: migracija/nextjs
   workflow_dispatch:
     inputs:
       server_ref:
@@ -29,7 +29,7 @@ on:
         default: migracija/kopija-ductus-backend
       preloader_ref:
         description: Grana Preloadera
-        default: main
+        default: migracija/nextjs
 permissions:
   contents: read
 jobs:
@@ -56,7 +56,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ductura/Preloader
-          ref: ${{ inputs.preloader_ref || 'main' }}
+          ref: ${{ inputs.preloader_ref || 'migracija/nextjs' }}
           path: Preloader
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -109,8 +109,8 @@ jobs:
         run: |
           pnpm build
           nohup pnpm start > "$RUNNER_TEMP/front.log" 2>&1 &
-          for i in $(seq 1 40); do curl -fsS -o /dev/null http://127.0.0.1:5173/app/web/stanje && break; sleep 3; done
-          curl -fsS -o /dev/null http://127.0.0.1:5173/app/web/stanje || { tail -n 100 "$RUNNER_TEMP/front.log"; exit 1; }
+          for i in $(seq 1 40); do curl -fsS -o /dev/null http://127.0.0.1:5173/aplikacija/stanje && break; sleep 3; done
+          curl -fsS -o /dev/null http://127.0.0.1:5173/aplikacija/stanje || { tail -n 100 "$RUNNER_TEMP/front.log"; exit 1; }
       - name: "Preloader i edge (:8000)"
         working-directory: Preloader
         env:
@@ -128,7 +128,7 @@ jobs:
           nohup node deploy/edge/dev-proxy.mjs > "$RUNNER_TEMP/edge.log" 2>&1 &
           for i in $(seq 1 30); do curl -fsS -o /dev/null http://localhost:8000/ && break; sleep 1; done
           curl -fsS -o /dev/null http://localhost:8000/ || { cat "$RUNNER_TEMP/edge.log"; exit 1; }
-          curl -fsS -o /dev/null http://localhost:8000/app/web/stanje
+          curl -fsS -o /dev/null http://localhost:8000/aplikacija/stanje
           curl -fsS http://localhost:8000/api/v1/health
       # VS-1.13: lokalno.ts gasi sve podprocese kad jedan izađe. Iste naredbe
       # s istom okolinom nastavljaju kao samostalni procesi, pa test smije

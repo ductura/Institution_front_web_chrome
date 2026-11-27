@@ -8,7 +8,7 @@ const ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c59";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d49";
 const SCOPE = "d".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0009";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 const INSTRUCTIONS = "Opišite izmišljeni gradski vrt i navedite tri izvora.";
 
 const noticeBody = (over: Record<string, unknown> = {}) => ({
@@ -86,10 +86,10 @@ test.describe("ED-09 Pravila za ovaj zadatak", () => {
 
   test("the links lead to the notice and to the declaration", async ({ page }) => {
     const rules = await openRules(page);
-    await expect(rules.getByRole("link", { name: "Pročitaj obavijest zadatka" })).toHaveAttribute("href", `/app/web/zadatak/${ID}`);
+    await expect(rules.getByRole("link", { name: "Pročitaj obavijest zadatka" })).toHaveAttribute("href", `/aplikacija/zadatak/${ID}`);
     // ED-12: in the editor the declaration opens its dialog in place; the full page stays one link away.
     await expect(rules.getByRole("button", { name: "Izjava o korištenju alata" })).toHaveAttribute("aria-haspopup", "dialog");
-    await expect(rules.getByRole("link", { name: "Uredi izjavu" })).toHaveAttribute("href", `/app/web/rad/${ID}/predaja/izjava`);
+    await expect(rules.getByRole("link", { name: "Uredi izjavu" })).toHaveAttribute("href", `/aplikacija/rad/${ID}/predaja/izjava`);
   });
 
   test("Prije prve rečenice shows the assignment's instructions", async ({ page }) => {

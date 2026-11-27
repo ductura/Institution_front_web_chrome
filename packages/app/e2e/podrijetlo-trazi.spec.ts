@@ -6,7 +6,7 @@ const ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c5d";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d3e";
 const SCOPE = "c".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0034";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 
 async function openEditor(page: Page) {
   await page.route("**/api/v1/me", (route) => route.fulfill({
@@ -46,5 +46,5 @@ test("/podrijetlo is offered and opens the work's provenance page", async ({ pag
   await expect(option).not.toHaveAttribute("aria-disabled", "true");
   await page.keyboard.press("Enter");
   // A dev server builds the provenance route on its first visit, so the soft navigation may take a while.
-  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}/podrijetlo$`), { timeout: 60_000 });
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/rad/${ID}/podrijetlo$`), { timeout: 60_000 });
 });

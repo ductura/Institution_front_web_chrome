@@ -59,7 +59,7 @@ for (const width of [390, 1280]) {
     test(`PR-20: the student answers the teacher's question by keyboard and it is saved on the server (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       const { puts } = await student(page);
-      await page.goto(`/app/web/rad/${T1}/predaja/izjava`);
+      await page.goto(`/aplikacija/rad/${T1}/predaja/izjava`);
       await setTheme(page, theme);
       const block = main(page).locator('[data-nf3="PR-20"]');
       await expect(block.getByRole("heading", { name: "Pitanje nastavnika" })).toBeVisible();
@@ -84,7 +84,7 @@ for (const width of [390, 1280]) {
 
 test("PR-20: without a question the step has no question block", async ({ page }) => {
   await student(page, { ...DRAFT_STATE, teacherQuestion: null as unknown as typeof QUESTION });
-  await page.goto(`/app/web/rad/${T1}/predaja/izjava`);
+  await page.goto(`/aplikacija/rad/${T1}/predaja/izjava`);
   await expect(main(page).getByRole("heading", { name: "Izjava o korištenju generativne umjetne inteligencije" })).toBeVisible();
   await expect(main(page).locator('[data-nf3="PR-20"]')).toHaveCount(0);
 });
@@ -131,7 +131,7 @@ for (const width of [390, 1280]) {
     test(`PG-6: the question and the student's answer in the declaration card (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await teacher(page, BOUND);
-      await page.goto(`/app/web/nastavnik/rad/${documentId}/pregled?kartica=izjava`);
+      await page.goto(`/aplikacija/nastavnik/rad/${documentId}/pregled?kartica=izjava`);
       await setTheme(page, theme);
       const block = page.locator('[data-nf5="PG-6"]');
       await expect(block.getByRole("heading", { name: "Pitanje nastavnika i odgovor studenta" })).toBeVisible();
@@ -145,7 +145,7 @@ for (const width of [390, 1280]) {
 
 test("PG-6: a declaration not given yet says the answer waits for it", async ({ page }) => {
   await teacher(page, { state: "none", payload: null, declarationSha256: null, question: QUESTION, questionAnswer: null });
-  await page.goto(`/app/web/nastavnik/rad/${documentId}/pregled?kartica=izjava`);
+  await page.goto(`/aplikacija/nastavnik/rad/${documentId}/pregled?kartica=izjava`);
   await expect(page.locator('[data-nf5="PG-6"]').getByText("Student još nije predao izjavu; odgovor će se vidjeti uz izjavu.")).toBeVisible();
 });
 
@@ -162,7 +162,7 @@ for (const width of [390, 1280]) {
         id: K1, name: "Izmišljeni kolegij", academicYear: "2026/2027", aiPolicy: "partially_allowed", assignments: [],
       }] } }));
       await page.route(`**/api/v1/institution/courses/${K1}/groups`, (route) => route.fulfill({ json: { groups: [] } }));
-      await page.goto(`/app/web/nastavnik/zadatak/novi?kolegij=${K1}`);
+      await page.goto(`/aplikacija/nastavnik/zadatak/novi?kolegij=${K1}`);
       await setTheme(page, theme);
       const field = page.getByLabel("Pitanje studentu uz izjavu (nije obavezno)");
       await expect(field).toBeEnabled();
