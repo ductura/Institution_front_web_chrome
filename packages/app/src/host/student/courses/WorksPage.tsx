@@ -53,7 +53,7 @@ export function MyWorksPage({ filter }: { filter: WorksFilter }) {
   const now = new Date();
   return (
     <Frame title={w.title} lede={w.lede}>
-      <State read={read} retry={retry} here="/zadaci/radovi" base={base} />
+      <State read={read} retry={retry} here="/zadaci/radovi" base={base} signedOut={t.signedOutWorks} />
       {ready && items.length === 0 ? (
         <section className={`${own.card} ${own.center}`} aria-labelledby="radovi-prazno">
           <h2 id="radovi-prazno">{w.emptyHeading}</h2>
@@ -80,12 +80,17 @@ export function MyWorksPage({ filter }: { filter: WorksFilter }) {
                 const due = effectiveDue(item.dueAt, item.extendedDueAt);
                 const text = kind === "submitted" ? submittedLine(submitted, whenHr) : kind === "notice" ? STATE_TEXT.notice
                   : item.state === null || item.state === "submitted" ? null : STATE_TEXT[item.state];
-                const course = item.academicYear === "" ? item.courseName : `${item.courseName} · ${yearLabel(item.academicYear)}`;
+                const course = (
+                  <>
+                    <span>{item.courseName}</span>
+                    {item.academicYear === "" ? null : <span>{yearLabel(item.academicYear)}</span>}
+                  </>
+                );
                 const a = { id: item.assignmentId, title: item.title, dueAt: item.dueAt, extendedDueAt: item.extendedDueAt, noticeFirst: item.noticeFirst };
                 const line = (
                   <>
                     {text === null ? null : <span>{text}</span>}
-                    {kind === "submitted" ? null : <span>{`Rok ${whenHr(due)}`}</span>}
+                    {kind === "submitted" || whenHr(due) === "" ? null : <span>{`Rok ${whenHr(due)}`}</span>}
                   </>
                 );
                 return <TaskItem key={item.assignmentId} a={a} course={course} kind={kind} now={now} line={line}

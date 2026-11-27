@@ -1,6 +1,8 @@
 /** WEB-2103 (paritet E-3/E-4): texts of the student's courses and works, as in INVENTAR-student.md. */
 export const coursesText = {
   signedOut: "Prijava nije valjana. Prijavite se ponovno.",
+  // Nacrt (DIZ S-04): the works page has its own wording, not the assignments one.
+  signedOutWorks: "Prijavite se da vidite svoje radove.",
   signIn: "Prijava sustavom AAI@EduHr",
   retry: "Pokušaj ponovno",
   loading: "Učitavanje…",

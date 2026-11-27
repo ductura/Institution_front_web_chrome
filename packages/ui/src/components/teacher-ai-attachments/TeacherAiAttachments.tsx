@@ -115,13 +115,13 @@ export function TeacherAiAttachments({ labels, state, onRetry }: TeacherAiAttach
           <>
             <p className={styles.alert} role="alert">{labels.error}</p>
             <p className={styles.note}>{labels.errorNote}</p>
-            {onRetry && <div className={styles.acts}><InertButton onClick={onRetry}>{labels.retry}</InertButton></div>}
+            {onRetry && <button type="button" className={styles.retryLink} onClick={onRetry}>{labels.retry}</button>}
           </>
         );
       case "pending":
         return (
           <>
-            <p><span className={styles.tag}>{labels.pendingTag}</span></p>
+            <p><span className={styles.tag} data-tone="warn">{labels.pendingTag}</span></p>
             <p className={styles.text}>{labels.pending}</p>
           </>
         );
@@ -167,7 +167,7 @@ function Ready({ labels, state }: { labels: TeacherAiAttachmentsLabels; state: R
     return (
       <div className={styles.group}>
         <h3 ref={openHeading} tabIndex={-1} className={styles.subtitle}>
-          {opened.title} <span className={styles.tag}>{tag}</span>
+          {opened.title} <span className={styles.tag} data-tone={opened.reason === "transfer" ? undefined : "accent"}>{tag}</span>
         </h3>
         <p className={styles.note}>{`${opened.assistantName}. ${labels.versionNote}`}</p>
         <ol className={styles.turns}>
@@ -228,7 +228,7 @@ function Ready({ labels, state }: { labels: TeacherAiAttachmentsLabels; state: R
             {state.conversations.map((c) => (
               <li key={c.conversationId} className={styles.row} data-conversation={c.conversationId}>
                 <span className={styles.itemTitle}>{c.title}</span>
-                <span className={styles.tag}>{c.reason === "transfer" ? labels.transferTag : labels.studentAddedTag}</span>
+                <span className={styles.tag} data-tone={c.reason === "transfer" ? undefined : "accent"}>{c.reason === "transfer" ? labels.transferTag : labels.studentAddedTag}</span>
                 <InertButton tone="quiet" onClick={() => open(c.conversationId)}>
                   {labels.open}
                   <span className={styles.sr}>{` ${c.title}`}</span>

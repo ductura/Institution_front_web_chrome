@@ -8,7 +8,8 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { useOnline } from "../../../../../../src/client/online-status.ts";
 import statusStyles from "../../../../../../src/components/editor/StatusBar.module.css";
-import { scopeLine, type ScopeRange } from "../../../../../../src/components/editor/StatusBar.tsx";
+import { ScopeParts, scopeParts, type ScopeRange } from "../../../../../../src/components/editor/StatusBar.tsx";
+import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr.ts";
 import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
 import { openFailureExit, openFailureText } from "../../../../../../src/components/editor/open-failure.ts";
 
@@ -33,10 +34,16 @@ export function momentHr(iso: string): string | null {
   return `${day}. ${month}. ${year}., ${hour}:${minute}`;
 }
 
-/** The line under the title: "Kolegij A · rok 8. 11. 2026., 23:59". */
-export function courseLine(course: string, dueAt: string): string {
-  const due = momentHr(dueAt);
-  return due === null ? course : workText.courseLine.replace("{course}", course).replace("{due}", due);
+/**
+ * S-07: the line under the title, "Uvod u znanstveno pisanje, Esej, rok 30. studenoga 2026. u 23:59".
+ * `kind` is the work type's name; without it (or without a readable deadline) the line leaves that part out.
+ */
+export function courseLine(course: string, dueAt: string, kind?: string): string {
+  const parsed = new Date(dueAt);
+  if (Number.isNaN(parsed.getTime())) return kind ? `${course}, ${kind}` : course;
+  const due = formatDateTimeHr(dueAt);
+  const line = kind ? workText.courseLine.replace("{kind}", kind) : workText.courseLineNoKind;
+  return line.replace("{course}", course).replace("{due}", due);
 }
 
 export function Banner({ lead, children }: { lead?: string; children: ReactNode }) {
@@ -120,12 +127,12 @@ export function FrameStatus({ chip, note, length, withNet = false }: {
   withNet?: boolean;
 }) {
   const online = useOnline();
-  const scope = length === undefined ? null : scopeLine(length.words, length.range);
+  const scope = length === undefined ? null : scopeParts(length.words, length.range);
   return (
     <footer className={statusStyles.bar} aria-label={t.workspace.status}>
       {chip}
       {note === undefined ? null : <span className={statusStyles.scope}>{note}</span>}
-      {scope === null ? null : <span className={statusStyles.scope}>{scope}</span>}
+      {scope === null ? null : <ScopeParts parts={scope} className={statusStyles.scope} />}
       {withNet && !online ? <span className={statusStyles.net}>{workText.offlineNet}</span> : null}
     </footer>
   );

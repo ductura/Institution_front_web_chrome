@@ -4,7 +4,7 @@
 // decides (approve; return with a required comment) and sees the versions; the student reads it in topic-student. After a write, and after a 409, the view shows what the server now says.
 import { useState } from "react";
 
-import { ActionRow, Button, Notice, Tag, TextArea } from "@ductura/ui";
+import { ActionRow, Button, Notice, Tag, TextArea, formatDate } from "@ductura/ui";
 
 import { createApi } from "../../../../../../src/client/api";
 import type { SectionViewProps, ThesisSectionDef } from "../model";
@@ -12,7 +12,7 @@ import { allowedDecisions, COMMENT_MAX, decide, type Decision, type Outcome } fr
 import { topicMentorHr as t } from "./messages.hr";
 import { readTopic, type Call, type TopicValue } from "./read";
 
-const when = (iso: string) => new Date(iso).toLocaleDateString("hr-HR");
+const when = (iso: string) => formatDate(iso, "hr");
 export const say = (o: Outcome) => t[o];
 
 export function TopicMentorView({ documentId, role, value: first, reload, call = createApi() }: SectionViewProps<TopicValue> & { call?: Call }) {
@@ -45,7 +45,7 @@ export function TopicMentorView({ documentId, role, value: first, reload, call =
       {value.current === null ? <p>{t.noneYet}</p> : (
         <div data-testid="topic-current">
           <h4>{value.current.title}</h4>
-          <p><small>{t.versionLabel} {value.current.version} · {t.proposedOn} {when(value.current.proposedAt)}</small></p>
+          <p><small>{t.versionLabel} {value.current.version}, {t.proposedOn} {when(value.current.proposedAt)}</small></p>
           <p>{value.current.summary === "" ? t.noSummary : value.current.summary}</p>
         </div>
       )}
@@ -73,7 +73,7 @@ export function TopicMentorView({ documentId, role, value: first, reload, call =
       )}
       <h5>{t.historyHeading}</h5>
       {value.history.length === 0 ? <p>{t.noHistory}</p> : (
-        <ul>{value.history.map((h) => <li key={h.version}>{t.versionLabel} {h.version} · {when(h.proposedAt)}: {h.title}</li>)}</ul>
+        <ul>{value.history.map((h) => <li key={h.version}>{t.versionLabel} {h.version}, {when(h.proposedAt)}: {h.title}</li>)}</ul>
       )}
       {message !== null && <Notice tone={message === "saved" ? "info" : "warn"}>{say(message)}</Notice>}
     </div>

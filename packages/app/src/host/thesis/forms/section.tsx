@@ -4,7 +4,7 @@
 // server's `title`; the student sees the consent and cannot change it; every write shows its outcome as a message.
 import { useState } from "react";
 
-import { ActionRow, Button, Notice, Select, Tag, TextArea } from "@ductura/ui";
+import { ActionRow, Button, Notice, Select, Tag, TextArea, formatDate } from "@ductura/ui";
 
 import { createApi } from "../../../../../../src/client/api";
 import type { SectionViewProps, ThesisRole, ThesisSectionDef } from "../model";
@@ -12,7 +12,7 @@ import { allowedStates, COMMENT_MAX, setConsent, setFormState, type Outcome } fr
 import { formsHr as t } from "./messages.hr";
 import { readForms, type Call, type FormsValue, type FormState, type ThesisForm } from "./read";
 
-const when = (iso: string | null) => (iso === null ? "" : new Date(iso).toLocaleDateString("hr-HR"));
+const when = (iso: string | null) => (iso === null ? "" : formatDate(iso, "hr"));
 export type Source = "form" | "consent";
 export const say = (o: Outcome, source: Source) => (o === "saved" ? t.saved : o === "unchanged" ? (source === "consent" ? t.consentUnchanged : t.unchanged) : t[o]);
 
