@@ -9,4 +9,9 @@ export const tocHr = {
   copy: "Kopiraj sadržaj rada",
   copied: "Sadržaj rada je kopiran.",
   copyFailed: "Sadržaj se nije mogao kopirati. Označite ga i kopirajte ručno.",
+  // ED-71: "Sadržaj na listu" (prototype features.js `#toc .tocbox`).
+  sheetTitle: "Sadržaj",
+  sheetEmpty: "Rad još nema naslova.",
+  sheetNote: "Složeno iz naslova.",
+  sheetLabel: "Sadržaj na listu",
 } as const;
