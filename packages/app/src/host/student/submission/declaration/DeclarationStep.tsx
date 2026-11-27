@@ -18,7 +18,7 @@ import TeacherQuestion from "../../statement/TeacherQuestion";
 import StepLink from "../steps/StepLink";
 import { chatDialogText as d, declarationStepText as t } from "./messages.hr";
 import {
-  attachedOf, canConfirm, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
+  attachedOf, canConfirm, canProceed, chatTitle, confirmLine, entryLabel, formMenuShown, mismatchTarget, mismatchText, recordedLine, stepView,
   type Chat, type ConfirmState, type DeclarationRead, type FormChoice,
 } from "./model";
 import type { StepPorts, StepRead } from "./step-ports";
@@ -210,7 +210,7 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
             {step?.kind === "read" && (
               <TeacherQuestion port={ports.statement} assignmentId={assignmentId} read={step.statement} onReload={reload} onSignIn={() => signIn.current()} />
             )}
-            {!closed && ready.recorded.length + ready.chats.length > 0 && (
+            {!closed && formMenuShown(ready.recorded) && (
               <>
                 <Select label={t.form} value={chosen} onChange={(event) => setForm(event.currentTarget.value as FormChoice)}
                   options={[{ value: "no_use", label: t.formNone }, { value: "used", label: t.formUsed }]} />
