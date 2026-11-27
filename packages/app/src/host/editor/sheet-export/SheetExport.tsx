@@ -9,6 +9,7 @@ import { browserTransport, goToSignIn } from "../../../../../../src/client/api";
 import { downloadBlob } from "../../../../../../src/components/editor/EarlierDraft";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
+import { LoadAlert } from "../../states/States";
 import { sheetExportHr as t } from "./messages.hr";
 import { exportFileName, readExport, type ExportKind, type ExportResult, type Transport } from "./port";
 
@@ -71,7 +72,7 @@ export default function SheetExport({ documentId, title, here, transport = brows
       <p>{t.firstSheetNote} {t.savedNote}</p>
       {shown.kind === "loading" ? <p role="status">{t.loading(shown.which === "csv" ? t.csvWhat : t.xlsxWhat)}</p> : null}
       {shown.kind === "done" ? <p role="status">{shown.which === "csv" ? t.doneCsv : t.doneXlsx}</p> : null}
-      {shown.kind === "failed" ? <p role="alert">{FAILURE[shown.reason]}</p> : null}
+      {shown.kind === "failed" ? <LoadAlert body={FAILURE[shown.reason]} /> : null}
     </div>
   );
 }

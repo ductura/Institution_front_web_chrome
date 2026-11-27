@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type M
 import { Button, Notice } from "@ductura/ui";
 
 import { computeSheet, countFilledCells, formatCellRef, type SheetDocument } from "../../../../../editor-core/src/sheet/index.ts";
+import { LoadAlert } from "../../states/States";
 import { FormulaBar } from "./FormulaBar";
 import { SheetTabs } from "./SheetTabs";
 import {
@@ -37,9 +38,8 @@ export function SheetGrid({ state, document: doc, onChange, onRetry, readOnly = 
   if (state === "loading") return <p role="status" aria-busy="true" data-sheet-state="loading">{t.loading}</p>;
   if (state === "error" || doc === null) {
     return (
-      <div role="alert" data-sheet-state="error">
-        <h2>{t.loadFailedTitle}</h2>
-        <p>{t.loadFailedBody}</p>
+      <div data-sheet-state="error">
+        <LoadAlert title={t.loadFailedTitle} body={t.loadFailedBody} />
         {onRetry ? <Button tone="secondary" onClick={onRetry}>{t.retry}</Button> : null}
       </div>
     );
@@ -310,7 +310,7 @@ function Grid({ doc, onChange, readOnly, newSheetId }: { doc: SheetDocument; onC
                           style={{ width: "100%", boxSizing: "border-box" }}
                         />
                       ) : shown.error ? (
-                        <span style={{ color: "var(--error)", fontWeight: 700 }}>{shown.text}</span>
+                        <span style={{ color: "var(--color-error)", fontWeight: 700 }}>{shown.text}</span>
                       ) : (
                         shown.text
                       )}

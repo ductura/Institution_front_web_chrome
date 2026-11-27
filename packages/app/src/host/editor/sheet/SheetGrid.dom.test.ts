@@ -80,6 +80,21 @@ describe("SheetGrid states", () => {
   });
 });
 
+describe("SheetGrid failed read frame (V14, A2)", () => {
+  it("puts the title and the text in one role=alert frame and keeps the retry button outside it", async () => {
+    const retries = { n: 0 };
+    const host = await mount({ initial: null, state: "error", retries });
+    const alerts = host.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]!.textContent).toContain("Tablica nije dostupna");
+    expect(alerts[0]!.textContent).toContain("Tablicu sada nije moguće učitati");
+    const retry = [...host.querySelectorAll("button")].find((b) => b.textContent === "Pokušaj ponovno")!;
+    expect(alerts[0]!.contains(retry)).toBe(false);
+    act(() => retry.click());
+    expect(retries.n).toBe(1);
+  });
+});
+
 describe("SheetGrid structure", () => {
   it("is a grid with column and row headers and one tab stop", async () => {
     const host = await mount({ initial: start() });

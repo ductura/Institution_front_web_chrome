@@ -67,6 +67,7 @@ describe("withMentored", () => {
       title: thesis.title,
       dueAt: thesis.dueAt,
       workState: "in_progress",
+      workType: "master_thesis",
     });
   });
 });

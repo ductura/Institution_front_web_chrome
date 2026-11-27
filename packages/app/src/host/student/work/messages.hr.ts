@@ -26,6 +26,8 @@ export const workText = {
   /** E-7a (NF-3 PR-1): the banner's ways on, as in the prototype (R-70, R-55). */
   openReceipt: "Otvori potvrdu o predaji",
   withdraw: "Povuci predaju",
-  courseLine: "{course} · rok {due}",
+  /** S-07: "{course}, {kind}, rok {due}"; the work type is left out when the read does not give it. */
+  courseLine: "{course}, {kind}, rok {due}",
+  courseLineNoKind: "{course}, rok {due}",
   notStarted: "Rad još nije započet. Započnite ga da biste mogli pisati.",
 } as const;

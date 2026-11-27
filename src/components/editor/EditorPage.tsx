@@ -68,3 +68,17 @@ export default function EditorPage({
 export function SheetNote({ children }: { children: ReactNode }) {
   return <p className={styles.note} role="note">{children}</p>;
 }
+
+/**
+ * S-07 (E4, E5): a read that failed. One role=alert frame, 1 px edge and text in the error
+ * colour, radius 4, no fill; the way out ("Pokušaj ponovno", a button) goes under it, not inside.
+ */
+export function SheetAlert({ children, announce = true }: { children: ReactNode; announce?: boolean }) {
+  // `announce` is false where an outer element already carries role=alert (E5), so it is announced once.
+  return <div className={styles.alertFrame} role={announce ? "alert" : undefined}>{children}</div>;
+}
+
+/** "Pokušaj ponovno" under a SheetAlert: an underlined accent link that reads again. */
+export function SheetRetry({ label, onRetry }: { label: string; onRetry: () => void }) {
+  return <p className={styles.retry}><button type="button" className={styles.retryLink} onClick={onRetry}>{label}</button></p>;
+}
