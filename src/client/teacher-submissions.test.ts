@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import vectors from "./migration-contract-vectors.generated.json";
-import { readSubmittedVersion, readTeacherSubmissions, type SubmissionsCall } from "./teacher-submissions";
+import { readSubmittedVersion, readTeacherReceiptPdf, readTeacherSubmissions, readTeacherWorkReceiptPdf, type SubmissionsCall } from "./teacher-submissions";
 
 const ASSIGNMENT = "3a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c01";
 const STUDENT = "5e4d3c2b-1a09-4f8e-8d7c-6b5a4f3e2d01";
@@ -101,5 +101,64 @@ describe("readSubmittedVersion", () => {
 
   it("maps 404 to not_found", async () => {
     expect(await readSubmittedVersion(answering(null, 404), ASSIGNMENT, STUDENT)).toEqual({ kind: "greska", code: "not_found" });
+  });
+});
+
+describe("readTeacherReceiptPdf (NAS-53)", () => {
+  const body = () => vectorBody("teacher.receipt-pdf.get", "receipt");
+  it("decodes the contract vector into a PDF file and asks for exactly this assignment and student", async () => {
+    const call = answering(body());
+    const read = await readTeacherReceiptPdf(call, ASSIGNMENT, STUDENT);
+    expect(read.kind).toBe("ok");
+    if (read.kind !== "ok") return;
+    expect(read.blob.type).toBe("application/pdf");
+    expect(read.filename).toBe("potvrda-predaje.pdf");
+    expect(call.calls).toEqual([["teacher.receipt-pdf.get", { params: { assignmentId: ASSIGNMENT, studentId: STUDENT } }]]);
+  });
+  it("maps 401 to session-expired, 404 to notFound (tuđe = nepostojeće), any other refusal to failed", async () => {
+    expect(await readTeacherReceiptPdf(answering(null, 401), ASSIGNMENT, STUDENT)).toEqual({ kind: "session-expired" });
+    expect(await readTeacherReceiptPdf(answering(null, 404), ASSIGNMENT, STUDENT)).toEqual({ kind: "notFound" });
+    expect(await readTeacherReceiptPdf(answering(null, 403), ASSIGNMENT, STUDENT)).toEqual({ kind: "failed" });
+    expect(await readTeacherReceiptPdf(answering(null, 503), ASSIGNMENT, STUDENT)).toEqual({ kind: "failed" });
+  });
+  it("a body outside the contract, bad Base64 or bytes that are no PDF is failed, never a file", async () => {
+    const good = body() as { filename: string; pdfBase64: string };
+    expect(await readTeacherReceiptPdf(answering({ ...good, extra: 1 }), ASSIGNMENT, STUDENT)).toEqual({ kind: "failed" });
+    expect(await readTeacherReceiptPdf(answering({ filename: good.filename, pdfBase64: "***" }), ASSIGNMENT, STUDENT)).toEqual({ kind: "failed" });
+    expect(await readTeacherReceiptPdf(answering({ filename: good.filename, pdfBase64: btoa("<html>") }), ASSIGNMENT, STUDENT)).toEqual({ kind: "failed" });
+    expect(await readTeacherReceiptPdf(answering({}), ASSIGNMENT, STUDENT)).toEqual({ kind: "failed" });
+  });
+  it("a transport that throws is failed", async () => {
+    const call = (async () => { throw new Error("x"); }) as SubmissionsCall;
+    expect(await readTeacherReceiptPdf(call, ASSIGNMENT, STUDENT)).toEqual({ kind: "failed" });
+  });
+});
+
+describe("readTeacherWorkReceiptPdf (NAS-53)", () => {
+  const pdf = vectorBody("teacher.receipt-pdf.get", "receipt");
+  const work = (documentId: string) => ({ documentId, studentId: STUDENT, studentName: null, assignmentId: ASSIGNMENT, state: "predano", prevDocumentId: null, nextDocumentId: null });
+  const route = (workAnswer: { status: number; body?: unknown }): SubmissionsCall & { ids: string[] } => {
+    const ids: string[] = [];
+    const call = (async (id: string) => {
+      ids.push(id);
+      const a = id === "teacher.work.get" ? workAnswer : { status: 200, body: pdf };
+      return a.status === 200 ? { ok: true, status: 200, body: a.body } : { ok: false, status: a.status, code: "x" };
+    }) as unknown as SubmissionsCall & { ids: string[] };
+    call.ids = ids;
+    return call;
+  };
+  it("names the assignment and the student through teacher.work.get, then reads the PDF", async () => {
+    const call = route({ status: 200, body: work("izmisljeni-rad-0001") });
+    expect((await readTeacherWorkReceiptPdf(call, "izmisljeni-rad-0001")).kind).toBe("ok");
+    expect(call.ids).toEqual(["teacher.work.get", "teacher.receipt-pdf.get"]);
+  });
+  it("a work that is not the one asked for, or not found, never reaches the PDF route", async () => {
+    const other = route({ status: 200, body: work("tudji-rad-0002") });
+    expect(await readTeacherWorkReceiptPdf(other, "izmisljeni-rad-0001")).toEqual({ kind: "failed" });
+    expect(other.ids).toEqual(["teacher.work.get"]);
+    const missing = route({ status: 404 });
+    expect(await readTeacherWorkReceiptPdf(missing, "izmisljeni-rad-0001")).toEqual({ kind: "notFound" });
+    expect(missing.ids).toEqual(["teacher.work.get"]);
+    expect(await readTeacherWorkReceiptPdf(route({ status: 401 }), "izmisljeni-rad-0001")).toEqual({ kind: "session-expired" });
   });
 });
