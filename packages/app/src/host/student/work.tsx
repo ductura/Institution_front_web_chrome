@@ -57,6 +57,9 @@ import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { leftSectionsFor, RailFooter, StartWorkHost } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
+import { startWorkText } from "./start-work/messages.hr";
+import { readTemplate } from "./start-work/template-port";
+import { startContentFor } from "./start-work/template";
 import { SlidesWork } from "../slides/editor/SlidesWork";
 import { workKindOf } from "../slides/editor/work-kind";
 import { SheetPage } from "../editor/sheet/SheetPage";
@@ -149,6 +152,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} base={base} course={read.course} title={read.title} topBar={topBar} length={length}
+            startContent={startContentFor(readTemplate, startWorkText.titleFields)}
             statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost}
             toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
             triggers={({ documentId }) => <SourcesMention documentId={documentId}
