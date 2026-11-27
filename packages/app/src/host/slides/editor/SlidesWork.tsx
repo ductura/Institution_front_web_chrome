@@ -6,7 +6,8 @@
 // journal's own document, saved on the device and sent to the server, with the
 // status bar claiming only the state the session reached. A second tab, an
 // unreadable kind, a missing sign-in and a sticky state each have their own card;
-// none of them is shown as "no data".
+// none of them is shown as "no data". F4-V13-R03: under the editor, "Preuzmi .pptx" and "Preuzmi PDF" (the
+// WEB-V13-IZVOZ buttons), on only while the session holds a verified receipt for the state shown.
 import { useEffect, useState, type ReactNode } from "react";
 import { Button, Card } from "@ductura/ui";
 import { goToSignIn } from "../../../../../../src/client/api.ts";
@@ -17,6 +18,7 @@ import EditorPage from "../../../../../../src/components/editor/EditorPage.tsx";
 import StatusBar, { type StatusSave } from "../../../../../../src/components/editor/StatusBar.tsx";
 import { SlideEditor, type SlideEditorSource } from "./SlideEditor.tsx";
 import { useSlidesSession, type SlidesSession } from "../sync/use-slides-session.ts";
+import SlidesExport from "../export/SlidesExport.tsx";
 import { slidesSyncText as sync } from "../sync/messages.hr.ts";
 
 /** What the status bar is told: nothing while there is no state to claim, the block for a second tab. */
@@ -56,7 +58,7 @@ function SessionWork({ assignmentId, course, title, topBar, length, onRetry }: F
   const submitted = session.phase === "ready" && session.readOnly;
   return (
     <EditorPage course={course} title={title} topBar={topBar} status={<StatusBar save={slidesStatusOf(session)} readOnly={submitted} length={length} />}>
-      <Body session={session} retry={retry} assignmentId={assignmentId} />
+      <Body session={session} retry={retry} title={title} here={`/rad/${assignmentId}`} assignmentId={assignmentId} />
     </EditorPage>
   );
 }
@@ -68,7 +70,7 @@ function SignedOut({ assignmentId }: { assignmentId: string }) {
   return <Card title={sync.signedOutTitle}><p role="status">{sync.signedOutBody}</p></Card>;
 }
 
-function Body({ session, retry, assignmentId }: { session: SlidesSession; retry: () => void; assignmentId: string }) {
+function Body({ session, retry, title, here, assignmentId }: { session: SlidesSession; retry: () => void; title: string | null; here: string; assignmentId: string }) {
   switch (session.phase) {
     case "loading": return <SlideEditor source={{ kind: "loading" }} />;
     case "blocked": return <Card title={sync.blockedTitle}><p role="status">{sync.blockedBody}</p></Card>;
@@ -87,6 +89,7 @@ function Body({ session, retry, assignmentId }: { session: SlidesSession; retry:
           {session.snapshot.stopped && <LoadAlert body={sync.stoppedNote} />}
           {session.snapshot.refused && <LoadAlert body={sync.refusedNote} />}
           <SlideEditor source={source} onSteps={session.onSteps} unsavedNote={false} />
+          <SlidesExport documentId={session.documentId} title={title} confirmed={session.snapshot.receiptVerified} here={here} />
         </>
       );
     }

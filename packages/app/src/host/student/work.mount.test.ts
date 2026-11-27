@@ -29,13 +29,16 @@ vi.mock("../../../../../src/components/editor/EditorPageWork.tsx", () => ({ defa
 // WEB-V13-DNEVNIK-SINKRONIZACIJA: the slides page now opens a journal session (Web Locks, IndexedDB, the open
 // route), which jsdom has none of; the session is stood in for here (it has its own tests in slides/sync) so
 // that this test keeps checking what it always checked: which editor the kind of work mounts.
-const session: { phase: string } = { phase: "ready" };
+const session: { phase: string; receiptVerified: boolean } = { phase: "ready", receiptVerified: false };
 vi.mock("../slides/sync/use-slides-session.ts", async () => {
   const { slidesRevisionZeroDocument } = await import("../../../../editor-core/src/slides/index.ts");
   return {
     useSlidesSession: () => session.phase === "ready"
-      ? { phase: "ready", document: slidesRevisionZeroDocument(), readOnly: false, onSteps: () => {},
-          snapshot: { state: "LOCAL_DURABLE", failure: null, receiptVerified: false, closedBy: null, stopped: false, refused: false } }
+      ? { phase: "ready", documentId: "dokument-izmisljeni-1", document: slidesRevisionZeroDocument(), readOnly: false, onSteps: () => {},
+          snapshot: {
+            state: session.receiptVerified ? "SYNCED" : "LOCAL_DURABLE", failure: null, receiptVerified: session.receiptVerified,
+            closedBy: null, stopped: false, refused: false,
+          } }
       : { phase: session.phase },
   };
 });
@@ -114,6 +117,37 @@ describe("WorkPage by kind of work", { timeout: 30000 }, () => {
   it("the text editor's shell links \"Kako vidi nastavnik\" to the student's own read-only view (F4-EDI-R14)", async () => {
     const link = (await open()).querySelector("a[href$='/rad/" + ID + "/nastavnik']");
     expect(link).not.toBeNull();
+  });
+  it("F4-V13-R03: the slides editor offers .pptx and PDF, off with the reason until the server confirmed", async () => {
+    kinds.documentKind = "slides";
+    const el = await open();
+    const region = el.querySelector("section[aria-label='Izvoz slajdova']");
+    expect(region).not.toBeNull();
+    const buttons = [...region!.querySelectorAll("button")];
+    expect(buttons.map((b) => b.textContent)).toEqual(["Preuzmi .pptx", "Preuzmi PDF"]);
+    expect(buttons.every((b) => b.disabled)).toBe(true);
+    expect(region!.querySelector("[role='note']")?.textContent).toBe("Izvoz je moguć tek kad poslužitelj potvrdi zadnju reviziju slajdova.");
+    expect(calls).not.toContain("work.export-slides.get");
+  });
+  it("F4-V13-R03: with a verified receipt the export buttons are on and the note is gone", async () => {
+    kinds.documentKind = "slides";
+    session.receiptVerified = true;
+    try {
+      const region = (await open()).querySelector("section[aria-label='Izvoz slajdova']");
+      expect([...region!.querySelectorAll("button")].every((b) => !b.disabled)).toBe(true);
+      expect(region!.querySelector("[role='note']")).toBeNull();
+    } finally {
+      session.receiptVerified = false;
+    }
+  });
+  it("F4-V13-R03: a slides work whose session cannot open offers no export", async () => {
+    kinds.documentKind = "slides";
+    session.phase = "unavailable";
+    try {
+      expect((await open()).querySelector("section[aria-label='Izvoz slajdova']")).toBeNull();
+    } finally {
+      session.phase = "ready";
+    }
   });
   it("the slides page has the plain top bar: no text-editor shell switches", async () => {
     kinds.documentKind = "slides";

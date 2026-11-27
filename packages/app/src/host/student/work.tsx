@@ -54,7 +54,7 @@ import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
 import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
 import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
-import { leftSectionsFor, RailFooter } from "../editor/left/LeftSectionsHost";
+import { leftSectionsFor, RailFooter, StartWorkHost } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
 import { SlidesWork } from "../slides/editor/SlidesWork";
 import { workKindOf } from "../slides/editor/work-kind";
@@ -176,6 +176,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               <RulesHost role="student" />
               <MarksHost />
               <ReadAloudHost />
+              {/* EDI-R16: the "Započnite rad" wizard lives here, outside the closable Napredak section, so its dialog is never hidden. */}
+              <StartWorkHost workId={assignmentId} />
             </>} />,
         });
       }
