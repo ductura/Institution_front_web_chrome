@@ -100,4 +100,14 @@ export const toolbarBehaviourHr = {
   viewFirstLines: "Prvi redovi",
   tipShortcut: "Prečac",
   commentNeedsSelection: "Označite dio teksta unutar jednog odlomka.",
+  // ED-102 (prototype toolbar2.js menu-marks): a paragraph marked to come back to.
+  marks: "Oznake",
+  marksTip: "Označite mjesto na koje se želite vratiti",
+  markAdd: "Označi ovaj odlomak",
+  markAddNote: "vratite se poslije",
+  markRemove: "Ukloni oznaku",
+  marksEmpty: "Još nema oznaka. Vidite ih samo Vi.",
+  markAdded: "Odlomak je označen. Oznake su pod gumbom Oznake.",
+  markAlready: "Taj je odlomak već označen.",
+  markNone: "Stavite pokazivač u odlomak koji želite označiti.",
 } as const;
