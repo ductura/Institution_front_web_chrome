@@ -4,6 +4,7 @@ import { act, createElement as h } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { BASE } from "../../../bases";
 import { HostContext, type HostValue } from "../../context";
 import CourseStudents from "./CourseStudents";
 import { courseStudentsMessages as t } from "./messages.hr";
@@ -12,7 +13,7 @@ import type { CourseStudentsPort, StudentChange } from "./model";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) { this.setAttribute("open", ""); };
 HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) { this.removeAttribute("open"); };
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: BASE, page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const STUDENTS = [{ studentId: "00000000-0000-4000-8000-0000000000b1", name: "Ana Šarić", group: null, works: [] }];
 
 describe("CourseStudents removal and return (F4-PM1-R09)", () => {
