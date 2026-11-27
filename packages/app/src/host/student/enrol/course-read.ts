@@ -8,7 +8,9 @@ import type { createApi } from "@/client/api";
 export type CourseRead =
   | { kind: "assignment"; assignmentId: string; courseName?: string }
   | { kind: "none"; courseName?: string }
-  | { kind: "signedOut" | "notFound" | "unavailable" };
+  | { kind: "signedOut" | "notFound" | "unavailable" }
+  /** DIZ S-05 (KU4): 403 is its own state; a course that is not the student's stays "notFound" (KU2). */
+  | { kind: "denied" };
 
 type Api = ReturnType<typeof createApi>;
 
@@ -47,7 +49,7 @@ export async function readCourse(call: Api, courseId: string, now: Date = new Da
   } catch {
     return { kind: "unavailable" };
   }
-  if (!result.ok) return result.status === 401 ? { kind: "signedOut" } : { kind: "unavailable" };
+  if (!result.ok) return result.status === 401 ? { kind: "signedOut" } : result.status === 403 ? { kind: "denied" } : { kind: "unavailable" };
   const { courses } = result.body as { courses: { id: string; name?: string; assignments: AssignmentDue[] }[] };
   // Only a course the student is enrolled in is listed; anything else is not theirs.
   const course = courses.find((item) => item.id === courseId);
