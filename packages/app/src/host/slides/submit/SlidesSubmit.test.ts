@@ -110,6 +110,8 @@ describe("slides submission, step 4", () => {
   it("a failed read is an error with a retry, never an empty work and never a submit", async () => {
     const host = await mount({ kind: "unavailable" });
     expect(host.querySelector('[role="alert"]')?.textContent).toBe(s.loadError);
+    // U10 (A2): the message is the frame; the existing "Pokušaj ponovno" button stays under it.
+    expect(host.querySelector('[role="alert"]')?.querySelector("button")).toBeNull();
     expect(host.textContent).not.toContain(s.empty);
     expect(submitButton(host)).toBeUndefined();
     expect([...host.querySelectorAll("button")].some((b) => b.textContent === t.retry)).toBe(true);

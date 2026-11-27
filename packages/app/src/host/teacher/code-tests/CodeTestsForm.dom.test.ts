@@ -41,7 +41,8 @@ describe("the code-test form in the browser", () => {
 
   it("shows loading, then 'no tests' as a state of its own", async () => {
     await render(fakeCodeTestsPort());
-    expect(host.querySelector("[data-testid=no-tests]")!.textContent).toBe(t.empty);
+    expect(host.querySelector("[data-testid=no-tests]")!.textContent).toContain(t.empty);
+    expect(button(t.add)).toBeDefined();
     expect(host.querySelector("[data-testid=count]")!.textContent).toContain("0 od 10");
   });
   it("503 is 'unavailable' with a retry, not 'no tests'; the retry reads again", async () => {
@@ -56,8 +57,23 @@ describe("the code-test form in the browser", () => {
   });
   it("another course's task (404) is 'not available' and shows no form", async () => {
     await render(stub({ kind: "notFound" }));
-    expect(text()).toContain(t.gone);
+    expect(host.querySelector("[role=alert]")!.textContent).toContain(t.gone);
+    expect(button(t.retry)).toBeUndefined();
     expect(host.querySelector("form")).toBeNull();
+  });
+  it("shows each part of the summary in its own line, without a dot between them, and the limit from {max}", async () => {
+    await render(stub({ kind: "ok", view: SAVED }));
+    expect(text()).not.toContain("·");
+    expect(host.querySelector("[data-testid=revision]")!.textContent).toBe(t.revision.replace("{n}", "1"));
+    expect(host.querySelector("[data-testid=size]")!.textContent).toMatch(/^Veličina: \d+ od 16384 bajtova$/);
+    expect(host.querySelector("[data-testid=count]")!.textContent).toBe("Testova: 1 od 10");
+    expect(text()).not.toContain("{max}");
+  });
+  it("the empty state offers 'Dodaj test', which adds the first row", async () => {
+    await render(stub({ kind: "ok", view: { ...SAVED, tests: [] } }));
+    await click(button(t.add));
+    expect(host.querySelectorAll("[data-testid=test-row]")).toHaveLength(1);
+    expect(host.querySelector("[data-testid=no-tests]")).toBeNull();
   });
   it("signed out goes to sign-in", async () => {
     await render(stub({ kind: "signedOut" }));

@@ -55,6 +55,9 @@ const NO_MUTABLE_FIELDS = new Set<string>([
   "institution.teaching-team-view.get success-holder",
   "live.document.get state",
   "live.document.get submitted",
+  // mentorship.working-style.get (MEN-R09): the answer is anyOf (text or nulls), so no single properties list to mutate.
+  "mentorship.working-style.get not-written",
+  "mentorship.working-style.get written",
   "ops.events.get empty",
   "ops.events.get page",
   "profile.staff-affiliation.get confirmed",

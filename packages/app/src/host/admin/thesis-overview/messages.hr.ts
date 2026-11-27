@@ -5,8 +5,6 @@ export const thesisOverviewMessages = {
   lead: "Popis radova ustanove za referadu, poredan prema datumu obrane. Popis samo prikazuje stanje radova i ne rangira ih.",
   loading: "Učitavanje popisa radova…",
   loadingMore: "Učitavanje…",
-  denied: "Popis radova vidi samo administrator ustanove.",
-  signedOut: "Prijava je istekla. Prijavite se ponovno.",
   unavailable: "Popis radova trenutačno nije dostupan. Pokušajte ponovno.",
   moreUnavailable: "Sljedeći radovi trenutačno nisu dostupni. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",

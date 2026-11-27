@@ -46,7 +46,7 @@ describe("Povijest dokumenta in the left panel (PIL-D7-POVIJEST, mount)", () => 
   });
 
   it("leftSections as a function of the work: the page's shape gives the history once the document is known", () => {
-    // The shape packages/app/src/host/student/work.tsx passes to EditorPageWork.
+    // The shape packages/app/src/host/student/WorkEditorPage.tsx passes to EditorPageWork.
     const leftSections = ({ documentId }: { documentId: string }): LeftSections => ({ ...leftSectionsFor("rad-1", documentId), chapter: createElement("p") });
     expect(leftSections({ documentId: "dok-1" }).history).toBeDefined();
     expect(leftSections({ documentId: "" }).history).toBeUndefined();

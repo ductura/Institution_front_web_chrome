@@ -21,6 +21,7 @@ import { tiptapToCanonicalV4 } from "../../../../../editor-core/src/editor/inter
 import QuoteReviewCard from "../stem/QuoteReviewCard";
 import type { EvidenceBySource } from "../stem/quote-check";
 import { loadQuoteEvidence, quotedSources } from "./quote-evidence";
+import { onPregledView, takePregledView, type PregledView } from "./pregled-view";
 
 import { pregledHr as t } from "./messages.hr";
 import { onPregledView, takePregledView } from "./pregled-view";
@@ -30,7 +31,7 @@ import {
 } from "./pregled-model";
 
 type Editor = NonNullable<ReturnType<typeof useLocalEditor>>;
-type View = "nacrt" | "pojmovnik" | "provjere";
+type View = PregledView;
 const VIEWS: readonly View[] = ["nacrt", "pojmovnik", "provjere"];
 
 const browserStorage = (): TermStorage | null => { try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; } };

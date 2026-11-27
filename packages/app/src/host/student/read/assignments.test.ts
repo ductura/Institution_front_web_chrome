@@ -48,8 +48,12 @@ describe("readMyAssignments", () => {
     expect(await readMyAssignments(api({ ok: false, status: 401, code: "session_expired" }))).toEqual({ kind: "signedOut" });
   });
 
+  it("reads a 403 as denied, a state of its own and not a read error (DIZ S-02, Z7)", async () => {
+    expect(await readMyAssignments(api({ ok: false, status: 403, code: "forbidden" }))).toEqual({ kind: "denied" });
+  });
+
   it("gives no list at all for any other answer or a failed call", async () => {
-    for (const status of [400, 403, 404, 409, 429, 500, 502, 503]) {
+    for (const status of [400, 404, 409, 429, 500, 502, 503]) {
       expect(await readMyAssignments(api({ ok: false, status, code: "unexpected" })), String(status)).toEqual({ kind: "unavailable" });
     }
     expect(await readMyAssignments(api(new TypeError("made-up broken connection")))).toEqual({ kind: "unavailable" });

@@ -58,7 +58,7 @@ describe("TableOfContentsHost over a live editor", () => {
 
 describe("the student's editor", () => {
   const read = (...p: string[]) => readFileSync(join(import.meta.dirname, ...p), "utf8");
-  const work = read("..", "..", "student", "work.tsx");
+  const work = read("..", "..", "student", "WorkEditorPage.tsx");
   it("mounts the table of contents in the left panel and never the old HeadingOutline", () => {
     expect(work).toMatch(/chapter: <><TableOfContentsMount \/><ChapterPanel /);
     expect(work).not.toMatch(/HeadingOutline/);

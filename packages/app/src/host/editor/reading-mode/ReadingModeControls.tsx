@@ -14,9 +14,11 @@ export interface ReadingModeControlsProps {
   readonly prefs: ReadingPrefs;
   readonly onChange: <K extends ReadingModeField>(field: K, value: ReadingPrefs[K]) => void;
   readonly onReset: () => void;
+  /** The dialog keeps one "Vrati na zadano" in its footer, so it hides this one. */
+  readonly showReset?: boolean;
 }
 
-export function ReadingModeControls({ prefs, onChange, onReset }: ReadingModeControlsProps) {
+export function ReadingModeControls({ prefs, onChange, onReset, showReset = true }: ReadingModeControlsProps) {
   const groups = readingModeGroups();
   return (
     <section className={styles.controls} aria-label={t.title}>
@@ -32,7 +34,7 @@ export function ReadingModeControls({ prefs, onChange, onReset }: ReadingModeCon
           />
         </div>
       ))}
-      <Button type="button" tone="ghost" disabled={readingModeIsDefault(prefs)} onClick={onReset}>{t.reset}</Button>
+      {showReset ? <Button type="button" tone="ghost" disabled={readingModeIsDefault(prefs)} onClick={onReset}>{t.reset}</Button> : null}
     </section>
   );
 }

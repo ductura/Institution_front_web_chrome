@@ -26,9 +26,10 @@ import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
 import { studentHostHr } from "./i18n/messages.hr.ts";
 
 import { SaveState } from "@ductura/ui";
-import { hostText } from "../../text";
 import { nextPath } from "../../bases";
 import { useHost } from "../context";
+import { useLocale } from "../../i18n";
+import { usePageTitle, workTitle } from "../page-title";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { AssistantMatchNoticeHost } from "../editor/assistant-match-notice/AssistantMatchNoticeHost";
 import { ImportHost } from "../editor/import/ImportHost";
@@ -56,6 +57,8 @@ import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
 import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
 import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
+import { SheetToc } from "../editor/toc/SheetToc";
+import type { TocEditor } from "../../../../editor-core/src/outline/index.ts";
 import { leftSectionsFor, RailFooter, StartWorkHost } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
 import { SlidesWork } from "../slides/editor/SlidesWork";
@@ -103,11 +106,14 @@ function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: strin
 
 type Shown = { kind: "loading" } | { kind: "notFound" } | { kind: "page"; node: ReactNode };
 
-export function WorkPage({ assignmentId }: { assignmentId: string }) {
+export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
   const { base } = useHost();
   const router = useRouter();
   const [shown, setShown] = useState<Shown>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
+  // WEB-NASLOVI-SVE: the tab reads "<naziv rada> — Pisanje" once the work is read.
+  const [name, setName] = useState<string | null>(null);
+  usePageTitle(workTitle(name, useLocale().app.host.titleWriting));
   useEffect(() => {
     let live = true;
     if (attempt > 0) setShown({ kind: "loading" });
@@ -126,6 +132,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const frame = workspaceFrame(read, undefined, { kind: "ready", wordRange });
       const title = read.kind === "ready" ? read.title : null;
+      setName(title);
       const subtitle = read.kind === "ready" ? courseLine(read.course, read.dueAt, read.workType === undefined ? undefined : (studentHostHr.teacher.assignment.workTypes as Record<string, string>)[read.workType]) : null;
       // WEB-NUZ-PREDAJA-1 (P-17): only the full editor has the text the count reads, so only it counts.
       const bar = <WorkspaceTopBar assignmentId={assignmentId} base={base} title={title} subtitle={subtitle}
@@ -173,6 +180,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
                 <AssistantRules assignmentId={assignmentId} base={base} />
               </>,
               instructions: () => <><NoticeInstructions assignmentId={assignmentId} /><RubricCard assignmentId={assignmentId} here={here} /></>,
+              // ED-71: "Prikaz › Sadržaj na listu" puts the table of contents on the sheet above the text.
+              sheetTop: ({ editor, scope, documentId }) => <SheetToc editor={editor as unknown as TocEditor | null} scope={scope} documentId={documentId} />,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId, read.dueAt), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></>,
               footer: <RailFooter range={frame.range} dueAt={read.dueAt} />,
