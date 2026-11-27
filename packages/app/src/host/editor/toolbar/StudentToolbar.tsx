@@ -42,7 +42,7 @@ import { PageFormatDialog } from "@/components/editor/pages/PageFormatDialog";
 import { pagesMessages } from "@/components/editor/pages/messages.hr";
 import { pageFormatOf } from "../page-format/page-format-of";
 import { useActiveProfile } from "../areas/skeleton/active-profile";
-import { skeletonAvailability } from "../areas/skeleton/skeleton";
+import { useSkeletonAvailability } from "../areas/skeleton/use-skeleton-availability";
 import { skeletonMessages } from "../areas/skeleton/messages.hr";
 import { assignmentIdFromPath, downloadLatex, latexMenuItem, useLatexStyle } from "../stem/latex-export-menu";
 import { stemHr } from "../stem/messages.hr";
@@ -252,7 +252,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const workProfile = skeletonProfile ?? chosenProfile;
   const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(workProfile));
   const code = useCodeBlockHost(editor, confirmedWorkSchemaVersion);
-  const skeletonState = skeletonAvailability(editor, workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null);
+  const skeletonState = useSkeletonAvailability(editor, workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null);
   const latexStyle = useLatexStyle(typeof window === "undefined" ? null : assignmentIdFromPath(window.location.pathname));
   const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | "structure" | "pageFormat" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
