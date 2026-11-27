@@ -6,6 +6,8 @@ import { cache } from "react";
 import { signInHref } from "@/client/api";
 import { serverApi } from "@/client/server";
 import AppHeader from "@/components/shell/AppHeader";
+import LoadAlert from "@/components/shell/LoadAlert";
+import RoleShell from "@/components/shell/RoleShell";
 import ThemeRestore from "@/components/shell/ThemeRestore";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -34,7 +36,7 @@ const resolveScreen = cache(async (): Promise<Screen> => {
 // No static title (DAN-313): the browser would apply it after a 404 and name the page in the tab.
 export async function generateMetadata(): Promise<Metadata> {
   const title = (await resolveScreen()) === "notFound" ? messagesHr.errorPage.notFoundTitle : t.newCourse.title;
-  return { title: `${title} · ${messagesHr.app.name}` };
+  return { title: `${title}, ${messagesHr.app.name}` };
 }
 
 /**
@@ -49,18 +51,32 @@ export default async function InstitutionCoursesPage() {
   const screen = await resolveScreen();
   if (screen === "signedOut") redirect(signInHref(HREF));
   if (screen === "notFound") notFound();
+  const heading = (
+    <header className={styles.heading}>
+      <h1>{t.newCourse.title}</h1>
+      <p className={styles.lead}>{t.newCourse.lead}</p>
+    </header>
+  );
+  // Design alignment 27. 11. 2026. (U-01): the administrator's shell, with "Kolegiji" in the
+  // side bar and the crumbs "Početna", "Kolegiji". RoleShell sends an unanswered session read
+  // to sign-in, so a page that is not available keeps the plain header and says so.
+  if (screen === "allowed") {
+    return (
+      <RoleShell here={HREF} current={HREF} crumbs={[messagesHr.shell.nav.institutionCourses]}>
+        <div className="page">
+          {heading}
+          <NewCourseForm here={HREF} years={academicYears(new Date())} />
+        </div>
+      </RoleShell>
+    );
+  }
   return (
     <>
       <ThemeRestore />
       <AppHeader />
       <main id="sadrzaj" tabIndex={-1} className="page">
-        <header className={styles.heading}>
-          <h1>{t.newCourse.title}</h1>
-          <p className={styles.lead}>{t.newCourse.lead}</p>
-        </header>
-        {screen === "allowed"
-          ? <NewCourseForm here={HREF} years={academicYears(new Date())} />
-          : <p role="alert" className={styles.alert}>{t.unavailable}</p>}
+        {heading}
+        <LoadAlert retry={{ label: t.retry, href: HREF }}>{t.unavailable}</LoadAlert>
       </main>
     </>
   );

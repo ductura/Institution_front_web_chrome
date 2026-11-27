@@ -86,8 +86,12 @@
   overflow-wrap: anywhere;
 }
 
+/* Design alignment 27. 11. 2026.: the parts of the row are separate, 12 px apart, never joined by a dot. */
 .meta {
   grid-area: meta;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
   font-size: 12px;
   color: var(--ink-3);
 }
@@ -134,17 +138,29 @@
 /*
  * DAN-871 (871-1), the one change from Ductus: each part of a work's row stays
  * whole, but the row may wrap between the parts, so at 360-400 px "Jezik rada"
- * stays inside the card. `pre` keeps each part's leading space; the links stay
- * inline in the text.
+ * stays inside the card. Design alignment 27. 11. 2026.: the parts are separate,
+ * 12 px apart, never joined by a dot.
  */
 .works {
   min-width: 0;
 }
 
+.work {
+  display: inline-flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+}
+
+/* WCAG 2.2 target size: every link of a work (the work, its language) is at least 24 px tall now that the parts sit apart. */
+.work a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
 .works .submission,
 .works .accommodation {
   display: inline-block;
-  white-space: pre;
 }
 
 /* DAN-332 PR 4: the state of a submission is text in the colour of the list, never a colour of its own (D-128). */

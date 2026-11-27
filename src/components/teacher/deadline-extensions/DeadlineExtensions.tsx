@@ -13,6 +13,7 @@ import {
 import { formatDateTimeHr } from "../../../lib/i18n/hr.ts";
 import { messagesHr } from "../../../lib/i18n/messages.hr.ts";
 import { zagrebInstant } from "../../../lib/i18n/zagreb.ts";
+import LoadAlert from "../../shell/LoadAlert.tsx";
 import { extensionsHref } from "../links.ts";
 
 import styles from "./DeadlineExtensions.module.css";
@@ -81,7 +82,7 @@ export default function DeadlineExtensions({
     if (busy) return;
     const dueAt = zagrebInstant(dueLocal);
     if (dueAt === null || reasonId === "" || (scope === "one" && studentId === "")) {
-      setNote({ tone: "alert", lines: [t.missing] });
+      setNote({ tone: "alert", lines: [scope === "all" ? t.missingAll : t.missing] });
       return;
     }
     setBusy(true);
@@ -147,11 +148,14 @@ export default function DeadlineExtensions({
         </form>
       </Card>
       <Card title={t.listTitle}>
+        {/* Design alignment 27. 11. 2026. (A2, 5b): the alert box, with the way to try again under it. */}
         {read.kind === "unavailable" ? (
-          <p role="alert" className={styles.alert}>{t.unavailable}</p>
+          <LoadAlert retry={{ label: t.retry, href: returnTo ?? extensionsHref(assignmentId) }}>{t.unavailable}</LoadAlert>
         ) : read.extensions.length === 0 ? (
           <p>{t.empty}</p>
         ) : (
+          // Design alignment 27. 11. 2026. (5a): at phone width the table scrolls inside the card.
+          <div className={styles.scroll}>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -174,6 +178,7 @@ export default function DeadlineExtensions({
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
     </>

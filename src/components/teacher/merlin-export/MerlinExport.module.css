@@ -17,8 +17,12 @@
   margin: 0 0 var(--space-1, 4px);
 }
 
+/* Design alignment 27. 11. 2026. (A2): the alert box, as LoadAlert. */
 .alert {
-  color: var(--danger, inherit);
+  padding: 10px 12px;
+  border-color: var(--error);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--error);
 }
 
 .fingerprint {

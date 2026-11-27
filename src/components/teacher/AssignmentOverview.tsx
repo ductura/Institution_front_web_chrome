@@ -5,6 +5,7 @@ import { DataTable, StateTag, type DataTableColumn } from "@ductura/ui";
 import type { OverviewRow } from "../../client/teacher-reads";
 import { formatDateTimeHr } from "../../lib/i18n/hr";
 import { messagesHr } from "../../lib/i18n/messages.hr";
+import LoadAlert from "../shell/LoadAlert";
 
 import styles from "./AssignmentOverview.module.css";
 
@@ -47,7 +48,12 @@ export function submissionHref(row: OverviewRowWork): string | null {
 /** The student and the group; a submitted row with a document id leads to N-07. */
 function student(row: OverviewRowWork) {
   const group = row.group === null ? t.noGroup : t.group.replace("{group}", row.group);
-  const label = `${row.name ?? t.noName} · ${group}`;
+  const label = (
+    <span className={styles.who}>
+      <span>{row.name ?? t.noName}</span>
+      <span>{group}</span>
+    </span>
+  );
   const href = row.submitted ? submissionHref(row) : null;
   return href === null ? label : <a href={href}>{label}</a>;
 }
@@ -68,8 +74,8 @@ export const OVERVIEW_COLUMNS: readonly DataTableColumn<OverviewRowWork>[] = [
     cell: (row) => (!row.submitted ? t.none : row.afterDeadline ? <StateTag state="late" /> : t.no),
   },
   { id: "record", header: t.columns.record, cell: record },
-  // Wave 8 fills it ("Zatraži doradu"); until then the column is empty.
-  { id: "revision", header: t.columns.revision, cell: () => null },
+  // Design alignment 27. 11. 2026.: the "revision" column (t.columns.revision) stays
+  // hidden until wave 8 brings its data ("Zatraži doradu").
 ];
 
 export type AssignmentOverviewProps = {
@@ -90,12 +96,10 @@ export type AssignmentOverviewProps = {
  */
 export default function AssignmentOverview({ assignmentTitle, rows, loading = false, retryHref }: AssignmentOverviewProps) {
   if (rows === null && !loading) {
-    return (
-      <div>
-        <p role="alert">{t.unavailable}</p>
-        {retryHref !== undefined && <p><a href={retryHref}>{t.retry}</a></p>}
-      </div>
-    );
+    // Design alignment 27. 11. 2026. (A2): the alert box, with the way to try again under it.
+    return retryHref === undefined
+      ? <LoadAlert>{t.unavailable}</LoadAlert>
+      : <LoadAlert retry={{ label: t.retry, href: retryHref }}>{t.unavailable}</LoadAlert>;
   }
   return (
     <div className={styles.overview}>

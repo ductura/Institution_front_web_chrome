@@ -4,6 +4,8 @@ import { Button, Card, Select, TextArea, TextField } from "@ductura/ui";
 import { useRef, useState } from "react";
 
 import { createApi, goToSignIn } from "@/client/api";
+// Design alignment 27. 11. 2026. (U-01): shown as "2026./2027.", still sent as "2026/2027".
+import { yearHr } from "@/components/teacher/TeacherCourses";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { AI_POLICIES, createOutcome, newCourseInput, type CreateOutcome, type FieldErrors, type NewCourseFields } from "./new-course";
@@ -79,7 +81,7 @@ export default function NewCourseForm({ here, years }: { here: string; years: re
       <TextField label={t.name} value={fields.name} onChange={set("name")} busy={busy}
         maxLength={160} autoComplete="off" error={error("name")} />
       <Select label={t.academicYear} value={fields.academicYear} onChange={set("academicYear")} busy={busy}
-        options={years.map((year) => ({ value: year, label: year }))} />
+        options={years.map((year) => ({ value: year, label: yearHr(year) }))} />
       <Select label={t.aiPolicy} value={fields.aiPolicy} onChange={set("aiPolicy")} busy={busy} options={POLICY_OPTIONS} />
       <TextField label={t.holder} hint={t.holderHint} value={fields.holderId} onChange={set("holderId")} busy={busy}
         spellCheck={false} autoComplete="off" error={error("holderId")} />

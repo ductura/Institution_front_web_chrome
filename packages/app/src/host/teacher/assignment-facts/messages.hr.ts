@@ -1,6 +1,7 @@
 // WEB-2145 (paritet N-01, prijedlog 5): facts of each assignment on "Moji kolegiji" and the banner of an
 // interrupted publish. Wording of docs/prototip/Ductura_nastavnik.html (`taskFacts`, `subRows`, `subLine`,
 // variant `prekinuto`); a part the server does not say is left out, never invented.
+import { oneDot } from "../../../i18n/date-dot";
 const studentWord = (n: number): string => {
   const a = n % 10, b = n % 100;
   return a >= 1 && a <= 4 && !(b >= 11 && b <= 14) ? "studenta" : "studenata";
@@ -60,7 +61,7 @@ export const assignmentFactsMessages = {
     needReason: "Odaberite razlog s popisa.",
     needDue: "Odaberite novi rok.",
     dueNotLater: "Novi rok mora biti u budućnosti.",
-    recorded: (when: string): string => `Zabilježeno: predaja je dopuštena do ${when}.`,
+    recorded: (when: string): string => oneDot(`Zabilježeno: predaja je dopuštena do ${when}.`),
     notRecorded: "Iznimka nije zabilježena. Provjerite rok i pokušajte ponovno.",
     unknown: "Nije sigurno je li iznimka zabilježena. Provjerite popis „Produljeni rokovi”.",
     list: "Produljeni rokovi",
