@@ -204,7 +204,7 @@ describe("AssignmentForm rubric (WEB-V17-RUBRIC-FORM)", () => {
     const host = await start({ publish, setRules: async () => [], setRubricFor });
     await click(button("Dodaj kriterij"));
     await click(button(f.review));
-    expect(host.textContent).toContain("Rubrika nije potpuna");
+    expect(host.textContent).toContain("Kriteriji nisu potpuni");
     expect(host.querySelector("#zs-rubric")).not.toBeNull();
     expect(publish).not.toHaveBeenCalled();
     await type(host.querySelector<HTMLInputElement>('input[maxlength="120"]')!, "Struktura");
@@ -224,11 +224,11 @@ describe("AssignmentForm rubric (WEB-V17-RUBRIC-FORM)", () => {
     await start({ publish, setRules: async () => [], setRubricFor: none });
     await click(button(f.review));
     const review = [...document.querySelectorAll("dt")].find((dt) => dt.textContent === "Kriteriji");
-    expect(review?.nextElementSibling?.textContent).toBe("Zadani");
+    expect(review?.nextElementSibling?.textContent).toBe("Nisu zadani");
     await click(button(f.publish));
     expect(none).toHaveBeenCalledTimes(1);
     expect(none).toHaveBeenCalledWith("a-new", []);
-    expect(document.body.textContent).not.toContain("Rubrika nije spremljena");
+    expect(document.body.textContent).not.toContain("Kriteriji nisu spremljeni");
     act(() => root?.unmount()); document.body.innerHTML = "";
     const host = await start({ publish, setRules: async () => [], setRubricFor: async () => "conflict" as const });
     await click(button("Dodaj kriterij"));
@@ -236,6 +236,6 @@ describe("AssignmentForm rubric (WEB-V17-RUBRIC-FORM)", () => {
     for (const input of host.querySelectorAll<HTMLInputElement>('input[maxlength="80"]')) await type(input, "Razina");
     await click(button(f.review));
     await click(button(f.publish));
-    expect(document.body.textContent).toContain("Rubrika nije spremljena");
+    expect(document.body.textContent).toContain("Kriteriji nisu spremljeni");
   });
 });
