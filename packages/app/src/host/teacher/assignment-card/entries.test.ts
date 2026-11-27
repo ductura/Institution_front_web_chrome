@@ -49,12 +49,12 @@ describe("NZ-1: every entry of an assignment is a page of the host", () => {
 describe("NZ-2: the task chooser", () => {
   it("offers every assignment, one whose deadline has passed too", () => {
     expect(taskOptions(course, NOW)).toEqual([
-      { value: A1, label: "Kućno kompostiranje · rok 15. 12. 2026. u 23:59" },
-      { value: A2, label: `Prikaz članka · ${t.deadlinePassed}` },
+      { value: A1, label: "Kućno kompostiranje, rok 15. 12. 2026. u 23:59" },
+      { value: A2, label: `Prikaz članka, ${t.deadlinePassed}` },
     ]);
   });
   it("says the deadline in words and keeps an unreadable one as it is", () => {
-    expect(taskOptionLabel({ title: "X", dueAt: "nije datum" }, NOW)).toBe("X · rok nije datum");
+    expect(taskOptionLabel({ title: "X", dueAt: "nije datum" }, NOW)).toBe("X, rok nije datum");
   });
   it("goes only to an assignment of this course", () => {
     expect(pickedPath(course, "extension", A2)).toBe(`/nastavnik/zadatak/${A2}/produljenje`);

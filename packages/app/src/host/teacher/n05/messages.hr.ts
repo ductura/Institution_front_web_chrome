@@ -25,6 +25,6 @@ export const fastPathHostText = {
     lastChange: "Zadnja promjena",
     pastes: "Lijepljenja bez izvora",
   },
-  pastesSome: "Ima ih · popis u punom sažetku",
+  pastesSome: "Ima ih, popis u punom sažetku",
   pastesNone: "Nema ih",
 } as const;

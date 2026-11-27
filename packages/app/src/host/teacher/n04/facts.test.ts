@@ -13,7 +13,7 @@ describe("N-04 factsOf (NZ-10)", () => {
   it("gives a submitted work its time, version and record", () => {
     const facts = factsOf({ dueAt: DUE, details, extensions: [] }, "s1");
     expect(facts).toEqual({ submittedAt: "2026-11-05T20:14Z", afterDeadline: false, version: 2, record: "with_gaps", extendedTo: null });
-    expect(stateLine(work(facts))).toBe("Predano 5. 11. 2026. u 21:14, prije roka · verzija 2 · zapis ima praznine");
+    expect(stateLine(work(facts))).toBe("Predano 5. 11. 2026. u 21:14, prije roka, verzija 2, zapis ima praznine");
   });
   it("gives an unsubmitted work its extended deadline only", () => {
     const facts = factsOf({ dueAt: DUE, details, extensions: [{ scope: "one", studentId: "s2", dueAt: "2026-12-20T22:59:00.000Z" }] }, "s2");

@@ -130,7 +130,7 @@ export function AssignmentCopy({ current, href, startOpen = false }: {
                 setCopy(null);
                 requestKey.current = null;
               }}
-              options={courses.map(({ id, name, academicYear }) => ({ value: id, label: `${name} · ${academicYear}` }))} />)}
+              options={courses.map(({ id, name, academicYear }) => ({ value: id, label: `${name}, ${academicYear}` }))} />)}
           {signedOut && <p><a href={signInHref(href(editPath(current.assignmentId)))}>{t.signIn}</a></p>}
           <CopyPreview current={current} />
         </>}

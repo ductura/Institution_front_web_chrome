@@ -27,12 +27,12 @@ const COMPOSITION: OriginComposition = {
 describe("WEB-0911 origin composition", () => {
   it("names every share by the closed list with its percent", () => {
     expect(shareRows(COMPOSITION).map((r) => r.label)).toEqual([
-      "Tipkano u Ducturi · 62 %",
-      "Umetnuto iz pomoćnika · 10 %",
-      "Podudara se s odgovorom pomoćnika · 4 %",
-      "Uvezeno iz datoteke · 12 %",
-      "Zalijepljeno, podrijetlo poznato · 9 %",
-      "Zalijepljeno, podrijetlo nepoznato · 3 %",
+      "Tipkano u Ducturi, 62 %",
+      "Umetnuto iz pomoćnika, 10 %",
+      "Podudara se s odgovorom pomoćnika, 4 %",
+      "Uvezeno iz datoteke, 12 %",
+      "Zalijepljeno, podrijetlo poznato, 9 %",
+      "Zalijepljeno, podrijetlo nepoznato, 3 %",
     ]);
     expect(unknownLine(COMPOSITION)).toBe("3 % nepoznato podrijetlo");
   });
@@ -41,7 +41,7 @@ describe("WEB-0911 origin composition", () => {
     const shares = COMPOSITION.shares.map((s) => (s.kind === "assistant_match" ? { ...s, codePoints: 0, percent: 0 } : s.kind === "pasted_unknown" ? { ...s, percent: 0 } : s));
     const rows = shareRows({ ...COMPOSITION, shares });
     expect(rows.some((r) => r.kind === "assistant_match")).toBe(false);
-    expect(rows.at(-1)?.label).toBe("Zalijepljeno, podrijetlo nepoznato · manje od 1 %");
+    expect(rows.at(-1)?.label).toBe("Zalijepljeno, podrijetlo nepoznato, manje od 1 %");
   });
 
   it("shows the rhythm only as gaps of the segment and only while it is recorded", () => {

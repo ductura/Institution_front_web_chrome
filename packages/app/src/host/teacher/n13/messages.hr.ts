@@ -1,10 +1,10 @@
 // N-13 "Produljenje roka" (WEB-2162, PARITET N-13): interface text as in the prototype and INVENTAR-nastavnik 3.13.
 export const n13Messages = {
   title: "Produljenje roka",
-  /** "Seminarski rad „X”, Kolegij A · rok 8. 11. 2026. u 23:59. Produljenje pokrećete samo Vi; …" Parts the read does not give are left out. */
+  /** "Seminarski rad „X”, Kolegij A, rok 8. 11. 2026. u 23:59. Produljenje pokrećete samo Vi; …" Parts the read does not give are left out. */
   lead: (task: string | null, course: string | null, due: string | null): string => {
     const head = [task === null ? null : `Zadatak „${task}”`, course].filter((p) => p !== null).join(", ");
-    const head2 = due === null ? head : head === "" ? `Rok ${due}` : `${head} · rok ${due}`;
+    const head2 = due === null ? head : head === "" ? `Rok ${due}` : `${head}, rok ${due}`;
     return `${head2 === "" ? "" : `${head2}. `}Produljenje pokrećete samo Vi; student ga ne traži kroz Ducturu.`;
   },
   loading: "Učitavanje rokova…",

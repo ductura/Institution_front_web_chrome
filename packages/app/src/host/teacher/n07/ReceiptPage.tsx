@@ -149,7 +149,7 @@ export default function N07ReceiptPage({ documentId, workHref, current, loadPdf 
   // N-10 (WEB-2157): the process summary is its own page under the work.
   const summaryHref = `${workHref}/sazetak`;
   const name = input?.kind === "ready" ? input.studentName : null;
-  // F4-NAS-R12: "Student · Seminarski rad „Naslov”" once read; until then, or when the work cannot be read, the name alone.
+  // F4-NAS-R12: "Student, Seminarski rad „Naslov”" once read; until then, or when the work cannot be read, the name alone.
   const crumb = useTaskCrumb(documentId) ?? name ?? undefined;
 
   const full = view.kind === "pending" || view.kind === "submitted";

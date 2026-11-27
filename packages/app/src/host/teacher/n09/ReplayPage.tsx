@@ -158,8 +158,8 @@ export function N09Player({ player }: { player: Player }) {
       )}
       <p aria-live="polite" role="status">
         <b>{m.sliderValue(n, player.total)}</b>
-        {tag !== null && <> · {m.sourceLead} <span className={replayStyles.srcTag}>{tag.text}</span></>}
-        {here.length > 0 && <> · <span className={replayStyles.srcTag}>{m.sourceGap}</span></>}
+        {tag !== null && <>, {m.sourceLead} <span className={replayStyles.srcTag}>{tag.text}</span></>}
+        {here.length > 0 && <>, <span className={replayStyles.srcTag}>{m.sourceGap}</span></>}
         <span className="visually-hidden"> {spoken}</span>
       </p>
       {here.map((g) => {

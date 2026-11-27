@@ -80,11 +80,11 @@ export function stateText(row: N17Row): string {
   return text.state.notSubmitted;
 }
 
-/** NZ-10: "5. 11. 2026. u 21:14 · verzija 2", in the short form of the prototype; "nema" when not submitted. */
+/** NZ-10: "5. 11. 2026. u 21:14, verzija 2", in the short form of the prototype; "nema" when not submitted. */
 export function timeText(row: N17Row): string {
   if (!row.submitted || row.requestedMinute === null) return text.none;
   const when = whenHr(row.requestedMinute) ?? formatDateTimeHr(row.requestedMinute);
-  return typeof row.version === "number" && Number.isInteger(row.version) && row.version > 0 ? `${when} · ${text.version(row.version)}` : when;
+  return typeof row.version === "number" && Number.isInteger(row.version) && row.version > 0 ? `${when}, ${text.version(row.version)}` : when;
 }
 
 /** NZ-10: "Rok produljen do …" or "Rok …"; "nedostupno" when the deadline was not read. */
@@ -94,11 +94,11 @@ export function deadlineText(row: N17Row): string {
   return row.deadlineExtended ? text.extendedTo(due) : text.dueAt(due);
 }
 
-/** The card's meta "Rok 8. 11. 2026. u 23:59" (· "rok je prošao"); null without a readable deadline. */
+/** The card's meta "Rok 8. 11. 2026. u 23:59" (or "rok je prošao"); null without a readable deadline. */
 export function cardDeadline(card: Pick<N17Card, "dueAt">, now: number): string | null {
   const due = card.dueAt === undefined ? null : whenHr(card.dueAt);
   if (due === null || card.dueAt === undefined) return null;
-  return Date.parse(card.dueAt) < now ? `${text.dueAt(due)} · ${text.deadlinePassed}` : text.dueAt(due);
+  return Date.parse(card.dueAt) < now ? `${text.dueAt(due)}, ${text.deadlinePassed}` : text.dueAt(due);
 }
 
 /** What NZ-10 joins to the overview rows; a part that was not read is null and leaves its field absent. */

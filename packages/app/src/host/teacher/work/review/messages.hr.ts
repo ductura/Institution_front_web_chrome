@@ -20,7 +20,7 @@ export const reviewMessages = {
   dueUnavailable: "rok nije dostupan",
   workKind: "Rad",
   heading: (student: string, kind: string, title: string | null): string =>
-    title === null ? `${student} · ${kind}` : `${student} · ${kind} „${title}”`,
+    title === null ? `${student}, ${kind}` : `${student}, ${kind} „${title}”`,
   backToTask: "Natrag na zadatak",
   backToCourses: "Natrag na kolegije",
   prev: "Prethodni rad",

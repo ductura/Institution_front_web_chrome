@@ -25,7 +25,7 @@ export function preSubmit(summary: SummaryFacts): PreSubmit {
   const { listed, listedAboveCharacters } = summary.pastes;
   return {
     pasted: {
-      rows: listed.map((p) => `${formatDateTimeHr(p.at.from)} · ${characters(p.characters)}`),
+      rows: listed.map((p) => `${formatDateTimeHr(p.at.from)}, ${characters(p.characters)}`),
       none: listed.length === 0 ? text.pastedNone(characters(listedAboveCharacters)) : null,
     },
     form: text.formNotRun,

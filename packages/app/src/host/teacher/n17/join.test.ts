@@ -26,7 +26,7 @@ describe("N-17 joinRows (NZ-10)", () => {
   it("says writing, not started and submitted from the reads, with the document and the version", () => {
     const [s1, s2, s3] = joinRows([row("s1", true), row("s2"), row("s3")], full, NOW);
     expect(stateText(s1!)).toBe("predano");
-    expect(timeText(s1!)).toBe("5. 11. 2026. u 21:14 · verzija 2");
+    expect(timeText(s1!)).toBe("5. 11. 2026. u 21:14, verzija 2");
     expect(workHref(s1!)).toBe("/nastavnik/rad/doc-1");
     expect(stateText(s2!)).toBe("u pisanju, rok produljen");
     expect(deadlineText(s2!)).toBe("Rok produljen do 20. 12. 2026. u 23:59");
@@ -55,7 +55,7 @@ describe("N-17 joinRows (NZ-10)", () => {
   });
   it("the card says its deadline, and that it has passed", () => {
     expect(cardDeadline({ dueAt: DUE }, NOW)).toBe("Rok 15. 12. 2026. u 23:59");
-    expect(cardDeadline({ dueAt: "2026-11-08T22:59:00.000Z" }, NOW)).toBe("Rok 8. 11. 2026. u 23:59 · rok je prošao");
+    expect(cardDeadline({ dueAt: "2026-11-08T22:59:00.000Z" }, NOW)).toBe("Rok 8. 11. 2026. u 23:59, rok je prošao");
     expect(cardDeadline({}, NOW)).toBeNull();
   });
 });
@@ -78,7 +78,7 @@ describe("N-17 follow-up (NAS-08, NAS-10, NAS-12)", () => {
   it("fills the revision column and the open count from the server; no revision is null, not unavailable", () => {
     const join = withFollowUp({ s1: follow({ noticeAcknowledgedAt: "x", revisionState: "open", openRevisionCount: 1 }), s2: follow({ noticeAcknowledgedAt: "x" }) });
     const [s1, s2] = joinRows([row("s1", true), row("s2")], join, NOW);
-    expect(revisionText(s1!)).toBe("zatražena · otvorena");
+    expect(revisionText(s1!)).toBe("zatražena, otvorena");
     expect(s1!.openRevisions).toBe(1);
     expect(revisionText(s2!)).toBe(m.revisionNone);
   });

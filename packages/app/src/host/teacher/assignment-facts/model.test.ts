@@ -21,7 +21,7 @@ describe("N-01 task facts (WEB-2145)", () => {
     expect(facts.opened).toBe("Otvorilo rad: 3 od 4 studenta. Rad još nisu otvorili: Student C.");
     expect(facts.sum).toBe("Zbroj: predano 1, u pisanju 2, rad nije otvoren 1.");
     expect(facts.rows.map((r) => r.line)).toEqual([
-      "Predano 31. 10. 2026. u 22:12, prije roka · verzija 3 · zapis je cjelovit", "U pisanju", "Rad nije otvoren", "U pisanju",
+      "Predano 31. 10. 2026. u 22:12, prije roka, verzija 3, zapis je cjelovit", "U pisanju", "Rad nije otvoren", "U pisanju",
     ]);
     expect(facts.rows.map((r) => r.documentId)).toEqual(["doc-a", "doc-b", null, "doc-d"]);
   });
@@ -37,25 +37,25 @@ describe("N-01 task facts (WEB-2145)", () => {
     }), NOW);
     expect(facts.sum).toBe("Zbroj: predano 2 (od toga 1 nakon roka), nije predano 1.");
     expect(facts.opened).toBe("Otvorilo rad: 3 od 3 studenta.");
-    expect(facts.rows[0]?.line).toBe("Predano 14. 10. 2026. u 17:40, prije roka · verzija 1 · zapis ima praznine");
-    expect(facts.rows[1]?.line).toBe("Predano 16. 10. 2026. u 10:05, nakon roka · verzija 2 · zapis je cjelovit");
-    expect(facts.rows[2]?.line).toBe("Nije predano · rok 15. 10. 2026. u 23:59 je prošao");
+    expect(facts.rows[0]?.line).toBe("Predano 14. 10. 2026. u 17:40, prije roka, verzija 1, zapis ima praznine");
+    expect(facts.rows[1]?.line).toBe("Predano 16. 10. 2026. u 10:05, nakon roka, verzija 2, zapis je cjelovit");
+    expect(facts.rows[2]?.line).toBe("Nije predano, rok 15. 10. 2026. u 23:59 je prošao");
   });
 
   it("an extension keeps the student writing and is said", () => {
     const extended = [{ scope: "one" as const, studentId: "d", dueAt: DUE }];
     const facts = factsOf(reads({ dueAt: PAST, works: [work("d", "D", "in_progress")], extensions: extended }), NOW);
-    expect(facts.rows[0]?.line).toBe("U pisanju · rok produljen do 8. 11. 2026. u 23:59");
+    expect(facts.rows[0]?.line).toBe("U pisanju, rok produljen do 8. 11. 2026. u 23:59");
     expect(deadlineOf("x", PAST, extended)).toEqual({ dueAt: PAST, extended: false });
     expect(deadlineOf("x", PAST, [{ scope: "all", studentId: null, dueAt: DUE }])).toEqual({ dueAt: DUE, extended: true });
   });
 
   it("leaves out what was not read, never guesses", () => {
     const failed = factsOf(reads({ works: [work("a", "A", "submitted")], details: null }), NOW);
-    expect(failed.rows[0]?.line).toBe("Predano · pojedinosti predaje trenutačno nisu dostupne");
+    expect(failed.rows[0]?.line).toBe("Predano, pojedinosti predaje trenutačno nisu dostupne");
     expect(failed.sum).toBe("Zbroj: predano 1.");
     const unbound = factsOf(reads({ works: [work("a", "A", "submitted")], details: new Map([["a", detail({ revision: 1 })]]) }), NOW);
-    expect(unbound.rows[0]?.line).toBe("Predano · verzija 1");
+    expect(unbound.rows[0]?.line).toBe("Predano, verzija 1");
   });
 
   it("orders by family name, never by any figure; a missing name is said and last; an unsafe id gets no link", () => {

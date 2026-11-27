@@ -32,14 +32,14 @@ export function matchOf(findings: readonly MatchFinding[], parts: readonly { rea
 }
 
 /**
- * „Podudara se s odgovorom pomoćnika · N % · nije dokaz autorstva”, with „manje od 1 %” for a share above 0 that
+ * „Podudara se s odgovorom pomoćnika, N %, nije dokaz autorstva”, with „manje od 1 %” for a share above 0 that
  * rounds to nothing; every figure carries „nije dokaz autorstva” (Ustav v1.6 C-6; WEB-NUZ-PG PG-14).
  * A share of 0 (findings without a share) has no figure: the line names the kind only.
  */
 export function shareLabel(percent: number): string {
   if (percent <= 0) return originText.kindAssistantMatch;
   const value = percent < 1 ? originText.lessThanOne : `${Math.round(percent)} %`;
-  return `${originText.kindAssistantMatch} · ${value} · ${t.notProof}`;
+  return `${originText.kindAssistantMatch}, ${value}, ${t.notProof}`;
 }
 
 export type MatchRow = { readonly key: string; readonly words: string; readonly recorded: string; readonly attached: string; readonly explanation: string; readonly explained: boolean };

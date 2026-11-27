@@ -35,7 +35,7 @@ describe("N13Extensions filter (NZ-6)", () => {
     const host = await mount();
     expect(rows(host)).toHaveLength(2);
     await choose(host, t.filter, "s-1");
-    expect(rows(host).map((r) => r[0])).toEqual([`${t.allStudents} · ${t.newDue} 14. 11. 2026. u 23:59`]);
+    expect(rows(host).map((r) => r[0])).toEqual([`${t.allStudents}, ${t.newDue} 14. 11. 2026. u 23:59`]);
     await choose(host, t.filter, "s-4");
     expect(rows(host)).toHaveLength(2);
     await choose(host, t.filter, "");

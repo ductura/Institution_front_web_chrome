@@ -26,7 +26,7 @@ export const revisionMessages = {
   retry: "Pokušaj ponovno",
   // The contract's create has no deadline field and needs a text anchor (PITANJE on Ductus#2052): until it does, sending says so.
   sendUnavailable: "Slanje zahtjeva za doradu trenutačno nije dostupno.",
-  stateHead: (state: string, at: string) => `Zahtjev za doradu · ${state} · zatražen ${at}`,
+  stateHead: (state: string, at: string) => `Zahtjev za doradu, ${state}, zatražen ${at}`,
   states: { open: "otvoren", responded: "student navodi da je proveden", accepted: "prihvaćen", reopened: "ponovno otvoren" },
   declined: "student navodi da ne može provesti",
   statesNote: "Stanja zahtjeva: otvoren, student navodi da je proveden, prihvaćen, ponovno otvoren. Isti zahtjev vidi i student.",

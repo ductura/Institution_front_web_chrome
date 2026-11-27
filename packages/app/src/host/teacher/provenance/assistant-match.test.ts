@@ -60,8 +60,8 @@ describe("PIL-P1-PODUDARANJE-KARTA: model", () => {
   it("keeps the server's share and order, and names a share below one percent", () => {
     expect(matchOf([], fakeParts(0))).toEqual({ kind: "none" });
     expect(matchOf([], fakeParts(2))).toEqual({ kind: "ready", percent: 2, findings: [] });
-    expect(shareLabel(4)).toBe(`${LABEL} · 4 % · nije dokaz autorstva`);
-    expect(shareLabel(0.4)).toBe(`${LABEL} · manje od 1 % · nije dokaz autorstva`);
+    expect(shareLabel(4)).toBe(`${LABEL}, 4 %, nije dokaz autorstva`);
+    expect(shareLabel(0.4)).toBe(`${LABEL}, manje od 1 %, nije dokaz autorstva`);
     expect(shareLabel(0)).toBe(LABEL);
     const second = { ...FAKE_FINDING, messageId: "00000000-0000-4000-8000-00000000a002", runWords: 21 };
     expect(matchRows([FAKE_FINDING, second]).map((row) => row.words)).toEqual(["11 riječi", "21 riječ"]);
@@ -102,7 +102,7 @@ describe("F4-NAS-R06: the student's explanation of each finding", () => {
 describe("PIL-P1-PODUDARANJE-KARTA: view", () => {
   it("shows the share, the attached conversation and the neutral notice", () => {
     const out = view({ kind: "ready", percent: 4, findings: [FAKE_FINDING] });
-    for (const text of [`${LABEL} · 4 %`, matchText.heading, matchText.intro, matchText.neutral, matchText.colAttached, "11 riječi"]) {
+    for (const text of [`${LABEL}, 4 %`, matchText.heading, matchText.intro, matchText.neutral, matchText.colAttached, "11 riječi"]) {
       expect(out).toContain(text);
     }
     expect(out).toContain('data-assistant-match="ready"');
@@ -129,8 +129,8 @@ describe("PIL-P1-PODUDARANJE-KARTA: view", () => {
     const map = (state: Parameters<typeof ProvenanceMapView>[0]["state"], read: MatchRead) => renderToStaticMarkup(createElement(ProvenanceMapView,
       { state, switches: DEFAULT_SWITCHES, onSwitches: () => {}, onRetry: () => {} }, createElement(AssistantMatchView, { read, onRetry: () => {} })));
     const ready = { kind: "ready", percent: 4, findings: [FAKE_FINDING] } as const;
-    expect(map({ kind: "marked" }, ready)).toContain(`${LABEL} · 4 %`);
-    expect(map({ kind: "noMarks" }, ready)).toContain(`${LABEL} · 4 %`);
+    expect(map({ kind: "marked" }, ready)).toContain(`${LABEL}, 4 %`);
+    expect(map({ kind: "noMarks" }, ready)).toContain(`${LABEL}, 4 %`);
     expect(map({ kind: "loading" }, ready)).not.toContain("data-assistant-match");
     const off = map({ kind: "marked" }, { kind: "none" });
     expect(off).not.toContain("data-assistant-match");

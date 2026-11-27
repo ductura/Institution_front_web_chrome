@@ -17,11 +17,11 @@ export const kindLabel = (kind: OriginKind): string => LABELS[kind];
 export const percentText = (share: Pick<OriginShare, "percent" | "codePoints">): string =>
   share.percent === 0 && share.codePoints > 0 ? t.lessThanOne : `${share.percent} %`;
 
-/** "Tipkano u Ducturi · 62 %"; fixed order of the closed list, never sorted by size, no colour per level. */
+/** "Tipkano u Ducturi, 62 %"; fixed order of the closed list, never sorted by size, no colour per level. */
 export function shareRows(c: OriginComposition): readonly { kind: OriginKind; label: string; value: string }[] {
   return ORIGIN_KINDS.flatMap((kind) => {
     const share = c.shares.find((s) => s.kind === kind);
-    return share === undefined || share.codePoints === 0 ? [] : [{ kind, label: `${kindLabel(kind)} · ${percentText(share)}`, value: percentText(share) }];
+    return share === undefined || share.codePoints === 0 ? [] : [{ kind, label: `${kindLabel(kind)}, ${percentText(share)}`, value: percentText(share) }];
   });
 }
 
