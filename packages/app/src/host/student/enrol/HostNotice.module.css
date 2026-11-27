@@ -39,6 +39,13 @@
   color: var(--ink-2);
 }
 
+/* F4-STU-R11 (E-6c): the prototype's `.up-diff`, what changed between two versions of the notice. */
+.changes { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--fs-sm); }
+.changes caption { text-align: left; font-weight: 600; padding-bottom: 6px; }
+.changes th, .changes td { border-top: 1px solid var(--rule-2); padding: 6px 8px 6px 0; vertical-align: top; }
+.changes th { font-weight: 600; color: var(--ink-2); }
+.changes .changed { font-weight: 600; }
+
 /* E-6 on the prototype's `.main.narrow` and `.up-hero` (VIZ-S2). */
 .narrow { max-width: 640px; margin-inline: auto; }
 .hero { display: grid; gap: 6px; text-align: center; }

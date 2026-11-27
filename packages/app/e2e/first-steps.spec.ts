@@ -10,7 +10,7 @@ const ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c5b";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0e2a";
 const SCOPE = "b".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0005";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 
 async function server(page: Page) {
   await page.route("**/api/v1/me", (route) => route.fulfill({

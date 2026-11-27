@@ -16,14 +16,14 @@ const labels: AccessDeniedLabels = {
   heldNote: "Neposlani unos čuva se na ovom uređaju.",
   home: "Na početnu",
 };
-const props = { labels, signInHref: "/api/v1/auth/login?returnTo=%2Fzadaci", homeHref: "/app/web/" };
+const props = { labels, signInHref: "/api/v1/auth/login?returnTo=%2Fzadaci", homeHref: "/aplikacija/" };
 
 describe("AccessDenied markup", () => {
   it("denied: one heading, a way home and no sign-in", () => {
     const html = renderToStaticMarkup(<AccessDenied kind="denied" {...props} />);
     expect(html).toContain('data-access="denied"');
     expect(html).toContain("<h1>Nema ovlasti</h1>");
-    expect(html).toContain('href="/app/web/"');
+    expect(html).toContain('href="/aplikacija/"');
     expect(html).not.toContain("AAI@EduHr");
     expect(html).not.toContain("<form");
   });

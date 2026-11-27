@@ -7,7 +7,7 @@ import { resolve } from "../../../routes";
 // WEB-V19-RECENZIJA-STUDENT: the screens are reachable: the notice of the assignment links to the list, the
 // route table opens the three paths for a student only, and each Next page mounts its screen and refuses a
 // malformed id as not found.
-const next = (rel: string) => readFileSync(join(import.meta.dirname, "../../../../app/[base]/zadatak/[id]/recenzija", rel), "utf8");
+const next = (rel: string) => readFileSync(join(import.meta.dirname, "../../../../app/(host)/zadatak/[id]/recenzija", rel), "utf8");
 
 describe("the student's peer review is mounted", () => {
   it("the notice links to /zadatak/<id>/recenzija", () => {

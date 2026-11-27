@@ -1,8 +1,7 @@
 import type { MyAssignment, MyCourse } from "../read/assignments";
 import type { WorkState } from "../read/works";
-import { extensionText, practiceOf, submittedLine, type ExtensionNote, type Submitted } from "../courses/model";
+import { deadlineTagOf, extensionText, nearTag, practiceOf, submittedLine, type DeadlineTag, type ExtensionNote, type Submitted } from "../courses/model";
 import { cleanCode } from "../enrol/code";
-import { protoToday } from "./format";
 import { homeText as t } from "./messages.hr";
 
 /** The row kinds of the prototype's `kind(t, s)`, in the order of its checks. */
@@ -119,37 +118,14 @@ export function coursesWithoutTask(courses: readonly MyCourse[]): MyCourse[] {
   return courses.filter((course) => course.assignments.length === 0);
 }
 
-const DAY_MS = 86_400_000;
+/** PAR2-A3: E-2 uses the same deadline tag as E-3. */
+export { nearTag };
 
-/** `Rok za N dana` within 7 days of the deadline, none after it has passed or far ahead; null otherwise. */
-export function nearTag(dueAt: string, now: number): string | null {
-  const due = Date.parse(dueAt);
-  if (Number.isNaN(due) || due < now) return null;
-  const days = Math.ceil((due - now) / DAY_MS);
-  if (days > 7) return null;
-  if (days <= 0) return t.nearToday;
-  return days === 1 ? t.nearOne : t.nearMany.replace("{n}", String(days));
-}
-
-/**
- * P-3 (E-2a): the deadline tag of a row that is not submitted. "Rok je prošao {datum}"
- * once the deadline that applies (the extended one when given) has passed. While an
- * extension the teacher gave this student still runs, the row says the original
- * deadline has passed, so both states are told apart. Null for a submitted row
- * and before the original deadline. The tag describes the deadline, not the student.
- */
-export type DeadlineTag = { readonly kind: "late" | "extension"; readonly text: string };
+/** P-3 (E-2a): the row's deadline tag; the rule itself is the one function of courses/model.ts, shared with E-3 and E-4. */
+export type { DeadlineTag };
 
 export function deadlineTag(row: Pick<TaskRow, "kind" | "dueAt" | "extended" | "originalDueAt">, now: number): DeadlineTag | null {
-  if (row.kind === "predano") return null;
-  const due = Date.parse(row.dueAt);
-  if (Number.isNaN(due)) return null;
-  if (due < now) return { kind: "late", text: t.late.replace("{date}", protoToday(new Date(due))) };
-  const original = Date.parse(row.originalDueAt);
-  if (row.extended && !Number.isNaN(original) && original < now) {
-    return { kind: "extension", text: t.originalPassed.replace("{date}", protoToday(new Date(original))) };
-  }
-  return null;
+  return deadlineTagOf({ submitted: row.kind === "predano", dueAt: row.dueAt, extended: row.extended, originalDueAt: row.originalDueAt }, now);
 }
 
 /** P-11: the one code rule (enrol/code.ts), the same as on E-5 and before sending. */
@@ -167,15 +143,6 @@ export function rowRoute(row: Pick<TaskRow, "id" | "kind">): string {
 export function enrollRoute(code: string): string {
   const normal = normalizeCode(code);
   return normal === "" ? "/upis" : `/upis?kod=${encodeURIComponent(normal)}`;
-}
-
-/**
- * INT-31: only a row with no work yet offers "Započni rad". A started work is
- * opened by its own "Otvori rad"; a submitted one, or one whose notice comes
- * first, offers no start at all.
- */
-export function startsWork(kind: RowKind): boolean {
-  return kind === "zadatak";
 }
 
 /** The button label of a row (btn()): "Otvori rad", "Pročitaj upute" or "Otvori zadatak". */

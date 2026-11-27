@@ -26,7 +26,7 @@ export default defineConfig({
     // the server only starts it; locally the build stays in the command.
     command: ci ? start : `pnpm run build && ${start}`,
     env: { INSTITUTION_SERVER_URL: institutionServer },
-    url: `http://127.0.0.1:${port}/app/web/`,
+    url: `http://127.0.0.1:${port}/aplikacija/`,
     reuseExistingServer: !ci,
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],

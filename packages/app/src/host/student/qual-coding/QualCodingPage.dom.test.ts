@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { qualCodingText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 const { QualCodingPage } = await import("./QualCodingPage");
 
@@ -85,7 +85,7 @@ describe("QualCodingPage in the browser", () => {
 
   it("goes to sign-in when the session is gone", async () => {
     await render(apiOf({ ...BASE, "student.qual-codes.get": () => fail(401, "unauthorized") }).call);
-    expect(signIn).toHaveBeenCalledWith(`/app/web/zadaci/kodiranje?gradivo=${M}`);
+    expect(signIn).toHaveBeenCalledWith(`/aplikacija/zadaci/kodiranje?gradivo=${M}`);
   });
 
   it("refuses a bad or repeated code without calling the server, and says success only after the answer", async () => {

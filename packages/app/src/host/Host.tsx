@@ -26,7 +26,7 @@ import { shellMessagesFor } from "./teacher/shell/messages";
 
 /**
  * The institution front (#2028 c.6993786629 §3.3), as the layout of
- * app/[base]/: reads the session once, sends a signed-out browser to AAI@EduHr
+ * app/(host)/: reads the session once, sends a signed-out browser to AAI@EduHr
  * sign-in (D-09), and shows the page of the path for the session's role inside
  * the prototypes' shell (VIZ-0: no top bar, so no breadcrumb; the
  * institution's name moves to the side bar's foot). Links of the app open through the
@@ -34,8 +34,8 @@ import { shellMessagesFor } from "./teacher/shell/messages";
  */
 export default function Host({ base, children }: { base: Base; children: ReactNode }) {
   const router = useRouter();
-  // An edge address ("/", "/pomoc", "/aplikacija/…", D-318) is read from the browser (hostRoute).
-  const route = hostRoute(`/app${usePathname()}`, typeof window === "undefined" ? null : window.location.pathname, base);
+  // An edge address ("/", "/pomoc", D-318) is read from the browser (hostRoute).
+  const route = hostRoute(usePathname(), typeof window === "undefined" ? null : window.location.pathname, base);
   const open = publicPage(route);
   const [session, setSession] = useState<SessionRead | null>(null);
   const catalogues = useLocale();

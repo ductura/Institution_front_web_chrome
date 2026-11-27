@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { workTeamText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 const { default: TeamPage } = await import("./TeamPage");
 

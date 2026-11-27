@@ -8,7 +8,7 @@ import { createSheetDocument } from "../../../../../../editor-core/src/sheet/ind
 import type { SheetRead } from "./read.ts";
 
 const signIn = vi.hoisted(() => vi.fn());
-vi.mock("../../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("../../../../../../../src/client/api.ts", () => ({ goToSignIn: signIn, createApi: () => vi.fn(), SERVER_PREFIX: "/api/v1/", browserTransport: vi.fn() }));
 const { SheetOrWork } = await import("./SheetReview.tsx");
 
