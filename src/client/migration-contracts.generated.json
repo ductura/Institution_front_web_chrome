@@ -2884,6 +2884,29 @@
                       "type": "null"
                     }
                   ]
+                },
+                "courseName": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "mentorName": {
+                  "description": "A display string only: one mentor, or several teachers joined by \", \". Clients show it as is and never split or parse it.",
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -20868,6 +20891,19 @@
                       "type": "null"
                     }
                   ]
+                },
+                "mismatchExplanation": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "maxLength": 4000,
+                      "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -21793,6 +21829,19 @@
                           "type": "string"
                         }
                       }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "mismatchExplanation": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "maxLength": 4000,
+                      "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                      "type": "string"
                     },
                     {
                       "type": "null"
@@ -25430,6 +25479,42 @@
                                       "type": "string"
                                     }
                                   ]
+                                },
+                                "title": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "workType": {
+                                  "anyOf": [
+                                    {
+                                      "const": "short_paper",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "essay",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "seminar_paper",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "bachelor_thesis",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "master_thesis",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "specialist_thesis",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "doctoral_thesis",
+                                      "type": "string"
+                                    }
+                                  ]
                                 }
                               }
                             }
@@ -25506,6 +25591,42 @@
                                     },
                                     {
                                       "const": "submitted",
+                                      "type": "string"
+                                    }
+                                  ]
+                                },
+                                "title": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "workType": {
+                                  "anyOf": [
+                                    {
+                                      "const": "short_paper",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "essay",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "seminar_paper",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "bachelor_thesis",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "master_thesis",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "specialist_thesis",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "doctoral_thesis",
                                       "type": "string"
                                     }
                                   ]
@@ -61396,6 +61517,296 @@
       ]
     }
   },
+  "student.submission-confirmation-code.get": {
+    "path": "/api/v1/student/assignments/{assignmentId}/submission/confirmation-code",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the code, or null before the receipt is bound",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "code"
+              ],
+              "properties": {
+                "code": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9A-HJKMNP-TV-Z]{4}(-[0-9A-HJKMNP-TV-Z]{4}){3}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.work.submitted-version.get": {
+    "path": "/api/v1/teacher/works/{documentId}/submitted-versions/{revision}",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId",
+        "revision"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "revision": {
+          "pattern": "^[1-9][0-9]{0,15}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the submitted revision",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "revision",
+                "document"
+              ],
+              "properties": {
+                "revision": {
+                  "minimum": 1,
+                  "maximum": 9007199254740991,
+                  "type": "integer"
+                },
+                "document": {
+                  "minLength": 1,
+                  "maxLength": 2097152,
+                  "description": "Canonical JSON of the document.",
+                  "type": "string"
+                },
+                "documentKind": {
+                  "anyOf": [
+                    {
+                      "const": "text",
+                      "type": "string"
+                    },
+                    {
+                      "const": "slides",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "workKind": {
+                  "anyOf": [
+                    {
+                      "const": "text",
+                      "type": "string"
+                    },
+                    {
+                      "const": "slides",
+                      "type": "string"
+                    },
+                    {
+                      "const": "spreadsheet",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "notifications.messages-and-slots.list.get": {
+    "path": "/api/v1/notifications/messages-and-slots",
+    "method": "GET",
+    "query": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "before": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "one page of notifications",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "notifications",
+                "nextBefore"
+              ],
+              "properties": {
+                "notifications": {
+                  "maxItems": 50,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "kind",
+                      "targetId",
+                      "documentId",
+                      "slotId",
+                      "createdAt",
+                      "readAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "kind": {
+                        "anyOf": [
+                          {
+                            "const": "message_posted",
+                            "type": "string"
+                          },
+                          {
+                            "const": "slot_requested",
+                            "type": "string"
+                          },
+                          {
+                            "const": "slot_proposed",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "targetId": {
+                        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "documentId": {
+                        "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "slotId": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "createdAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "readAt": {
+                        "anyOf": [
+                          {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "nextBefore": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
   "mentorship.working-style.get": {
     "path": "/api/v1/student/mentors/{teacherId}/working-style",
     "method": "GET",
@@ -61555,145 +61966,6 @@
       ],
       "415": [
         "unsupported_media_type"
-      ],
-      "422": [
-        "invalid_input"
-      ],
-      "503": [
-        "unavailable"
-      ]
-    }
-  },
-  "notifications.messages-and-slots.list.get": {
-    "path": "/api/v1/notifications/messages-and-slots",
-    "method": "GET",
-    "query": {
-      "type": "object",
-      "required": [],
-      "properties": {
-        "before": {
-          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
-    },
-    "responses": {
-      "200": {
-        "description": "one page of notifications",
-        "headers": {
-          "cache-control": {
-            "schema": {
-              "type": "string"
-            }
-          }
-        },
-        "content": {
-          "application/json": {
-            "schema": {
-              "additionalProperties": false,
-              "type": "object",
-              "required": [
-                "notifications",
-                "nextBefore"
-              ],
-              "properties": {
-                "notifications": {
-                  "maxItems": 50,
-                  "type": "array",
-                  "items": {
-                    "additionalProperties": false,
-                    "type": "object",
-                    "required": [
-                      "id",
-                      "kind",
-                      "targetId",
-                      "documentId",
-                      "slotId",
-                      "createdAt",
-                      "readAt"
-                    ],
-                    "properties": {
-                      "id": {
-                        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
-                        "type": "string"
-                      },
-                      "kind": {
-                        "anyOf": [
-                          {
-                            "const": "message_posted",
-                            "type": "string"
-                          },
-                          {
-                            "const": "slot_requested",
-                            "type": "string"
-                          },
-                          {
-                            "const": "slot_proposed",
-                            "type": "string"
-                          }
-                        ]
-                      },
-                      "targetId": {
-                        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
-                        "type": "string"
-                      },
-                      "documentId": {
-                        "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
-                        "type": "string"
-                      },
-                      "slotId": {
-                        "anyOf": [
-                          {
-                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
-                            "type": "string"
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "createdAt": {
-                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
-                        "type": "string"
-                      },
-                      "readAt": {
-                        "anyOf": [
-                          {
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
-                            "type": "string"
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      }
-                    }
-                  }
-                },
-                "nextBefore": {
-                  "anyOf": [
-                    {
-                      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "errors": {
-      "401": [
-        "unauthorized"
-      ],
-      "404": [
-        "not_found"
       ],
       "422": [
         "invalid_input"
@@ -62854,6 +63126,19 @@
                       "type": "null"
                     }
                   ]
+                },
+                "mismatchExplanation": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "maxLength": 4000,
+                      "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -63015,6 +63300,19 @@
                   "type": "string"
                 }
               }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mismatchExplanation": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "maxLength": 4000,
+              "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+              "type": "string"
             },
             {
               "type": "null"
@@ -63828,6 +64126,19 @@
                           "type": "string"
                         }
                       }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "mismatchExplanation": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "maxLength": 4000,
+                      "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                      "type": "string"
                     },
                     {
                       "type": "null"
@@ -64712,6 +65023,19 @@
                       "type": "null"
                     }
                   ]
+                },
+                "mismatchExplanation": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "maxLength": 4000,
+                      "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -64873,6 +65197,19 @@
                   "type": "string"
                 }
               }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mismatchExplanation": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "maxLength": 4000,
+              "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+              "type": "string"
             },
             {
               "type": "null"
@@ -65691,6 +66028,19 @@
                       "type": "null"
                     }
                   ]
+                },
+                "mismatchExplanation": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "maxLength": 4000,
+                      "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -65738,63 +66088,6 @@
       "422": [
         "invalid_input",
         "invalid_attachment"
-      ],
-      "503": [
-        "unavailable"
-      ]
-    }
-  },
-  "student.submission-confirmation-code.get": {
-    "path": "/api/v1/student/assignments/{assignmentId}/submission/confirmation-code",
-    "method": "GET",
-    "params": {
-      "type": "object",
-      "required": [
-        "assignmentId"
-      ],
-      "properties": {
-        "assignmentId": {
-          "minLength": 1,
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
-    },
-    "responses": {
-      "200": {
-        "description": "the code, or null before the receipt is bound",
-        "content": {
-          "application/json": {
-            "schema": {
-              "additionalProperties": false,
-              "type": "object",
-              "required": [
-                "code"
-              ],
-              "properties": {
-                "code": {
-                  "anyOf": [
-                    {
-                      "pattern": "^[0-9A-HJKMNP-TV-Z]{4}(-[0-9A-HJKMNP-TV-Z]{4}){3}$",
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "errors": {
-      "401": [
-        "unauthorized"
-      ],
-      "404": [
-        "not_found"
       ],
       "503": [
         "unavailable"
@@ -66967,22 +67260,22 @@
       ]
     }
   },
-  "teacher.work.submitted-version.get": {
-    "path": "/api/v1/teacher/works/{documentId}/submitted-versions/{revision}",
+  "teacher.submission-confirmation-code.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/students/{studentId}/submission/confirmation-code",
     "method": "GET",
     "params": {
       "type": "object",
       "required": [
-        "documentId",
-        "revision"
+        "assignmentId",
+        "studentId"
       ],
       "properties": {
-        "documentId": {
-          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+        "assignmentId": {
+          "minLength": 1,
           "type": "string"
         },
-        "revision": {
-          "pattern": "^[1-9][0-9]{0,15}(?![\\s\\S])",
+        "studentId": {
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -66990,53 +67283,31 @@
     },
     "responses": {
       "200": {
-        "description": "the submitted revision",
+        "description": "the code, or null before the receipt is bound",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
               "additionalProperties": false,
               "type": "object",
               "required": [
-                "revision",
-                "document"
+                "code"
               ],
               "properties": {
-                "revision": {
-                  "minimum": 1,
-                  "maximum": 9007199254740991,
-                  "type": "integer"
-                },
-                "document": {
-                  "minLength": 1,
-                  "maxLength": 2097152,
-                  "description": "Canonical JSON of the document.",
-                  "type": "string"
-                },
-                "documentKind": {
+                "code": {
                   "anyOf": [
                     {
-                      "const": "text",
+                      "pattern": "^[0-9A-HJKMNP-TV-Z]{4}(-[0-9A-HJKMNP-TV-Z]{4}){3}$",
                       "type": "string"
                     },
                     {
-                      "const": "slides",
-                      "type": "string"
-                    }
-                  ]
-                },
-                "workKind": {
-                  "anyOf": [
-                    {
-                      "const": "text",
-                      "type": "string"
-                    },
-                    {
-                      "const": "slides",
-                      "type": "string"
-                    },
-                    {
-                      "const": "spreadsheet",
-                      "type": "string"
+                      "type": "null"
                     }
                   ]
                 }
@@ -67050,11 +67321,11 @@
       "401": [
         "unauthorized"
       ],
+      "403": [
+        "forbidden"
+      ],
       "404": [
         "not_found"
-      ],
-      "422": [
-        "invalid_input"
       ],
       "503": [
         "unavailable"
