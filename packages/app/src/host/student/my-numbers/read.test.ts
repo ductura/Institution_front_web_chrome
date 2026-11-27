@@ -48,6 +48,10 @@ describe("readMyNumbers", () => {
     const r = await readMyNumbers(api({ "student-work.works.get": () => ok({ works: [WORK("a")] }), "work.versions.get": () => fail(401, "unauthorized") }), NOW);
     expect(r).toEqual({ kind: "signedOut" });
   });
+  it("signed out on the milestone read is signed out for the page, not hidden figures", async () => {
+    const r = await readMyNumbers(api({ "student-work.works.get": () => ok({ works: [WORK("a")] }), "work.versions.get": () => ok(VERSIONS), "work.milestone-states.get": () => fail(401, "session_expired") }), NOW);
+    expect(r).toEqual({ kind: "signedOut" });
+  });
   it("a submitted work shows no days to deadline", async () => {
     const r = await readMyNumbers(api({ "student-work.works.get": () => ok({ works: [WORK("a", "submitted")] }), "work.versions.get": () => ok(VERSIONS) }), NOW);
     expect(r).toMatchObject({ kind: "ready", items: [{ daysLeft: null }] });

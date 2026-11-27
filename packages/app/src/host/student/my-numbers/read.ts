@@ -27,11 +27,15 @@ async function readVersions(call: Api, workId: string): Promise<One<VersionsPage
   return { kind: "ok", value: { savedMinutes: r.body.versions.map((v) => v.savedMinute), more: r.body.nextBeforeRevision !== null } };
 }
 
-async function readMilestones(call: Api, workId: string): Promise<Milestones | null> {
+type Steps = { readonly kind: "ok"; readonly value: Milestones | null } | { readonly kind: "signedOut" };
+
+/** A failed read is "no figure" (null), but a signed-out answer is kept: it is the page's state. */
+async function readMilestones(call: Api, workId: string): Promise<Steps> {
   const r = await attempt(() => call("work.milestone-states.get", { params: { documentId: workId }, query: undefined, body: undefined }));
-  if (r === null || !r.ok) return null;
+  if (r === null) return { kind: "ok", value: null };
+  if (!r.ok) return signedOut(r) ? { kind: "signedOut" } : { kind: "ok", value: null };
   const list = r.body.milestones;
-  return list.length === 0 ? null : { done: list.filter((m) => m.state === "approved").length, total: list.length };
+  return { kind: "ok", value: list.length === 0 ? null : { done: list.filter((m) => m.state === "approved").length, total: list.length } };
 }
 
 /** Own works first (signed out or unavailable there is the page's state), then the figures of each work. */
@@ -44,9 +48,9 @@ export async function readMyNumbers(call: Api, now: Date): Promise<NumbersView> 
     .slice(0, MAX_WORKS);
   if (works.length === 0) return { kind: "empty" };
   const each = await Promise.all(works.map(async (work) => ({ work, versions: await readVersions(call, work.workId), milestones: await readMilestones(call, work.workId) })));
-  if (each.some((e) => e.versions.kind === "signedOut")) return { kind: "signedOut" };
+  if (each.some((e) => e.versions.kind === "signedOut" || e.milestones.kind === "signedOut")) return { kind: "signedOut" };
   const items = each
     .filter((e) => e.versions.kind !== "notFound")
-    .map((e) => numbersOf(e.work, e.versions.kind === "ok" ? e.versions.value : null, e.milestones, now));
+    .map((e) => numbersOf(e.work, e.versions.kind === "ok" ? e.versions.value : null, e.milestones.kind === "ok" ? e.milestones.value : null, now));
   return items.length === 0 ? { kind: "empty" } : { kind: "ready", items };
 }
