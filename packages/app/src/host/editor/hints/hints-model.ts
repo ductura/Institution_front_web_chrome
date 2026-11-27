@@ -62,11 +62,11 @@ type Block = { text: string; base: number; ss: Sentence[]; isP: boolean; sec: nu
 function blocksOf(doc: PmNode): Block[] {
   const out: Block[] = [];
   let sec = -1;
-  doc.descendants((node, pos, parent) => {
+  doc.descendants((node, pos, container) => {
     if (!node.isTextblock) return true;
     if (node.type.name === "heading") sec += 1;
     const text = node.textBetween(0, node.content.size, "", ATOM);
-    out.push({ text, base: pos + 1, ss: sentences(text), isP: parent === doc && node.type.name === "paragraph", sec });
+    out.push({ text, base: pos + 1, ss: sentences(text), isP: container === doc && node.type.name === "paragraph", sec });
     return false;
   });
   return out;
