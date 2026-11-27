@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
+import { axe } from "./a11y/check";
 import { expect, test, type Page } from "./fixtures/test";
 
 import type ContractVectors from "../../../src/client/migration-contract-vectors.generated.json";
@@ -38,7 +39,7 @@ const profile = vectors.find((v) => v.route === "profile.me.get" && v.name === "
 const profileBody = { ...profile, roles: ["teacher"] };
 const originNothingRecorded = vectors.find((v) => v.route === "work.origin-composition.get" && v.name === "nothing-recorded")!.response.body;
 const path = `/nastavnik/rad/${encodeURIComponent(documentId)}`;
-const work = `/app/web${path}`;
+const work = `/aplikacija${path}`;
 const receiptPath = `/api/v1/teacher/assignments/${assignmentId}/students/${studentId}/submission`;
 const consultationPath = `/api/v1/works/${documentId}/consultation-records`;
 const text = "Izmišljeni odlomak o gradskim vrtovima.";
@@ -47,7 +48,7 @@ manuscript.nodes[0].children = [{ type: "text", marks: [], text }];
 const snapshot = canonicalizeJcs(manuscript);
 const etag = `"${createHash("sha256").update(snapshot).digest("hex")}"`;
 
-async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
+async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200, courses: readonly unknown[] = []) {
   let access = initial;
   const seen: string[] = [];
   await page.route("**/api/v1/**", async (route) => {
@@ -58,7 +59,7 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
       case "/api/v1/teacher/access": return route.fulfill({ status: access,
         json: access === 200 ? { access: "allowed", scope: "a".repeat(64) }
           : { error: access === 401 ? "unauthorized" : "unavailable" } });
-      case "/api/v1/teacher/courses": return route.fulfill({ json: { courses: [] } });
+      case "/api/v1/teacher/courses": return route.fulfill({ json: { courses } });
       // WEB-1804: the host reads the saved interface language once signed in; none is saved here.
       case "/api/v1/profile/interface-locale": return route.fulfill({ json: { locale: null } });
       case "/api/v1/auth/login": return route.fulfill({ contentType: "text/html", body: "<p>Lažni AAI@EduHr</p>" });
@@ -125,9 +126,41 @@ test("teacher opens the live text, replay, signed receipt and consultations unde
   expect(seen).toContain(receiptPath);
 });
 
+// F4-NAS-R12 (NAS-30): the assignment's title and kind of work from the teacher's course list, on N-06 and on
+// N-07, N-09, N-10 and N-11 under it; one teacher.courses.get read gives N-06 both the title and the deadline.
+test("the work and its pages name the student, the kind of work and the assignment's title", async ({ page }, info) => {
+  const course = {
+    id: "00000000-0000-4000-8000-0000000000c1", name: "Izmišljeni kolegij", academicYear: "2026/2027", aiPolicy: "partially_allowed",
+    assignments: [{
+      id: workBody.assignmentId, title: "Izmišljeni seminar o vrtovima", workType: "seminar_paper",
+      opensAt: "2026-10-01T08:00:00.000Z", dueAt: "2026-11-20T22:59:00.000Z", currentVersion: 1, enrolledStudents: 1,
+    }],
+  };
+  const { seen } = await fakeServer(page, 200, [course]);
+  const line = "Iva Izmišljena · Seminarski rad „Izmišljeni seminar o vrtovima”";
+  await page.goto(work);
+  await expect(page.getByRole("heading", { level: 1, name: line })).toBeVisible();
+  expect(seen.filter((p) => p === "/api/v1/teacher/courses").length).toBeGreaterThanOrEqual(1);
+  await axe(page, info, "nas-r12-n06");
+  for (const [sub, label] of [["predaja", "n07"], ["reprodukcija", "n09"], ["sazetak", "n10"], ["usporedba", "n11"]] as const) {
+    await page.goto(`${work}/${sub}`);
+    await expect(page.getByText(line, { exact: true })).toBeVisible();
+    await axe(page, info, `nas-r12-${label}`);
+  }
+});
+
+test("without the assignment in the course list the work keeps the plain kind and no title", async ({ page }) => {
+  await fakeServer(page);
+  await page.goto(work);
+  await expect(page.getByRole("heading", { level: 1, name: `Iva Izmišljena · ${frame.workKind}` })).toBeVisible();
+  await page.goto(`${work}/reprodukcija`);
+  await expect(page.getByText(`Iva Izmišljena · ${frame.workKind}`, { exact: true })).toBeVisible();
+  await expect(page.getByText("„")).toHaveCount(0);
+});
+
 test("teacher access 401 sends the browser back to the requested view after login", async ({ page }) => {
   const { seen } = await fakeServer(page, 401);
-  const requested = `/app/chrome${path}/reprodukcija`;
+  const requested = `/aplikacija${path}/reprodukcija`;
   await page.goto(requested);
   await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
   expect(new URL(page.url()).searchParams.get("returnTo")).toBe(requested);

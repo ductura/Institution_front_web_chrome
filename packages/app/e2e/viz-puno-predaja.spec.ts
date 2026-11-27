@@ -32,7 +32,7 @@ for (const width of [390, 1280]) {
     test(`PR-19: puno walks steps 2 to 5 by keyboard, then withdraws (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page);
-      await page.goto(`/app/web/rad/${T1}/predaja`);
+      await page.goto(`/aplikacija/rad/${T1}/predaja`);
       await setTheme(page, theme);
       // E-8: the declaration the scenario confirmed for this text.
       await expect(page.getByText("Potvrda izjave je spremljena na poslužitelju.", { exact: false })).toBeVisible();
@@ -80,7 +80,7 @@ for (const { ishod, heading, text } of OUTCOMES) {
   test(`PR-19: puno answers the submission with "${ishod}" and the page says it`, async ({ page }, info) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await student(page, ishod);
-    await page.goto(`/app/web/rad/${T1}/predaja/slanje`);
+    await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
     await pressOn(page, "Predaj rad");
     await page.getByRole("dialog", { name: "Predati rad?" }).getByRole("button", { name: "Predaj rad" }).click();
     if (heading !== undefined) await expect(page.getByRole("heading", { name: heading })).toBeVisible();

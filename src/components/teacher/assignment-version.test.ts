@@ -5,6 +5,7 @@ import {
   draftOf,
   localMinute,
   publishVersion,
+  significantChanges,
   widensWords,
   type CurrentVersion,
   type VersionBody,
@@ -132,5 +133,14 @@ describe("DAN-310 new version: the reply", () => {
     expect(await publishVersion(ID, body, down)).toEqual({ kind: "unavailable" });
     expect(await publishVersion("../x", body, down)).toEqual({ kind: "invalid" });
     expect(down).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("NAS-07 significant changes", () => {
+  it("counts the deadline, the allowed use and the word range, not title, opening or instructions", () => {
+    expect(significantChanges(["title", "instructions", "opensAt"])).toEqual([]);
+    expect(significantChanges(["title", "dueAt", "aiPurposes", "wordRange"])).toEqual(["dueAt", "aiPurposes", "wordRange"]);
+    const check = checkVersion(CURRENT, { ...draftOf(CURRENT), title: "Drugi" });
+    expect(check.kind === "ready" && significantChanges(check.changes)).toEqual([]);
   });
 });

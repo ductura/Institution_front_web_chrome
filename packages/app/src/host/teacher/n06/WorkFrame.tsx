@@ -6,13 +6,12 @@ import { useEffect, useState, type ReactNode } from "react";
 import { WorkPage } from "../n07/WorkPage";
 import { RevisionSection } from "../revision";
 import styles from "./frame.module.css";
-import { createApi } from "@/client/api";
 import { appHref } from "@/components/shell/nav";
-import { readTeacherCourses } from "@/components/teacher/teacher-courses-read";
 import { liveWorkHref } from "@/components/teacher/LiveWorkFrame";
 import { useHost } from "../../context";
-import { deadlinePassedFor, extensionPath, gapsBanner, heading, isSubmitted, links, sequence, showNotSubmittedBanner, stateLine, type Facts, type ProcessGap } from "./model";
+import { duePassed, extensionPath, gapsBanner, isSubmitted, links, sequence, showNotSubmittedBanner, stateLine, type Facts, type ProcessGap } from "./model";
 import { readFrame, type FrameRead } from "./read";
+import { taskHeading, useTaskContext } from "./task-context";
 import { workFrameMessages as text } from "./messages.hr";
 
 /**
@@ -33,18 +32,10 @@ export default function WorkFrame({ documentId, current = () => true, gaps, dead
     return () => { live = false; };
   }, [documentId, attempt]);
 
-  // NAS-R05: the deadline comes from teacher.courses.get, only for an unsubmitted work; an explicit prop wins.
-  const [courseDeadline, setCourseDeadline] = useState<boolean | null>(null);
-  const unsubmittedId = read?.kind === "ready" && read.facts.state === "nije_predano" ? read.facts.assignmentId : null;
-  useEffect(() => {
-    setCourseDeadline(null);
-    if (unsubmittedId === null || given !== null) return;
-    let live = true;
-    void readTeacherCourses(createApi()).then((courses) => {
-      if (live && courses.kind === "ready") setCourseDeadline(deadlinePassedFor(unsubmittedId, courses.courses, Date.now()));
-    });
-    return () => { live = false; };
-  }, [unsubmittedId, given]);
+  // F4-NAS-R12: the assignment's title and kind in the heading; "Rad" until read or when the course list does not name it.
+  const context = useTaskContext(read?.kind === "ready" ? read.facts.assignmentId : null);
+  // NAS-R05: the deadline comes from the same teacher.courses.get read, only for an unsubmitted work; an explicit prop wins.
+  const courseDeadline = read?.kind === "ready" && read.facts.state === "nije_predano" ? duePassed(context?.dueAt, Date.now()) : null;
   const deadlinePassed = given ?? courseDeadline;
 
   const workPath = liveWorkHref(documentId) ?? "";
@@ -64,6 +55,7 @@ export default function WorkFrame({ documentId, current = () => true, gaps, dead
     );
   }
   const facts: Facts = read.facts;
+  const title = taskHeading(facts.studentName, context);
   const items = sequence(facts);
   const gapText = isSubmitted(facts) ? gapsBanner(gaps) : null;
   const step = (id: string | null, label: string, rel: "prev" | "next") => {
@@ -74,9 +66,9 @@ export default function WorkFrame({ documentId, current = () => true, gaps, dead
   return (
     <RevisionSection documentId={documentId} current={current} compareHref={isSubmitted(facts) && workPath !== "" ? appHref(base, `${workPath}/usporedba`) : undefined}>
       {(rev) => (
-        <WorkPage back={backHref} backLabel={text.backToCourses} crumb={heading(facts)} wide>
+        <WorkPage back={backHref} backLabel={text.backToCourses} crumb={title} wide>
           <section className={`panel ${styles.head}`}>
-            <h1>{heading(facts)}</h1>
+            <h1>{title}</h1>
             <p>{stateLine(facts)}</p>
             {items.length === 0 ? <p className="meta">{text.seqEmpty}</p>
               : <ol className="facts" aria-label={text.seqLabel}>{items.map((i) => <li key={i}>{i}</li>)}</ol>}

@@ -9,7 +9,7 @@ const fixtures = JSON.parse(readFileSync(new URL("./fixtures/teacher.json", impo
   "teacher.courses.get": { courses: TeacherCourse[] };
 };
 
-const newPath = "/app/web/nastavnik/zadatak/novi";
+const newPath = "/aplikacija/nastavnik/zadatak/novi";
 const { assignment, existingCourse } = messagesHr.teacher;
 const { newVersion, workLanguageException } = messagesHr.teacher;
 const course = fixtures["teacher.courses.get"].courses[0]!;
@@ -20,7 +20,7 @@ const current = {
   aiPurposes: ["proofreading"], evidenceProfile: "basic", importAllowed: false, wordMin: 1500, wordMax: 2500,
 };
 const documentId = "izmisljeni-rad-01";
-const teacherPath = `/app/chrome/nastavnik/zadatak/${current.assignmentId}`;
+const teacherPath = `/aplikacija/nastavnik/zadatak/${current.assignmentId}`;
 const assignmentApi = `**/api/v1/institution/assignments/${current.assignmentId}`;
 const workApi = `${assignmentApi}/works/${documentId}/work-language`;
 
@@ -107,7 +107,7 @@ test("teacher publishes the next version and the return link stays in the Chrome
   }
   await expect(published).toBeVisible();
   const links = page.locator("form").getByRole("link", { name: messagesHr.teacher.backCourses });
-  await expect(links).toHaveAttribute("href", "/app/chrome/nastavnik");
+  await expect(links).toHaveAttribute("href", "/aplikacija/nastavnik");
 });
 
 test("version conflict reloads the current version before another write", async ({ page }) => {

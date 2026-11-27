@@ -11,7 +11,7 @@ import { fakeN13Port } from "./fake-port";
 import { n13Messages as t } from "./messages.hr";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 
 describe("N13Extensions filter (NZ-6)", () => {
   let root: Root | undefined;
@@ -50,6 +50,20 @@ describe("N13Extensions filter (NZ-6)", () => {
     expect(own).not.toContain(t.studentSeesHidden);
     expect(other).toContain("Student vidi: Bio 12. 11. 2026. u 23:59, razlog: (skriven Vama)");
     expect(other).toContain(t.studentSeesHidden);
+  });
+
+  it("NAS-R14: warns with the submission time when a student who already submitted is chosen, and for all", async () => {
+    const host = await mount();
+    const warn = () => host.querySelector("[data-testid='n13-existing-submission']")?.textContent ?? null;
+    expect(warn()).toBeNull();
+    await act(async () => { host.querySelector<HTMLInputElement>("input[value='all']")!.click(); });
+    expect(warn()).toContain("Predaja već postoji kod 1 studenta");
+    await act(async () => { host.querySelector<HTMLInputElement>("input[value='one']")!.click(); });
+    expect(warn()).toBeNull();
+    await choose(host, t.student, "s-2");
+    expect(warn()).toContain("Predaja studenta Marko Babić već postoji (zatraženo 8. 11. 2026. u 22:15)");
+    await choose(host, t.student, "s-1");
+    expect(warn()).toBeNull();
   });
 });
 

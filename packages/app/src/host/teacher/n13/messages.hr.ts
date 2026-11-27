@@ -61,6 +61,11 @@ export const n13Messages = {
   recordedRest: "Student vidi novi rok uz zadatak. Razlog vidite samo Vi i taj student.",
   conflict: (who: string | null): string => `${who ?? "Student"} je predaju zatražio prije ovog produljenja.`,
   conflictRest: "Produljenje ne mijenja tu predaju; bilježi se kao dopuna uz nju.",
+  // NAS-R14 (NAS-26): the warning before saving, from the submissions the server already holds.
+  existingOne: (who: string, minute: string): string => `Predaja studenta ${who} već postoji (zatraženo ${minute}).`,
+  existingAll: (count: number): string => `Predaja već postoji kod ${count} ${count % 10 === 1 && count % 100 !== 11 ? "studenta" : "studenata"}:`,
+  existingRest: "Produljenje ne mijenja te predaje; bilježi se kao dopuna uz njih.",
+  submissionsUnknown: "Predaje studenata trenutačno nije moguće provjeriti; ako je netko već predao, produljenje ne mijenja tu predaju.",
   missing: "Odaberite studenta, novi rok i razlog.",
   invalid: "Produljenje nije zabilježeno. Provjerite da je novi rok kasniji od roka koji sada vrijedi i da razlog odgovara izboru.",
   notFound: "Zadatak ili student više nisu dostupni.",

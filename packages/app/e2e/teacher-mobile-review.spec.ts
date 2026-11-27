@@ -32,7 +32,7 @@ const profile = vectors.find((v) => v.route === "profile.me.get" && v.name === "
 const profileBody = { ...profile, roles: ["teacher"] };
 const originNothingRecorded = vectors.find((v) => v.route === "work.origin-composition.get" && v.name === "nothing-recorded")!.response.body;
 const path = `/nastavnik/rad/${encodeURIComponent(documentId)}`;
-const work = `/app/web${path}`;
+const work = `/aplikacija${path}`;
 const receiptPath = `/api/v1/teacher/assignments/${assignmentId}/students/${studentId}/submission`;
 const consultationPath = `/api/v1/works/${documentId}/consultation-records`;
 const text = "Izmišljeni odlomak o gradskim vrtovima. Nadkompostiranjeigradskihvrtovanaizmišljenomkvartu"

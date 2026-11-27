@@ -52,6 +52,11 @@ type Answers = {
   exception?: boolean;
   /** The moment of the page: after T1's deadline for a late submission. */
   now?: string;
+  /**
+   * F4-PRE-R01: the assignment's late rule and this student's late-submission exceptions. Left out, both reads
+   * answer 503, so the timing stays as the deadline alone says and the server's 409 decides (the fallback).
+   */
+  late?: { allowed: boolean; exceptionsUntil: readonly string[] };
 };
 
 /** The "puno" student on T1, with a confirmed declaration and the text above. */
@@ -66,6 +71,13 @@ async function student(page: Page, answers: Answers = {}) {
     if (req.method() === "POST" && path === "/api/v1/evidence/open") return route.fulfill({ json: OPENED });
     // WEB-V17-FORMAT-CHECK: invented format rules for the form check of step 3.
     if (req.method() === "GET" && path.endsWith("/format-rules")) return route.fulfill({ json: { wordMin: 100, wordMax: null, minSources: 0, requiredSections: [], citationStyle: "fpzg", font: null, size: null, spacing: null } });
+    if (req.method() === "GET" && path.endsWith("/late-submission")) {
+      return answers.late === undefined ? route.fulfill({ status: 503, json: { status: "unavailable" } }) : route.fulfill({ json: { lateSubmissionAllowed: answers.late.allowed } });
+    }
+    if (req.method() === "GET" && path.endsWith("/late-submission-exceptions")) {
+      return answers.late === undefined ? route.fulfill({ status: 503, json: { status: "unavailable" } }) : route.fulfill({ json: { exceptions: answers.late.exceptionsUntil.map((untilAt, i) => (
+        { id: `00000000-0000-4000-8000-0000000000a${i}`, kind: "exception", untilAt, reasonId: "justified", createdAt: "2026-11-09T09:00:00.000Z" })) } });
+    }
     if (req.method() === "POST" && path === "/api/v1/submission/v2" && answers.submit !== undefined) {
       return route.fulfill({ status: answers.submit.status, json: answers.submit.body });
     }
@@ -95,7 +107,7 @@ for (const width of [390, 1280]) {
     test(`PR-3: step 3 lists the places and the pastes, says the form check honestly, and "Dalje" leads on (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page);
-      await page.goto(`/app/web/rad/${T1}/predaja/pregled`);
+      await page.goto(`/aplikacija/rad/${T1}/predaja/pregled`);
       await setTheme(page, theme);
       await expect(page.getByRole("link", { name: "Odlomak 1 ([izvor])" })).toBeVisible();
       await expect(page.getByRole("link", { name: "2. Izmišljena analiza, odlomak 1 ([?])" })).toBeVisible();
@@ -117,7 +129,7 @@ for (const width of [390, 1280]) {
   test(`PR-7: the dialog says the declaration and the words, and a late submission is confirmed twice, by keyboard (${width} px)`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
     await student(page, { now: "2026-11-10T12:00:00+01:00", submit: { status: 409, body: { status: "not_open" } } });
-    await page.goto(`/app/web/rad/${T1}/predaja/slanje`);
+    await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
     await expect(page.getByText(/^Rok je prošao 8\. 11\. 2026\. u 23:59\./)).toBeVisible();
     await submitButton(page).focus();
     await page.keyboard.press("Enter");
@@ -140,13 +152,45 @@ for (const width of [390, 1280]) {
   });
 }
 
+for (const width of [390, 1280]) {
+  test(`F4-PRE-R01: an assignment without late submission says so on steps 3 and 4 before the click (${width} px)`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    let posts = 0;
+    page.on("request", (req) => { if (req.method() === "POST" && req.url().endsWith("/api/v1/submission/v2")) posts += 1; });
+    await student(page, { now: "2026-11-10T12:00:00+01:00", late: { allowed: false, exceptionsUntil: [] } });
+    await page.goto(`/aplikacija/rad/${T1}/predaja/pregled`);
+    await expect(page.getByText(/^Predaja za ovaj zadatak više nije otvorena\. Rok je bio 8\. 11\. 2026\. u 23:59\./)).toBeVisible();
+    await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
+    await expect(page.getByText(/^Predaja za ovaj zadatak više nije otvorena\./)).toBeVisible();
+    await expect(page.getByText("Zadatak ne dopušta predaju nakon roka.", { exact: false })).toBeVisible();
+    await expect(submitButton(page)).toHaveAttribute("aria-disabled", "true");
+    await axe(page, info, `predaja-zatvorena-${width}`);
+    await submitButton(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog", { name: "Predati rad?" })).toHaveCount(0);
+    expect(posts).toBe(0);
+  });
+}
+
+test("F4-PRE-R01: an open late-submission exception is the deadline that counts, and a permitted late one is said", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await student(page, { now: "2026-11-10T12:00:00+01:00", late: { allowed: false, exceptionsUntil: [EXCEPTION_UNTIL] } });
+  await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
+  await expect(page.getByText("Rok iznimke")).toBeVisible();
+  await expect(submitButton(page)).not.toHaveAttribute("aria-disabled", "true");
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await student(page, { now: "2026-11-10T12:00:00+01:00", late: { allowed: true, exceptionsUntil: [] } });
+  await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
+  await expect(page.getByText(/Zadatak dopušta predaju nakon roka; predaja će biti označena kao predaja nakon roka\./)).toBeVisible();
+});
+
 test("Daniel's answer 3: the teacher's exception is named on steps 3 and 4 with its deadline", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, { now: "2026-11-10T12:00:00+01:00", exception: true });
-  await page.goto(`/app/web/rad/${T1}/predaja/pregled`);
+  await page.goto(`/aplikacija/rad/${T1}/predaja/pregled`);
   await expect(page.getByText(/nastavnik je za Vas iznimno odobrio kasnu predaju do 12\. 11\. 2026\. u 23:59/i)).toBeVisible();
   await expect(page.getByText("Iznimka do 12. 11. 2026.")).toBeVisible();
-  await page.goto(`/app/web/rad/${T1}/predaja/slanje`);
+  await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
   await expect(page.getByText("Rok iznimke")).toBeVisible();
   await submitButton(page).click();
   await expect(page.getByRole("dialog", { name: "Predati rad?" }).getByRole("checkbox")).toBeVisible();
@@ -156,7 +200,7 @@ for (const width of [390, 1280]) {
   test(`PR-8: a refused submission is its own panel without "Predaj rad" (${width} px)`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
     await student(page, { submit: { status: 409, body: { status: "blocked", reason: "no_evidence" } } });
-    await page.goto(`/app/web/rad/${T1}/predaja/slanje`);
+    await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
     await submitButton(page).click();
     await page.getByRole("dialog", { name: "Predati rad?" }).getByRole("button", { name: "Predaj rad" }).click();
     await expect(page.getByRole("heading", { name: "Predaja nije prihvaćena" })).toBeVisible();
@@ -177,7 +221,7 @@ for (const width of [390, 1280]) {
 test("PR-9: an unknown outcome is one message, read again when the connection returns, never offering 'Predaj rad'", async ({ page, context }, info) => {
   await page.setViewportSize({ width: 390, height: 900 });
   const reads = await student(page, { submit: { status: 503, body: { status: "unavailable", stage: "signing" } }, state: 503 });
-  await page.goto(`/app/web/rad/${T1}/predaja/slanje`);
+  await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
   await submitButton(page).click();
   await page.getByRole("dialog", { name: "Predati rad?" }).getByRole("button", { name: "Predaj rad" }).click();
   await expect(page.getByText("Odgovor poslužitelja nije stigao, pa ishod predaje nije poznat. Rad je možda predan.")).toBeVisible();

@@ -33,7 +33,7 @@ vi.mock("@/components/teacher/SummaryCard", () => ({ useProcessSummary: () => ({
 vi.mock("../n06/read", () => ({ readFrame: async () => ({ kind: "ready", facts: { state: "predano" } }) }));
 vi.mock("../ai-declaration/AiDeclarationSection", () => ({ default: () => null }));
 vi.mock("../pre-submit/PreSubmitPanel", () => ({ PreSubmitPanel: () => null, FallbackPanel: () => null }));
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) { this.setAttribute("open", ""); };
@@ -48,7 +48,7 @@ async function show(loadPdf?: (id: string) => Promise<ReceiptPdfRead>) {
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => { root!.render(h(Page, { documentId: "izmisljeni-rad-0001", workHref: "/app/web/nastavnik/rad/izmisljeni-rad-0001", current: () => true, ...(loadPdf ? { loadPdf } : {}) })); });
+  await act(async () => { root!.render(h(Page, { documentId: "izmisljeni-rad-0001", workHref: "/aplikacija/nastavnik/rad/izmisljeni-rad-0001", current: () => true, ...(loadPdf ? { loadPdf } : {}) })); });
   await act(async () => {});
 }
 const button = (label: string) => [...host!.querySelectorAll("button")].find((b) => b.textContent === label) ?? null;

@@ -43,7 +43,7 @@ test("ED-38: Komentari counts the open comments in the text, not the resolved on
     return [thread(1, "open", at), thread(2, "resolved", at)];
   });
 
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const tab = page.getByRole("tab", { name: /^Komentari/ });
   await expect(tab).toBeVisible();
