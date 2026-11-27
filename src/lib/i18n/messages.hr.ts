@@ -25,6 +25,11 @@ export const editorPanelLayoutsHr = {
   // ED-37 (P2-6): the chapter row parts, as in the prototype "Prilagodi panel".
   row: "U retku poglavlja",
   rowParts: { words: "Broj riječi", status: "Točka stanja", flags: "Napomene „za popraviti”" },
+  // ED-70: "Potpoglavlja" and "Donji dijelovi", as in the prototype "Prilagodi panel".
+  subModes: { open: "Rasklopljena", closed: "Sklopljena", active: "Samo u aktivnom" },
+  parts: "Donji dijelovi",
+  moveUp: (label: string) => `Pomakni gore: ${label}`,
+  moveDown: (label: string) => `Pomakni dolje: ${label}`,
   width: "Širina na računalu",
   widths: { narrow: "Uska", medium: "Srednja", wide: "Široka" },
   settingsNote: "Postavke vrijede samo za Vas i pamte se u ovom pregledniku.",
