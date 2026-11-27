@@ -14,9 +14,9 @@ const running = (w, files) => plan(w, decide(w, files)).filter((j) => j.on).map(
 // Three kinds of change, as in the PR body.
 const cases = [
   [['docs/x.md'], 'changes'],
-  [['src/components/editor/a.tsx'], 'app,app-build,changes,test,ui'],
+  [['src/components/editor/a.tsx'], 'app,changes,test,ui'],
   [['catalog/src/a.ts'], 'changes,ui,ui-baselines'],
-  [['src/client/api.ts'], 'app,app-build,changes,ui'],
+  [['src/client/api.ts'], 'app,changes,ui'],
 ];
 for (const [files, expected] of cases) {
   test(`ci:local: ${files.join(', ')} runs [${expected}]`, () => {

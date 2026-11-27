@@ -15,6 +15,8 @@ import { createApi, goToSignIn } from "../../../../../../src/client/api.ts";
 import { studentHostHr as messagesHr } from "../i18n/messages.hr.ts";
 
 import { nextPath, type Base } from "../../../bases";
+import { LoadAlert } from "../../states/States";
+import { StudentDenied } from "../read/denied";
 import { useHost } from "../../context";
 import { protoDateTime } from "../home/format";
 import { coursesText as t } from "./messages.hr";
@@ -66,7 +68,7 @@ export function Frame({ title, lede, children }: { title: string; lede: string |
 }
 
 /** The states shared by both pages; null when the read is ready. */
-export function State({ read, retry, here, base }: { read: CoursesRead | null; retry: () => void; here: string; base: string }) {
+export function State({ read, retry, here, base, signedOut = t.signedOut }: { read: CoursesRead | null; retry: () => void; here: string; base: string; signedOut?: string }) {
   if (read === null) {
     return (
       <div className={own.course} aria-busy="true" role="status">
@@ -80,19 +82,15 @@ export function State({ read, retry, here, base }: { read: CoursesRead | null; r
   if (read.kind === "signedOut") {
     return (
       <div className={`${own.card} ${own.center}`}>
-        <p className={own.note} role="status">{t.signedOut}</p>
+        <p className={own.note} role="status">{signedOut}</p>
         <Button onClick={() => goToSignIn(appHref(base, here))}>{t.signIn}</Button>
       </div>
     );
   }
+  if (read.kind === "denied") return <StudentDenied base={base} />;
   if (read.kind === "unavailable") {
-    return (
-      <section className={own.card} role="alert" aria-labelledby="stanje-greska">
-        <h2 id="stanje-greska">{home.unavailableHeading}</h2>
-        <p className={own.note}>{home.unavailableBody}</p>
-        <Button className={own.start} onClick={retry}>{t.retry}</Button>
-      </section>
-    );
+    // DIZ S-02 (Z4, R6): one alert frame; "Pokušaj ponovno" is the link under it, not a button.
+    return <LoadAlert title={home.unavailableHeading} body={home.unavailableBody} retry={{ label: t.retry, onRetry: retry }} />;
   }
   return null;
 }
@@ -104,7 +102,7 @@ export function State({ read, retry, here, base }: { read: CoursesRead | null; r
  * server gave one, and the history of an extended deadline where the history read answered.
  */
 export function TaskItem({ a, course, kind, now, line, extension, submitted }: {
-  a: Assignment; course: string | null; kind: RowKind; now: Date; line?: ReactNode;
+  a: Assignment; course: ReactNode | null; kind: RowKind; now: Date; line?: ReactNode;
   extension?: ExtensionNote | null; submitted?: Submitted | null;
 }) {
   const { base } = useHost();
@@ -122,7 +120,7 @@ export function TaskItem({ a, course, kind, now, line, extension, submitted }: {
         {course === null ? null : <span className={own.eyebrow}>{course}</span>}
         <span className={own.title}>{a.title}</span>
         <span className={own.when} id={whenId}>
-          {line ?? (kind === "submitted" ? <span>{submittedLine(submitted, whenHr)}</span> : <span>{t.dueLabel.replace("{time}", whenHr(due))}</span>)}
+          {line ?? (kind === "submitted" ? <span>{submittedLine(submitted, whenHr)}</span> : whenHr(due) === "" ? null : <span>{t.dueLabel.replace("{time}", whenHr(due))}</span>)}
           {line === undefined && near !== null ? <Tag tone="warn">{near}</Tag> : null}
           {deadline === null ? null : <Tag tone={deadline.kind === "late" ? "warn" : "neutral"}>{deadline.text}</Tag>}
           {line === undefined && kind === "notice" ? <Tag tone="open">{t.noticeFirst}</Tag> : null}
@@ -162,7 +160,7 @@ export function MyCoursesPage() {
       ) : null}
       {shown ? read.courses.map((c: Course) => (
         <section key={c.id} className={own.course} aria-labelledby={`kolegij-${c.id}`}>
-          <span className={own.eyebrow}>{c.academicYear ? `${home.courseLabel} · ${yearHr(c.academicYear)}` : home.courseLabel}</span>
+          <span className={own.eyebrow}><span>{home.courseLabel}</span>{c.academicYear ? <span>{yearHr(c.academicYear)}</span> : null}</span>
           <h2 id={`kolegij-${c.id}`}>{c.name}</h2>
           {groupLabels(c.groups).length === 0 ? null : (
             <ul className={own.tags} aria-label={t.group}>

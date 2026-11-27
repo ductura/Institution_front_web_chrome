@@ -1,4 +1,6 @@
 // WEB-V16-ETAPE-STUDENT: the pure rules of the student's "Etape" section.
+import { formatDateTime } from "@ductura/ui";
+
 import type { StudentMilestone } from "../../../../../../src/client/milestone-submit";
 import type { SectionRead, ThesisRole } from "../model";
 
@@ -23,5 +25,6 @@ export function stagesRead(
 export function showDate(iso: string | null): string | null {
   if (iso === null) return null;
   const time = Date.parse(iso);
-  return Number.isNaN(time) ? null : new Date(time).toLocaleString("hr-HR", { timeZone: "Europe/Zagreb", dateStyle: "medium", timeStyle: "short" });
+  // "10. studenoga 2026. u 23:59": the full month, never "10. stu 2026. 23:59" (A3).
+  return Number.isNaN(time) ? null : formatDateTime(time, "hr");
 }

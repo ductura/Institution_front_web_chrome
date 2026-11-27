@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { createEditorExtensionsV3 } from "../../../../../../editor-core/src/editor/schema";
 import { PROFILES, type RuleProfile } from "../../rules/profiles";
-import { applySkeleton, DEFAULT_SECTIONS, presentTitles, skeletonAvailable, skeletonSections } from "./skeleton";
+import { applySkeleton, DEFAULT_SECTIONS, presentTitles, skeletonAvailability, skeletonAvailable, skeletonSections } from "./skeleton";
 
 const made: Editor[] = [];
 function editorWith(content: object[], editable = true): Editor {
@@ -67,5 +67,28 @@ describe("applySkeleton", () => {
     gone.destroy();
     expect(applySkeleton(gone, ["Uvod"])).toBeNull();
     expect(applySkeleton(null, ["Uvod"])).toBeNull();
+  });
+  it("puts the headings before the work's own Literatura, which stays last", () => {
+    const e = editorWith([h("Naslov", 1), p("Tekst."), h("Literatura"), p("Izvor.")]);
+    expect(applySkeleton(e, ["Uvod", "Zaključak"])).toBe(2);
+    expect(heads(e)).toEqual(["Naslov", "Uvod", "Zaključak", "Literatura"]);
+    expect(e.getJSON().content!.map((n) => n.type)).toEqual(["heading", "paragraph", "heading", "heading", "heading", "paragraph"]);
+  });
+  it("a chosen Literatura goes last, after the other new headings", () => {
+    const e = editorWith([h("Naslov", 1), p("Tekst.")]);
+    expect(applySkeleton(e, ["Literatura", "Uvod"])).toBe(2);
+    expect(heads(e)).toEqual(["Naslov", "Uvod", "Literatura"]);
+  });
+});
+
+describe("skeletonAvailability", () => {
+  it("is off, with the reason, when every section of the list is already in the work", () => {
+    const e = editorWith([...DEFAULT_SECTIONS.map((s) => h(s))]);
+    expect(skeletonAvailability(e, base)).toEqual({ enabled: false, reason: "Svi odjeljci s popisa već postoje u radu." });
+  });
+  it("is on while one is missing, and off for another area with its own reason", () => {
+    const e = editorWith([h("Uvod"), p("Tekst.")]);
+    expect(skeletonAvailability(e, base)).toEqual({ enabled: true });
+    expect(skeletonAvailability(e, { ...base, unitId: "pf" })).toMatchObject({ enabled: false, reason: expect.stringContaining("nije dostupan") });
   });
 });

@@ -66,8 +66,8 @@ test("the mentor sees each work's stages and agreement, adds a stage, and is tol
   const plans = page.getByTestId("mentor-work-plan");
   await expect(plans).toHaveCount(2);
   const first = plans.first();
-  await expect(first.getByText("Etape · 1 od 2 odobreno")).toBeVisible();
-  await first.getByText("Etape · 1 od 2 odobreno").click();
+  await expect(first.getByText("Etape, 1 od 2 odobreno")).toBeVisible();
+  await first.getByText("Etape, 1 od 2 odobreno").click();
   await expect(first.getByText("Izmišljeni opis: naslov i tri rečenice o temi.")).toBeVisible();
   await expect(first.getByText("Izmišljena napomena: proširiti metodu.")).toBeVisible();
   await expect(first.getByText("Izmišljeni dogovor: dovršiti uvod do idućeg tjedna.")).toBeVisible();

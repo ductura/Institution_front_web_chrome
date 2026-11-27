@@ -25,6 +25,15 @@ describe("WEB-1220 provenance panel", () => {
     expect(html).toContain("<mark");
   });
 
+  it("S-08 K5: a failed read is a role=alert frame without a retry link or button, as on N-04", async () => {
+    const failing: ProvenancePort = { read: async () => { throw new Error("izmišljena greška"); } };
+    const html = await render(failing, "rad-izmisljeni-1");
+    expect(html).toContain('role="alert"');
+    expect(html).toContain(provenanceShareHr.error);
+    expect(html).not.toContain(provenanceShareHr.retry);
+    expect(html).not.toContain("<button");
+  });
+
   it("renders the same view for the student's and the teacher's screen", async () => {
     const student = await render(screenProvenance, "rad-izmisljeni-1");
     const teacher = await render(screenProvenance, "doc-izmisljeni-2");
@@ -58,7 +67,42 @@ describe("WEB-1220 provenance panel", () => {
     for (const path of ["rad/[assignmentId]/predaja/potvrda/page.tsx", "nastavnik/rad/[id]/predaja/page.tsx"]) {
       const source = page(path);
       expect(source).toContain("const PROVENANCE = screenProvenance;");
-      expect(source).toContain("<ProvenancePanel read={provenance} />");
+      // The teacher's page mounts the panel through the retry wrapper (N-AI-ATT); still no role prop.
+      expect(source).toContain(path.startsWith("nastavnik")
+        ? "<ProvenancePanelRetry read={provenance} showMatch={MATCH_MARK_ENABLED} />"
+        : "<ProvenancePanel read={provenance} />");
     }
+  });
+});
+
+describe("N-AI-ATT provenance panel on the teacher's page", () => {
+  const failing: ProvenancePort = { read: async () => { throw new Error("izmišljena greška"); } };
+
+  it("with onRetry a failed read is a bordered role=alert frame with the retry link under it", async () => {
+    const html = renderToStaticMarkup(<ProvenancePanel read={await readProvenance(failing, "rad-izmisljeni-1")} onRetry={() => undefined} />);
+    expect(html).toContain('role="alert"');
+    expect(html).toContain(provenanceShareHr.retry);
+    expect(html.indexOf('role="alert"')).toBeLessThan(html.indexOf(provenanceShareHr.retry));
+  });
+
+  it("carries the match mark only when it is switched on (D-268 O6)", async () => {
+    const read = await readProvenance(screenProvenance, "rad-izmisljeni-1");
+    expect(renderToStaticMarkup(<ProvenancePanel read={read} showMatch={false} />)).not.toContain("<mark");
+    expect(renderToStaticMarkup(<ProvenancePanel read={read} showMatch={false} />)).toContain("53 %");
+    expect(renderToStaticMarkup(<ProvenancePanel read={read} showMatch />)).toContain("<mark");
+  });
+
+  it("the teacher's page passes the retry and keeps the mark off", () => {
+    const src = page("nastavnik/rad/[id]/predaja/page.tsx");
+    expect(src).toContain("MATCH_MARK_ENABLED = false");
+    expect(src).toContain("<ProvenancePanelRetry");
+    expect(readFileSync(new URL("./ProvenancePanelRetry.ts", import.meta.url), "utf8")).toContain("onRetry: () => router.refresh()");
+  });
+
+  it("styles the mark with the accent tokens and the alert with a 1 px error border", () => {
+    const css = readFileSync(new URL("../../../packages/ui/src/components/provenance-share/ProvenanceShare.module.css", import.meta.url), "utf8");
+    expect(css).toMatch(/\.mark \{[^}]*var\(--accent-soft\)[^}]*var\(--accent\)/);
+    expect(css).toMatch(/\.alert \{[^}]*1px solid var\(--error\)/);
+    expect(css).not.toMatch(/\.alert \{[^}]*error-soft/);
   });
 });

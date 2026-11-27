@@ -66,7 +66,16 @@ export type Line = {
   readonly retry: boolean;
   /** PR-9: the outcome is unknown, so the state is read again on reconnection and after 10 s. */
   readonly recheck?: boolean;
+  /**
+   * S-08 D9: the line reports a state (waiting for the signature, not recorded), not an error; it stays plain
+   * text. Every other line of an outcome is an error and is written in the error colour (`isErrorLine`), except
+   * the warning with the way to the declaration (declaration_required is no error).
+   */
+  readonly plain?: boolean;
 };
+
+/** S-08: whether the lines of an outcome say an error (blocked, incomplete, unknown, errors) rather than a state. */
+export const isErrorLine = (line: Line): boolean => line.plain !== true && line.offer !== "declaration";
 export type Next = { readonly go: "receipt" | "notice" | "signIn" } | Line;
 export type Answer = SubmitOutcome | { readonly kind: "check"; readonly state: SubmissionRead };
 
@@ -87,8 +96,8 @@ const unknown = (requestedAt: string | null): Line => ({
 function fromState(state: SubmissionRead): Next {
   switch (state.kind) {
     case "potvrdeno": return { go: "receipt" };
-    case "ceka": return { go: null, title: t.panelTitle, text: [fill(t.unknownRequested, { when: whenOf(state.requestedAt) }), t.waiting], offer: "check", retry: false };
-    case "none": return { go: null, text: [t.notRecorded], retry: true };
+    case "ceka": return { go: null, title: t.panelTitle, text: [fill(t.unknownRequested, { when: whenOf(state.requestedAt) }), t.waiting], offer: "check", retry: false, plain: true };
+    case "none": return { go: null, text: [t.notRecorded], retry: true, plain: true };
     case "session-expired": return { go: "signIn" };
     case "greska": return state.code === "not_found" ? { go: null, text: [t.errors.not_found], retry: false } : unknown(null);
     default: return unknown(null);
