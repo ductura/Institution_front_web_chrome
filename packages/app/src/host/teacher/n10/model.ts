@@ -37,7 +37,7 @@ export interface N10Port {
 
 export type N10Read =
   | { readonly kind: "ready"; readonly summary: ProcessSummaryV1; readonly details: SummaryDetails | null; readonly versions: readonly N10Version[] | null; readonly thresholds?: readonly ThresholdRow[]; readonly notes?: readonly N10Note[] }
-  | { readonly kind: "empty" }
+  | { readonly kind: "empty"; readonly notes?: readonly N10Note[] }
   | { readonly kind: "signedOut" }
   | { readonly kind: "notFound" }
   | { readonly kind: "unavailable" };
@@ -67,7 +67,8 @@ export async function loadSummary(port: N10Port, documentId: string): Promise<N1
     safe(async () => (port.notes === undefined ? NO_NOTES : port.notes(documentId)), NO_NOTES),
   ]);
   if (summary.kind !== "ok") return { kind: summary.kind };
-  if (isEmpty(summary.summary)) return { kind: "empty" };
+  // Notes are written independently of recorded events, so an empty record keeps the notes that were read.
+  if (isEmpty(summary.summary)) return notes.kind === "ok" ? { kind: "empty", notes: notes.notes } : { kind: "empty" };
   return {
     kind: "ready",
     summary: summary.summary,

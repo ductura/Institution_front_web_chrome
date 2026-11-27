@@ -4,7 +4,7 @@ import { act, createElement as h } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { FAKE_NOTES, FAKE_SUMMARY, fakeN10Port } from "./fake-port";
+import { FAKE_EMPTY, FAKE_NOTES, FAKE_SUMMARY, fakeN10Port } from "./fake-port";
 import { n10Messages as text } from "./messages.hr";
 import { loadSummary } from "./model";
 import { readSubmissionNotes } from "./port";
@@ -70,6 +70,16 @@ describe("N-10 student notes: screen", () => {
     const section = await show({ kind: "unavailable" });
     expect(section.textContent).toContain(text.unavailable);
     expect(section.textContent).not.toContain(text.notesEmpty);
+  });
+  it("keeps the notes when the process record is empty", async () => {
+    const port = fakeN10Port(FAKE_EMPTY, undefined, undefined, undefined, { kind: "ok", notes: FAKE_NOTES });
+    expect(await loadSummary(port, "d1")).toEqual({ kind: "empty", notes: FAKE_NOTES });
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => { root!.render(h(SummaryPage, { port, documentId: "d1", workHref: "/w", signInHref: "/x", map: h("div") })); });
+    expect(host.textContent).toContain(text.empty);
+    expect(host.textContent).toContain(FAKE_NOTES[0]!.text);
   });
   it("loadSummary keeps notes out of the read when the port has none", async () => {
     const { notes: _n, ...port } = fakeN10Port();
