@@ -119,19 +119,49 @@ describe("Postavke fakulteta (OA-2)", () => {
   });
 });
 
-describe("Asistent na fakultetu (OA-9)", () => {
-  it("kaže da je asistent isključen i pokazuje pravila po vrsti rada, bez imenovanja pružatelja", async () => {
-    stub({ "/institution/faculty-rules": () => Response.json(rules) });
+const setting = (assistant: boolean) => ({ assistant, transcription: false, tools: false, settingVersion: 3, changeable: false });
+
+describe("Asistent na fakultetu (OA-9, OPE-09)", () => {
+  it("čita prekidač s poslužitelja: uključen se prikazuje kao uključen, bez imenovanja pružatelja", async () => {
+    const urls = stub({ "/institution/faculty-rules": () => Response.json(rules), "/institution/assistant-setting": () => Response.json(setting(true)) });
     await mount("/ustanova/postavke/asistent", "assistant");
-    expect(text()).toContain(t.assistant.off);
+    expect(urls.some((u) => u.includes("/institution/assistant-setting"))).toBe(true);
+    expect(text()).toContain(t.assistant.on);
+    expect(text()).not.toContain(t.assistant.off);
     expect(text()).toContain(t.assistant.studentSees);
     expect(host!.querySelectorAll("tbody tr").length).toBe(7);
     expect(text()).toContain("Djelomično dopuštena");
     expect(text()).toContain(t.assistant.noRule);
     expect(host!.querySelectorAll("input, select, textarea").length).toBe(0);
   });
-  it("kad pravila nisu dostupna, i dalje kaže da je asistent isključen i nudi ponovni pokušaj", async () => {
-    stub({ "/institution/faculty-rules": () => Response.json({}, { status: 503 }) });
+  it("isključen prekidač se prikazuje kao isključen", async () => {
+    stub({ "/institution/faculty-rules": () => Response.json(rules), "/institution/assistant-setting": () => Response.json(setting(false)) });
+    await mount("/ustanova/postavke/asistent", "assistant");
+    expect(text()).toContain(t.assistant.off);
+    expect(text()).not.toContain(t.assistant.on);
+  });
+  it("kad prekidač nije čitljiv, ne tvrdi da je isključen i nudi ponovni pokušaj; pravila se i dalje vide", async () => {
+    stub({ "/institution/faculty-rules": () => Response.json(rules), "/institution/assistant-setting": () => Response.json({}, { status: 503 }) });
+    await mount("/ustanova/postavke/asistent", "assistant");
+    expect(text()).not.toContain(t.assistant.off);
+    expect(text()).not.toContain(t.assistant.on);
+    expect(text()).toContain(t.assistant.unread);
+    expect(host!.querySelectorAll("tbody tr").length).toBe(7);
+    expect([...host!.querySelectorAll("button")].some((b) => b.textContent === t.retry)).toBe(true);
+  });
+  it("odgovor izvan ugovora (kriv oblik) nije čitljiv, a 403 se kaže kao uskraćen pristup", async () => {
+    stub({ "/institution/faculty-rules": () => Response.json(rules), "/institution/assistant-setting": () => Response.json({ assistant: "da" }) });
+    await mount("/ustanova/postavke/asistent", "assistant");
+    expect(text()).not.toContain(t.assistant.off);
+    expect(text()).toContain(t.assistant.unread);
+    act(() => root?.unmount()); host?.remove(); root = null; host = null;
+    stub({ "/institution/faculty-rules": () => Response.json(rules), "/institution/assistant-setting": () => Response.json({ error: "forbidden", code: "forbidden", messageKey: "errors.forbidden", status: 403 }, { status: 403 }) });
+    await mount("/ustanova/postavke/asistent", "assistant");
+    expect(text()).toContain(t.denied);
+    expect(text()).not.toContain(t.assistant.off);
+  });
+  it("kad pravila nisu dostupna, prekidač se i dalje čita i nudi se ponovni pokušaj", async () => {
+    stub({ "/institution/faculty-rules": () => Response.json({}, { status: 503 }), "/institution/assistant-setting": () => Response.json(setting(false)) });
     await mount("/ustanova/postavke/asistent", "assistant");
     expect(text()).toContain(t.assistant.off);
     expect(text()).toContain(t.unavailable);
