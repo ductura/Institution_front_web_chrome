@@ -5,7 +5,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "./fixtures/test";
 
-const PAGE = "/app/web/operater/mjerila-pilota";
+const PAGE = "/aplikacija/operater/mjerila-pilota";
 const ME = (roles: string[]) => ({ roles, displayName: "Operater A", institution: { slug: "izm", displayName: "Izmišljeni fakultet za testove" } });
 const FULL = {
   asOf: "2026-11-20T23:00:00.000Z",
@@ -41,8 +41,8 @@ const serious = async (page: Page) =>
 
 test("the operator lands on its own page from the app's home, inside the shell", async ({ page }) => {
   await fakeServer(page, ["network_engineer"], { status: 200, body: FULL });
-  await page.goto("/app/web/");
-  await expect(page).toHaveURL(/\/app\/web\/operater\/mjerila-pilota$/);
+  await page.goto("/aplikacija/");
+  await expect(page).toHaveURL(/\/aplikacija\/operater\/mjerila-pilota$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mjerila pilota");
   await expect(page).toHaveTitle("Mjerila pilota · Ductura");
   await expect(page.getByRole("complementary", { name: "Bočna navigacija" })).toBeVisible();
@@ -101,7 +101,7 @@ for (const roles of [["institution_admin"], ["teacher"], ["student"]]) {
   test(`a ${roles[0]} account is refused and the measures are never read`, async ({ page }) => {
     const seen = await fakeServer(page, roles, { status: 200, body: FULL });
     await page.goto(PAGE);
-    await expect(page).toHaveURL(/\/app\/web\/nema-ovlasti\?kind=denied$/);
+    await expect(page).toHaveURL(/\/aplikacija\/nema-ovlasti\?kind=denied$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nemate ovlasti za ovaj prikaz");
     await expect(page.getByText("Zabilježene predaje")).toHaveCount(0);
     expect(seen.metrics).toBe(0);

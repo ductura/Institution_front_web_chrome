@@ -13,10 +13,10 @@ export const BLOCKING = ["critical", "serious"];
 
 export type Theme = "dark" | "light";
 
-/** Opens a screen under /app/web for its role, in the default dark theme (D-188), and waits until it has settled. */
+/** Opens a screen under /aplikacija for its role, in the default dark theme (D-188), and waits until it has settled. */
 export async function open(page: Page, screen: Screen) {
   await fakeServer(page, screen.role);
-  await page.goto(`/app/web${screen.path}`);
+  await page.goto(`/aplikacija${screen.path}`);
   await page.waitForLoadState("networkidle");
   // The host shows the page once the session is read; a loading state is not the screen.
   await expect(page.locator("main").first()).toBeVisible();

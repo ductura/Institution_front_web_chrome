@@ -8,7 +8,7 @@ import { workTeamText } from "../../student/work-team/messages.hr";
 import { teacherTeamText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 const { default: TeamsPage } = await import("./TeamsPage");
 

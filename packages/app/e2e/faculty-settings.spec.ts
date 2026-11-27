@@ -24,7 +24,7 @@ for (const width of [390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     const writes: string[] = [];
     await fake(page, "institution_admin", writes);
-    await page.goto("/app/web/ustanova/postavke");
+    await page.goto("/aplikacija/ustanova/postavke");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Postavke fakulteta");
     await expect(page.getByText("Rok još nije određen (čeka odluku)")).toBeVisible();
     await expect(page.getByText("Na snazi je 1 od 1 obrazaca.")).toBeVisible();
@@ -44,10 +44,10 @@ for (const width of [390, 1280]) {
 test("student: „Moja prava” je statična uputa; nastavnik ne otvara postavke fakulteta", async ({ page }) => {
   const writes: string[] = [];
   await fake(page, "student", writes);
-  await page.goto("/app/web/moja-prava");
+  await page.goto("/aplikacija/moja-prava");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moja prava");
   await expect(page.getByText("Ova uputa čeka pravni pregled.")).toBeVisible();
   await axe(page);
-  await page.goto("/app/web/ustanova/postavke");
+  await page.goto("/aplikacija/ustanova/postavke");
   await expect(page).not.toHaveURL(/ustanova\/postavke/);
 });

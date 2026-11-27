@@ -14,7 +14,7 @@ describe("the questionnaire page is mounted", () => {
     expect(resolve(PATH, "teacher")).not.toMatchObject({ kind: "page" });
   });
   it("the Next page renders QuestionnairePage", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/zadaci/upitnici/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/zadaci/upitnici/page.tsx"), "utf8");
     expect(page).toContain("QuestionnairePage");
   });
 });

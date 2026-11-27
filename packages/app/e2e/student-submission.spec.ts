@@ -21,8 +21,8 @@ async function student(page: Page, workState: "not_started" | "in_progress" | "s
 
 test("a work not yet submitted opens on the declaration under the same base", async ({ page }) => {
   await student(page, "in_progress");
-  await page.goto(`/app/chrome${PATH}`);
-  await expect(page).toHaveURL(new RegExp(`/app/chrome${PATH}/izjava$`));
+  await page.goto(`/aplikacija${PATH}`);
+  await expect(page).toHaveURL(new RegExp(`/aplikacija${PATH}/izjava$`));
   await expect(page.getByRole("heading", { level: 1, name: "Izjava" })).toBeVisible();
 });
 
@@ -31,16 +31,16 @@ test("a submitted work opens on the receipt, read from the server", async ({ pag
   await page.route(`**/api/v1/student/assignments/${ID}/submission`, (route) => route.fulfill({
     status: 500, json: { code: "internal" },
   }));
-  await page.goto(`/app/web${PATH}`);
-  await expect(page).toHaveURL(new RegExp(`/app/web${PATH}/potvrda$`));
+  await page.goto(`/aplikacija${PATH}`);
+  await expect(page).toHaveURL(new RegExp(`/aplikacija${PATH}/potvrda$`));
   await expect(page.getByRole("heading", { level: 1, name: "Potvrda predaje" })).toBeVisible();
 });
 
 test("a notice not yet acknowledged comes first", async ({ page }) => {
   await student(page, "not_started", true);
   await page.route(`**/api/v1/student/assignments/${ID}/notice`, (route) => route.fulfill({ status: 503, json: { code: "unavailable" } }));
-  await page.goto(`/app/web${PATH}/pregled`);
-  await expect(page).toHaveURL(new RegExp(`/app/web/zadatak/${ID}$`));
+  await page.goto(`/aplikacija${PATH}/pregled`);
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/zadatak/${ID}$`));
 });
 
 test("a 401 sends the student to AAI@EduHr, back to the same step", async ({ page }) => {
@@ -50,7 +50,7 @@ test("a 401 sends the student to AAI@EduHr, back to the same step", async ({ pag
     contentType: "text/html; charset=utf-8",
     body: '<!doctype html><html lang="hr"><title>AAI@EduHr</title><p>Lažni AAI@EduHr</p></html>',
   }));
-  await page.goto(`/app/web${PATH}/slanje`);
+  await page.goto(`/aplikacija${PATH}/slanje`);
   await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
-  expect(new URL(page.url()).searchParams.get("returnTo")).toBe(`/app/web${PATH}/slanje`);
+  expect(new URL(page.url()).searchParams.get("returnTo")).toBe(`/aplikacija${PATH}/slanje`);
 });

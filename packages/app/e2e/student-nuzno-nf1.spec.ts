@@ -57,7 +57,7 @@ for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme });
       await student(page);
-      await page.goto("/app/web/zadaci");
+      await page.goto("/aplikacija/zadaci");
       const late = page.getByRole("listitem").filter({ hasText: "Sažetak izmišljenog članka" });
       await expect(late.getByText("Rok je prošao 10. 1. 2026.")).toBeVisible();
       const extended = page.getByRole("listitem").filter({ hasText: "Esej o izmišljenom gradu" });
@@ -74,7 +74,7 @@ for (const width of [390, 1280]) {
 
 test("P-1: the bell counts only known unread kinds, opens the list, and marks an entry read on the way", async ({ page }) => {
   const seen = await student(page);
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   const bell = page.getByRole("button", { name: "Obavijesti, nepročitanih: 1" });
   await expect(bell).toBeVisible();
   await bell.click();
@@ -84,27 +84,27 @@ test("P-1: the bell counts only known unread kinds, opens the list, and marks an
   await expect(list.getByRole("link", { name: /Rok za zadatak Esej o izmišljenom gradu: / })).toBeVisible();
   await axe(page);
   await list.getByRole("link", { name: /Nova verzija zadatka/ }).click();
-  await expect(page).toHaveURL(new RegExp(`/app/web/zadatak/${LATE}$`));
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/zadatak/${LATE}$`));
   await expect.poll(() => seen.reads).toEqual([`/api/v1/notifications/${N1}/read`]);
 });
 
 test("P-1: an unavailable inbox says so and does not claim there are none", async ({ page }) => {
   await student(page);
   await page.route("**/api/v1/notifications", (route) => route.fulfill({ status: 503, json: { code: "unavailable" } }));
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   await page.getByRole("button", { name: "Obavijesti" }).click();
   await expect(page.getByRole("dialog", { name: "Popis obavijesti" })).toContainText("Obavijesti trenutačno nisu dostupne. To ne znači da ih nema.");
 });
 
 test("P-11 and P-10: the home card carries a clean code to E-5; too many attempts has its own text, apart from the field", async ({ page }) => {
   const seen = await student(page);
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   const card = page.getByRole("region", { name: "Imate kod novog kolegija?" });
   const homeField = card.getByRole("textbox", { name: "Kod kolegija" });
   await expect(homeField).toHaveAttribute("maxlength", "32");
   await homeField.fill("kol-d 2026");
   await card.getByRole("button", { name: "Upiši" }).click();
-  await expect(page).toHaveURL(/\/app\/web\/upis\?kod=KOLD2026$/);
+  await expect(page).toHaveURL(/\/aplikacija\/upis\?kod=KOLD2026$/);
   const field = page.getByRole("textbox");
   await expect(field).toHaveValue("KOLD2026");
   await expect(field).toHaveAttribute("maxlength", "32");
@@ -120,7 +120,7 @@ test("P-11 and P-10: the home card carries a clean code to E-5; too many attempt
 
 test("P-15: a refused sign-in has its own text, names the faculty administrator and offers no retry", async ({ page }) => {
   await page.route("**/api/v1/me", (route) => route.fulfill({ status: 401, json: { code: "unauthorized" } }));
-  await page.goto("/app/web/prijava?greska=login_refused");
+  await page.goto("/aplikacija/prijava?greska=login_refused");
   const alert = page.getByRole("main").getByRole("alert");
   await expect(alert.getByRole("heading", { level: 2 })).toHaveText("Prijava je odbijena");
   await expect(alert).toContainText("To nije kvar prijave i ponovni pokušaj ga neće promijeniti.");
@@ -129,17 +129,17 @@ test("P-15: a refused sign-in has its own text, names the faculty administrator 
   await expect(alert.getByRole("link", { name: "Na početnu" })).toHaveAttribute("href", "/");
   await axe(page);
 
-  await page.goto("/app/web/prijava?greska=provider_unavailable");
+  await page.goto("/aplikacija/prijava?greska=provider_unavailable");
   await expect(page.getByRole("main").getByRole("alert").getByRole("heading", { level: 2 })).toHaveText("AAI@EduHr trenutačno ne odgovara");
 
-  await page.goto("/app/web/prijava?stanje=bezuloge");
+  await page.goto("/aplikacija/prijava?stanje=bezuloge");
   const card = page.getByRole("status").filter({ hasText: "Prijava je uspjela" });
   await expect(card).toContainText("Ulogu dodjeljuje administrator fakulteta.");
 });
 
 test("P-1: the bell works from the keyboard: Enter opens the list, Tab reaches an entry, Escape closes it", async ({ page }) => {
   const seen = await student(page);
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   const bell = page.getByRole("button", { name: "Obavijesti, nepročitanih: 1" });
   await bell.focus();
   await page.keyboard.press("Enter");
@@ -157,6 +157,6 @@ test("P-1: the bell works from the keyboard: Enter opens the list, Tab reaches a
   }
   expect(reached).toBe(true);
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(new RegExp(`/app/web/zadatak/${EXTENDED}$`));
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/zadatak/${EXTENDED}$`));
   await expect.poll(() => seen.reads).toEqual([`/api/v1/notifications/${N3}/read`]);
 });

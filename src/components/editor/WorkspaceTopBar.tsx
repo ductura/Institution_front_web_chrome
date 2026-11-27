@@ -15,7 +15,7 @@ import styles from "./WorkspaceTopBar.module.css";
 
 export type WorkspaceTopBarProps = {
   readonly assignmentId: string;
-  /** EDI-R02: the prefix the app is served under (/app/web or /app/chrome); "" when it is served at the root. */
+  /** EDI-R02: the prefix the app is served under (/aplikacija or /aplikacija); "" when it is served at the root. */
   readonly base?: string;
   /** The assignment's title, or null when the read could not give it. */
   readonly title: string | null;

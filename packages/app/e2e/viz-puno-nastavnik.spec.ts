@@ -32,7 +32,7 @@ for (const width of [390, 1280]) {
     test(`NZ-18: the course card names the role and the students, and opens the submitted work (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await teacher(page);
-      await page.goto("/app/web/nastavnik");
+      await page.goto("/aplikacija/nastavnik");
       await setTheme(page, theme);
       await expect(main(page).getByText("nositelj (Vi)").first()).toBeVisible();
       await expect(main(page).getByText("Vrijedi do 31. 12. 2026. u 23:59.").first()).toBeVisible();
@@ -51,13 +51,13 @@ for (const width of [390, 1280]) {
     test(`PG-15: the review names its course and task, and the interview shows the student's explanation (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await teacher(page);
-      await page.goto(`/app/web/nastavnik/rad/${PREDANI_RAD}/pregled`);
+      await page.goto(`/aplikacija/nastavnik/rad/${PREDANI_RAD}/pregled`);
       await setTheme(page, theme);
       await expect(main(page).getByText("Kolegij A · zadatak „Lokalni mediji i izborna kampanja”").first()).toBeVisible();
       await expect(main(page).getByText(/nije dostupan · Naziv zadatka nije dostupan/)).toHaveCount(0);
-      await expect(main(page).getByRole("link", { name: "Natrag na zadatak" })).toHaveAttribute("href", `/app/web/nastavnik/zadatak/${T1}/predaje`);
+      await expect(main(page).getByRole("link", { name: "Natrag na zadatak" })).toHaveAttribute("href", `/aplikacija/nastavnik/zadatak/${T1}/predaje`);
       await axe(page, info, `pregled-${width}-${theme}`);
-      await page.goto(`/app/web/nastavnik/rad/${PREDANI_RAD}/priprema-razgovora`);
+      await page.goto(`/aplikacija/nastavnik/rad/${PREDANI_RAD}/priprema-razgovora`);
       await setTheme(page, theme);
       await expect(main(page).getByText("Izmišljeno objašnjenje: odlomak je nastao nakon razgovora s mentorom.")).toBeVisible();
       await axe(page, info, `priprema-${width}-${theme}`);
@@ -66,7 +66,7 @@ for (const width of [390, 1280]) {
     test(`MK-16: the mentorship lists its own key dates and opens T1's work, the document the student writes (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await teacher(page);
-      await page.goto("/app/web/nastavnik/mentorstva");
+      await page.goto("/aplikacija/nastavnik/mentorstva");
       await setTheme(page, theme);
       await expect(main(page).getByText("Rok predaje: 8. 11. 2026. u 23:59")).toBeVisible();
       await expect(main(page).getByText("Za ovo mentorstvo još nema rokova ni termina.")).toBeVisible();
@@ -83,11 +83,11 @@ for (const width of [390, 1280]) {
 test("NZ-18: the aggregate links each submitted work, and the extension lists the students by name", async ({ page }, info) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await teacher(page);
-  await page.goto("/app/web/nastavnik/zbirni");
-  await expect(main(page).getByRole("link", { name: "Demo Kompost" }).first()).toHaveAttribute("href", `/app/web/nastavnik/rad/${PREDANI_RAD}`);
+  await page.goto("/aplikacija/nastavnik/zbirni");
+  await expect(main(page).getByRole("link", { name: "Demo Kompost" }).first()).toHaveAttribute("href", `/aplikacija/nastavnik/rad/${PREDANI_RAD}`);
   await expect(main(page).getByRole("link", { name: "Produljenje" }).first()).toBeVisible();
   await axe(page, info, "zbirni");
-  await page.goto(`/app/web/nastavnik/zadatak/${T1}/produljenje`);
+  await page.goto(`/aplikacija/nastavnik/zadatak/${T1}/produljenje`);
   await expect(main(page).getByText(/^Demo Kompost · novi rok 28\. 12\. 2026\./)).toBeVisible();
   await axe(page, info, "produljenje");
 });
@@ -95,7 +95,7 @@ test("NZ-18: the aggregate links each submitted work, and the extension lists th
 test("MK-16: a slot is confirmed by keyboard, and the page records the server's answer for that slot", async ({ page }, info) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await teacher(page);
-  await page.goto(`/app/web/nastavnik/rad/${DOKUMENT_T1}/konzultacije`);
+  await page.goto(`/aplikacija/nastavnik/rad/${DOKUMENT_T1}/konzultacije`);
   await expect(main(page).getByText("Tema: Metoda istraživanja")).toBeVisible();
   const confirm = main(page).getByRole("button", { name: "Potvrdi", exact: true });
   await confirm.focus();

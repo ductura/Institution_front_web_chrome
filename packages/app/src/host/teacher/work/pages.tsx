@@ -4,6 +4,7 @@ import { Button } from "@ductura/ui";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { createApi } from "@/client/api";
+import { routerPath } from "../../../bases";
 import { watchSessionEnd } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
 import { readTeacherWorkAccess } from "@/client/teacher-work";
@@ -120,9 +121,9 @@ function OpenWork({ documentId, path, view, session }: {
   const workHref = appHref(base, path);
   if (ended) return <WorkStatus title={title}><p role="status">{t.liveView.connection.signedOut}</p></WorkStatus>;
   if (view === "consultations") {
-    // N-12 (WEB-2161). The router adds the basePath itself, so it gets the path without "/app".
+    // N-12 (WEB-2161). The router adds the basePath itself, so it gets the path without "/aplikacija".
     return <N12Consultations key={documentId} documentId={documentId} workHref={workHref}
-      appPath={`${workHref.slice("/app".length)}/konzultacije`} />;
+      appPath={`${routerPath(workHref)}/konzultacije`} />;
   }
   if (view === "comparison") {
     return <N11Compare key={documentId} port={n11Port} documentId={documentId} signInHref={workHref} workHref={workHref}

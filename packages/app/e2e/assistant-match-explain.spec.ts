@@ -8,7 +8,7 @@ const ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c13";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d13";
 const SCOPE = "d".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0013";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 const MESSAGE = "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e13";
 const FINDING = {
   segmentRef: "izmisljeni-odlomak-1", conversationId: "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d13", messageId: MESSAGE,

@@ -118,14 +118,14 @@ describe("N-04 real port (PIL-K-N04)", () => {
     const read = await loadRoster(port(vector("teacher.course-students.get", "unauthorized")), COURSE);
     expect(read).toEqual({ kind: "signedOut" });
     const left: string[] = [];
-    signInWhenSignedOut(read, "/app/web", COURSE, (href) => left.push(href));
-    expect(left).toEqual([signInHref(`/app/web/nastavnik/kolegiji/${COURSE}/studenti`)]);
-    signInWhenSignedOut({ kind: "unavailable" }, "/app/web", COURSE, (href) => left.push(href));
+    signInWhenSignedOut(read, "/aplikacija", COURSE, (href) => left.push(href));
+    expect(left).toEqual([signInHref(`/aplikacija/nastavnik/kolegiji/${COURSE}/studenti`)]);
+    signInWhenSignedOut({ kind: "unavailable" }, "/aplikacija", COURSE, (href) => left.push(href));
     expect(left).toHaveLength(1);
   });
 
   it("the route mounts the real port, not the default", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/nastavnik/kolegiji/[courseId]/studenti/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/nastavnik/kolegiji/[courseId]/studenti/page.tsx"), "utf8");
     expect(page).toMatch(/from "\.\.\/(?:\.\.\/)*src\/host\/teacher\/n04\/CourseStudentsPage"/);
     const wrapper = readFileSync(join(import.meta.dirname, "CourseStudentsPage.tsx"), "utf8");
     expect(wrapper).toMatch(/courseStudentsPort\(\)/);
