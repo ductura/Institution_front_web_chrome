@@ -53,10 +53,11 @@ test("renders the notice, writes nothing on opening, waits for the acknowledgmen
   await page.goto(`/aplikacija${PATH}`);
   await expect(page.getByRole("heading", { name: TITLE })).toBeVisible();
   await expect(page.getByRole("link", { name: "Moji kolegiji i zadaci" })).toHaveAttribute("href", "/aplikacija/zadaci");
-  // P-8: five lines on top, with the line that a confirmation is not a consent.
+  // P-8 + ASIST-S1: six lines (the Assistant line is new), with the line that a confirmation is not a consent.
   const summary = page.getByRole("region", { name: "Ukratko" });
-  await expect(summary.getByRole("listitem")).toHaveCount(5);
+  await expect(summary.getByRole("listitem")).toHaveCount(6);
   await expect(summary).toContainText("lektoriranje i jezična provjera");
+  await expect(summary).toContainText("Asistent u Ducturi radi u pilotu");
   await expect(summary).toContainText("Potvrda nije privola.");
   await expect(page.getByText(/otvorena|zabilježeno da je obavijest/)).toHaveCount(0);
   expect(opens).toBe(0);
