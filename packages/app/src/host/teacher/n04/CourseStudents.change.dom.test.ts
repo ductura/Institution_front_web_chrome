@@ -73,3 +73,21 @@ describe("CourseStudents removal and return (F4-PM1-R09)", () => {
     expect(button(t.remove)).toBeUndefined();
   });
 });
+
+describe("CourseStudents mounts the course's Asistent switch (F4-PM1-R07)", () => {
+  let root: Root | undefined;
+  afterEach(() => { act(() => root?.unmount()); document.body.innerHTML = ""; });
+  const roster = async () => ({ kind: "ready" as const, data: { courseName: "Izmišljeni kolegij", students: STUDENTS } });
+
+  it("shows the card with the server's state when a port is given, and not otherwise", async () => {
+    const assistant = { read: vi.fn(async () => ({ kind: "ready" as const, enabled: true })), write: vi.fn() };
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => { root?.render(h(HostContext.Provider, { value: HOST }, h(CourseStudents, { courseId: "c1", port: { read: roster }, assistant }))); });
+    expect(assistant.read).toHaveBeenCalledWith("c1");
+    expect(document.querySelector('[data-testid="course-assistant-state"]')).not.toBeNull();
+    await act(async () => { root?.render(h(HostContext.Provider, { value: HOST }, h(CourseStudents, { courseId: "c1", port: { read: roster } }))); });
+    expect(document.querySelector('[data-testid="course-assistant"]')).toBeNull();
+  });
+});
