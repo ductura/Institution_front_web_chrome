@@ -133,7 +133,7 @@ test("F4-PM2-R08: the overview never shows an unread accommodation mark as unmar
     asked.push(route.request().url());
     return route.fulfill(json({ marked: route.request().url().includes(S1) }));
   });
-  await page.goto(`/app/web/nastavnik/zbirni?kolegij=${K1}`);
+  await page.goto(`/aplikacija/nastavnik/zbirni?kolegij=${K1}`);
   const table = page.getByRole("region", { name: "Tablica predaja" }).first();
   await expect(table.getByRole("row", { name: /Ana Izmišljenić/ })).toBeVisible();
   await expect(page.getByText("Oznake odobrene prilagodbe trenutačno nisu dostupne. Pokušajte ponovno.").first()).toBeVisible();
