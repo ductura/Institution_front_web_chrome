@@ -71,6 +71,17 @@ describe("PracticeJournalPage in the browser", () => {
     expect(text()).not.toContain(t.noEntries);
   });
 
+  it("frames the read error as an alert, marks an unsigned entry 'Čeka potpis' and says an ended practice takes no entries", async () => {
+    const unsigned = { entryId: "e9", date: "2026-03-20", hours: 1, text: "Izmišljen zapis.", correctsEntryId: null, createdAt: "2026-03-20T10:00:00.000Z" };
+    let d = apiOf({ "practice.placements.get": () => ok({ placements: [PLACEMENT] }), "practice.entries.get": () => ({ ok: false, status: 503, code: "unavailable" }) });
+    await render(d.call);
+    expect(host.querySelector("[role=alert]")?.textContent).toContain(t.entriesUnavailable);
+    d = apiOf({ "practice.placements.get": () => ok({ placements: [{ ...PLACEMENT, endsOn: "2026-03-31", signedThrough: null }] }), "practice.entries.get": () => ok({ entries: [unsigned], signoffs: [] }) });
+    await render(d.call);
+    expect(text()).toContain(t.unsignedMark);
+    expect(text()).toContain(t.endedNote);
+  });
+
   it("reads another student's practice as not available", async () => {
     const { call } = apiOf({ "practice.placements.get": () => ok({ placements: [PLACEMENT] }), "practice.entries.get": () => ({ ok: false, status: 404, code: "not_found" }) });
     await render(call);

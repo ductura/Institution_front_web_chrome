@@ -10,6 +10,7 @@ import { formatDateHr, formatDateTimeHr } from "../../../../../../src/lib/i18n/h
 import { useHost } from "../../context";
 import { useTeacherRead } from "../../pages";
 import { countText, groupByDate, correctedIds, placementState, signoffsNewestFirst, signedThroughOf, todayOf } from "../../student/practice-journal/model";
+import { DeniedState, LoadAlert } from "../../states/States";
 import { TeacherPage } from "../shell/TeacherPage";
 import { mentorJournalText as t } from "./messages.hr";
 import { checkSign, placementRows, studentIndex, suggestedThrough, waitingFor, type SignError } from "./model";
@@ -42,15 +43,18 @@ export default function MentorJournalPage({ works = worksCall, call = defaultCal
     const result = await readMentoredWorks(works());
     return result.kind === "ready" ? { kind: "ready", value: result.works } : result;
   });
+  if (read?.kind === "notTeacher") {
+    return <DeniedState title={t.deniedTitle} backLabel={t.backToOwn} backHref={appHref(base, "/nastavnik")} />;
+  }
   return (
+    <>
+    <p><a href={appHref(base, "/nastavnik/mentorstva")}><span aria-hidden="true">← </span>{t.backToMentorships}</a></p>
     <TeacherPage title={t.title} lead={t.lead} loading={t.loading} read={read} retry={retry}
       unavailable={t.unavailable} retryLabel={t.retry}
       ready={(list) => (
-        <>
-          <p><a href={appHref(base, "/nastavnik/mentorstva")}><span aria-hidden="true">← </span>{t.backToMentorships}</a></p>
-          <Journals works={list} call={call} now={now} base={base} />
-        </>
+        <Journals works={list} call={call} now={now} base={base} />
       )} />
+    </>
   );
 }
 
@@ -93,8 +97,7 @@ function Journals({ works, call, now, base }: { works: readonly MentoredWork[]; 
   else if (placements.kind === "unavailable") {
     list = (
       <Card level={2} title={t.placementsTitle}>
-        <p role="alert">{t.placementsUnavailable}</p>
-        <p><Button tone="quiet" onClick={reload}>{t.retry}</Button></p>
+        <LoadAlert body={t.placementsUnavailable} retry={{ label: t.retry, onRetry: reload }} />
       </Card>
     );
   } else if (mentorships.length === 0 && placements.placements.length === 0) {
@@ -159,12 +162,11 @@ function PlacementJournal({ placement, call, here, onChanged }: { placement: Pla
   }, [attempt, placement.placementId]);
 
   if (read === null || read.kind === "signedOut") return <RouteLoading label={t.loadingEntries} />;
-  if (read.kind === "notFound") return <Card level={2} title={t.entriesTitle}><p role="alert">{t.placementGone}</p></Card>;
+  if (read.kind === "notFound") return <Card level={2} title={t.entriesTitle}><LoadAlert body={t.placementGone} /></Card>;
   if (read.kind === "unavailable") {
     return (
       <Card level={2} title={t.entriesTitle}>
-        <p role="alert">{t.entriesUnavailable}</p>
-        <p><Button tone="quiet" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button></p>
+        <LoadAlert body={t.entriesUnavailable} retry={{ label: t.retry, onRetry: () => setAttempt((n) => n + 1) }} />
       </Card>
     );
   }
@@ -247,9 +249,9 @@ function PlacementJournal({ placement, call, here, onChanged }: { placement: Pla
               <li key={s.signoffId} data-testid="signoff">
                 {t.signoffLine
                   .replace("{mentor}", `${s.mentor.givenName} ${s.mentor.familyName}`.trim() || t.mentorUnnamed)
-                  .replace("{date}", formatDateHr(s.throughDate)).replace("{n}", String(s.entryCount)).replace("{signedAt}", formatDateTimeHr(s.signedAt))}
+                  .replace("{date}", formatDateHr(s.throughDate)).replace("{signedAt}", formatDateTimeHr(s.signedAt))}
                 {s.comment !== null && <><br /><span>{t.signoffComment.replace("{comment}", s.comment)}</span></>}
-                <br /><span>{t.signoffHash.replace("{hash}", s.entriesSha256)}</span>
+                <br /><span>{t.signoffCount.replace("{n}", String(s.entryCount))}</span>
               </li>
             ))}
           </ul>
