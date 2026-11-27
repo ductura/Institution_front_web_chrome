@@ -23,6 +23,7 @@ import type { EvidenceBySource } from "../stem/quote-check";
 import { loadQuoteEvidence, quotedSources } from "./quote-evidence";
 
 import { pregledHr as t } from "./messages.hr";
+import { onPregledView, takePregledView } from "./pregled-view";
 import {
   abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, outlineRows, removeTerm, saveTerms, termCounts,
   WHOLE, MAX_DEFINITION_LENGTH, MAX_TERM_LENGTH, type PregledScope, type Term, type TermStorage,
@@ -42,7 +43,8 @@ export function PregledGroup({ editor, documentId, assignmentId, enabledCheckIds
   /** Check ids the institution enabled; null when none were read (every check of this build runs). */
   enabledCheckIds?: readonly string[] | null;
 }) {
-  const [view, setView] = useState<View>("nacrt");
+  const [view, setView] = useState<View>(() => takePregledView() ?? "nacrt");
+  useEffect(() => onPregledView(setView), []);
   const [wholeWork, setWholeWork] = useState(false);
   const snapshot = useEditorSnapshot(editor);
   const doc = useMemo(() => (snapshot ? readReviewDoc(snapshot.doc) : null), [snapshot?.doc]); // eslint-disable-line react-hooks/exhaustive-deps

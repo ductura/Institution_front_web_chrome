@@ -47,6 +47,7 @@ import { StudentBibliographyHost } from "../editor/bibliography/student/StudentB
 import { useLocalEditor } from "../../../../../src/components/editor/LocalDocument.tsx";
 import { courseIdOf } from "../editor/sources-mention/required-literature";
 import { MarksHost } from "../editor/marks/MarksHost";
+import { HintsHost } from "../editor/hints/HintsHost";
 import { ReadAloudHost } from "../editor/read-aloud/ReadAloudHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
 import { ChapterMarks } from "../editor/left/ChapterMarks";
@@ -185,6 +186,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               <ImportHost documentId={documentId} />
               <RulesHost role="student" />
               <MarksHost />
+              <HintsHost scope={scope} workId={documentId} />
               <ReadAloudHost />
               {/* EDI-R16: the "Započnite rad" wizard lives here, outside the closable Napredak section, so its dialog is never hidden. */}
               <StartWorkHost workId={assignmentId} />
