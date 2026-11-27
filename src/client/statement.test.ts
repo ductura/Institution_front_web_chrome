@@ -73,7 +73,7 @@ describe("statement adapter (PIL-K-IZJAVA-PORT)", () => {
     await s.port.read(ASSIGNMENT);
     expect(await s.port.saveHumanHelp(ASSIGNMENT, { kind: "proofreading", text: " Izmišljena lektura " })).toEqual({ kind: "saved" });
     const put = s.sent.find((r) => r.method === "PUT");
-    expect(matchesSchema(contracts["student.declaration.put"].body as Schema, put?.body)).toBe(true);
+    expect(matchesSchema(contracts["student.declaration-second.put"].body as Schema, put?.body)).toBe(true);
     expect(put?.body).toMatchObject({
       baseVersion: 0, revision: 1, form: FORM, confirm: false,
       humanHelp: { received: true, entries: [{ kind: "language", text: "Izmišljena lektura" }] },
@@ -100,7 +100,7 @@ describe("statement adapter (PIL-K-IZJAVA-PORT)", () => {
     expect(await full.port.saveHumanHelp(ASSIGNMENT, { kind: "none", text: "" })).toEqual({ kind: "saved" });
     const ids = (full.sent.at(-1)?.body as { ai: { externalAttachmentIds: string[] } }).ai.externalAttachmentIds;
     expect(ids).toEqual([...named, ...held.slice(0, 6).map((u) => u.externalAttachmentId)]);
-    expect(matchesSchema(contracts["student.declaration.put"].body as Schema, full.sent.at(-1)?.body)).toBe(true);
+    expect(matchesSchema(contracts["student.declaration-second.put"].body as Schema, full.sent.at(-1)?.body)).toBe(true);
   });
 
   it("adds a new printout to the ones the draft already names, and links it once", async () => {
@@ -170,7 +170,7 @@ describe("statement adapter: tools outside Ductura (ED-12)", () => {
     const next = [{ tool: "Rječnik HJP", purpose: "provjera značenja", phase: "pisanje" }, { tool: "Zotero", purpose: "popis literature", phase: "istraživanje" }];
     expect(await s.port.saveTools?.(ASSIGNMENT, next)).toEqual({ kind: "saved" });
     const put = s.sent.find((r) => r.method === "PUT");
-    expect(matchesSchema(contracts["student.declaration.put"].body as Schema, put?.body)).toBe(true);
+    expect(matchesSchema(contracts["student.declaration-second.put"].body as Schema, put?.body)).toBe(true);
     expect(put?.body).toMatchObject({
       baseVersion: 1,
       ai: { use: "used", declaredTools: [tool, { toolLabel: "Zotero", purposeText: "popis literature", phaseText: "istraživanje" }] },
@@ -183,7 +183,7 @@ describe("statement adapter: tools outside Ductura (ED-12)", () => {
     await s.port.read(ASSIGNMENT);
     expect(await s.port.saveTools?.(ASSIGNMENT, [])).toEqual({ kind: "saved" });
     const put = s.sent.find((r) => r.method === "PUT");
-    expect(matchesSchema(contracts["student.declaration.put"].body as Schema, put?.body)).toBe(true);
+    expect(matchesSchema(contracts["student.declaration-second.put"].body as Schema, put?.body)).toBe(true);
     expect((put?.body as { ai: { declaredTools: unknown[] } }).ai.declaredTools).toEqual([]);
   });
 });

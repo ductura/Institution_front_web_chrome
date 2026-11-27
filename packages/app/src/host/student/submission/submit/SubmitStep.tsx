@@ -4,7 +4,7 @@
 // src/components/student/Submission.tsx (evidence.open.post; the submission now on submission.submit-second.post), with the
 // transport of "Provjeri stanje predaje" (readSubmittedWork), the extended deadline (C-15), the states
 // of the prototype, aria-disabled instead of disabled, and a backdrop click that closes PD-3 (R-30).
-// PIL-K-IZJAVA-VRATA: the declaration is read from the server (student.declaration.get), never from this
+// PIL-K-IZJAVA-VRATA: the declaration is read from the server (student.declaration-second.get), never from this
 // browser; a failed read keeps sending closed, and the server's 409 declaration_required is a warning.
 import { Button, Dialog, StepActions, StepCheck, StepKv, StepLoading, StepNav, StepPanel, StepSpinner } from "@ductura/ui";
 import { useRouter } from "next/navigation";

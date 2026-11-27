@@ -2,7 +2,7 @@
 
 // WEB-NUZ-PREDAJA-1 (NF-3 PR-2, NF-2 P-11): the one source of the declaration's state for everything
 // before the submission. The rehearsal, the workspace's top bar and steps 3 and 4 of the submission all
-// read it here, through the declaration client (student.declaration.get), never from this browser:
+// read it here, through the declaration client (student.declaration-second.get), never from this browser:
 // neither its storage nor the address step 2 hands over (PIL-K-IZJAVA-VRATA). A failed read keeps
 // sending closed (PRODUCT §5 rule 11); the server checks again on submission.
 import { useCallback, useEffect, useRef, useState } from "react";

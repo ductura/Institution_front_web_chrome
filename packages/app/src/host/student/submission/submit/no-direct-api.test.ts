@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // WEB-2109, PIL-K-IZJAVA-VRATA: step 4 reaches the server only through the shared client, and the
-// declaration's gate only through student.declaration.get (summary/declaration-gate.ts).
+// declaration's gate only through student.declaration-second.get (summary/declaration-gate.ts).
 const FORBIDDEN = /\bfetch\s*\(|XMLHttpRequest|\bWebSocket\b|\bEventSource\b|sendBeacon|\baxios\b|["'`]\/?api\/|<form\b[^>]*\baction\s*=/;
 const BROWSER_DECLARATION = /sessionStorage|predaja\/Declaration|useSessionTag|confirmationKey|DECLARED_PARAM|isDeclared|[?&]izjava=/;
 const sources = (dir: string) => readdirSync(dir).filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f) && !/\.fixture\.ts$/.test(f));

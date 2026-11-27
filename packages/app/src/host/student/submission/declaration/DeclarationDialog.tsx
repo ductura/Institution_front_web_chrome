@@ -6,7 +6,7 @@
 // halves), and closing it (Zatvori, Escape) leaves the student on the step that opened it, with the
 // focus back on what opened it (the shared Dialog). Only the server's answer checks the box, and only a
 // confirmation the server holds for the current revision of the text counts as held: that is the gate's
-// word (student.declaration.get read per revision), not the step's, which also counts a stale one.
+// word (student.declaration-second.get read per revision), not the step's, which also counts a stale one.
 import { Button, Dialog, StepCheck, StepKv, StepLoading } from "@ductura/ui";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 

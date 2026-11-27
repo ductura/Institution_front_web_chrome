@@ -40,7 +40,7 @@ function proofsDetail(proofs: ProofsRead | undefined): string {
   return proofs.open === 0 ? t.proofsNoneOpen : t.proofsOpen(proofs.open, proofs.total);
 }
 
-/** The faculty's declaration form, as student.declaration.get names it (OD-11), never a guess. */
+/** The faculty's declaration form, as student.declaration-second.get names it (OD-11), never a guess. */
 function formsDetail(gate: GateState | undefined): string {
   if (gate === undefined || gate.kind === "unavailable" || gate.kind === "signedOut") return t.unavailable;
   if (gate.kind === "loading") return t.formsLoading;
@@ -51,7 +51,7 @@ function formsDetail(gate: GateState | undefined): string {
 /**
  * The rows the rehearsal adds to its parts. Uncited sources are read from the
  * text; the mentor's proofs from student.source-proof-requests.get and the
- * faculty's form from student.declaration.get (P-16). The faculty's rules have
+ * faculty's form from student.declaration-second.get (P-16). The faculty's rules have
  * no route a student may read (only institution.faculty-rules.get for the
  * institution): the row says that the check is not there yet, never a count.
  */
