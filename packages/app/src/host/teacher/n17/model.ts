@@ -194,3 +194,46 @@ export function workHref(row: N17Row): string | null {
   const id = row.documentId;
   return typeof id === "string" && /^[\w-]+$/.test(id) ? `/nastavnik/rad/${encodeURIComponent(id)}` : null;
 }
+
+// NAS-R15 (NZ-11): filters by state and group, and "Nije započelo n". Reading only; nothing ranks by a figure.
+export type N17StateFilter = "" | "notStarted" | "writing" | "submitted" | "late" | "revision";
+export const N17_STATE_FILTERS: readonly Exclude<N17StateFilter, "">[] = ["notStarted", "writing", "submitted", "late", "revision"];
+
+export function rowInState(row: N17Row, filter: Exclude<N17StateFilter, "">): boolean {
+  switch (filter) {
+    case "notStarted": return !row.submitted && (row.phase === "notStarted" || row.phase === "unconfirmed");
+    case "writing": return !row.submitted && row.phase === "writing";
+    case "submitted": return row.submitted;
+    case "late": return row.submitted && row.afterDeadline;
+    case "revision": return row.revision !== undefined && row.revision !== null;
+  }
+}
+
+/** Rows in the chosen state ("" = all) and group ("" = all); order is kept. */
+export function filteredRows(rows: readonly N17Row[], state: N17StateFilter, group: string): readonly N17Row[] {
+  return rows.filter((r) => (state === "" || rowInState(r, state)) && (group === "" || r.group === group));
+}
+
+/** "Sva stanja (n)" and one option per state with its count over all rows of all cards. */
+export function stateFilterOptions(rows: readonly N17Row[]): readonly { value: string; label: string }[] {
+  return [
+    { value: "", label: `${text.filters.allStates} (${rows.length})` },
+    ...N17_STATE_FILTERS.map((value) => ({ value, label: `${text.filters.state[value]} (${rows.filter((r) => rowInState(r, value)).length})` })),
+  ];
+}
+
+/** "Sve grupe (n)" and "Grupa X (n)" alphabetically; empty when no row has a group. */
+export function groupFilterOptions(rows: readonly N17Row[]): readonly { value: string; label: string }[] {
+  const counts = new Map<string, number>();
+  for (const r of rows) if (r.group !== null && r.group !== "") counts.set(r.group, (counts.get(r.group) ?? 0) + 1);
+  if (counts.size === 0) return [];
+  return [
+    { value: "", label: `${text.filters.allGroups} (${rows.length})` },
+    ...[...counts].sort(([a], [b]) => compareHr(a, b)).map(([value, n]) => ({ value, label: `${value} (${n})` })),
+  ];
+}
+
+/** Every row of every card that was read. */
+export function allRows(cards: readonly N17Card[]): readonly N17Row[] {
+  return cards.flatMap((c) => c.rows ?? []);
+}

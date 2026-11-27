@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 
+import { routerPath } from "../../../bases";
+
 import { createApi } from "@/client/api";
 import { assignmentSetupMessages } from "@/components/teacher/TeacherSetup/messages.hr";
 import { newAssignmentHref } from "@/components/teacher/links";
@@ -38,7 +40,7 @@ export default function NewAssignmentPage({ courseId }: { courseId?: string | st
           <section aria-labelledby="odabir-kolegija">
             <h2 id="odabir-kolegija">{assignmentSetupMessages.choose}</h2>
             <ul>{courses.map(({ id, name, academicYear }) => (
-              <li key={id}><Link href={href(newAssignmentHref(id)).slice("/app".length)}>{name} · {academicYear}</Link></li>
+              <li key={id}><Link href={routerPath(href(newAssignmentHref(id)))}>{name} · {academicYear}</Link></li>
             ))}</ul>
           </section>
         );

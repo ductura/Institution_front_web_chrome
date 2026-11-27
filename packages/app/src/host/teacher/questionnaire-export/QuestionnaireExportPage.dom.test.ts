@@ -8,7 +8,7 @@ import { questionnaireExportText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
 const download = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 vi.mock("../../../../../../src/components/editor/EarlierDraft", () => ({ downloadBlob: download }));
 const { default: QuestionnaireExportPage } = await import("./QuestionnaireExportPage");

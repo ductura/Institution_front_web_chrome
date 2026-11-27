@@ -14,7 +14,7 @@ describe("StudentDataDownloadPage", () => {
     if (page === null) throw new Error("no public route");
     const download = vi.fn<Download>();
     const html = renderToStaticMarkup(
-      createElement(HostContext, { value: { base: "/app/web", page, role: null } },
+      createElement(HostContext, { value: { base: "/aplikacija", page, role: null } },
         createElement(StudentDataDownloadPage, { token: TOKEN, download, save: vi.fn<Save>() })),
     );
     expect(html).toContain("<h1>Izvoz mojih podataka</h1>");

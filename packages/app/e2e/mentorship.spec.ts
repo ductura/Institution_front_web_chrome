@@ -36,7 +36,7 @@ test("the student picks a teacher, sends a request, sees a declined one as decli
     rows[0] = { ...REQUEST, state: "withdrawn", endedAt: "2026-11-21T12:00:00.000Z" };
     return route.fulfill({ json: { requestId: REQUEST.requestId, state: "withdrawn" } });
   });
-  await page.goto("/app/web/zadaci/mentorstvo");
+  await page.goto("/aplikacija/zadaci/mentorstvo");
   await expect(page.getByRole("heading", { name: s.title })).toBeVisible();
   await expect(page.getByText(s.unavailable)).toHaveCount(0);
   await expect(page.getByText(s.status.declined, { exact: true })).toBeVisible();
@@ -57,7 +57,7 @@ test("when the routes fail the page says unavailable, never an empty list", asyn
   await session(page, "student");
   await page.route("**/api/v1/student/**", (route) => route.fulfill({ status: 503, json: { code: "internal" } }));
   await page.route("**/api/v1/mentorship-requests/**", (route) => route.fulfill({ status: 503, json: { code: "internal" } }));
-  await page.goto("/app/web/zadaci/mentorstvo");
+  await page.goto("/aplikacija/zadaci/mentorstvo");
   await expect(page.getByText(s.unavailable)).toBeVisible();
   await expect(page.getByText(s.empty)).toHaveCount(0);
 });
@@ -66,7 +66,7 @@ test("the teacher's page says the requests are unavailable and shows no success"
   await session(page, "teacher");
   await page.route("**/api/v1/teacher/mentorships", (route) => route.fulfill({ json: { works: [] } }));
   await page.route("**/api/v1/teacher/mentorship-requests", (route) => route.fulfill({ status: 503, json: { code: "unavailable" } }));
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   await expect(page.getByRole("heading", { name: "Radovi uz mentora" })).toBeVisible();
   await expect(page.getByText(messagesHr.mentorshipRequests.unavailable)).toBeVisible();
   await expect(page.getByText("Nemate mentorstava")).toBeVisible();

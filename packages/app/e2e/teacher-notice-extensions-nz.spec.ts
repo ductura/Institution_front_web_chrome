@@ -60,7 +60,7 @@ const preview = (page: Page) => page.getByRole("region", { name: "Ovako će stud
 
 test("NZ-7a: the preview allows all five real purposes, in the order of the article, with the student's word range", async ({ page }) => {
   await teacher(page);
-  await page.goto(`/app/web/nastavnik/zadatak/${A1}/uredi`);
+  await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/uredi`);
   const block = preview(page);
   await expect(block).toBeVisible();
   await expect(block.getByRole("definition")).toHaveText([
@@ -77,14 +77,14 @@ test("NZ-7a: the preview allows all five real purposes, in the order of the arti
 for (const purpose of AI_PURPOSES) {
   test(`NZ-7a: a version allowing only ${purpose} shows it as allowed, as the student sees it`, async ({ page }) => {
     await teacher(page, { ...VERSION, aiPurposes: [purpose] });
-    await page.goto(`/app/web/nastavnik/zadatak/${A1}/uredi`);
+    await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/uredi`);
     await expect(preview(page).getByRole("definition").nth(1)).toHaveText(`Asistent je dopušten za: ${labels[purpose]}`);
   });
 }
 
 test("NZ-6: the filter, by keyboard, keeps one student's extensions and those for all; the hidden reason is said", async ({ page }) => {
   await teacher(page);
-  await page.goto(`/app/web/nastavnik/zadatak/${A1}/produljenje`);
+  await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/produljenje`);
   const list = page.getByRole("region", { name: "Produljeni rokovi" });
   const rows = list.getByRole("listitem");
   await expect(rows).toHaveCount(2);
@@ -115,7 +115,7 @@ for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 900 });
       await teacher(page);
       for (const path of ["uredi", "produljenje"]) {
-        await page.goto(`/app/web/nastavnik/zadatak/${A1}/${path}`);
+        await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/${path}`);
         await page.locator("html").evaluate((html, value) => html.setAttribute("data-theme", value), theme);
         await expect(path === "uredi" ? preview(page) : page.getByRole("region", { name: "Produljeni rokovi" })).toBeVisible();
         expect(await axe(page)).toEqual([]);

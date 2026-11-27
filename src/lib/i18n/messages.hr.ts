@@ -955,6 +955,12 @@ export const hr = {
       reload: "Učitaj aktualnu verziju",
       missing: "Zadatak nije dostupan ovom računu.",
       unavailable: "Zadatak trenutačno nije moguće učitati. Pokušajte ponovno.",
+      confirm: {
+        title: "Objaviti verziju {n}?",
+        lead: "Mijenja se ono što student čita u obavijesti, pa će verziju {n} morati ponovno potvrditi prije nastavka pisanja. Već napisan tekst ostaje kakav jest. Mijenja se:",
+        publish: "Objavi verziju {n}",
+        cancel: "Natrag na izmjene",
+      },
       fields: {
         title: "Naslov",
         instructions: "Upute studentima",

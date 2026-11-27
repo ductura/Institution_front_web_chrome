@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 // INT-10 (DAN-887): the system tests run what is shipped. The browser has one
 // origin, the Preloader's local edge (deploy/edge/dev-proxy.mjs of
 // ductura/Preloader): `/` is the Preloader's build, `/api/v1/*` the real
-// Institution_server and `/app/web/*` the production build of packages/app
+// Institution_server and `/aplikacija/*` the production build of packages/app
 // (`pnpm build` + `pnpm start` in this repo). The root Next app in src/app is
 // not served.
 const webRoot = fileURLToPath(new URL('../..', import.meta.url));
@@ -20,13 +20,13 @@ if (!Number.isInteger(port) || port < 1024 || port > 65535 || port === 4000 || p
 export const webOrigin = `http://localhost:${port}`;
 export const oidcOrigin = 'http://localhost:8090';
 /** Where packages/app answers behind the edge (README of packages/app). */
-export const appBase = '/app/web';
+export const appBase = '/aplikacija';
 /** The direct address of Institution_server, for the health check after a restart. */
 export const serverHealthUrl = 'http://127.0.0.1:4000/api/v1/health';
 /** The host the tests exercise: the shipped package, not src/app. */
 export const shippedHost = 'packages/app';
 
-/** A path of the shipped app, e.g. app('/zadaci') = '/app/web/zadaci'. */
+/** A path of the shipped app, e.g. app('/zadaci') = '/aplikacija/zadaci'. */
 export const app = (path: string) => `${appBase}${path === '/' ? '/' : path}`;
 
 async function checkService(url: string, service: string, checkBody?: (response: Response) => Promise<void>) {
@@ -54,14 +54,15 @@ export async function checkHealth(response: Response) {
 
 async function checkPreloader(response: Response) {
   const html = await response.text();
-  // The Preloader's first screen offers the AAI@EduHr sign-in that returns to the web (#2028 §3.1).
-  if (!html.includes('/api/v1/auth/login?returnTo=%2Fapp%2Fweb%2F')) throw new Error('na / nije prvi ekran Preloadera');
+  // D-318: the Preloader's first screen is /ulaz; it leads to the app's sign-in screen (/aplikacija/prijava),
+  // which leaves for the AAI@EduHr login and returns to /aplikacija/ (#2028 §3.1). `/` is the app's landing page.
+  if (!html.includes(`href="${appBase}/prijava"`)) throw new Error('na /ulaz nije prvi ekran Preloadera');
 }
 
 async function checkShippedApp(response: Response) {
   const html = await response.text();
-  // The production build of packages/app asks for its files under /app/web/_next/ (assetPrefix).
-  if (!html.includes('/app/web/_next/')) throw new Error('na /app/web/ nije izgradnja packages/app');
+  // The production build of packages/app asks for its files under /aplikacija/_next/ (basePath).
+  if (!html.includes('/aplikacija/_next/')) throw new Error('na /aplikacija/ nije izgradnja packages/app');
 }
 
 export function revision(directory: string, repo: string) {
@@ -86,7 +87,7 @@ export const repoRevisions = () => ({
 });
 
 export default async function setup() {
-  await checkService(`${webOrigin}/`, 'Preloader (edge)', checkPreloader);
+  await checkService(`${webOrigin}/ulaz`, 'Preloader (edge)', checkPreloader);
   await checkService(`${webOrigin}${appBase}/stanje`, 'packages/app (edge)', checkShippedApp);
   await checkService(serverHealthUrl, 'Institution_server', checkHealth);
   await checkService(`${webOrigin}/api/v1/health`, 'edge → Institution_server', checkHealth);

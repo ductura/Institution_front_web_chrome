@@ -8,7 +8,7 @@ const ID = "11111111-1111-4111-8111-111111111111";
 const answer: { receipt: unknown } = { receipt: { kind: "potvrdeno", receipt: { payload: { requestedAt: "2026-11-08T21:30:00.000Z", documentId: "doc-1" } } } };
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: () => {}, push: () => {} }), notFound: () => { throw new Error("notFound"); } }));
-vi.mock("../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("../../../../../src/client/api.ts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   browserTransport: async () => new Response("{}"),
