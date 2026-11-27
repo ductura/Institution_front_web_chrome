@@ -31,6 +31,9 @@ for (const width of [390, 1280]) {
     await expect(page.getByText("Na snazi je 1 od 1 obrazaca.")).toBeVisible();
     await expect(page.getByText("Izjava mentora (izjava-mentora)", { exact: false })).toBeVisible();
     await expect(page.getByText("Suglasnost mentora potrebna je za predaju rada.")).toBeVisible();
+    // WEB-DATUM-TOCKA: the date already ends with a dot, so the line has one dot after the year.
+    await expect(page.getByText(/Zadnja promjena: 3\. lis 2026\./).first()).toBeVisible();
+    await expect(page.locator("main")).not.toContainText(/\d{4}\.\./);
     await axe(page);
     await page.getByRole("link", { name: "Asistent na fakultetu" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Asistent na fakultetu");

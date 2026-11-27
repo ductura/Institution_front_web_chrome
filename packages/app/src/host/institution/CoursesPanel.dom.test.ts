@@ -114,9 +114,27 @@ describe("CoursesPanel group tools", () => {
     await type(g.nameLabel, "Grupa B");
     const reads = calls.length;
     await click(button(g.create));
-    expect(text()).toContain(g.ended);
+    expect(text()).toContain(g.forbidden);
+    expect(text()).not.toContain(g.ended);
     expect(text()).not.toContain(g.created);
     expect(calls.length).toBe(reads + 1);
+  });
+
+  it("says the sign-in ended only for a 401", async () => {
+    post = () => json(401, { error: "unauthorized", code: "unauthorized", messageKey: "errors.unauthorized", status: 0 });
+    await show();
+    await type(g.nameLabel, "Grupa B");
+    await click(button(g.create));
+    expect(text()).toContain(g.ended);
+    expect(text()).not.toContain(g.forbidden);
+  });
+
+  it("shows the administrator the instruction instead of removal and return controls", async () => {
+    await show();
+    expect(text()).toContain("radi nastavnik kolegija");
+    expect(button("Ukloni iz kolegija")).toBeUndefined();
+    expect(button("Dopusti povratak")).toBeUndefined();
+    expect(writes()).toEqual([]);
   });
 
   it("says the outcome is not confirmed when the answer proves nothing, and reads again", async () => {

@@ -15,6 +15,7 @@ import { LoadAlert } from "../../states/States";
 import { StudentDenied } from "../read/denied";
 import { useHost } from "../../context";
 import { CodeCard, CodeForm } from "./CodeForm";
+import { DeadlinesExport } from "./DeadlinesExport";
 import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
@@ -189,6 +190,7 @@ export function HomePage() {
               </ul>
             </div>
           ))}
+          <DeadlinesExport rows={rows} />
         </section>
         <CodeCard />
       </>
