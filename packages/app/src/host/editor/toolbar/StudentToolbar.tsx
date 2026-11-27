@@ -28,6 +28,7 @@ import {
   convertBlock, glyphOf, insertChar, insertHole, pushRecent, readRecent, SPECIAL_CHARS, writeRecent,
 } from "@/components/editor/toolbar-menu";
 import { askPrintPreview } from "@/components/editor/print-export/print-event";
+import { insertSourceAction } from "../sources-mention/new-source-request";
 import { textWithFootnotes } from "@/lib/document/text-with-footnotes";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
@@ -200,7 +201,7 @@ function useEditorFocused(editor: Editor | null): boolean {
 type Item = { id: string; label: string; disabled?: boolean; /** The reason an item is off, shown beside it. */ hint?: string };
 
 /** ED-44 (P2-16): the prototype's "Umetni" items the host cannot insert yet; shown, never hidden (Val 6). */
-export const PENDING_INSERTS = ["cite", "newSource", "table", "image", "phrase", "variant"] as const;
+export const PENDING_INSERTS = ["table", "image", "phrase", "variant"] as const;
 /** The prototype's order of "Umetni"; the host's own items not in the prototype follow. */
 const INSERT_ORDER = ["cite", "newSource", "table", "image", "footnote", "xref", "formula", "inlineFormula", "codeBlock", "hole", "phrase", "variant"];
 
@@ -292,6 +293,9 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     ? { fusnota: () => v3.openInsert?.("footnote"), ref: () => v3.openInsert?.("crossReference") } : {});
 
   const insert: Item[] = withPendingInserts([
+    // ED-92: Navod opens the source list at the caret (as "@"), Novi izvor the quick source dialog (as "@ › Dodaj").
+    { id: "cite", label: t.toolbar.insertItems.cite, disabled: !writeOk },
+    { id: "newSource", label: t.toolbar.insertItems.newSource, disabled: !writeOk },
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
     { id: "xref", label: crossReferenceMessages.title, disabled: !writeOk || !v3.openInsert },
     { id: "formula", label: formulaHostHr.insertBlock, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
@@ -328,7 +332,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
           onContextAction: (id) => runContextAction(editor, id, openCrossReference),
         }} />
       <Menu label={t.toolbar.insert} items={insert} onSelect={(id) => {
-        if (id === "footnote") v3.openInsert?.("footnote");
+        if (id === "cite" || id === "newSource") { if (writeOk) insertSourceAction(editor, id); }
+        else if (id === "footnote") v3.openInsert?.("footnote");
         else if (id === "xref") v3.openInsert?.("crossReference");
         else if (id === "workParts" && writeOk) setDialog("parts");
         else if (id === "formula" || id === "inlineFormula") formula.open(id === "formula" ? "block" : "inline");
