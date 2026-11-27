@@ -6,8 +6,8 @@
  * (db/main/migrations/20261220360000_teacher_declaration_conversation.sql): the sha256 of the JSON array
  * text of each message's contentSha256, seq 1..throughSeq.
  *
- * TODO(ugovor): student.declaration-second.get/put are not in the WEB extract yet. Until they are, the
- * shape of the attachments is local (below) and createApi rejects the operation without a request
+ * The extract has student.declaration-second.get/put. The shape the step needs of the attachments stays
+ * local (below). A client that does not know the operation rejects it without a request
  * (`client_rejected`): `readSecond` says `unsupported` and the step stays on declaration-v1.
  */
 import type { createApi } from "./api";
@@ -131,7 +131,7 @@ export type SecondCall = (
 
 export type SecondRead =
   | { readonly kind: "ready"; readonly body: unknown; readonly refs: readonly ConversationRef[]; readonly count: number }
-  /** The client does not know the operation yet (TODO(ugovor)): nothing was sent. */
+  /** The client does not know the operation: nothing was sent. */
   | { readonly kind: "unsupported" }
   | { readonly kind: "signedOut" | "unavailable" };
 

@@ -4,10 +4,10 @@
 // neither writes on a version the other has already replaced (no 409 between them).
 //
 // F4-PRE-R02: the step reads the student's Asistent conversations and attaches them on declaration-v2
-// (Institution_server#890). TODO(ugovor): until the extract has student.declaration-second.*, the client
-// rejects them without a request, so the step stays on v1 and offers no attaching. Once it has them, every
-// read and write of the step goes through v2, and each write keeps the attachments the server holds
-// (the v1 draft builder sends none).
+// (Institution_server#890). The extract has student.declaration-second.*, so every read and write of the
+// step goes through v2, and each write keeps the attachments the server holds (the v1 draft builder sends
+// none). A client that does not know the operations rejects them without a request; the step then stays
+// on v1 and offers no attaching.
 import { createApi } from "../../../../../../../src/client/api.ts";
 import {
   conversationRef, readConversationMessages, readConversations, readSecond, withRef,
@@ -67,7 +67,7 @@ const V1_PUT = "student.declaration.put";
 /** The step's ports over `call` (createApi by default). */
 export function createStepPorts(call: Call = createApi()): StepPorts {
   const send = call as unknown as (op: string, input: unknown) => Promise<Answer>;
-  // TODO(ugovor): typed by the extract once it has the operations.
+  // The v2 shapes stay local (SecondCall) until the WEB part takes the extract's types.
   const second = call as unknown as SecondCall;
   // Whether the client knows declaration-v2: unknown until the first read tries it.
   let onSecond: boolean | null = null;

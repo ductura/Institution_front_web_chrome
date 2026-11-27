@@ -6,8 +6,7 @@ import { attachedCountReader } from "./attached-count";
 import { createStepPorts, type StepRead } from "./step-ports";
 
 // F4-PRE-R02: Asistent conversations attached to the declaration on declaration-v2, against a recorded
-// transport. Invented data only. The v2 operations are not in the extract yet (TODO(ugovor)), so the fake
-// answers them by operation id, as the client will once it knows them.
+// transport answered by operation id, and once over the real client. Invented data only.
 const ASSIGNMENT = "00000000-0000-4000-8000-0000000000a1";
 const C1 = "00000000-0000-4000-8000-0000000000c1";
 const C2 = "00000000-0000-4000-8000-0000000000c2";
@@ -31,11 +30,11 @@ const CONVERSATIONS = [
 ];
 const MESSAGES = {
   [C1]: [
-    { seq: 2, id: "m2", requestId: "r1", role: "provider_response", content: "Izmišljeni odgovor.", contentSha256: H("b"), createdAt: "2026-11-18T09:01:00.000Z", requestState: "completed" },
-    { seq: 1, id: "m1", requestId: "r1", role: "student_paragraph", content: "Izmišljeni odlomak.", contentSha256: H("a"), createdAt: "2026-11-18T09:00:30.000Z", requestState: "completed" },
+    { seq: 2, id: "00000000-0000-4000-8000-0000000000e2", requestId: "00000000-0000-4000-8000-0000000000f1", role: "provider_response", content: "Izmišljeni odgovor.", contentSha256: H("b"), createdAt: "2026-11-18T09:01:00.000Z", requestState: "completed" },
+    { seq: 1, id: "00000000-0000-4000-8000-0000000000e1", requestId: "00000000-0000-4000-8000-0000000000f1", role: "student_paragraph", content: "Izmišljeni odlomak.", contentSha256: H("a"), createdAt: "2026-11-18T09:00:30.000Z", requestState: "completed" },
   ],
   [C2]: [
-    { seq: 1, id: "m3", requestId: "r2", role: "student_paragraph", content: "Drugi odlomak.", contentSha256: H("c"), createdAt: "2026-11-20T10:00:30.000Z", requestState: "completed" },
+    { seq: 1, id: "00000000-0000-4000-8000-0000000000e3", requestId: "00000000-0000-4000-8000-0000000000f2", role: "student_paragraph", content: "Drugi odlomak.", contentSha256: H("c"), createdAt: "2026-11-20T10:00:30.000Z", requestState: "completed" },
   ],
 } as const;
 
@@ -151,22 +150,36 @@ describe("conversations on the declaration (F4-PRE-R02, declaration-v2)", () => 
   });
 });
 
-describe("before the extract has declaration-v2 (TODO(ugovor))", () => {
-  const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+describe("over the real client, now that the extract has declaration-v2", () => {
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
-  it("stays on declaration-v1, lists the conversations, offers no attaching and counts nothing", async () => {
-    const urls: string[] = [];
-    const fetchImpl: typeof fetch = async (input) => {
-      urls.push(String(input));
-      if (String(input).includes("/assistant-conversations")) return json({ assignmentId: ASSIGNMENT, conversations: CONVERSATIONS });
-      return json(STATE);
+  it("reads and writes on declaration-v2 only, attaches through the typed client and counts it", async () => {
+    let state = { ...STATE, draft: { ...DRAFT, ai: { ...DRAFT.ai } } };
+    const sent: string[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const url = new URL(String(input));
+      const method = init?.method ?? "GET";
+      sent.push(`${method} ${url.pathname}`);
+      if (url.pathname.endsWith("/assistant-conversations")) return json({ assignmentId: ASSIGNMENT, conversations: CONVERSATIONS });
+      const conversation = /\/assistant\/conversations\/([^/]+)$/u.exec(url.pathname)?.[1];
+      if (conversation) return json({ conversationId: conversation, messages: MESSAGES[conversation as keyof typeof MESSAGES] });
+      if (!url.pathname.endsWith("/declaration-v2")) return json({ error: "not_found", code: "not_found", messageKey: "errors.x", status: 404, requestId: "00000000-0000-4000-8000-000000000000" }, 404);
+      if (method === "PUT") {
+        const body = JSON.parse(String(init?.body)) as Body;
+        state = { ...state, version: state.version + 1, draft: { ...body, baseVersion: state.version } };
+      }
+      return json(state);
     };
     const call = createApi({ baseUrl: "https://ductura.example.invalid", fetchImpl });
     const ports = createStepPorts(call);
     const view = shown(await ports.read(ASSIGNMENT));
-    expect(view.chats.map((c) => [c.n, c.conversationId, c.attached])).toEqual([[1, C1, null], [2, C2, null]]);
-    expect(urls.some((u) => u.includes("declaration-v2"))).toBe(false);
-    expect(await ports.attach!(ASSIGNMENT, C1, true)).toBe("unavailable");
-    expect(await attachedCountReader(call)(ASSIGNMENT)).toBeNull();
+    expect(view.chats.map((c) => [c.n, c.conversationId, c.attached])).toEqual([[1, C1, false], [2, C2, false]]);
+    expect(await ports.attach!(ASSIGNMENT, C1, true)).toBe("saved");
+    expect(state.draft.ai.attachments).toEqual([{ conversationId: C1, throughSeq: 2, messagesSha256: expectedHash([H("a"), H("b")]) }]);
+    expect(await attachedCountReader(call)(ASSIGNMENT)).toEqual({ total: 2, attached: 1 });
+    // Every read and write of the declaration went through v2; v1 was never asked.
+    const declaration = sent.filter((s) => /\/declaration(-v2)?$/u.test(s));
+    expect(declaration.length).toBeGreaterThan(0);
+    expect(declaration.every((s) => s.endsWith("/declaration-v2"))).toBe(true);
   });
 });
