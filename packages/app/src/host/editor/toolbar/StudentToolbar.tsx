@@ -62,6 +62,7 @@ import { listenCommentKey } from "./comment-key";
 import { MOBILE_MORE, type QuickTool } from "./quick-tools";
 import { canStep, DEFAULT_ZOOM, loadZoom, saveZoom, snapZoom, stepZoom, zoomPercent, zoomToast } from "./text-size";
 import { MobileQuickBar } from "./ToolbarBehaviour";
+import { ToolbarBookmarks } from "./ToolbarBookmarks";
 import { ToolbarCounters } from "./ToolbarCounters";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 import { DEFAULT_PREFS, loadPrefs, savePrefs, type ToolbarPrefs } from "./toolbar-prefs";
@@ -391,6 +392,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
           else if (id === "latex") toast(downloadLatex(editor, confirmedWorkSchemaVersion, latexStyle) ? stemHr.latex.done : stemHr.latex.failed);
           else if (id === "copy") void copyWorkText(editor).then((ok) => toast(copyToastText(ok)));
         }} />
+      {/* ED-102: "Oznake", paragraphs marked to come back to, only in this browser. */}
+      <ToolbarBookmarks editor={editor} work={workPartsKey} toast={toast} />
       {/* ED-101: what still waits in the text, and "Pošalji mentoru" with the list before sending. */}
       <ToolbarCounters editor={editor} />
       <ReadAloudControls editor={editor} />
