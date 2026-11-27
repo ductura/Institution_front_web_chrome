@@ -26,7 +26,8 @@ export const hr = {
     // Design v3 shell (#476 6314969336): only static labels and the role the
     // server read; no names or counts the app does not have.
     sideNav: "Bočna navigacija",
-    workNav: "Radni prostor",
+    // PAR2-A3: not the name of the fifth item, so a screen reader does not say "Radni prostor" twice.
+    workNav: "Glavna navigacija",
     home: `${APP_NAME}, početna`,
     space: {
       teacher: "Nastavnički prostor",
