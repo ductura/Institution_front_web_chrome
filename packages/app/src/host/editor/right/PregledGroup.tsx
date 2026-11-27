@@ -21,6 +21,7 @@ import { tiptapToCanonicalV4 } from "../../../../../editor-core/src/editor/inter
 import QuoteReviewCard from "../stem/QuoteReviewCard";
 import type { EvidenceBySource } from "../stem/quote-check";
 import { loadQuoteEvidence, quotedSources } from "./quote-evidence";
+import { onPregledView, takePregledView, type PregledView } from "./pregled-view";
 
 import { pregledHr as t } from "./messages.hr";
 import {
@@ -30,7 +31,8 @@ import {
 import { blockTextAt, sentenceShape } from "./sentence-shape";
 
 type Editor = NonNullable<ReturnType<typeof useLocalEditor>>;
-type View = "nacrt" | "pojmovnik" | "provjere" | "oblik";
+// ED-73: "oblik" is a view of this group only; the menu (pregled-view) never asks for it.
+type View = PregledView | "oblik";
 const VIEWS: readonly View[] = ["nacrt", "pojmovnik", "provjere", "oblik"];
 
 const browserStorage = (): TermStorage | null => { try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; } };
@@ -43,7 +45,8 @@ export function PregledGroup({ editor, documentId, assignmentId, enabledCheckIds
   /** Check ids the institution enabled; null when none were read (every check of this build runs). */
   enabledCheckIds?: readonly string[] | null;
 }) {
-  const [view, setView] = useState<View>("nacrt");
+  const [view, setView] = useState<View>(() => takePregledView() ?? "nacrt");
+  useEffect(() => onPregledView(setView), []);
   const [wholeWork, setWholeWork] = useState(false);
   const snapshot = useEditorSnapshot(editor);
   const doc = useMemo(() => (snapshot ? readReviewDoc(snapshot.doc) : null), [snapshot?.doc]); // eslint-disable-line react-hooks/exhaustive-deps

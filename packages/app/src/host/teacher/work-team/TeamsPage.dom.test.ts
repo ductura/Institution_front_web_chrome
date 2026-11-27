@@ -12,6 +12,10 @@ vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 const { default: TeamsPage } = await import("./TeamsPage");
 
+// jsdom has no modal dialog; the shared Dialog needs these two.
+HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) { this.open = true; };
+HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) { this.open = false; };
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 type Answer = { ok: true; status: number; body: unknown } | { ok: false; status: number; code: string };
@@ -123,6 +127,7 @@ describe("TeamsPage in the browser", () => {
     const refused = apiOf({ ...BASE, "teacher.work-team-member.post": () => fail(409, "conflict") });
     await render(refused.call);
     await click(host.querySelector("[data-testid=team-member] button"));
+    await click(button(t.teams.removeConfirmYes));
     expect(refused.calls.find((c) => c.id === "teacher.work-team-member.post")).toMatchObject({ input: { body: { studentId: S1, action: "remove" } } });
     expect(text()).toContain(t.teams.conflict);
     expect(text()).not.toContain(t.teams.removed);
@@ -132,11 +137,29 @@ describe("TeamsPage in the browser", () => {
     const full = apiOf({ ...BASE, "institution.assignment-team-setting.get": () => ok({ ...SETTING, maxSize: 2 }) });
     await render(full.call);
     expect(host.querySelector("[data-testid=unassigned] select")).toBeNull();
-    expect(text()).toContain(t.unassigned.noTeams);
+    expect(text()).toContain(t.unassigned.full);
+    expect(button(t.unassigned.add)!.disabled).toBe(true);
     const off = apiOf({ ...BASE, "institution.assignment-team-setting.get": () => ok({ ...SETTING, enabled: false }) });
     await render(off.call);
     expect(host.querySelector("[data-testid=teams-off]")).not.toBeNull();
     expect(button(t.teams.create)!.disabled).toBe(true);
+  });
+
+  it("asks before removing a member and sends nothing when the teacher declines", async () => {
+    const d = apiOf({ ...BASE, "teacher.work-team-member.post": () => ok({ updated: true }) });
+    await render(d.call);
+    await click(host.querySelector("[data-testid=team-member] button"));
+    expect(d.calls.some((c) => c.id === "teacher.work-team-member.post")).toBe(false);
+    expect(text()).toContain(t.teams.removeConfirmTitle);
+    await click(button(t.teams.removeConfirmNo));
+    expect(d.calls.some((c) => c.id === "teacher.work-team-member.post")).toBe(false);
+  });
+
+  it("frames an unavailable read as an alert with a retry link and never as a button next to it", async () => {
+    const d = apiOf({ ...BASE, "teacher.work-teams.get": () => fail(503, "unavailable") });
+    await render(d.call);
+    expect(host.querySelector("[role=alert]")!.textContent).toContain(t.unavailable);
+    expect(text()).not.toMatch(/poslužitelj|·/);
   });
 
   it("shows the contribution of one team on request with the notice, and a pending one as 'not ready'", async () => {

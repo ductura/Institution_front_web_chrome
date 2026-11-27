@@ -6,10 +6,11 @@ export const addonsMessages = {
   dictateStop: "Stani",
   dictating: "Diktiranje je uključeno. Govorite, tekst se umeće na mjesto kursora.",
   read: "Čitaj naglas",
-  readStop: "Stani čitanje",
-  readEmpty: "Nema teksta za čitanje. Označite dio teksta ili stavite kursor u odlomak.",
+  readStop: "Zaustavi čitanje",
+  readEmpty: "Najprije odaberite tekst koji želite čuti.",
   unsupported: "Ovaj preglednik ne podržava diktiranje i čitanje naglas.",
   local: "Diktiranje i čitanje rade u pregledniku; Ductura ne sprema zvuk.",
+  retry: "Pokušaj ponovno",
   failed: "Diktiranje je prekinuto. Pokušajte ponovno.",
   denied: "Pristup mikrofonu nije dopušten. Dopustite ga u postavkama preglednika.",
 } as const;

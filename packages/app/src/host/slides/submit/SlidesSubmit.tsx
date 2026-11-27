@@ -33,6 +33,8 @@ import { takeChoice } from "../../student/submission/submit/newer-choice";
 import { opensSending, serverGate, useDeclarationGate, declarationText, type GateRead } from "../../student/submission/summary/declaration-gate";
 import { checkSlides, readSlidesWork, type SlideRange, type SlidesCheck, type SlidesWorkRead } from "./requirements";
 import { slidesSubmitText as s } from "./messages.hr";
+import { LoadAlert } from "../../states/States";
+import styles from "./submit.module.css";
 
 const WHY_ID = "slides-submission-why";
 const LATE_WHY_ID = "slides-submission-late-why";
@@ -218,7 +220,7 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
       {work.kind === "loading" && <StepPanel title={t.panelTitle} busy><StepLoading message={s.loading} /></StepPanel>}
       {work.kind === "unavailable" && (
         <StepPanel title={t.panelTitle}>
-          <p className="note" role="alert">{s.loadError}</p>
+          <LoadAlert body={s.loadError} />
           <StepActions><Button tone="secondary" onClick={() => void load()}>{t.retry}</Button></StepActions>
         </StepPanel>
       )}
@@ -260,12 +262,12 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
               <p className="note">{s.serverNote}</p>
             </>
           )}
-          {checkText !== null && <p className="note" role="alert" id={WHY_ID}>{checkText}</p>}
-          {check?.kind === "unreadableRange" && <p className="note" role="note">{s.unreadableRange}</p>}
+          {checkText !== null && <p className={`note ${styles.rangeError}`} role="alert" id={WHY_ID}>{checkText}</p>}
+          {check?.kind === "unreadableRange" && <p className={`note ${styles.rangeError}`} role="alert">{s.unreadableRange}</p>}
           {next !== null && next.retry && lines.map((line, i) => (
             <p key={line} className="note" id={i === 0 ? OUTCOME_ID : undefined} tabIndex={i === 0 ? -1 : undefined} role={i === lines.length - 1 ? "alert" : undefined}>{line}</p>
           ))}
-          {!offline && !confirmed && next?.offer !== "declaration" && <p className="note" id={checkText === null ? WHY_ID : undefined}>{declarationWhy}</p>}
+          {!offline && !confirmed && next?.offer !== "declaration" && <p className={gate.kind === "unavailable" ? `note ${styles.rangeError}` : "note"} id={checkText === null ? WHY_ID : undefined}>{declarationWhy}</p>}
           {!offline && gate.kind === "unavailable" && <StepActions><Button tone="secondary" onClick={readGate}>{t.declarationRetry}</Button></StepActions>}
           {sending && <p className="note" role="status" id={WHY_ID}><StepSpinner /> {t.inProgress}</p>}
           <StepActions>
@@ -305,7 +307,7 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
               <Button tone="secondary" busy={sending} onClick={closeDialog}>{t.cancel}</Button>
             </>
           )}>
-          <p className="note">{t.newer.text}</p>
+          <p className="note">{s.newerText}</p>
           {late && <p className="note">{dialogLateLine(timing)}</p>}
           {sending && <p className="note" role="status"><StepSpinner /> {t.inProgress}</p>}
         </Dialog>

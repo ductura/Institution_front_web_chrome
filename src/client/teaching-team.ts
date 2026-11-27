@@ -25,6 +25,16 @@ function failure(status: number): Failure {
 
 const unavailable = { kind: "unavailable" } as const;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const invalid = { kind: "invalid" } as const;
+
+/** The contract's bounds of a group name: 1 to 80 characters, no space at either end; null when none can be sent. */
+export const MAX_GROUP_NAME = 80;
+export function groupName(raw: string): string | null {
+  const name = raw.trim();
+  return name.length === 0 || [...name].length > MAX_GROUP_NAME ? null : name;
+}
+
 export function createTeachingTeam(courseId: string, api = createApi()) {
   const params = { id: courseId };
   return {
@@ -59,6 +69,28 @@ export function createTeachingTeam(courseId: string, api = createApi()) {
       try {
         const result = await api("institution.teaching-team.post", { params, query: undefined, body: { assistantIds } });
         return result.ok ? { kind: "saved" } : failure(result.status);
+      } catch {
+        return unavailable;
+      }
+    },
+    /** institution.course-groups.post: the holder or a collaborator adds a seminar group; one attempt, no retry. */
+    async createGroup(rawName: string): Promise<Saved> {
+      const name = groupName(rawName);
+      if (name === null || !UUID.test(courseId)) return invalid;
+      try {
+        const result = await api("institution.course-groups.post", { params: { courseId }, query: undefined, body: { name } });
+        return result.ok ? { kind: "saved" } : failure(result.status);
+      } catch {
+        return unavailable;
+      }
+    },
+    /** institution.course-group-teachers.post: the holder puts a confirmed teacher into a group. `assigned: false` proves nothing. */
+    async assignGroupTeacher(groupId: string, teacherId: string): Promise<Saved> {
+      if (!UUID.test(groupId) || !UUID.test(teacherId)) return invalid;
+      try {
+        const result = await api("institution.course-group-teachers.post", { params: { groupId }, query: undefined, body: { teacherId } });
+        if (!result.ok) return failure(result.status);
+        return result.body.assigned ? { kind: "saved" } : unavailable;
       } catch {
         return unavailable;
       }
