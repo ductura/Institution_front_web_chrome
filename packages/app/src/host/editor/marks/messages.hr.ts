@@ -52,6 +52,12 @@ export const marksHr = {
     next: "Sljedeće mjesto ›",
     checked: "Provjereno, ukloni",
     link: "Poveži u Literaturi",
+    // ED-104 (prototype text2.js holePop): a mark that asks for a source ([izvor], [citat], [stranica]).
+    sourceTitle: "Ovdje nedostaje izvor",
+    sourceIntro: "Odaberite izvor i oznaka postaje navod. Kursor ostaje na istom mjestu.",
+    allSources: (n: number) => `Svi izvori (${n})`,
+    newSource: "Dodaj novi izvor…",
+    askSource: "Zapravo treba izvor",
   },
   // INVENTAR §2.6 text2 "Privatna bilješka" and level 3/4 marks are not drawn here:
   // no API for private notes (Q-6), advice and origin marks wait on other tasks (B-1, C-13).
