@@ -274,7 +274,7 @@ export const probe = Object.create(proto);
     const root = copy();
     probe(root, "hr.ts", ["Predano", "Sumnjivo pisanje"]);
     const scan = report(root);
-    expect(scan.read["hr.ts"]).toBe(1432);
+    expect(scan.read["hr.ts"]).toBe(1433);
     expect(found(scan)).toEqual(["hr.ts probe.1: forbidden term: sumnjivo"]);
   });
 });
@@ -403,7 +403,7 @@ describe("invariant 1b: a .ts catalogue is data, read without running it", () =>
       'const WORD = "Sumnjivo";\nexport const probe = { a: `${WORD} pisanje`, b: [WORD] };';
     writeFileSync(file, `${readFileSync(file, "utf8")}\n${source}\n`);
     const scan = report(root);
-    expect(scan.read["hr.ts"]).toBe(1432);
+    expect(scan.read["hr.ts"]).toBe(1433);
     expect(flagged(scan, "hr.ts")).toEqual(["probe.a", "probe.b.0"]);
   });
 
