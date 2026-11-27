@@ -8,11 +8,6 @@ export const assignmentSetupMessages = {
   help: "Uporaba AI alata",
   courseHelp: "Prema pravilima kolegija",
   noHelp: "Bez AI pomoći",
-  groups: "Grupe zadatka",
-  externalTools: "Vanjski alati",
-  unavailable: "Trenutačno nedostupno",
-  summaryHelpPending: "Odabir „Samo sažimanje” trenutačno je nedostupan.",
-  importPreview: "Student smije uvesti postojeći tekst iz datoteke; uvezeni dio ostaje označen kao uvezen.",
   recorded: [
     "Tekst rada i svaka promjena, s vremenom primitka na poslužitelj.",
     "Sesije se sastoje od niza promjena bez prekida duljeg od 30 minuta. Prag P-01 postavlja fakultet.",

@@ -64,8 +64,8 @@ describe("MentoredWorks", () => {
   it("draws every work with its student, title, type and state, and the order note", () => {
     const shown = text(renderToStaticMarkup(h(MentoredWorks, { works: WORKS })));
     expect(shown).toContain(t.listTitle);
-    expect(shown).toContain("Ante Čvorić Naslov 3 Diplomski rad · Predano");
-    expect(shown).toContain(`${t.unnamed} Naslov 2 Završni rad · Rad nije započet.`);
+    expect(shown).toContain("Ante Čvorić Naslov 3 Diplomski rad Predano");
+    expect(shown).toContain(`${t.unnamed} Naslov 2 Završni rad Rad nije započet.`);
     expect(shown).toContain(t.orderNote);
     expect(shown.indexOf("Ana Crtić")).toBeLessThan(shown.indexOf("Vesna Žbunić"));
   });

@@ -44,6 +44,12 @@ describe("WEB-9C public verification page", () => {
     },
   );
 
+  it("says an unanswered check in the alert box, the other outcomes in the status line", () => {
+    expect(renderToStaticMarkup(<VerificationFeedback state={{ kind: "unavailable" }} />))
+      .toMatch(new RegExp(`role="alert"[^>]*>${t.unavailable}`));
+    expect(renderToStaticMarkup(<VerificationFeedback state={{ kind: "notMatched" }} />)).not.toContain('role="alert"');
+  });
+
   it("keeps the Croatian copy within PRODUCT §5", () => {
     for (const message of Object.values(t)) expect(findForbiddenTerms(message, "hr")).toEqual([]);
   });

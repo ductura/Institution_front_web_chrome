@@ -1,5 +1,6 @@
 // N-01 "Moji kolegiji": the card of one course and its dk-h dialog. The words
 // are those of docs/prototip/Ductura_nastavnik.html (screen `kolegiji`).
+import { oneDot } from "../../../i18n/date-dot";
 export const assignmentCardMessages = {
   title: "Moji kolegiji",
   lead: "Kolegiji u kojima predajete, akademska godina 2026./2027. Uz svaki zadatak vidite činjenice o predaji: vrijeme, rok, verziju i stanje zapisa.",
@@ -25,8 +26,8 @@ export const assignmentCardMessages = {
   students: { one: "student", few: "studenta", many: "studenata" },
   codeUnknown: "Stanje koda nije dostupno. Novi kod izdajte ako ga trebate.",
   codeHolderIssues: "Izdaje nositelj kolegija.",
-  codeValidUntil: (until: string): string => `Vrijedi do ${until}.`,
-  codeExpiredAt: (until: string): string => `Istekao ${until}.`,
+  codeValidUntil: (until: string): string => oneDot(`Vrijedi do ${until}.`),
+  codeExpiredAt: (until: string): string => oneDot(`Istekao ${until}.`),
   codeNone: "Nema izdanog koda.",
   codeLabel: "Kod za upis",
   copyCode: "Kopiraj kod",

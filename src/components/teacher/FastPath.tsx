@@ -8,6 +8,7 @@ import { signInHref as loginHref } from "@/client/api";
 import { watchSessionEnd, type SessionWatch } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
 import RevisionLog from "@/components/editor/revision/RevisionLog";
+import LoadAlert from "@/components/shell/LoadAlert";
 import { ProcessSummaryView } from "@/components/summary/ProcessSummaryView";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -46,11 +47,18 @@ export type FastPathProps = {
   readonly load: FastPathLoad;
   readonly signInHref?: string;
   readonly revisions?: RevisionAccess;
+  /** Where "Pokušaj ponovno" leads when the read failed: a page to load again, or a new read in place. */
+  readonly retry?: { readonly href: string } | { readonly onRetry: () => void };
 };
 
-export function FastPath({ load, signInHref = loginHref(), revisions }: FastPathProps) {
+const HREF = "/nastavnik/brz-put";
+
+export function FastPath({ load, signInHref = loginHref(HREF), revisions, retry }: FastPathProps) {
   if (load.state === "loading") return h("p", { className: styles.state, role: "status" }, t.loading);
-  if (load.state === "unavailable") return h("p", { className: styles.state, role: "alert" }, t.unavailable);
+  // Design alignment 27. 11. 2026. (B3): the alert box, always with the way to try again under it.
+  if (load.state === "unavailable") {
+    return h(LoadAlert, { className: styles.state, retry: { label: t.retry, ...(retry ?? { href: HREF }) } }, t.unavailable);
+  }
   if (load.state === "signedOut") {
     // An OIDC login: a real navigation, not a prefetchable Link.
     return h("p", { className: styles.state, role: "status" }, messagesHr.teacher.signedOut, " ", h("a", { href: signInHref }, messagesHr.teacher.signIn));
@@ -92,7 +100,7 @@ function FastPathSession({ assignmentId }: { readonly assignmentId: string }) {
   if (session === undefined) return h(FastPath, { load: { state: "loading" } });
   if (session === null) {
     const retry = () => { setSession(undefined); setAttempt((n) => n + 1); };
-    return h("div", null, h(FastPath, { load: { state: "unavailable" } }), h(Button, { onClick: retry }, t.retry));
+    return h(FastPath, { load: { state: "unavailable" }, retry: { onRetry: retry } });
   }
   return h(AssignmentFastPath, { assignmentId, session });
 }
@@ -121,9 +129,11 @@ function AssignmentFastPath({ assignmentId, session }: {
       else setLoad(next);
     }, current });
   }, [assignmentId, current, end, ended]);
+  const here = `${HREF}?zadatak=${encodeURIComponent(assignmentId)}`;
   return h(FastPath, {
     load: ended ? { state: "signedOut" } : load,
-    signInHref: loginHref(`/nastavnik/brz-put?zadatak=${encodeURIComponent(assignmentId)}`),
+    signInHref: loginHref(here),
+    retry: { href: here },
     revisions: { current, onSignedOut: end },
   });
 }
@@ -260,7 +270,8 @@ function RevisionPreview({ documentId, record, current, onSignedOut }: RevisionA
   }, [documentId, record, current, onSignedOut]);
 
   if (outcome === null) return h("p", { role: "status" }, t.revisionsLoading);
-  if (outcome.kind !== "ok") return h("p", { role: "status" }, t.revisionsUnavailable);
+  // Design alignment 27. 11. 2026. (B11): a failed read is said in the alert box.
+  if (outcome.kind !== "ok") return h(LoadAlert, null, t.revisionsUnavailable);
   return h("div", null,
     outcome.awaiting && h("p", { className: controls.round, role: "status" }, t.revisionReady),
     h(RevisionLog, { entries: outcome.entries }),

@@ -57,7 +57,7 @@ const REQUESTS_TITLE = 'Zahtjevi za mentorstvo';
 const REQUESTS_UNAVAILABLE = 'Zahtjevi za mentorstvo trenutačno nisu dostupni. Pokušajte ponovno.';
 const APPROVED = 'Zahtjev je odobren. Rad je u popisu radova uz mentora.';
 const DECISION_UNKNOWN = 'Nije poznato je li odluka zabilježena. Osvježite stranicu prije novog pokušaja.';
-const SHA256_HEX = /^[0-9a-f]{64}$/;
+const COPY_FINGERPRINT = 'Otisak u međuspremnik';
 
 const fixturePaths = {
   roster: '/nastavnik/kolegiji/izmisljeni-kolegij/studenti',
@@ -250,12 +250,14 @@ if (process.env.DUCTURA_VAL5_FIXTURE === '1') test.describe('WEB-36 · prikazi s
       await page.getByRole('link', { name: TO_SUBMISSION }).click();
       await expect(page).toHaveURL(`${origin}/nastavnik/rad/${receipt.payload.documentId}/predaja`);
       await expect(page.getByText('Otisak predanog teksta (SHA-256)', { exact: true })).toBeVisible();
-      const fingerprint = await shownFingerprint(page);
-      expect(fingerprint).toBe(receipt.payload.artifactSha256);
+      // Design alignment 27. 11. 2026.: no digest for people, only the copy button.
+      expect(await shownFingerprint(page)).toBe('');
+      await expect(page.getByRole('button', { name: COPY_FINGERPRINT })).toBeVisible();
       await axe(page);
       await page.goto(origin + fixturePaths.studentReceipt);
       await expect(page.getByText('Otisak predanog teksta (SHA-256)', { exact: true })).toBeVisible();
-      expect(await shownFingerprint(page)).toBe(fingerprint);
+      expect(await shownFingerprint(page)).toBe('');
+      await expect(page.getByRole('button', { name: COPY_FINGERPRINT })).toBeVisible();
       await axe(page);
       await page.goto(origin + fixturePaths.accessLog);
       const entry = page.getByRole('listitem').filter({ hasText: 'Izmišljeni Nastavnik · nastavnik kolegija' });
@@ -309,7 +311,7 @@ if (process.env.DUCTURA_VAL5_FIXTURE === '1') test.describe('WEB-36 · prikazi s
       }
       await expect(page.getByRole('status')).toHaveText(APPROVED);
       await expect(approve).toHaveCount(0);
-      await expect(page.getByRole('region', { name: 'Radovi · abecedno' }).getByText(requestTitle)).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Radovi, abecedno' }).getByText(requestTitle)).toBeVisible();
       await axe(page);
     });
   }
@@ -364,7 +366,6 @@ if (process.env.DUCTURA_STOG === '1') {
     let assignment;
     let studentAssignmentId;
     let workHref;
-    let fingerprint;
 
     test.beforeAll(async ({ browser }) => {
       await reachable(`${WEB}/`, 'Next (pnpm next:dev)');
@@ -404,7 +405,7 @@ if (process.env.DUCTURA_STOG === '1') {
       await filter.selectOption({ label: groupB });
       await expect(rosterRow(page, submitted.name)).toHaveCount(1);
       await expect(rosterRow(page, unsubmitted.name)).toHaveCount(0);
-      await expect(rosterRow(page, submitted.name)).toContainText(` · `);
+      await expect(rosterRow(page, submitted.name).locator('p span').first()).toHaveText(/\bB$/);
     });
 
     test('rad: „Otvori seminarski rad” vodi na rad uživo s poveznicom na predaju', async () => {
@@ -424,10 +425,12 @@ if (process.env.DUCTURA_STOG === '1') {
       await page.getByRole('link', { name: TO_SUBMISSION, exact: true }).click();
       await page.waitForURL(`${workHref}/predaja`);
       await expect(heading(page, RECEIPT_TITLE)).toBeVisible();
-      await expect(page.getByText(submitted.name)).toBeVisible();
+      await expect(page.getByText(submitted.name, { exact: true })).toBeVisible();
+      await expect(page.getByRole('link', { name: `Rad uživo: ${submitted.name}` })).toBeVisible();
       await expect(page.getByRole('alert')).toHaveCount(0);
-      fingerprint = await shownFingerprint(page);
-      expect(fingerprint).toMatch(SHA256_HEX);
+      // Design alignment 27. 11. 2026.: no digest for people, only the copy button.
+      expect(await shownFingerprint(page)).toBe('');
+      await expect(page.getByRole('button', { name: COPY_FINGERPRINT })).toBeVisible();
     });
 
     test('zbirni: predano i nepredano u zadatku iz seeda, sortiranje tipkovnicom', async () => {
@@ -518,12 +521,13 @@ if (process.env.DUCTURA_STOG === '1') {
       }
     }
 
-    test('demo-student-3 vidi isti otisak kao nastavnik', async () => {
+    test('demo-student-3 vidi potvrdu bez otiska, s gumbom za kopiranje kao nastavnik', async () => {
       const { page } = submitted;
       await page.goto(`${WEB}/rad/${studentAssignmentId}/predaja`);
       await page.waitForURL(`${WEB}/rad/${studentAssignmentId}/predaja/potvrda`);
       await expect(heading(page, RECEIPT_TITLE)).toBeVisible();
-      expect(await shownFingerprint(page)).toBe(fingerprint);
+      expect(await shownFingerprint(page)).toBe('');
+      await expect(page.getByRole('button', { name: COPY_FINGERPRINT })).toBeVisible();
     });
 
     test('demo-student-3 u dnevniku pristupa vidi da je nastavnik otvorio rad uživo', async () => {

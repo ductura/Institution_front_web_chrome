@@ -3,6 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { facultySettingsMessages as fs } from "../host/admin/faculty-settings/messages.hr";
 import { stateView } from "../host/editor/mentor/mentor-model";
+import { assignmentCardMessages as card } from "../host/teacher/assignment-card/messages.hr";
+import { assignmentFactsMessages as facts } from "../host/teacher/assignment-facts/messages.hr";
+import { interviewMessages as interview } from "../host/teacher/interview/messages.hr";
+import { courseStudentsMessages as n04 } from "../host/teacher/n04/messages.hr";
+import { n07Messages as n07 } from "../host/teacher/n07/messages.hr";
 import { oneDot } from "./date-dot";
 
 const long = (iso: string) => new Intl.DateTimeFormat("hr-HR", { dateStyle: "long" }).format(new Date(iso));
@@ -39,5 +44,19 @@ describe("dates in sentences", () => {
     expect(fs.rules.changed(date, "Izmišljena Osoba")).toBe(`Zadnja promjena: ${date} Objavio: Izmišljena Osoba.`);
     expect(fs.forms.published(date)).toBe(`objavljen ${date}`);
     for (const line of [fs.thesisSettings.changed(date), fs.rules.changed(date, "Izmišljena Osoba"), fs.forms.published(date)]) expect(line).not.toMatch(DOUBLE);
+  });
+
+  // WEB-DATUM-TOCKA-2: the teacher's sentences that end on a date, or go on after it.
+  it("the teacher's date sentences keep one dot after a date that ends in one, and the full stop after a time", () => {
+    const date = medium("2026-11-27T10:00:00Z");
+    const lines = [
+      card.codeValidUntil(date), card.codeExpiredAt(date), facts.late.recorded(date),
+      interview.invited(date), interview.heldOn(date), n04.awaitsRevision(date), n04.extendedTo(date), n07.pendingBody(date),
+    ];
+    for (const line of lines) expect(line).not.toMatch(DOUBLE);
+    expect(interview.heldOn(date)).toBe(`Razgovor je održan ${date}`);
+    expect(n07.pendingBody(date)).toBe(`Predaja je zabilježena ${date} Potpis potvrde još se izdaje; vrijeme predaje se time ne mijenja.`);
+    // A moment that ends on the time keeps its full stop.
+    expect(interview.invited("27. 11. 2026. u 10:00")).toBe("Poziv je poslan 27. 11. 2026. u 10:00.");
   });
 });

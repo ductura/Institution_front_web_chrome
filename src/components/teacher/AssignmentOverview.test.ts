@@ -38,24 +38,27 @@ const cells = (html: string, marker: string) => {
 };
 
 describe("AssignmentOverview (N-17)", () => {
-  it("has a caption and the six columns, the student as row header", () => {
+  it("has a caption and five columns, the student as row header, the revision column hidden until wave 8", () => {
     const html = render(ROWS);
     expect(html).toContain("<caption");
     expect(text(html)).toContain("Predaje zadatka Izmišljeni zadatak");
-    for (const header of Object.values(t.columns)) expect(html).toContain(header);
+    const { revision, ...shown } = t.columns;
+    for (const header of Object.values(shown)) expect(html).toContain(header);
+    expect(html).not.toContain(revision);
+    expect(html).not.toContain("\u00b7");
     expect(html.match(/<th scope="row"/g)?.length).toBe(4);
   });
 
   it("shows submitted, after the deadline and not submitted", () => {
     const html = render(ROWS);
-    expect(cells(html, "Osoba 1")).toEqual(["Izmišljena Osoba 1 · grupa A", "○ Nije predano", "–", "–", "–", ""]);
-    expect(cells(html, "Osoba 2")).toEqual(["Izmišljena Osoba 2 · grupa B", "✓ Predano", "2. studenoga 2026. u 14:32", "Ne", "Zapis je cjelovit", ""]);
-    expect(cells(html, "Osoba 3")).toEqual(["Izmišljena Osoba 3 · grupa A", "✓ Predano", "20. studenoga 2026. u 10:05", "! Nakon roka", "◌ Praznina u zapisu", ""]);
+    expect(cells(html, "Osoba 1")).toEqual(["Izmišljena Osoba 1 grupa A", "○ Nije predano", "–", "–", "–"]);
+    expect(cells(html, "Osoba 2")).toEqual(["Izmišljena Osoba 2 grupa B", "✓ Predano", "2. studenoga 2026. u 14:32", "Ne", "Zapis je cjelovit"]);
+    expect(cells(html, "Osoba 3")).toEqual(["Izmišljena Osoba 3 grupa A", "✓ Predano", "20. studenoga 2026. u 10:05", "! Nakon roka", "◌ Praznina u zapisu"]);
   });
 
   it("shows a missing name as missing, never a stand-in, and a receipt not yet bound as waiting", () => {
     const html = render(ROWS);
-    expect(cells(html, t.noName)).toEqual([`${t.noName} · ${t.noGroup}`, "✓ Predano", "1. studenoga 2026. u 09:00", "Ne", "… Čeka potvrdu", ""]);
+    expect(cells(html, t.noName)).toEqual([`${t.noName} ${t.noGroup}`, "✓ Predano", "1. studenoga 2026. u 09:00", "Ne", "… Čeka potvrdu"]);
   });
 
   it("draws no link until N-07 has a teacher route (TODO(N-07))", () => {

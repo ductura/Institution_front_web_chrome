@@ -22,7 +22,7 @@ export const hr = {
   },
   shell: {
     skipToContent: "Preskoči na sadržaj",
-    demoBadge: "Demo · izmišljeni podaci",
+    demoBadge: "Demo, izmišljeni podaci",
     // Design v3 shell (#476 6314969336): only static labels and the role the
     // server read; no names or counts the app does not have.
     sideNav: "Bočna navigacija",
@@ -713,7 +713,9 @@ export const hr = {
     lead: "Kolegiji u kojima predajete i njihovi zadaci. Poredak: akademska godina, pa naziv; zadaci po roku.",
     newCourse: "Novi kolegij i zadatak",
     empty: "Nemate kolegija u kojima predajete.",
-    emptyLead: "Stvorite kolegij i objavite prvi zadatak.",
+    // Design alignment 27. 11. 2026.: the faculty administrator creates a course (as teacherCourseCodes).
+    emptyBody: "Kolegij izrađuje administrator fakulteta i dodjeljuje ga nositelju. Kad Vas doda u kolegij, on se pojavljuje ovdje.",
+    emptyNext: "Treba li Vam novi kolegij, javite se administratoru svojeg fakulteta.",
     noAssignments: "Još nema zadataka.",
     unavailable: "Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.",
     retry: "Pokušaj ponovno",
@@ -741,7 +743,7 @@ export const hr = {
   mentoredWorks: {
     title: "Radovi uz mentora",
     lead: "Radovi studenata kojima ste mentor, po prezimenu.",
-    listTitle: "Radovi · abecedno",
+    listTitle: "Radovi, abecedno",
     orderNote: "Popis se ne može poredati po brojevima.",
     empty: "Nemate mentorstava",
     emptyHint: "Mentorstvo nastaje kad odobrite studentov zahtjev.",
@@ -770,7 +772,7 @@ export const hr = {
     // #757 D1, za potvrdu: a student whose account has no name; never a number or an address.
     unnamed: "Ime nije dostupno",
     studentsLabel: "Studenti",
-    studentsTitle: "Studenti · po prezimenu",
+    studentsTitle: "Studenti, po prezimenu",
     // #732 item 18, design pregled-radova-v2 (D-80): the list has no order by numbers.
     orderNote: "Popis se ne može poredati po brojevima.",
     work: {
