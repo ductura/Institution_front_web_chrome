@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "test:a11y": "playwright test e2e/a11y",
     "test:mobile": "playwright test tests/mobile",
-    "viz": "playwright test -c e2e/viz/playwright.config.ts"
+    "viz": "playwright test -c e2e/viz/playwright.config.ts",
+    "reference:report": "playwright test -c e2e/reference-report/playwright.config.ts"
   },
   "dependencies": {
     "@ductura/ui": "workspace:*",

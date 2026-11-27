@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { BASE } from "../../src/bases";
+import ErrorBoundary from "../../src/ErrorBoundary";
 import Host from "../../src/host/Host";
 import { LocaleProvider } from "../../src/i18n/LocaleProvider";
 
@@ -14,5 +15,5 @@ export const dynamic = "force-dynamic";
  * the page of the path in the shell. The interface language (D-70) holds for all of it.
  */
 export default function BaseLayout({ children }: { children: ReactNode }) {
-  return <LocaleProvider><Host base={BASE}>{children}</Host></LocaleProvider>;
+  return <LocaleProvider><Host base={BASE}>{/* DAN-1568: a page that throws while it renders leaves the error screen inside the shell. */}<ErrorBoundary>{children}</ErrorBoundary></Host></LocaleProvider>;
 }
