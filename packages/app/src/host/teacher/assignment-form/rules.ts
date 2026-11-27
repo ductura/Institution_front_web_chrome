@@ -19,9 +19,11 @@ export type RuleChoices = {
   readonly withdrawal: boolean;
   /** On by default: the faculty form is always asked unless the teacher turns it off (decision 6, 23. 11.). */
   readonly declarationRequired: boolean;
+  /** F4-NAS-R01: a submission after the deadline; allowed by default on the server, so set only when turned off. */
+  readonly lateAllowed: boolean;
 };
 
-export const defaultChoices: RuleChoices = { groupIds: null, summaryOnly: false, externalTools: true, withdrawal: true, declarationRequired: true };
+export const defaultChoices: RuleChoices = { groupIds: null, summaryOnly: false, externalTools: true, withdrawal: true, declarationRequired: true, lateAllowed: true };
 
 const none = { query: undefined, body: undefined } as const;
 
@@ -60,7 +62,7 @@ export function groupsMissing(groups: GroupsRead | null, choices: RuleChoices): 
 }
 
 export type SwitchOutcome = "set" | "failed" | "signedOut";
-export type RuleName = "withdrawal" | "declaration";
+export type RuleName = "withdrawal" | "declaration" | "late";
 
 /** teacher.submission-withdrawal.post: set only when the answer repeats the value sent. */
 export async function setWithdrawal(call: Call, assignmentId: string, allowed: boolean): Promise<SwitchOutcome> {
@@ -84,28 +86,46 @@ export async function setDeclarationRequired(call: Call, assignmentId: string, r
   }
 }
 
+/** institution.assignment-late-submission.put (F4-NAS-R01): set only when the answer repeats the value sent. */
+export async function setLateSubmission(call: Call, assignmentId: string, allowed: boolean): Promise<SwitchOutcome> {
+  try {
+    const result = await call("institution.assignment-late-submission.put", { params: { assignmentId }, query: undefined, body: { lateSubmissionAllowed: allowed } });
+    if (!result.ok) return result.status === 401 ? "signedOut" : "failed";
+    return result.body.lateSubmissionAllowed === allowed ? "set" : "failed";
+  } catch {
+    return "failed";
+  }
+}
+
 /** The switches of a new assignment that differ from the defaults, set one by one; returns the ones that failed. */
 export async function applyRules(call: Call, assignmentId: string, choices: RuleChoices): Promise<RuleName[]> {
   const failed: RuleName[] = [];
+  if (choices.lateAllowed !== defaultChoices.lateAllowed && (await setLateSubmission(call, assignmentId, choices.lateAllowed)) !== "set") failed.push("late");
   if (choices.withdrawal !== defaultChoices.withdrawal && (await setWithdrawal(call, assignmentId, choices.withdrawal)) !== "set") failed.push("withdrawal");
   if (choices.declarationRequired !== defaultChoices.declarationRequired &&
       (await setDeclarationRequired(call, assignmentId, choices.declarationRequired)) !== "set") failed.push("declaration");
   return failed;
 }
 
-/** The two switches of an existing assignment (teacher.submission-withdrawal.get, teacher.declaration-required.get). */
-export type CurrentRules = { readonly withdrawal: boolean; readonly declarationRequired: boolean };
+/**
+ * The switches of an existing assignment: teacher.submission-withdrawal.get, teacher.declaration-required.get and
+ * (F4-NAS-R01) teacher.assignment-late-submission.get. Without `lateAllowed` the late rule could not be read, so the
+ * edit page shows it disabled with a note while the other two stay usable.
+ */
+export type CurrentRules = { readonly withdrawal: boolean; readonly declarationRequired: boolean; readonly lateAllowed?: boolean };
 
 export async function readRules(call: Call, assignmentId: string): Promise<{ kind: "ready"; rules: CurrentRules } | { kind: "signedOut" | "unavailable" }> {
   try {
     const params = { assignmentId };
-    const [w, d] = await Promise.all([
+    const [w, d, late] = await Promise.all([
       call("teacher.submission-withdrawal.get", { params, ...none }),
       call("teacher.declaration-required.get", { params, ...none }),
+      call("teacher.assignment-late-submission.get", { params, ...none }).catch(() => null),
     ]);
-    if ((!w.ok && w.status === 401) || (!d.ok && d.status === 401)) return { kind: "signedOut" };
+    if ((!w.ok && w.status === 401) || (!d.ok && d.status === 401) || (late !== null && !late.ok && late.status === 401)) return { kind: "signedOut" };
     if (!w.ok || !d.ok) return { kind: "unavailable" };
-    return { kind: "ready", rules: { withdrawal: w.body.allowed, declarationRequired: d.body.required } };
+    const rules: CurrentRules = { withdrawal: w.body.allowed, declarationRequired: d.body.required };
+    return { kind: "ready", rules: late?.ok && typeof late.body.lateSubmissionAllowed === "boolean" ? { ...rules, lateAllowed: late.body.lateSubmissionAllowed } : rules };
   } catch {
     return { kind: "unavailable" };
   }

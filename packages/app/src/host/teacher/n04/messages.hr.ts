@@ -45,4 +45,22 @@ export const courseStudentsMessages = {
   awaitsRevisionNoDeadline: "Čeka doradu.",
   extendedTo: (due: string): string => `Rok produljen do ${due}.`,
   at: "u",
+  // F4-PM1-R09: removal of a student from the course and permission to return.
+  remove: "Ukloni iz kolegija",
+  allowReturn: "Dopusti povratak",
+  cancel: "Odustani",
+  removedHeading: "Uklonjeni u ovoj sesiji",
+  removeTitle: (name: string): string => `Ukloniti studenta ${name} iz kolegija?`,
+  returnTitle: (name: string): string => `Dopustiti studentu ${name} povratak u kolegij?`,
+  removeNote: "Student više neće biti upisan u ovaj kolegij.",
+  returnNote: "Student se može ponovno upisati u ovaj kolegij.",
+  changeOutcome: {
+    removed: "Student je uklonjen iz kolegija.",
+    returnAllowed: "Povratak studenta je dopušten.",
+    notRemoved: "Student nije bio upisan u ovaj kolegij; ništa nije promijenjeno.",
+    notAllowed: "Ništa nije promijenjeno.",
+    ended: "Prijava je istekla ili nemate pravo na ovu radnju.",
+    invalid: "Zahtjev nije prihvaćen.",
+    unknown: "Ne znamo je li se promjena dogodila. Osvježite popis i provjerite stanje.",
+  },
 } as const;

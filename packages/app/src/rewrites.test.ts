@@ -42,7 +42,7 @@ describe("institutionRewrites", () => {
 describe("institutionRedirects (F4-STU-R01)", () => {
   it("sends the root /prijava of the server's failed sign-in to the app's own /prijava, not permanently", () => {
     expect(institutionRedirects()).toEqual([
-      { source: "/prijava", destination: "/app/web/prijava", basePath: false, permanent: false },
+      { source: "/prijava", destination: "/aplikacija/prijava", basePath: false, permanent: false },
     ]);
   });
 });

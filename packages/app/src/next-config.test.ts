@@ -10,14 +10,15 @@ describe("next.config (LOK-WEB-6)", () => {
     expect(nextConfig.allowedDevOrigins).toContain("127.0.0.1");
   });
 
-  it("keeps the host under /app/web/", () => {
-    expect(nextConfig.basePath).toBe("/app");
-    expect(nextConfig.assetPrefix).toBe("/app/web");
+  it("keeps the host under /aplikacija/", () => {
+    expect(nextConfig.basePath).toBe("/aplikacija");
+    // The build's own files go under the basePath too (/aplikacija/_next/); no second prefix (D-318).
+    expect(nextConfig.assetPrefix).toBeUndefined();
   });
 
   it("redirects the root /prijava to the app's, so the server's greska codes land on E-1 (F4-STU-R01)", async () => {
     expect(await nextConfig.redirects?.()).toContainEqual(
-      expect.objectContaining({ source: "/prijava", destination: "/app/web/prijava", basePath: false }),
+      expect.objectContaining({ source: "/prijava", destination: "/aplikacija/prijava", basePath: false }),
     );
   });
 

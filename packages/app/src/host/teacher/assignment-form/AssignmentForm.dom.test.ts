@@ -9,7 +9,7 @@ import AssignmentForm from "./AssignmentForm";
 import { assignmentFormHr as f } from "./messages.hr";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const course = { id: "c1", name: "Izmišljeni kolegij", academicYear: "2026./2027.", aiPolicy: "partially_allowed" } as const;
 const groups = { kind: "ready", groups: [{ id: "g1", name: "Grupa A" }, { id: "g2", name: "Grupa B" }] } as const;
 
@@ -56,6 +56,30 @@ describe("AssignmentForm flow (NZ-3, NZ-4)", () => {
     const body = (publish.mock.calls[0] as unknown as [string, Record<string, unknown>])[1];
     expect(body).toMatchObject({ groupIds: ["g1"], aiSummaryOnly: true, externalToolsAllowed: false, aiPurposes: ["literature_search"] });
     expect(setRules).toHaveBeenCalledWith("a-new", expect.objectContaining({ withdrawal: false, declarationRequired: true }));
+  });
+
+  it("turns late submission off, shows it in the review and passes it to the switches (F4-NAS-R01)", async () => {
+    const publish = vi.fn(async () => ({ kind: "available" as const, id: "a-new" }));
+    const setRules = vi.fn(async () => []);
+    const host = await mount({ publish, setRules, loadGroups: async () => ({ kind: "ready", groups: [] }) });
+    await fillBasics(host);
+    expect(box("pr-late", "yes").checked).toBe(true);
+    await click(box("pr-late", "no"));
+    expect(host.textContent).toContain(f.submitRules.seesLate.off);
+    await click(button(f.review));
+    const row = [...document.querySelectorAll("dt")].find((dt) => dt.textContent === f.labels.late);
+    expect(row?.nextElementSibling?.textContent).toBe(f.values.lateOff);
+    await click(button(f.publish));
+    expect(setRules).toHaveBeenCalledWith("a-new", expect.objectContaining({ lateAllowed: false }));
+  });
+
+  it("says when the late rule could not be set after publishing", async () => {
+    const host = await mount({ publish: async () => ({ kind: "available" as const, id: "a-new" }), setRules: async () => ["late"], loadGroups: async () => ({ kind: "ready", groups: [] }) });
+    await fillBasics(host);
+    await click(box("pr-late", "no"));
+    await click(button(f.review));
+    await click(button(f.publish));
+    expect(document.querySelector('[role="alert"]')?.textContent).toBe(f.submitRules.failed.late);
   });
 
   it("sends no groupIds with every group ticked and asks for one when none is", async () => {

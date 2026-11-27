@@ -13,7 +13,7 @@ describe("the teacher's code-test page is mounted", () => {
     expect(resolve("/nastavnik/zadatak/a1/testovi", null)).not.toMatchObject({ kind: "page" });
   });
   it("the Next page renders CodeTestsPage, which mounts the form, and refuses a malformed id as not found", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/nastavnik/zadatak/[assignmentId]/testovi/page.tsx"), "utf8");
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/nastavnik/zadatak/[assignmentId]/testovi/page.tsx"), "utf8");
     expect(page).toContain("CodeTestsPage");
     expect(page).toContain("notFound()");
     expect(readFileSync(join(import.meta.dirname, "CodeTestsPage.tsx"), "utf8")).toContain("<CodeTestsForm");
