@@ -67,7 +67,7 @@ const WORD_KEY = 6;
 export type SentenceStart = { readonly word: string; readonly count: number; readonly pos: number };
 export type RepeatedWord = { readonly word: string; readonly key: string; readonly count: number };
 
-const top = <T extends { count: number }>(list: T[], min: number, max: number) => list.filter((x) => x.count >= min).sort((a, b) => b.count - a.count).slice(0, max);
+const strongest = <T extends { count: number }>(list: T[], min: number, max: number) => list.filter((x) => x.count >= min).sort((a, b) => b.count - a.count).slice(0, max);
 
 /** Sentence starts (a first word of three letters or more) used three times or more, at most eight. */
 export function sentenceStarts(doc: ReviewDoc, scope: PregledScope): SentenceStart[] {
@@ -81,7 +81,7 @@ export function sentenceStarts(doc: ReviewDoc, scope: PregledScope): SentenceSta
       seen.set(m[1]!, o);
     }
   }
-  return top([...seen.values()], STARTS_MIN, STARTS_SHOWN);
+  return strongest([...seen.values()], STARTS_MIN, STARTS_SHOWN);
 }
 
 /** Words of five letters or more (counted by their first six letters) used six times or more, at most twelve. */
@@ -97,7 +97,7 @@ export function repeatedWords(doc: ReviewDoc, scope: PregledScope): RepeatedWord
       seen.set(key, o);
     }
   }
-  return top([...seen.values()], WORDS_MIN, WORDS_SHOWN);
+  return strongest([...seen.values()], WORDS_MIN, WORDS_SHOWN);
 }
 
 /** The block of the next use of a word after `from` (the first use when none follows), or null. */
