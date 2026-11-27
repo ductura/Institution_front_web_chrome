@@ -5,8 +5,10 @@ import { Button, Card, Checkbox, DataTable, RouteLoading } from "@ductura/ui";
 
 import { createApi, goToSignIn } from "@/client/api";
 import { downloadBlob } from "../../../../../../src/components/editor/EarlierDraft";
+import { messagesHr as shell } from "../../../../../../locales/hr.ts";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
+import { DeniedState, LoadAlert, NotFoundState } from "../../states/States";
 import { questionnaireExportText as t } from "./messages.hr";
 import {
   CSV_FILE, JSON_FILE, QUESTIONNAIRE_EXPORT_MIN_RESPONSES, exportPath, exportedVariables, fill, textVariables, toCsv, toJson,
@@ -68,14 +70,15 @@ export default function QuestionnaireExportPage({ questionnaireId, call = defaul
   const head = <header><h1>{t.title}</h1><p>{t.lead}</p></header>;
 
   if (read === null || read.kind === "signedOut") return <div className="page">{back}{head}<RouteLoading label={t.loading} /></div>;
-  if (read.kind === "notFound") {
-    return <div className="page">{back}{head}<Card level={2} title={t.notFound.title}><p role="alert">{t.notFound.body}</p></Card></div>;
-  }
+  // F14: 404 and 403 are two states, not a read error; only the heading and the way back, no head and no body.
+  const own = appHref(base, "/nastavnik");
+  if (read.kind === "notFound") return <div className="page"><NotFoundState title={shell.errorPage.notFoundTitle} back={{ label: shell.access.backToOwn, href: own }} /></div>;
+  if (read.kind === "denied") return <div className="page"><DeniedState title={shell.access.deniedTitle} backLabel={shell.access.backToOwn} backHref={own} /></div>;
   if (read.kind === "unavailable") {
     return (
       <div className="page">{back}{head}
         <Card level={2} title={t.countTitle}>
-          <p role="alert">{t.unavailable}</p>
+          <LoadAlert body={t.unavailable} />
           <p><Button tone="quiet" onClick={reload}>{t.retry}</Button></p>
         </Card>
       </div>
@@ -116,7 +119,7 @@ export default function QuestionnaireExportPage({ questionnaireId, call = defaul
   return (
     <div className="page">
       {back}{head}{titleLine}
-      {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
+      {note !== null && (note.tone === "alert" ? <LoadAlert body={note.text} /> : <p role="status">{note.text}</p>)}
       <Card level={2} title={t.countTitle}>
         <p>{fill(t.countLine, { n: data.responseCount })}</p>
         <p>{fill(t.minNote, { min: MIN })}</p>

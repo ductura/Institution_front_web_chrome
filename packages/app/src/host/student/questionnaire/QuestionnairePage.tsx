@@ -6,6 +6,7 @@ import { Button, Card, OptionGroup, RouteLoading, Tag, TextArea, TextField } fro
 import { createApi, goToSignIn } from "@/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
+import { LoadAlert } from "../../states/States";
 import { questionnaireText as t } from "./messages.hr";
 import { buildSheet, emptyField, MAX_TEXT, scaleValues, type Fields } from "./model";
 import { readForm, readList, sendSheet, type Form, type FormRead, type ListRead, type Row } from "./read";
@@ -57,7 +58,7 @@ export default function QuestionnairePage({ call = defaultCall }: { call?: () =>
     return (
       <div className="page">{back}{head}
         <Card level={2} title={t.listTitle}>
-          <p role="alert">{t.unavailable}</p>
+          <LoadAlert body={t.unavailable} />
           <p><Button tone="quiet" onClick={reload}>{t.retry}</Button></p>
         </Card>
       </div>
@@ -67,7 +68,7 @@ export default function QuestionnairePage({ call = defaultCall }: { call?: () =>
   return (
     <div className="page">
       {back}{head}
-      {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
+      {note !== null && (note.tone === "alert" ? <LoadAlert body={note.text} /> : <p role="status">{note.text}</p>)}
       <Card level={2} title={t.listTitle}>
         {rows.length === 0 ? <><h3>{t.noQuestionnaires.title}</h3><p>{t.noQuestionnaires.body}</p></> : (
           <ul>
@@ -132,7 +133,7 @@ function FormCard({ id, title, call, here, onClose, onBusy, onFinished, onUnknow
   if (read.kind === "unavailable") {
     return (
       <Card level={2} title={card}>
-        <p role="alert">{t.formUnavailable}</p>
+        <LoadAlert body={t.formUnavailable} />
         <p><Button tone="quiet" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button>{" "}<Button tone="quiet" onClick={onClose}>{t.close}</Button></p>
       </Card>
     );
@@ -182,7 +183,7 @@ function Sheet({ form, card, call, here, onClose, onBusy, onFinished, onUnknown 
     <Card level={2} title={card}>
       <form onSubmit={(event) => void send(event)} noValidate>
         <p>{t.optionalNote}</p>
-        {error !== null && error.questionId === null && <p role="alert">{error.text}</p>}
+        {error !== null && error.questionId === null && <LoadAlert body={error.text} />}
         {questions.map((q) => {
           const legend = t.questionOf.replace("{n}", String(q.order)).replace("{text}", q.text);
           const value = fields[q.id] ?? emptyField(q);
