@@ -12,10 +12,10 @@ export const receiptText = {
   dueAt: "Rok",
   signingStarted: "Potpisivanje potvrde započelo",
   notYetRecorded: "još nije zabilježeno",
-  utc: "Točne vrijednosti iz potvrde (UTC)",
+  utc: "Točna vremena iz potvrde (UTC)", // nacrt (S-08, Ductus#2059): the old label spoke of values; the block now holds times in words
   fingerprintTitle: "Otisak predanog teksta",
   fingerprintNote: "Niz znakova izračunan iz točnog predanog teksta. Ako se tekst promijeni i za jedan znak, otisak više nije isti.",
-  copy: "Kopiraj otisak",
+  copy: "Otisak u međuspremnik",
   copied: "Otisak je kopiran.",
   toastLabel: "Obavijesti",
   toastClose: "Zatvori",

@@ -1,6 +1,8 @@
 // WEB-V19-RECENZIJA-STUDENT: the pure rules of the peer-review screens. Nothing here counts, sorts by an
 // amount, ranks, marks or names a person (val19-razlika V19-11): works are "Rad 1, 2, …" by position,
 // received reviews are in the order they were sent.
+import { formatDateHr, formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
+import { peerReviewText } from "./messages.hr";
 import type { ReceivedView, TasksView, WorkView } from "./read";
 
 export const MAX_TEXT = 4000;
@@ -52,8 +54,11 @@ export function buildReview(rubrics: WorkView["rubrics"], draft: Draft): Built {
 /** The works by position: the label never carries anything that leads to a person. */
 export const workNumber = (index: number): number => index + 1;
 
-export const dueLabel = (iso: string): string =>
-  new Intl.DateTimeFormat("hr-HR", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Zagreb" }).format(new Date(iso));
+/** "19. listopada 2026. u 14:05" (V19, A3). */
+export const dueLabel = (iso: string): string => formatDateTimeHr(iso);
+
+/** A day only ("19. listopada 2026."): where only the day matters (V19, A3). */
+export const dayLabel = (iso: string): string => formatDateHr(iso);
 
 /** The reviews in the order they were sent (time, not quality). */
 export const inSentOrder = (reviews: ReceivedView["reviews"]): ReceivedView["reviews"] =>
@@ -76,3 +81,10 @@ export function grouped(blocks: readonly Block[]): readonly Rendered[] {
 
 /** May the student write a review for this task now: the round is open and the task is still waiting. */
 export const mayWrite = (view: TasksView, task: TasksView["tasks"][number]): boolean => view.state === "open" && task.state === "pending";
+
+/** What a task says about itself: waiting only while the round is open; otherwise the round's state (V19). */
+export function taskStatus(view: TasksView, task: TasksView["tasks"][number]): string {
+  if (task.state === "submitted") return peerReviewText.list.submitted;
+  if (view.state === "open") return peerReviewText.list.pending;
+  return view.state === "closed" ? peerReviewText.list.roundClosed : peerReviewText.list.notOpenYet;
+}

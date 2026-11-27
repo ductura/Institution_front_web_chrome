@@ -19,7 +19,7 @@ function toState(read: TeacherDeclarationRead): TeacherAiAttachmentsState {
 
 /**
  * N-07 declPanel and dialog ch-h (WEB-2165): the declaration on the submission page, with each
- * attached conversation opened in a dialog „Razgovor n · datum”. Read only; the port hands over
+ * attached conversation opened in a dialog „Razgovor n, datum”. Read only; the port hands over
  * attached conversations only (D-41). Without a given port it reads the server's declaration
  * (teacher.declaration.get, PIL-K-AI-PRILOZI); a route that fails is said, never an empty list.
  */

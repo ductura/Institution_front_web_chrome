@@ -24,8 +24,9 @@ on:
       preloader_ref:
         type: string
         required: false
-      # CI-WEB-NOGE: ci.yml passes true and the job takes the build of its
-      # job `app-build` instead of building the host again (about 55 s).
+      # CI-WEB-NOGE: ci.yml passes true and the job takes the build of the
+      # build step of its job `changes` instead of building the host again
+      # (about 55 s).
       build_artifact:
         type: boolean
         default: false

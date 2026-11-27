@@ -69,16 +69,16 @@ describe("E-9 variants (WEB-2107)", () => {
 
 describe("PD-2 and the prototype's copy", () => {
   it("titles each conversation and labels its entries", () => {
-    expect(chatTitle(FAKE_CHATS[0]!)).toBe("Razgovor 1 · 28. 10. 2026.");
-    expect(chatTitle(FAKE_CHATS[1]!)).toBe("Razgovor 2 · 31. 10. 2026.");
-    expect(FAKE_CHATS[0]!.entries.map(entryLabel)).toEqual(["Vi · 10:01", "Asistent · 10:02", "Prijenos u tekst · 10:05"]);
+    expect(chatTitle(FAKE_CHATS[0]!)).toBe("Razgovor 1, 28. 10. 2026.");
+    expect(chatTitle(FAKE_CHATS[1]!)).toBe("Razgovor 2, 31. 10. 2026.");
+    expect(FAKE_CHATS[0]!.entries.map(entryLabel)).toEqual(["Vi, 10:01", "Asistent, 10:02", "Prijenos u tekst, 10:05"]);
     expect(FAKE_CHATS.map((c) => c.required)).toEqual([true, false]);
   });
 
   it("formats the recorded lines", () => {
     const full = FAKE_READS.puno;
     if (full.kind !== "ready") throw new Error("fixture");
-    expect(recordedLine(full.recorded[0]!)).toEqual({ line: "Prijenos iz Asistenta, 28. 10. 2026. u 10:05", who: "Asistent · 2. Teorijski okvir, odlomak 1" });
+    expect(recordedLine(full.recorded[0]!)).toEqual({ line: "Prijenos iz Asistenta, 28. 10. 2026. u 10:05", who: "Asistent, 2. Teorijski okvir, odlomak 1" });
     expect(recordedLine(full.recorded[1]!).line).toBe("Razgovor s Asistentom bez prijenosa, 31. 10. 2026.");
   });
 

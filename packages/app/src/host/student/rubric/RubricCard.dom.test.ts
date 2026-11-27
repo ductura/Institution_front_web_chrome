@@ -35,7 +35,8 @@ describe("RubricCard", () => {
   it("loading, unavailable (with a retry that reads again), empty and not found are different states", async () => {
     api.mockResolvedValueOnce({ ok: false, status: 503, code: "unavailable" });
     await mount();
-    expect(host.querySelector("[data-testid=rubric-state]")?.textContent).toBe(t.unavailable);
+    expect(host.querySelector("[data-testid=rubric-state] [role=alert]")?.textContent).toBe(t.unavailable);
+    expect(host.querySelector("[data-testid=rubric-state] button")?.textContent).toBe(t.retry);
     api.mockResolvedValueOnce({ ok: true, status: 200, body: BODY });
     await act(async () => { (host.querySelector("button") as HTMLButtonElement).click(); });
     expect(host.querySelectorAll("[data-testid=rubric-criterion]")).toHaveLength(2);

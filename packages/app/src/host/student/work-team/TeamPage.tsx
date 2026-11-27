@@ -7,6 +7,7 @@ import { createApi, goToSignIn } from "@/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
 import { editorPath } from "../enrol/model";
+import { LoadAlert } from "../../states/States";
 import { ContributionCard } from "./ContributionCard";
 import { workTeamText as t } from "./messages.hr";
 import { byName, countOf, fullName, mayFormTeam, plural } from "./model";
@@ -77,13 +78,12 @@ export default function TeamPage({ assignmentId, call = defaultCall }: { assignm
   const head = <header><h1>{t.title}</h1><p>{t.lead}</p></header>;
 
   if (team === null || team.kind === "signedOut") return <div className="page">{back}{head}<RouteLoading label={t.loading} /></div>;
-  if (team.kind === "notFound") return <div className="page">{back}{head}<Card level={2} title={t.title}><p role="alert">{t.gone}</p></Card></div>;
+  if (team.kind === "notFound") return <div className="page">{back}{head}<Card level={2} title={t.title}><LoadAlert body={t.gone} /></Card></div>;
   if (team.kind === "unavailable") {
     return (
       <div className="page">{back}{head}
         <Card level={2} title={t.title}>
-          <p role="alert">{t.unavailable}</p>
-          <p><Button tone="quiet" onClick={retry}>{t.retry}</Button></p>
+          <LoadAlert body={t.unavailable} retry={{ label: t.retry, onRetry: retry }} />
         </Card>
       </div>
     );
@@ -92,7 +92,7 @@ export default function TeamPage({ assignmentId, call = defaultCall }: { assignm
   return (
     <div className="page">
       {back}{head}
-      {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
+      {note !== null && (note.tone === "alert" ? <LoadAlert body={note.text} /> : <p role="status">{note.text}</p>)}
       {view.state === "disabled" && <Card level={2} title={t.title}><p data-testid="team-disabled">{t.disabled}</p></Card>}
       {view.state === "none" && (
         <Card level={2} title={t.none.title}>
@@ -103,11 +103,11 @@ export default function TeamPage({ assignmentId, call = defaultCall }: { assignm
               <h3>{t.openTeamsTitle}</h3>
               {view.openTeams.length === 0 ? <p>{t.noOpenTeams}</p> : (
                 <ul>
-                  {view.openTeams.map((open) => (
+                  {view.openTeams.map((open, index) => (
                     <li key={open.teamId} data-testid="open-team">
-                      {t.openTeamLine.replace("{n}", countOf(open.memberCount))}{" "}
+                      {t.openTeamLine.replace("{n}", String(index + 1)).replace("{m}", countOf(open.memberCount))}{" "}
                       <Button tone="quiet" busy={busy === `join-${open.teamId}`} disabled={busy !== null}
-                        aria-label={t.joinAria.replace("{n}", countOf(open.memberCount))} onClick={() => void act({ action: "join", teamId: open.teamId })}>
+                        aria-label={t.joinAria.replace("{n}", String(index + 1)).replace("{m}", countOf(open.memberCount))} onClick={() => void act({ action: "join", teamId: open.teamId })}>
                         {busy === `join-${open.teamId}` ? t.joining : t.join}
                       </Button>
                     </li>
