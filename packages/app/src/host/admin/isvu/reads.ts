@@ -52,3 +52,28 @@ export async function confirmImport(importId: string, options?: ApiOptions): Pro
     return { kind: "unavailable" };
   }
 }
+
+type CsvPreview = Extract<ApiResult<"institution.roster-imports.post">, { ok: true }>["body"];
+export type CsvImportPreview = CsvPreview;
+export type CsvSource = CsvPreview["source"];
+/** The server's limit for the pasted list (contract: maxLength of `csv`). */
+export const CSV_MAX_LENGTH = 200000;
+/** Why the server refused the list itself (422); the codes are the contract's. */
+export type CsvRejection = "columns" | "tooManyRows" | "malformed" | "invalid";
+export type CsvOutcome = Outcome<CsvImportPreview> | { kind: "rejected"; reason: CsvRejection };
+
+const rejection = (code: string): CsvRejection =>
+  code === "roster_columns_missing" ? "columns" : code === "roster_too_many_rows" ? "tooManyRows" : code === "roster_malformed" ? "malformed" : "invalid";
+
+/** Preview of a pasted CSV roster (Merlin or ISVU export); nothing is enrolled by this call. */
+export async function previewCsvImport(courseId: string, source: CsvSource, csv: string, options?: ApiOptions): Promise<CsvOutcome> {
+  if (csv.trim() === "" || csv.length > CSV_MAX_LENGTH) return { kind: "rejected", reason: "invalid" };
+  try {
+    const call = createApi(options);
+    const answer = await call("institution.roster-imports.post", { params: { courseId }, query: undefined, body: { source, csv } });
+    if (answer.ok) return { kind: "ok", value: answer.body };
+    return answer.status === 422 ? { kind: "rejected", reason: rejection(answer.code) } : { kind: failure(answer.status) };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}

@@ -6,6 +6,7 @@ import { appHref, homeHref } from "../../../../../../src/components/index";
 import { navLabel, useLocale } from "../../../i18n";
 import { useHost } from "../../context";
 import { DeniedState } from "../../states/States";
+import CsvImport from "./CsvImport";
 import IsvuPage from "./IsvuPage";
 
 /**
@@ -30,6 +31,7 @@ export default function IsvuRoute() {
     <section className="page" data-role={role ?? undefined}>
       <h1>{label}</h1>
       <IsvuPage onDenied={onDenied} />
+      <CsvImport onDenied={onDenied} />
     </section>
   );
 }
