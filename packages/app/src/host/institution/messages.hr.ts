@@ -17,27 +17,7 @@ export const institutionHostMessages = {
 
   student: {
     heading: "Uklanjanje i povratak studenta",
-    lead: "Student se uklanja iz kolegija ili mu se dopušta povratak u njega. Upišite identifikator studenta.",
-    field: "Identifikator studenta",
-    hint: "Identifikator je u zapisu iz kojeg dolazi zahtjev; imena studenata ovdje se ne prikazuju.",
-    remove: "Ukloni iz kolegija",
-    allowReturn: "Dopusti povratak",
-    cancel: "Odustani",
-    close: "Zatvori",
-    removeTitle: "Ukloniti studenta iz kolegija?",
-    returnTitle: "Dopustiti studentu povratak u kolegij?",
-    removeNote: "Student više neće biti upisan u ovaj kolegij.",
-    returnNote: "Student se može ponovno upisati u ovaj kolegij.",
-    invalidId: "Identifikator studenta nije ispravan.",
-    outcome: {
-      removed: "Student je uklonjen iz kolegija.",
-      returnAllowed: "Povratak studenta je dopušten.",
-      notRemoved: "Student nije bio upisan u ovaj kolegij; ništa nije promijenjeno.",
-      notAllowed: "Ništa nije promijenjeno.",
-      ended: "Prijava je istekla ili nemate pravo na ovu radnju.",
-      invalid: "Zahtjev nije prihvaćen. Provjerite identifikator.",
-      unknown: "Ne znamo je li se promjena dogodila. Osvježite prikaz i provjerite stanje.",
-    },
+    teacherOnly: "Uklanjanje studenta iz kolegija i dopuštanje povratka radi nastavnik kolegija. Administrator te radnje ne izvodi.",
     directEnrolment: "Izravni upis studenta nije dostupan. Student se upisuje kodom kolegija.",
   },
 } as const;
@@ -56,7 +36,8 @@ export const courseGroupMessages = {
   created: "Grupa je izrađena.",
   assigned: "Nastavnik je dodijeljen grupi.",
   invalid: "Unos nije prihvaćen. Naziv grupe mora imati 1 do 80 znakova, bez razmaka na početku i na kraju.",
-  ended: "Prijava je istekla ili nemate pristup. Prijavite se ponovno.",
+  ended: "Prijava je istekla. Prijavite se ponovno.",
+  forbidden: "Nemate pravo na ovu radnju.",
   unknown: "Nije potvrđeno je li promjena spremljena. Provjerite stanje popisa.",
   check: "Provjeri stanje",
 } as const;
