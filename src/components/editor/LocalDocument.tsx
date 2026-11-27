@@ -60,6 +60,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import { createLivePublisher, livePublishAllowed, type LivePublisher } from "@/client/live-publisher";
 import { followLogoutNatively, postLogout } from "@/client/logout-request";
 import { signInHref } from "@/client/api";
+import { createOriginSegmentsPort } from "@/client/origin-segments";
 import {
   editorSignOutPlan, planAfterDiscard, readLogoutHold, unsavedAfterSettle, untilLoaded, withinHoldLimit, type HoldRead,
 } from "@/client/logout-hold";
@@ -77,6 +78,7 @@ import {
 import { ConflictDialog } from "./ConflictDialog";
 import { applyKeptDocument, type ConflictChoice, type ConflictOffer, type ConflictOutcome } from "./conflict-resolution";
 import type { EvidenceSession, SheetDocument } from "./evidence-session";
+import { OriginReporter } from "./origin/origin-reporter";
 import LogoutDialog from "./LogoutDialog";
 import { blockedLastSavedText } from "./blocked-notice";
 import { StoppedReport } from "./stopped-report/StoppedReport";
@@ -347,6 +349,8 @@ export function LocalDocumentProvider({
   const saverRef = useRef<DocumentSaver | null>(null);
   // Set while an evidence session writes the sheet; it alone records changes.
   const evidenceRef = useRef<EvidenceSession | null>(null);
+  // PM1-R01: the origin ranges of the sheet, sent after each revision the server confirms.
+  const originsRef = useRef<OriginReporter | null>(null);
   // Only watches the editor's events (3d-1c, I6); one per provider.
   const [observer] = useState(() => new SourceObserver());
   const editorRef = useRef<Editor | null>(null);
@@ -433,7 +437,9 @@ export function LocalDocumentProvider({
       if (!evidence) return;
       const all = [transaction, ...appendedTransactions];
       const seen = observer.take(all);
-      if (readyRef.current) evidence.record(all, seen, Date.now());
+      if (!readyRef.current) return;
+      const source = evidence.record(all, seen, Date.now());
+      originsRef.current?.note(all, source);
     };
     editor.on("transaction", onTransaction);
     return () => { editor.off("transaction", onTransaction); };
@@ -567,6 +573,8 @@ export function LocalDocumentProvider({
       // This run's own values: the refs are shared with the next run (F-125 t. 2).
       let publisher: LivePublisher | null = null;
       let locked: LockedLogout | null = null;
+      let offConfirmed: () => void = () => {};
+      const origins = evidence ? new OriginReporter(createOriginSegmentsPort(), documentId) : null;
       try {
         const result = await saver.load();
         if (disposed) return;
@@ -578,6 +586,12 @@ export function LocalDocumentProvider({
         startFreshHistory(editor.view, "keep");
         saverRef.current = saver;
         evidenceRef.current = evidence;
+        // PM1-R01: a failed send of the ranges never reaches the writing or the saving of the text.
+        if (evidence && origins) {
+          originsRef.current = origins;
+          offConfirmed = evidence.onConfirmed(({ revision, document }) => { void origins.confirmed(revision, document).catch(() => null); });
+          if (result.kind === "ready") void origins.seed(evidence.loadedRevision(), result.document).catch(() => null);
+        }
         setSnapshot(saver.snapshot());
         if (result.kind !== "unavailable" && result.document) {
           // The only way stored ids enter the editor (#226): validated, never
@@ -698,6 +712,8 @@ export function LocalDocumentProvider({
       } finally {
         endRun({ publisher: publisherRef, logout: logoutRef }, { publisher, logout: locked });
         if (evidenceRef.current === evidence) evidenceRef.current = null;
+        if (originsRef.current === origins) originsRef.current = null;
+        offConfirmed();
         evidence?.pause();
         await saver.settled();
         evidence?.close();
