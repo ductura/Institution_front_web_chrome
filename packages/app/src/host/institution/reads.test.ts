@@ -1,7 +1,7 @@
 // LOK-WEB-8: the reads and role actions of /ustanova over a stub transport answering with invented data.
 import { describe, expect, it, vi } from "vitest";
 
-import { changeTeacherRole, readAcademicYears, readAdminCourses, readTeacherRoles } from "./reads";
+import { changeCourseStudent, changeTeacherRole, readAcademicYears, readAdminCourses, readTeacherRoles } from "./reads";
 import { chosenYear, displayName, overviewCounts, yearLabel } from "./views";
 
 const BASE = "https://ductura.example.invalid";
@@ -131,5 +131,39 @@ describe("views", () => {
     expect(overviewCounts({ pending: [], confirmed: [] }, [])).toEqual({
       confirmedTeachers: 0, teacherCandidates: 0, teachersWithoutAffiliation: 0, courses: 0, students: 0,
     });
+  });
+});
+
+describe("changeCourseStudent", () => {
+  it("posts removal and return to the course and student route", async () => {
+    const removal = reply(200, { removed: true });
+    expect(await changeCourseStudent("remove", A, B, { baseUrl: BASE, fetchImpl: removal })).toEqual({ kind: "done" });
+    expect(String(removal.mock.calls[0]![0])).toBe(`${BASE}/api/v1/institution/courses/${A}/students/${B}/removal`);
+    expect(removal.mock.calls[0]![1]?.method).toBe("POST");
+    const back = reply(200, { allowed: true });
+    expect(await changeCourseStudent("return", A, B, { baseUrl: BASE, fetchImpl: back })).toEqual({ kind: "done" });
+    expect(String(back.mock.calls[0]![0])).toBe(`${BASE}/api/v1/institution/courses/${A}/students/${B}/return-permission`);
+  });
+
+  it("says nothing changed for false, and never claims done for it", async () => {
+    expect(await changeCourseStudent("remove", A, B, { baseUrl: BASE, fetchImpl: reply(200, { removed: false }) })).toEqual({ kind: "nothing" });
+    expect(await changeCourseStudent("return", A, B, { baseUrl: BASE, fetchImpl: reply(200, { allowed: false }) })).toEqual({ kind: "nothing" });
+  });
+
+  it("maps the refusals and an unproven answer", async () => {
+    const send = (status: number) => changeCourseStudent("remove", A, B, { baseUrl: BASE, fetchImpl: reply(status, error("x")) });
+    expect(await send(401)).toEqual({ kind: "unauthorized" });
+    expect(await send(403)).toEqual({ kind: "forbidden" });
+    expect(await send(422)).toEqual({ kind: "invalid" });
+    expect(await send(404)).toEqual({ kind: "unknown" });
+    expect(await send(503)).toEqual({ kind: "unknown" });
+    expect(await changeCourseStudent("remove", A, B, { baseUrl: BASE, fetchImpl: vi.fn(async () => { throw new Error("offline"); }) })).toEqual({ kind: "unknown" });
+  });
+
+  it("sends nothing for an id that is not a UUID", async () => {
+    const fetchImpl = reply(200, { removed: true });
+    expect(await changeCourseStudent("remove", A, "nije-uuid", { baseUrl: BASE, fetchImpl })).toEqual({ kind: "invalid" });
+    expect(await changeCourseStudent("return", "x", B, { baseUrl: BASE, fetchImpl })).toEqual({ kind: "invalid" });
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

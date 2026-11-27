@@ -15,6 +15,7 @@ import { coursesText as t } from "./messages.hr";
 import { effectiveDue, matchesState, rowKind, STATE_FILTERS, stateFilterOf, submittedLine, type StateFilter } from "./model";
 import { EnrollLink, Frame, State, TaskItem, useExtensions, whenHr, yearLabel } from "./CoursesPages";
 import { readCourses, type CoursesCall } from "./read";
+import MyNumbers from "../my-numbers/MyNumbers";
 import own from "./courses.module.css";
 import { createApi } from "../../../../../../src/client/api.ts";
 import { useSearchParams } from "next/navigation";
@@ -94,6 +95,8 @@ export function MyWorksPage({ filter }: { filter: WorksFilter }) {
           )}
         </>
       ) : null}
+      {/* F4-PM2-R20 (M7.13): the student's own figures, from saved versions. */}
+      {ready && items.length > 0 ? <MyNumbers here="/zadaci/radovi" /> : null}
     </Frame>
   );
 }

@@ -15,7 +15,7 @@ import { assignmentFormHr as f, documentKindHr as k } from "./messages.hr";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 // Invented course, assignment and ids.
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const course = { id: "c1", name: "Izmišljeni kolegij", academicYear: "2026./2027.", aiPolicy: "partially_allowed" } as const;
 const courseId = "0b7c4f0e-6d1a-4c55-9a3e-2f1d8c9b7a61";
 const assignmentId = "8c7b6a5d-4e3f-4b2a-8d9c-6e5f4a3b2c01";
@@ -35,8 +35,15 @@ describe("documentKind on the bodies", () => {
     expect(kindOf(undefined)).toBe("text");
     expect(kindOf("video")).toBe("text");
     expect(kindOf("slides")).toBe("slides");
+    expect(kindOf("spreadsheet")).toBe("spreadsheet");
     expect(withDocumentKind(base(), {})).toMatchObject({ documentKind: "text" });
     expect(withDocumentKind(base(), { documentKind: "slides" })).toMatchObject({ documentKind: "slides" });
+  });
+
+  it("sends a table as workKind spreadsheet beside documentKind text (the enum is not widened)", () => {
+    const body = withDocumentKind(base(), { documentKind: "spreadsheet" });
+    expect(body).toMatchObject({ documentKind: "text", workKind: "spreadsheet" });
+    expect(withDocumentKind(base(), { documentKind: "slides" })).not.toHaveProperty("workKind");
   });
 
   it("reaches the wire of the create route through the typed client", async () => {
@@ -75,6 +82,7 @@ describe("DocumentKindReadBack (edit page)", () => {
     expect(text({ documentKind: "text" })).toContain(k.options.text);
     expect(text({})).toContain(k.unknown);
     expect(text({ documentKind: "video" })).toContain(k.unknown);
+    expect(text({ documentKind: "text", workKind: "spreadsheet" })).toContain(k.options.spreadsheet);
   });
 });
 
@@ -120,6 +128,17 @@ describe("AssignmentForm document kind", () => {
     expect(document.body.textContent).toContain(k.options.slides);
     await click(button(f.publish));
     expect(sentBody(publish)).toMatchObject({ documentKind: "slides" });
+  });
+
+  it("sends workKind: spreadsheet when Tablica is picked", async () => {
+    const publish = vi.fn(async () => ({ kind: "available" as const, id: "a-new" }));
+    await start({ publish });
+    await click(radio("spreadsheet"));
+    expect(document.body.textContent).toContain(k.spreadsheetHint);
+    await click(button(f.review));
+    expect(document.body.textContent).toContain(k.options.spreadsheet);
+    await click(button(f.publish));
+    expect(sentBody(publish)).toMatchObject({ documentKind: "text", workKind: "spreadsheet" });
   });
 
   it("shows a contract refusal as an error, not as published", async () => {

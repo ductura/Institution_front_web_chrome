@@ -60,8 +60,8 @@ describe("ruta /ustanova/predlozak-rada", () => {
     expect(resolve("/ustanova/predlozak-rada", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
     expect(resolve("/ustanova/predlozak-rada", null)).toEqual({ kind: "redirect", to: "/" });
   });
-  it("stranica je montirana u app/[base] kroz rute postavki fakulteta", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../../../app/[base]/ustanova/predlozak-rada/page.tsx"), "utf8");
+  it("stranica je montirana u app/(host) kroz rute postavki fakulteta", () => {
+    const page = readFileSync(join(import.meta.dirname, "../../../../app/(host)/ustanova/predlozak-rada/page.tsx"), "utf8");
     expect(page).toContain("faculty-settings/routes");
     expect(page).toContain('view="work-template"');
     expect(readFileSync(join(import.meta.dirname, "../faculty-settings/routes.tsx"), "utf8")).toContain("WorkTemplatePage");

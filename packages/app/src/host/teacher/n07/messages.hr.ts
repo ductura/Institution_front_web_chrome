@@ -32,9 +32,10 @@ export const n07Messages = {
   verifyNote: "Potpis potvrde provjerava se na stranici Provjera potvrde, bez prijave.",
   verifyLink: "Provjera potvrde",
   qrNote: "QR kod je u zapisu koji je student preuzeo. Ovdje je samo uzorak bez sadržaja.",
-  revision: "Zatraži doradu",
-  // Only when the port carries no return (a failed wiring); the live port is work.return-for-revision.post (WEB-2155B).
-  revisionUnavailable: "Vraćanje na doradu trenutačno nije dostupno.",
-  revisionDone: "Rad je vraćen na doradu.",
   fastPath: "Brz put",
+  pdf: "Preuzmi PDF potvrde",
+  pdfLoading: "Pripremam PDF potvrde.",
+  pdfSaved: "PDF potvrde je preuzet.",
+  pdfFailed: "PDF potvrde trenutačno nije moguće preuzeti. Predaja i vrijeme predaje time se ne mijenjaju.",
+  pdfNotFound: "PDF potvrde za ovaj rad nije dostupan ovom računu.",
 } as const;

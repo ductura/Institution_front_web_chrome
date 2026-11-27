@@ -36,6 +36,7 @@ import type {
 import { restoreSyncState } from "@/domain/sync/restore";
 import type { SyncState } from "@/domain/sync/states";
 import { CaptureError, EvidenceRecorder, type BuiltSegment, NO_OBSERVATION, recordWithSource, type SourceObservation } from "@/editor";
+import type { EvidenceSource } from "@/domain/forensics/evidence-segment-v2";
 import { verifyWorkOpening, type VerifiedWorkOpening } from "@/domain/serverSync/work-opening";
 import type { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
 import {
@@ -148,6 +149,8 @@ export type EvidenceSnapshot = SaverSnapshot & {
 export type SheetDocument = CanonicalDocument | CanonicalDocumentV3;
 
 type Candidate = { doc: SheetDocument; gen: number; marks: number };
+/** A revision the server confirmed with a verified receipt, and the document it holds (PM1-R01). */
+export type ConfirmedRevision = { revision: number; document: VersionedDocument };
 type Contents = JournalContents<EvidenceSegmentTransaction, VersionedDocument>;
 
 const STICKY: ReadonlySet<SyncState> = new Set(["CONFLICT", "RECOVERY_REQUIRED"]);
@@ -202,6 +205,9 @@ export class EvidenceSession {
   private unlisten: () => void = () => {};
   private unwatch: () => void = () => {};
   private readonly listeners = new Set<(snapshot: EvidenceSnapshot) => void>();
+  private readonly confirmedListeners = new Set<(confirmed: ConfirmedRevision) => void>();
+  /** PM1-R01: the server revision the load's document is, when nothing was owed at load; else null. */
+  private loadedAt: number | null = null;
   private readonly id: string;
   private readonly now: () => Date;
   private readonly clock: () => number;
@@ -305,6 +311,7 @@ export class EvidenceSession {
     this.refused = meta.refusedLocalSeq !== undefined;
     this.stopped = meta.evidenceStopped ?? null;
     this.profile = this.work?.evidenceProfileId ?? this.deps.storedProfile?.(meta) ?? null;
+    this.loadedAt = contents.pending.length === 0 ? snapshot.revision : null;
     this.loaded = true;
     if (this.work?.submitted) {
       // O2 (DAN-289, #756 c.6399602745): a submitted work opens closed, the
@@ -328,18 +335,37 @@ export class EvidenceSession {
     return { kind: "ready", document: document.doc };
   }
 
-  /** One editor change (`transaction` event); the caller gates it on its ready flag. */
-  record(transactions: readonly Transaction[], observation: SourceObservation = NO_OBSERVATION, at = Date.now()): void {
-    if (!this.recorder || this.stopped || this.halted || this.closedBy) return;
-    if (!transactions.some((tr) => tr.docChanged)) return;
+  /**
+   * PM1-R01: the server revision the loaded document is, or null when the
+   * journal owed rows at load (the document is then ahead of any revision).
+   */
+  loadedRevision(): number | null {
+    return this.loadedAt;
+  }
+
+  /**
+   * PM1-R01: calls back after a step whose verified receipt left nothing owed,
+   * with the confirmed revision and the journal's document, which is then that
+   * revision's text. A revision with rows still owed is not reported.
+   */
+  onConfirmed(listener: (confirmed: ConfirmedRevision) => void): () => void {
+    this.confirmedListeners.add(listener);
+    return () => { this.confirmedListeners.delete(listener); };
+  }
+
+  /** One editor change (`transaction` event); the caller gates it on its ready flag. Returns the source it recorded, if any. */
+  record(transactions: readonly Transaction[], observation: SourceObservation = NO_OBSERVATION, at = Date.now()): EvidenceSource | null {
+    if (!this.recorder || this.stopped || this.halted || this.closedBy) return null;
+    if (!transactions.some((tr) => tr.docChanged)) return null;
     this.recorded += 1;
     try {
-      recordWithSource(this.recorder, transactions, observation, at);
+      return recordWithSource(this.recorder, transactions, observation, at);
     } catch (error) {
       if (!(error instanceof CaptureError)) throw error;
       this.stopped = error.code;
       // DAN-699: the student learns of the stop now, not at the next save.
       this.emit();
+      return null;
     }
   }
 
@@ -578,12 +604,26 @@ export class EvidenceSession {
       this.manualOnly = result.kind === "needs_retry";
       if (result.kind === "sent" && result.state === "SYNCED") this.syncedHere = true;
       const contents = await this.refresh();
+      if (result.kind === "sent" && result.ackedRevision !== null && contents) this.confirm(result.ackedRevision, contents);
       if (result.kind === "sent" && contents && contents.pending.length > 0) continue;
       if (result.kind === "waiting" && !this.closed && !this.closedBy) {
         const set = this.deps.setTimer ?? ((run, ms) => setTimeout(run, ms));
         this.timer = set(() => { this.timer = null; this.kick(); }, Math.max(0, result.notBefore - this.clock()));
       }
       return;
+    }
+  }
+
+  /** PM1-R01: reports `revision` only when nothing is owed and the journal's document is based on it. */
+  private confirm(revision: number, contents: Contents): void {
+    const { snapshot, pending } = contents;
+    if (pending.length > 0 || !snapshot || snapshot.revision !== revision || this.closedBy || this.stopped) return;
+    for (const listener of [...this.confirmedListeners]) {
+      try {
+        listener({ revision, document: snapshot.document });
+      } catch {
+        // A listener's failure never reaches the saving of the text.
+      }
     }
   }
 
@@ -735,6 +775,27 @@ export class EvidenceSession {
         this.kick();
       }
       this.emit();
+    }
+  }
+
+  /**
+   * F4-EDI-R05: the server's version of the work, for the difference the
+   * author sees before choosing a way out of a sticky state. Read only: the
+   * answer is asked for now, a v3 work only once it is verified again as this
+   * v3 work, and nothing is written. Null when there is no answer, it is
+   * another work's, it cannot be verified, or its document is not valid.
+   */
+  async serverVersion(): Promise<SheetDocument | null> {
+    if (this.closed) return null;
+    try {
+      const opened = await this.openSafely();
+      if (this.closed || opened.status !== "opened" || opened.work.documentId !== this.id) return null;
+      if (this.deps.schemaVersion === 3 && !(await verifiedV3(this.id, opened.work))) return null;
+      const parsed: unknown = JSON.parse(new TextDecoder().decode(opened.work.document));
+      const valid = this.deps.schemaVersion === 3 ? validV3(parsed) : validateDocument(parsed);
+      return valid.ok ? valid.doc : null;
+    } catch {
+      return null;
     }
   }
 

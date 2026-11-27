@@ -27,3 +27,31 @@ export function institutionRewrites(server: string, nodeEnv: string | undefined)
     rules.push({ source: "/__lazni/:path*", destination: `${server}/__lazni/:path*`, basePath: false });
   return rules;
 }
+
+export interface Redirect {
+  source: string;
+  destination: string;
+  basePath: false;
+  permanent: false;
+}
+
+/**
+ * Old callers of /api/auth/* (login, callback, logout, logout-all) are sent on to the
+ * server's /api/v1/auth/*. A temporary redirect (307) keeps the method, so an old logout
+ * form still posts. Only these paths: "/" and the rest of the origin are never touched, the
+ * front lives under its basePath only (D-318, KA-07-WEB), and after sign-out the server
+ * leads the person back to "/".
+ */
+export function legacyAuthRedirects(): Redirect[] {
+  return [{ source: "/api/auth/:path+", destination: "/api/v1/auth/:path+", basePath: false, permanent: false }];
+}
+
+/**
+ * F4-STU-R01: the server's failed or refused sign-in returns to /prijava?greska=<code> at the root
+ * (login_refused, login_failed, provider_unavailable), but the app has only /aplikacija/prijava.
+ * This sends the root path there, and Next carries the whole query (greska, returnTo) over. Not
+ * permanent: the answer depends on the code and must not be cached by the browser.
+ */
+export function institutionRedirects(): Redirect[] {
+  return [{ source: "/prijava", destination: "/aplikacija/prijava", basePath: false, permanent: false }];
+}

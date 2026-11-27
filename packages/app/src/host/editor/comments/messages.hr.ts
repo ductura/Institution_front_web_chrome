@@ -87,4 +87,8 @@ export const commentsHr = {
   noteScope: "Komentari su odvojeni od teksta: tekst rada se ne mijenja.",
   deleted: "Komentar je obrisan.",
   submittedNote: "Rad je predan: komentare možete samo čitati.",
+  proposalsLoading: "Učitavanje prijedloga nastavnika…",
+  proposalsUnavailable: "Prijedlozi nastavnika trenutačno nisu dostupni.",
+  proposalsRefresh: "Osvježi prijedloge",
+  proposalsReadOnly: "Rad je predan: prijedloge možete samo čitati.",
 } as const;

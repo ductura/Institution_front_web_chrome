@@ -9,7 +9,7 @@ const ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c51";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d41";
 const SCOPE = "c".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0008";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 const SENTENCE = "Izmišljena rečenica osam.";
 
 async function server(page: Page) {
@@ -75,13 +75,14 @@ const notice = (page: Page) => page.getByText("Rad na poslužitelju razlikuje se
 test.describe("ED-08 Sukob", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test("the notice says what to do and promises no decision", async ({ page }) => {
+  test("the notice says what to do, and the decision is a button of its own (F4-EDI-R05)", async ({ page }) => {
     await openConflict(page);
     await expect(notice(page)).toHaveText(
       "Rad na poslužitelju razlikuje se od teksta na ovom uređaju. Tekst ostaje na uređaju i zasad se ništa ne šalje. Izvezite tekst i javite se podršci.",
     );
     await expect(page.getByText(/dok ne odlučite/)).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /Odluči/ })).toHaveCount(0);
+    // F4-EDI-R05 deliberately changes this: the decision is offered in a dialog opened by this button, the notice stays as it was.
+    await expect(page.getByRole("button", { name: "Odluči o razlici" })).toHaveCount(1);
   });
 
   for (const width of [390, 1280]) {

@@ -5,7 +5,7 @@
  * changes nothing and the person can try again (DAN-99, #1444).
  */
 
-import { cookieTransport, signOut, type ApiOptions } from "./api";
+import { cookieTransport, signOut, signOutAll, type ApiOptions } from "./api";
 import { LOGOUT_TIMEOUT_MS } from "./logout-hold";
 import {
   browserCookieJar, browserMarkStore, currentSession, endAfterLogout, SESSION_END_CHANNEL,
@@ -24,11 +24,24 @@ export { followLogoutNatively } from "./api";
  * unconfirmed (F-285).
  */
 export async function postLogout(fetchImpl?: ApiOptions["fetchImpl"], timeoutMs = LOGOUT_TIMEOUT_MS): Promise<boolean> {
+  return postWithin(signOut, fetchImpl, timeoutMs);
+}
+
+/** The same for "sign out of all sessions" (auth.logout-all.post, OPE-30). */
+export async function postLogoutAll(fetchImpl?: ApiOptions["fetchImpl"], timeoutMs = LOGOUT_TIMEOUT_MS): Promise<boolean> {
+  return postWithin(signOutAll, fetchImpl, timeoutMs);
+}
+
+async function postWithin(
+  send: (options: ApiOptions) => Promise<boolean>,
+  fetchImpl: ApiOptions["fetchImpl"] | undefined,
+  timeoutMs: number,
+): Promise<boolean> {
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), timeoutMs);
   try {
     const transport = cookieTransport("", fetchImpl);
-    const reached = await signOut({
+    const reached = await send({
       fetchImpl: (url, init) => transport(url, { ...init, signal: abort.signal }),
     });
     return !abort.signal.aborted && reached;
@@ -53,8 +66,8 @@ export function announceEnded(tag: string): void {
   channel.close();
 }
 
-export function browserSignOutDeps(): SignOutDeps {
-  return { post: () => postLogout(), store: browserMarkStore(), jar: browserCookieJar(), announce: announceEnded };
+export function browserSignOutDeps(all = false): SignOutDeps {
+  return { post: () => (all ? postLogoutAll() : postLogout()), store: browserMarkStore(), jar: browserCookieJar(), announce: announceEnded };
 }
 
 /**

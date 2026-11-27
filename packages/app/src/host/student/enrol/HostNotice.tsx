@@ -3,7 +3,7 @@
 // E-6 for the app host: the notice of the shared screen with what the prototype
 // adds (who set the rule, the faculty rule, three columns) and an editor link
 // that goes to /rad/<assignmentId>. The acknowledgment is the shared one.
-import { useReducer, useRef, useSyncExternalStore, type FormEvent } from "react";
+import { useEffect, useReducer, useRef, useSyncExternalStore, type FormEvent } from "react";
 
 import { AI_PURPOSES } from "../../../../../../src/components/teacher/assignment-create.ts";
 import type { StudentNoticeRead } from "../../../../../../src/client/student-notice.ts";
@@ -13,10 +13,11 @@ import { wordRangeHr } from "../../../../../../src/lib/i18n/length-line.ts";
 import { studentHostHr as t } from "../i18n/messages.hr.ts";
 
 import { noticeText } from "./messages.hr";
-import { editorPath } from "./model";
+import { NoticeChanges } from "./NoticeChanges";
 
 import { NoticeMeta } from "../notice/NoticeMeta";
 import styles from "../notice/Notice.module.css";
+import { assistantState } from "../notice/summary";
 import type { NoticeWindow } from "../notice/window";
 import own from "./HostNotice.module.css";
 
@@ -77,13 +78,16 @@ function ToolsCard({ view }: { view: NoticeView }) {
   );
 }
 
-function RecordCard({ extended }: { extended: boolean }) {
+function RecordCard({ extended, assistant }: { extended: boolean; assistant: boolean }) {
   return (
     <section className={styles.card} aria-labelledby="biljezi">
       <div className={own.cols}>
         <section>
           <h2 id="biljezi">{s.recordedHeading}</h2>
-          <ul>{Object.values(s.recorded).map((text) => <li key={text}>{text}</li>)}</ul>
+          <ul>
+            {Object.values(s.recorded).map((text) => <li key={text}>{text}</li>)}
+            {assistant ? <li>{s.recordedAssistant}</li> : null}
+          </ul>
         </section>
         <section>
           <h2>{s.notRecordedHeading}</h2>
@@ -105,66 +109,127 @@ function RecordCard({ extended }: { extended: boolean }) {
   );
 }
 
-export default function HostNotice({ view, timing, editorHref }: { view: NoticeView; timing: NoticeWindow; editorHref: string }) {
+type HostNoticeProps = {
+  view: NoticeView;
+  timing: NoticeWindow;
+  editorHref: string;
+  /** Where a 403 leads back to (E-6 `bezprava`). */
+  backHref: string;
+  /** Reads the notice again (E-6 `promijenjeno`, R-21). */
+  onReload: () => void;
+  /** Goes to the work after a fresh confirmation (R-19, E-7); the link is the way for a returning student. */
+  onOpenWork: () => void;
+};
+
+export default function HostNotice({ view, timing, editorHref, backHref, onReload, onOpenWork }: HostNoticeProps) {
   const [state, dispatch] = useReducer(reduce, view.acknowledgedAt, initialNotice);
   const sending = useRef(false);
+  const fresh = useRef(false);
   const inBrowser = useSyncExternalStore(never, () => true, () => false);
   const time = (iso: string) => (inBrowser ? formatDateTimeHr(iso) : "…");
 
+  const confirmedNow = state.phase === "acknowledged" && fresh.current;
+  useEffect(() => {
+    if (confirmedNow) onOpenWork();
+  }, [confirmedNow, onOpenWork]);
+
   async function confirm(event: FormEvent) {
     event.preventDefault();
+    // aria-disabled keeps the button in the tab order, so the guard is here and not in `disabled`.
     if (sending.current || !noticeStep(state, { type: "confirm" }).send) return;
     sending.current = true;
     dispatch({ type: "confirm" });
     const result = await acknowledgeNotice(view);
     sending.current = false;
+    if (result.kind === "acknowledged") fresh.current = true;
     dispatch({ type: "settled", result });
   }
 
-  const returning = view.acknowledgedAt !== null;
-  const done = state.phase === "acknowledged" ? (
-    <div className={styles.done}>
-      <p role="status">{s.confirmed.replace("{time}", time(state.at))}</p>
-      {timing !== "notOpen" ? <p><a className="btn" href={editorHref}>{s.openEditor}</a></p> : null}
-    </div>
-  ) : null;
-  const note = timing === "notOpen" ? s.notOpen.replace("{time}", time(view.opensAt))
-    : timing === "pastDue" ? s.pastDue.replace("{time}", time(view.dueAt)) : null;
-  const kindLine = [workTypes[view.workType], wordRangeHr({ min: view.wordMin, max: view.wordMax })].filter(Boolean).join(" · ");
+  const kindLine = [workTypes[view.workType], wordRangeHr({ min: view.wordMin, max: view.wordMax })].filter((part): part is string => Boolean(part));
+  const lead = (
+    <section className={own.lead} aria-label={view.title}>
+      <h2>{view.title}</h2>
+      <NoticeMeta kind={kindLine} due={s.dueAt.replace("{time}", time(view.dueAt))} />
+    </section>
+  );
 
+  // E-6 `nijeotvoren`: only the card; the notice and the confirmation come when the assignment opens.
+  if (timing === "notOpen") {
+    return (
+      <article className={`${styles.notice} ${own.narrow}`} aria-labelledby="zadatak">
+        <header className={own.hero}>
+          <p className={own.eyebrow}>{noticeText.eyebrow}</p>
+          <h1 id="zadatak">{noticeText.heroBefore} <em>{noticeText.heroAccent}</em></h1>
+        </header>
+        {lead}
+        <p className={styles.window} role="status">{s.notOpen.replace("{time}", time(view.opensAt))}</p>
+      </article>
+    );
+  }
+
+  const note = timing === "pastDue" ? s.pastDue.replace("{time}", time(view.dueAt)) : null;
+  const body = (
+    <>
+      <ToolsCard view={view} />
+      <RecordCard extended={view.evidenceProfile === "extended"} assistant={assistantState(view) !== "unavailable"} />
+    </>
+  );
+
+  // E-6 `potvrdeno`: "Pročitana obavijest", the card with the title and the confirmation, the full notice behind a details.
+  if (state.phase === "acknowledged") {
+    return (
+      <article className={`${styles.notice} ${own.narrow}`} aria-labelledby="zadatak">
+        <header className={own.hero}>
+          <p className={own.eyebrow}>{s.confirmedEyebrow}</p>
+          <h1 id="zadatak">{s.confirmedHeadingBefore} <em>{s.confirmedHeadingAccent}</em></h1>
+        </header>
+        <section className={styles.card} aria-label={view.title}>
+          <h2>{view.title}</h2>
+          <div className={styles.done}>
+            <p role="status">{s.confirmed.replace("{time}", time(state.at))}</p>
+            <p><a className="btn" href={editorHref}>{s.openEditor}</a></p>
+          </div>
+        </section>
+        {note ? <p className={styles.window} role="status">{note}</p> : null}
+        <details className={own.faculty}>
+          <summary>{s.showNotice}</summary>
+          {body}
+        </details>
+      </article>
+    );
+  }
+
+  const error = state.phase === "reading" ? state.error : undefined;
+  const ready = state.phase === "reading" && state.checked;
   return (
     <article className={`${styles.notice} ${own.narrow}`} aria-labelledby="zadatak">
       <header className={own.hero}>
         <p className={own.eyebrow}>{noticeText.eyebrow}</p>
         <h1 id="zadatak">{noticeText.heroBefore} <em>{noticeText.heroAccent}</em></h1>
       </header>
-      <section className={own.lead} aria-label={view.title}>
-        <h2>{view.title}</h2>
-        <NoticeMeta kind={kindLine} due={s.dueAt.replace("{time}", time(view.dueAt))} />
-      </section>
+      {lead}
       {note ? <p className={styles.window} role="status">{note}</p> : null}
-      {returning ? done : null}
-      <ToolsCard view={view} />
-      <RecordCard extended={view.evidenceProfile === "extended"} />
-      {returning ? null : done}
-      {state.phase === "acknowledged" || timing === "notOpen" ? null : (
-        <form className={styles.ack} onSubmit={confirm}>
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={state.phase === "reading" && state.checked}
-              disabled={state.phase === "sending"}
-              onChange={() => dispatch({ type: "toggle" })}
-            />
-            {s.checkbox}
-          </label>
-          <button className="btn" type="submit" disabled={!(state.phase === "reading" && state.checked)}>
-            {state.phase === "sending" ? s.confirming : s.confirm}
-          </button>
-          <p className={styles.hint}>{s.notConsent}</p>
-          {state.phase === "reading" && state.error ? <p className={styles.error} role="alert">{s.errors[state.error]}</p> : null}
-        </form>
-      )}
+      {error === "stale" ? <p className={styles.window} role="status">{s.staleTag.replace("{version}", String(view.versionNo))}</p> : null}
+      {view.previousVersion ? <NoticeChanges previous={view.previousVersion} current={view} time={time} /> : null}
+      {body}
+      <form className={styles.ack} onSubmit={confirm}>
+        <label className={styles.check}>
+          <input
+            type="checkbox"
+            checked={ready}
+            disabled={state.phase === "sending"}
+            onChange={() => dispatch({ type: "toggle" })}
+          />
+          {s.checkbox}
+        </label>
+        <button className="btn" type="submit" aria-disabled={!ready}>
+          {state.phase === "sending" ? s.confirming : s.confirm}
+        </button>
+        <p className={styles.hint}>{s.notConsent}</p>
+        {error ? <p className={styles.error} role="alert">{s.errors[error]}</p> : null}
+        {error === "stale" ? <button className="btn" type="button" onClick={onReload}>{s.reload}</button> : null}
+        {error === "forbidden" ? <p><a href={backHref}>{s.backFromForbidden}</a></p> : null}
+      </form>
     </article>
   );
 }

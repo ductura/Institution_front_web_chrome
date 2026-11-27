@@ -71,14 +71,15 @@ describe("assignment form rendering (WEB-2146)", () => {
     expect(html).toContain(f.groups.loading);
   });
 
-  it("has the section Pravila predaje with the late rule honestly unavailable (NZ-4)", () => {
+  it("has the section Pravila predaje with the late rule as a working choice, allowed at the start (NZ-4, F4-NAS-R01)", () => {
     const html = render("partially_allowed");
     expect(html).toContain('id="zs-5"');
     expect(html).toContain(f.sections.submitRules);
-    expect(html).toContain(f.submitRules.lateUnavailable);
-    expect(html).toMatch(/<fieldset[^>]*disabled=""[^>]*><legend>Predaja nakon roka<\/legend>/);
+    expect(html).not.toContain(f.submitRules.lateUnavailable);
+    expect(html).not.toMatch(/<fieldset[^>]*disabled=""[^>]*><legend>Predaja nakon roka<\/legend>/);
+    expect(html).toMatch(/<input(?=[^>]*name="pr-late")(?=[^>]*value="yes")(?=[^>]*checked)(?![^>]*disabled)[^>]*>/);
     expect(html).toMatch(/<input(?=[^>]*name="pr-withdrawal")(?![^>]*disabled)[^>]*>/);
-    expect(html).toContain(`${f.submitRules.seesIntro} ${f.submitRules.seesWithdrawal.on}; ${f.submitRules.seesDeclaration.on}.`);
+    expect(html).toContain(`${f.submitRules.seesIntro} ${f.submitRules.seesLate.on}; ${f.submitRules.seesWithdrawal.on}; ${f.submitRules.seesDeclaration.on}.`);
   });
 
   it("offers only the no-help choice when the course prohibits AI help (D-52)", () => {

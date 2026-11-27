@@ -2,8 +2,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { proofRequestsHr as t } from "./messages.hr";
-import { ProofRequestsView } from "./ProofRequests";
+import { proofRequestsHr as t, recommendedSourcesHr as r12 } from "./messages.hr";
+import { ProofRequestsView, RecommendedSourcesView } from "./ProofRequests";
+import { readRecommended } from "./recommended-sources";
 import { dayOf, openRows, readRequests, type ProofRequest } from "./proof-requests";
 
 const A = "0f0e0d0c-0b0a-4908-8706-050403020115";
@@ -80,5 +81,49 @@ describe("ED-15 zatražene potvrde: the block", () => {
     expect(html).toContain(t.item("Izmišljena (2021)"));
     expect(html).toContain(t.due("1. 12. 2026."));
     expect(html).toContain(t.only);
+  });
+});
+
+describe("EDI-R12 preporučeni izvori", () => {
+  const rec = (id: string, requirement: "recommended" | "required" | null, title = "Izmišljena knjiga") =>
+    ({ id, record: { id, authors: [{ kind: "person", family: "Izmišljenić", given: "Ivo" }], year: 2021, title }, requirement, createdAt: "x", updatedAt: "x" });
+
+  it("reads student.work-sources.get and lists only the mentor's sources, required first", async () => {
+    const calls: unknown[] = [];
+    const call = (async (id: string, input: unknown) => {
+      calls.push([id, input]);
+      return { ok: true, status: 200, body: { sources: [rec("a", null), rec("b", "recommended"), rec("c", "required", "Druga")] } };
+    }) as never;
+    const read = await readRecommended(call, A);
+    expect(read).toEqual({ kind: "ready", sources: [
+      { id: "c", requirement: "required", label: "Izmišljenić (2021)", title: "Druga" },
+      { id: "b", requirement: "recommended", label: "Izmišljenić (2021)", title: "Izmišljena knjiga" },
+    ] });
+    expect(calls).toEqual([["student.work-sources.get", { params: { assignmentId: A }, query: undefined, body: undefined }]]);
+  });
+
+  it("a work without recommendations is an empty, honest list, not an error", async () => {
+    const call = (async () => ({ ok: true, status: 200, body: { sources: [rec("a", null)] } })) as never;
+    expect(await readRecommended(call, A)).toEqual({ kind: "ready", sources: [] });
+  });
+
+  it("404 (someone else's work), 401, 5xx, a thrown call and a reply off the contract are never shown as an empty list", async () => {
+    expect(await readRecommended((async () => ({ ok: false, status: 404 })) as never, A)).toEqual({ kind: "unavailable" });
+    expect(await readRecommended((async () => ({ ok: false, status: 401 })) as never, A)).toEqual({ kind: "signedOut" });
+    expect(await readRecommended((async () => ({ ok: false, status: 503 })) as never, A)).toEqual({ kind: "unavailable" });
+    expect(await readRecommended((async () => { throw new Error("mreža"); }) as never, A)).toEqual({ kind: "unavailable" });
+    expect(await readRecommended((async () => ({ ok: true, status: 200, body: {} })) as never, A)).toEqual({ kind: "unavailable" });
+    expect(await readRecommended((async () => ({ ok: true, status: 200, body: { sources: [{ id: "x", record: {}, requirement: "zlo" }] } })) as never, A)).toEqual({ kind: "unavailable" });
+  });
+
+  it("renders the list, the empty state and the failure with a retry", () => {
+    const ready = renderToStaticMarkup(createElement(RecommendedSourcesView, { onRetry: () => undefined, read: { kind: "ready", sources: [{ id: "b", requirement: "required", label: "Izmišljenić (2021)", title: "Knjiga" }] } }));
+    expect(ready).toContain("Izmišljenić (2021)");
+    expect(ready).toContain(r12.required);
+    expect(renderToStaticMarkup(createElement(RecommendedSourcesView, { onRetry: () => undefined, read: { kind: "ready", sources: [] } }))).toContain(r12.none);
+    const failed = renderToStaticMarkup(createElement(RecommendedSourcesView, { onRetry: () => undefined, read: { kind: "unavailable" } }));
+    expect(failed).toContain(r12.error);
+    expect(failed).toContain(r12.retry);
+    expect(failed).not.toContain(r12.none);
   });
 });

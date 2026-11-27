@@ -41,7 +41,7 @@ async function show(role: "admin" | "teacher" | "student" | null, srv = server()
   document.body.append(host);
   root = createRoot(host);
   await act(async () => {
-    root!.render(createElement(HostContext.Provider, { value: { base: "/app/web", page, role } },
+    root!.render(createElement(HostContext.Provider, { value: { base: "/aplikacija", page, role } },
       createElement(OriginThresholdsPage, { call: () => srv.call })));
   });
   await settle();

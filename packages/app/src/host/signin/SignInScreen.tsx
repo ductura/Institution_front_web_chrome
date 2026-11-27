@@ -2,11 +2,13 @@
 
 import AppHeader from "../../../../../src/components/shell/AppHeader";
 
+import { appHref } from "../../../../../src/components/shell/nav";
+import { messagesFor } from "../../../../../src/lib/i18n/locale";
 import { useLocale } from "../../i18n";
 import { SignOutDialogButton } from "../SignOut";
 import screen from "../../../../../src/components/auth/SignInScreen.module.css";
 import own from "./SignIn.module.css";
-import type { SignInView } from "./sign-in-view";
+import { FOOTER_LINKS, type SignInView } from "./sign-in-view";
 import { signInTextFor } from "./text";
 
 /** Official AAI@EduHr help: identity problems belong to the home institution (R-8). */
@@ -18,6 +20,8 @@ export type SignInScreenProps = {
   href: string;
   /** The button and "Pokušaj ponovno": the page shows "preusmjeravanje" and leaves for `href`. */
   onStart: () => void;
+  /** The base the app is served under ("/aplikacija"); the footer links are built on it. */
+  base?: string;
 };
 
 /**
@@ -28,10 +32,11 @@ export type SignInScreenProps = {
  * AAI@EduHr is the only way in (D-09): no role picker, e-mail or password
  * field; the button is a link to the login route, so it works without script.
  */
-export default function SignInScreen({ view, href, onStart }: SignInScreenProps) {
+export default function SignInScreen({ view, href, onStart, base = "" }: SignInScreenProps) {
   const { work, app, locale } = useLocale();
   const p = work.prijava;
   const extra = signInTextFor(locale);
+  const footer = messagesFor(locale === "en" ? "en" : "hr").landing.footer;
   const start = (event: { preventDefault(): void }) => {
     event.preventDefault();
     onStart();
@@ -42,6 +47,20 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
 
   const home = <a className={own.homeLink} href="/">{work.auth.home}</a>;
   const retry = <a className={screen.button} href={href} onClick={start}>{work.auth.retry}</a>;
+
+  // PAR2-A1 (E-1): the help sits inside the default card, open for `pomoc`.
+  const help = (
+    <details className={screen.help} open={view === "help"}>
+      <summary>{p.helpSummary}</summary>
+      <div className={screen.helpBody}>
+        <h3 className={screen.roleTitle}>{p.helpAaiTitle}</h3>
+        <p className={screen.small}>{p.helpAaiBody}</p>
+        <a className={screen.link} href={AAI_HELP_URL} rel="noopener noreferrer">{p.helpAaiLink}</a>
+        <h3 className={screen.roleTitle}>{p.helpAccessTitle}</h3>
+        <p className={screen.small}>{extra.helpAccessBody}</p>
+      </div>
+    </details>
+  );
 
   let card;
   if (view === "redirecting") {
@@ -72,7 +91,7 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
         <p className={screen.body}>{view === "failed" ? work.auth.failedBody : work.auth.unavailableBody}</p>
         <div className={own.actions}>
           {retry}
-          {home}
+          {view === "failed" ? home : null}
         </div>
       </section>
     );
@@ -106,6 +125,8 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
           <span aria-hidden="true">→</span>
         </a>
         <p className={screen.note}>{p.passwordNote}</p>
+        {/* Place for the AAI@EduHr mark; the official logo is not downloaded without approval (Design Studio). */}
+        <div className={own.logoSlot} data-testid="aai-logo-slot" aria-hidden="true">AAI@EduHr</div>
         <div className={screen.role}>
           <h3 className={screen.roleTitle}>{p.roleTitle}</h3>
           <p className={screen.small}>{p.roleBody}</p>
@@ -114,6 +135,7 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
           <summary>{p.codeSummary}</summary>
           <p className={screen.small}>{p.codeNote}</p>
         </details>
+        {help}
       </section>
     );
   }
@@ -162,16 +184,11 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
       </main>
       <footer className={screen.footer}>
         <p className={screen.footerNote}>{p.footer}</p>
-        <details className={screen.help} open={view === "help"}>
-          <summary>{p.helpSummary}</summary>
-          <div className={screen.helpBody}>
-            <h3 className={screen.roleTitle}>{p.helpAaiTitle}</h3>
-            <p className={screen.small}>{p.helpAaiBody}</p>
-            <a className={screen.link} href={AAI_HELP_URL} rel="noopener noreferrer">{p.helpAaiLink}</a>
-            <h3 className={screen.roleTitle}>{p.helpAccessTitle}</h3>
-            <p className={screen.small}>{extra.helpAccessBody}</p>
-          </div>
-        </details>
+        <nav className={own.footerLinks} aria-label={footer.nav}>
+          {FOOTER_LINKS.map((link) => (
+            <a key={link.key} href={appHref(base, link.path)}>{footer[link.key]}</a>
+          ))}
+        </nav>
       </footer>
     </div>
   );

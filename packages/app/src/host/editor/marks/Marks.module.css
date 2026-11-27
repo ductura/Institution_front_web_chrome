@@ -4,6 +4,8 @@
 /* ED-45: the ghost text stands in the empty paragraph, takes no room and is never printed; an empty
    alternative keeps a screen reader from reading it as text of the work. */
 .ghost::before { content: attr(data-ghost); content: attr(data-ghost) / ""; float: left; height: 0; pointer-events: none; color: var(--ink-3); font-style: italic; white-space: pre-wrap; text-align: left; }
+/* "Čisti tekst" (Prikaz): the quiet hint stays out of the text. */
+:global(:root[data-clean-text="on"]) .ghost::before { content: none; }
 @media print { .ghost::before { content: none; } }
 .gutter { position: absolute; inset: 0 auto 0 0; width: 0; pointer-events: none; }
 .dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; border: 0; padding: 0; pointer-events: auto; }

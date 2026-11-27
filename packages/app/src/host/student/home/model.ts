@@ -1,8 +1,7 @@
 import type { MyAssignment, MyCourse } from "../read/assignments";
 import type { WorkState } from "../read/works";
-import { practiceOf } from "../courses/model";
+import { deadlineTagOf, extensionText, nearTag, practiceOf, submittedLine, type DeadlineTag, type ExtensionNote, type Submitted } from "../courses/model";
 import { cleanCode } from "../enrol/code";
-import { protoToday } from "./format";
 import { homeText as t } from "./messages.hr";
 
 /** The row kinds of the prototype's `kind(t, s)`, in the order of its checks. */
@@ -22,7 +21,17 @@ export type TaskRow = {
   readonly typeLabel: string;
   /** P-D1: the server said `isPractice: true`; the row then carries the "Probni" badge. */
   readonly practice: boolean;
+  /** NF-1 P-6: when it was submitted and whether after the deadline; absent until (and unless) the read answers. */
+  readonly submitted?: Submitted | null;
+  /** NF-1 P-7: the history of the extension behind `dueAt`; absent until (and unless) the read answers. */
+  readonly extension?: ExtensionNote | null;
 };
+
+/** The extra reads of the home, by assignment id. */
+export type Extras = {
+  readonly submitted: ReadonlyMap<string, Submitted>;
+  readonly extensions: ReadonlyMap<string, ExtensionNote>;
+} | null | undefined;
 
 /** The state of one work: the read's, and `null` where the work-state read did not answer. */
 export type States = ReadonlyMap<string, WorkState> | null | undefined;
@@ -37,7 +46,7 @@ export function kindOf(assignment: MyAssignment, states: States): RowKind {
 }
 
 /** The flat list of every visible assignment, courses in the read's order, each with its course. */
-export function flatRows(courses: readonly MyCourse[], states: States): TaskRow[] {
+export function flatRows(courses: readonly MyCourse[], states: States, extras?: Extras): TaskRow[] {
   return courses.flatMap((course) =>
     course.assignments.map((assignment): TaskRow => {
       const extended = typeof assignment.extendedDueAt === "string" && assignment.extendedDueAt !== "";
@@ -46,6 +55,7 @@ export function flatRows(courses: readonly MyCourse[], states: States): TaskRow[
         dueAt: extended ? (assignment.extendedDueAt as string) : assignment.dueAt, extended, originalDueAt: assignment.dueAt,
         typeLabel: assignment.workType === undefined ? t.taskFallback : t.workTypes[assignment.workType],
         practice: practiceOf(assignment),
+        submitted: extras?.submitted.get(assignment.id) ?? null, extension: extras?.extensions.get(assignment.id) ?? null,
       };
     }));
 }
@@ -108,37 +118,14 @@ export function coursesWithoutTask(courses: readonly MyCourse[]): MyCourse[] {
   return courses.filter((course) => course.assignments.length === 0);
 }
 
-const DAY_MS = 86_400_000;
+/** PAR2-A3: E-2 uses the same deadline tag as E-3. */
+export { nearTag };
 
-/** `Rok za N dana` within 7 days of the deadline, none after it has passed or far ahead; null otherwise. */
-export function nearTag(dueAt: string, now: number): string | null {
-  const due = Date.parse(dueAt);
-  if (Number.isNaN(due) || due < now) return null;
-  const days = Math.ceil((due - now) / DAY_MS);
-  if (days > 7) return null;
-  if (days <= 0) return t.nearToday;
-  return days === 1 ? t.nearOne : t.nearMany.replace("{n}", String(days));
-}
-
-/**
- * P-3 (E-2a): the deadline tag of a row that is not submitted. "Rok je prošao {datum}"
- * once the deadline that applies (the extended one when given) has passed. While an
- * extension the teacher gave this student still runs, the row says the original
- * deadline has passed, so both states are told apart. Null for a submitted row
- * and before the original deadline. The tag describes the deadline, not the student.
- */
-export type DeadlineTag = { readonly kind: "late" | "extension"; readonly text: string };
+/** P-3 (E-2a): the row's deadline tag; the rule itself is the one function of courses/model.ts, shared with E-3 and E-4. */
+export type { DeadlineTag };
 
 export function deadlineTag(row: Pick<TaskRow, "kind" | "dueAt" | "extended" | "originalDueAt">, now: number): DeadlineTag | null {
-  if (row.kind === "predano") return null;
-  const due = Date.parse(row.dueAt);
-  if (Number.isNaN(due)) return null;
-  if (due < now) return { kind: "late", text: t.late.replace("{date}", protoToday(new Date(due))) };
-  const original = Date.parse(row.originalDueAt);
-  if (row.extended && !Number.isNaN(original) && original < now) {
-    return { kind: "extension", text: t.originalPassed.replace("{date}", protoToday(new Date(original))) };
-  }
-  return null;
+  return deadlineTagOf({ submitted: row.kind === "predano", dueAt: row.dueAt, extended: row.extended, originalDueAt: row.originalDueAt }, now);
 }
 
 /** P-11: the one code rule (enrol/code.ts), the same as on E-5 and before sending. */
@@ -158,18 +145,20 @@ export function enrollRoute(code: string): string {
   return normal === "" ? "/upis" : `/upis?kod=${encodeURIComponent(normal)}`;
 }
 
-/**
- * INT-31: only a row with no work yet offers "Započni rad". A started work is
- * opened by its own "Otvori rad"; a submitted one, or one whose notice comes
- * first, offers no start at all.
- */
-export function startsWork(kind: RowKind): boolean {
-  return kind === "zadatak";
-}
-
 /** The button label of a row (btn()): "Otvori rad", "Pročitaj upute" or "Otvori zadatak". */
 export function rowAction(kind: RowKind): { label: string; primary: boolean } {
   if (kind === "predano") return { label: t.openWork, primary: false };
   if (kind === "obavijest") return { label: t.readNotice, primary: false };
   return { label: kind === "rad" ? t.openWork : t.openTask, primary: true };
+}
+
+/** NF-1 P-6: "Predano {vrijeme}" or "Predano {vrijeme}, nakon roka"; plain "Predano" while no time is known. */
+export function submittedText(row: Pick<TaskRow, "submitted">, format: (iso: string) => string): string {
+  return submittedLine(row.submitted, format);
+}
+
+/** NF-1 P-7: the history line of an extended, unsubmitted row, or null when the history is not known. */
+export function extensionLine(row: Pick<TaskRow, "kind" | "extended" | "extension">, format: (iso: string) => string): string | null {
+  if (row.kind === "predano" || !row.extended || !row.extension) return null;
+  return extensionText(row.extension, format);
 }

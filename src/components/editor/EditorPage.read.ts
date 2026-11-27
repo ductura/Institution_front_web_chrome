@@ -8,7 +8,7 @@ type Answer<Body> = { readonly ok: true; readonly status: number; readonly body:
 type AssignmentsBody = {
   readonly courses: readonly {
     readonly name: string;
-    readonly assignments: readonly { readonly id: string; readonly title: string; readonly dueAt: string; readonly noticeFirst: boolean }[];
+    readonly assignments: readonly { readonly id: string; readonly title: string; readonly dueAt: string; readonly noticeFirst: boolean; readonly workType?: string }[];
   }[];
 };
 type WorkBody = { readonly assignments: readonly { readonly assignmentId: string; readonly workState: string }[] };
@@ -22,7 +22,7 @@ export type EditorWorkRead =
   | { readonly kind: "notFound" }
   /** The current notice is not acknowledged yet: the work opens on the notice (PRODUCT §5 rule 6). */
   | { readonly kind: "noticeFirst" }
-  | { readonly kind: "ready"; readonly course: string; readonly title: string; readonly dueAt: string; readonly workState: WorkState };
+  | { readonly kind: "ready"; readonly course: string; readonly title: string; readonly dueAt: string; readonly workState: WorkState; /** The server's work type ("essay"), for the workspace subtitle; absent when the read does not give it. */ readonly workType?: string };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -48,7 +48,7 @@ export function editorWorkRead(assignmentId: string, assignments: Answer<Assignm
     if (row === undefined) return { kind: "unavailable" };
     const { workState } = row;
     if (workState !== "not_started" && workState !== "in_progress" && workState !== "submitted") return { kind: "unavailable" };
-    return { kind: "ready", course: course.name, title: assignment.title, dueAt: assignment.dueAt, workState };
+    return { kind: "ready", course: course.name, title: assignment.title, dueAt: assignment.dueAt, workState, ...(assignment.workType === undefined ? {} : { workType: assignment.workType }) };
   }
   return { kind: "notFound" };
 }

@@ -113,7 +113,7 @@ describe("course aggregate real port (PIL-K-ZBIRNO)", () => {
 
   it("sends a signed-out teacher to AAI@EduHr sign-in and back to this aggregate", () => {
     const left: string[] = [];
-    signInToAggregate("/app/web", COURSE, (href) => left.push(href));
-    expect(left).toEqual([signInHref(`/app/web${aggregatePath(COURSE)}`)]);
+    signInToAggregate("/aplikacija", COURSE, (href) => left.push(href));
+    expect(left).toEqual([signInHref(`/aplikacija${aggregatePath(COURSE)}`)]);
   });
 });

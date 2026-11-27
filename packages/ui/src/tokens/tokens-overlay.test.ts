@@ -46,4 +46,12 @@ describe("tokens.css: the published entry point over the ported globals.css", ()
       expect(contrast(error, token(sheet, "--error-soft"))).toBeGreaterThanOrEqual(4.5);
     }
   });
+
+  it("--danger and --color-error are aliases of --error on every element, with no value of their own (WEB-DIZ-S-ZAJEDNICKO)", () => {
+    const alias = rule(OVERLAY, ":where(*, *::before, *::after)");
+    expect(token(alias, "--danger")).toBe("var(--error)");
+    expect(token(alias, "--color-error")).toBe("var(--error)");
+    // The ported tokens do not define them, so the alias is the only source.
+    expect(GLOBALS).not.toMatch(/--danger:|--color-error:/);
+  });
 });

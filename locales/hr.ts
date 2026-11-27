@@ -26,7 +26,8 @@ export const hr = {
     // Design v3 shell (#476 6314969336): only static labels and the role the
     // server read; no names or counts the app does not have.
     sideNav: "Bočna navigacija",
-    workNav: "Radni prostor",
+    // PAR2-A3: not the name of the fifth item, so a screen reader does not say "Radni prostor" twice.
+    workNav: "Glavna navigacija",
     home: `${APP_NAME}, početna`,
     space: {
       teacher: "Nastavnički prostor",
@@ -57,6 +58,11 @@ export const hr = {
       dataRetention: "Čuvanje podataka",
       // WEB-1302 (SRV-1308): the student data export, /ustanova/izvoz-podataka.
       studentDataExport: "Izvoz podataka studenta",
+      questionnaires: "Upitnici",
+      codingMaterials: "Gradivo za kodiranje",
+      codingExport: "Izvoz kodiranja",
+      practiceJournal: "Dnevnik prakse",
+      isvu: "Povezivanje s ISVU-om (probni izvor)",
     },
     role: { teacher: "Nastavnik", student: "Student", admin: "Administrator" },
     demoNote: "Nijedan stvarni osobni podatak.",
@@ -1566,7 +1572,7 @@ export const hr = {
     passwordNote: "Lozinku upisujete samo kod AAI@EduHr.",
     roleTitle: "Jedan ulaz. Vaš prostor.",
     roleBody:
-      "Nakon prijave otvara se vaš prostor prema dodijeljenoj ulozi. Ulogu nastavnika potvrđuje administrator fakulteta.",
+      "Nakon prijave otvara se Vaš prostor prema dodijeljenoj ulozi. Ulogu nastavnika potvrđuje administrator fakulteta.",
     codeSummary: "Prvi dolazak ili imate kod zadatka?",
     codeNote:
       "Prvo se prijavite sustavom AAI@EduHr. Kod zadatka od nastavnika upisujete nakon prijave.",
