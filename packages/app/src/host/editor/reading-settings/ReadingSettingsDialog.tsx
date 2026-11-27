@@ -60,12 +60,14 @@ export function ReadingSettingsDialog({ open, onClose, store = readingStore() }:
       <SegmentedControl label={t.font.label} options={FONT_OPTIONS} value={prefs.font}
         onChange={(value) => { if (isStep("font", value)) store.set("font", value); }} />
       <p>{t.font.help}</p>
-      <ReadingModeControls prefs={prefs} onChange={(field, value) => store.set(field, value)} onReset={() => {
+      <h3>{t.modeTitle}</h3>
+      <ReadingModeControls showReset={false} prefs={prefs} onChange={(field, value) => store.set(field, value)} onReset={() => {
         for (const field of ["width", "lineHeight", "letterSpacing", "paragraphGap"] as const) store.set(field, DEFAULT_READING_PREFS[field]);
       }} />
       <h3>{t.rate.label}</h3>
       <SegmentedControl label={t.rate.label} options={RATE_OPTIONS} value={String(rate)}
         onChange={(value) => { const step = chosenRate(value); if (step !== null) setReadAloudRate(step); }} />
+      <p>{t.rate.note}</p>
     </Dialog>
   );
 }
