@@ -9,16 +9,31 @@ import type { WorkState } from "../mentor";
 import { nodeWords, type WordsNode } from "../mentor/prep-model";
 import { roundOf } from "../work/review/review-model";
 
+/** The mentor's consent as work.mentor-consent.get answers it; null when unread, absent or not parsed. */
+export type ConsentRead = { readonly state: "none" | "given" | "withdrawn"; readonly changedAt: string | null } | null;
+
+/** Parses the answer of work.mentor-consent.get by hand; any other shape (or a failed read) is null, never "given". */
+export function consentOf(answer: { readonly ok: boolean; readonly body?: unknown }): ConsentRead {
+  const b = answer.ok ? answer.body : null;
+  if (typeof b !== "object" || b === null) return null;
+  const { state, changedAt } = b as { state?: unknown; changedAt?: unknown };
+  if (state !== "none" && state !== "given" && state !== "withdrawn") return null;
+  if (changedAt !== null && typeof changedAt !== "string") return null;
+  return { state, changedAt };
+}
+
 /**
  * Submitted → "predan"; a version waiting for the mentor → "kod mentora"; open requests → "dorada";
  * no request ever → "kod Vas" (the extract has no way to send the work for review). Every other mix
  * (only closed requests, an unread list) is `null`: the card says the state is unavailable.
  */
-export function workStateOf(submitted: boolean, requests: readonly RevisionRequest[] | null): WorkState | null {
+export function workStateOf(submitted: boolean, requests: readonly RevisionRequest[] | null, consent: ConsentRead = null): WorkState | null {
   if (submitted) return { kind: "submitted", submittedAt: null };
   if (requests === null) return null;
-  if (requests.length === 0) return { kind: "draft" };
+  // MEN-R08 (MEN-18): the mentor's consent in force is the "prihvaćeno" state, unless a round is still running.
   const round = roundOf(requests);
+  if (consent?.state === "given" && round.kind === "none") return { kind: "accepted", consentAt: consent.changedAt };
+  if (requests.length === 0) return { kind: "draft" };
   const current = (r: RevisionRequest) => r.versions[r.versions.length - 1] ?? null;
   if (round.kind === "teacher-turn") {
     const sent = requests.filter((r) => r.state === "responded").map((r) => current(r)?.response?.window ?? "").sort().pop();
