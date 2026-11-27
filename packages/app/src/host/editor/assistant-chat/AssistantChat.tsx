@@ -12,6 +12,7 @@ import {
   type AssistantPort, type AvailabilityRead, type ConversationRead, type ConversationsRead, type RemainingRead, type HeldChat, type Kept,
 } from "./assistant-chat";
 import { assistantChatHr as t } from "./messages.hr";
+import { findPersonalData, removePersonalData, type PersonalDataFinding } from "./personal-data";
 import styles from "./AssistantChat.module.css";
 
 type Banner = "failed" | "busy" | "purpose" | "forbidden" | "disabled" | "limit" | "signedOut";
@@ -106,6 +107,12 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
   const [pendingKey, setPendingKey] = useHeld(slot, "pendingKey");
   const [say, setSay] = useState("");
   const [fieldError, setFieldError] = useState(false);
+  // ED-80: personal data found in the question waits here for the student's choice; the text they
+  // chose to send (as it is or cleaned) is not asked about again, so "Pokušaj ponovno" just retries.
+  const [pii, setPii] = useState<readonly PersonalDataFinding[] | null>(null);
+  const approved = useRef<string | null>(null);
+  const piiTitle = useRef<HTMLParagraphElement>(null);
+  useEffect(() => { if (pii !== null) piiTitle.current?.focus(); }, [pii]);
 
   const [availability, setAvailability] = useState<AvailabilityRead | null>(null);
   const [remaining, setRemaining] = useState<RemainingRead | null>(null);
@@ -161,17 +168,25 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
   const blocked = banner === "disabled" || banner === "limit" || banner === "forbidden" || serverOff || (serverLimit && pendingKey === null);
   const canAsk = !readOnly && available !== null && !prohibited && purposes.length > 0 && !blocked;
 
-  async function send() {
+  async function send(text: string = draft) {
     if (busy || !online) return;
-    if (draft.trim() === "" || (summaryOnly && wordCount(draft) < SUMMARY_MIN_WORDS)) {
+    if (text.trim() === "" || (summaryOnly && wordCount(text) < SUMMARY_MIN_WORDS)) {
       setFieldError(true);
       field.current?.focus();
       return;
     }
     const chosen = purposes.find((p) => p === purpose);
     if (chosen === undefined) return;
+    if (approved.current !== text) {
+      const found = findPersonalData(text);
+      if (found.length > 0) {
+        setPii(found);
+        return;
+      }
+    }
+    setPii(null);
     const key = pendingKey ?? newKey();
-    const sent = draft;
+    const sent = text;
     // Held before asking: if the drawer closes mid-request, reopening retries this request, not a new one.
     setPendingKey(key);
     setFieldError(false);
@@ -266,14 +281,30 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
             <label className={styles.f} htmlFor={promptId}>{summaryOnly ? t.summaryPrompt : t.prompt}</label>
             <textarea id={promptId} ref={field} className={styles.ta} rows={4} maxLength={2000} value={draft}
               aria-invalid={fieldError || undefined} aria-describedby={fieldError ? errorId : undefined}
-              onChange={(e) => { setDraft(e.target.value); setFieldError(false); setPendingKey(null); }} />
+              onChange={(e) => { setDraft(e.target.value); setFieldError(false); setPendingKey(null); setPii(null); }} />
             {fieldError ? <p id={errorId} className={styles.error}>{summaryOnly ? t.summaryTooShort(SUMMARY_MIN_WORDS) : t.empty}</p> : null}
             <div className={`${styles.row} ${styles.asl}`}>
               <button type="submit" className={`${styles.btn} ${styles.pri}`}>{summaryOnly ? t.summarySend : t.send}</button>
               <button type="button" className={styles.btn} disabled={current === null} onClick={fresh}>{t.newConversation}</button>
             </div>
           </fieldset>
-          {busy ? <p className={`${styles.muted} ${styles.asl}`}><span className={styles.dot} aria-hidden="true" /> {t.answering}</p> : null}
+          {pii !== null && !busy ? (
+            <div className={`${styles.banner} ${styles.asb} ${styles.pii}`} role="group" aria-labelledby={`${ids}-pii`} data-personal-data>
+              <p id={`${ids}-pii`} ref={piiTitle} tabIndex={-1} className={styles.piiTitle}><b>{t.pii.title}</b></p>
+              <p className={styles.piiBody}>{t.pii.body(pii.map((f) => `${t.pii.kinds[f.kind]}: ${f.matches.slice(0, 3).join(", ")}`).join("; "))}</p>
+              <div className={styles.row}>
+                <button type="button" className={`${styles.btn} ${styles.pri}`} onClick={() => {
+                  const cleaned = removePersonalData(draft);
+                  setDraft(cleaned);
+                  approved.current = cleaned;
+                  void send(cleaned);
+                }}>{t.pii.cut}</button>
+                <button type="button" className={styles.btn} onClick={() => { approved.current = draft; void send(draft); }}>{t.pii.go}</button>
+                <button type="button" className={styles.btn} onClick={() => { setPii(null); field.current?.focus(); }}>{t.pii.cancel}</button>
+              </div>
+            </div>
+          ) : null}
+          {busy ?<p className={`${styles.muted} ${styles.asl}`}><span className={styles.dot} aria-hidden="true" /> {t.answering}</p> : null}
         </form>
       ) : null}
 
