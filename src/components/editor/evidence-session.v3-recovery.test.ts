@@ -21,6 +21,7 @@ import { conflict, DOC, DOMAIN, journalKit, json, PROFILE, raw, server, sha256, 
 
 import { EvidenceSession, type EvidenceSessionDeps, type SheetDocument } from "./evidence-session";
 import { sheetCandidate } from "./LocalDocument";
+import { applyKeptDocument, documentText } from "./conflict-resolution";
 
 /**
  * PIL-K-V3-OPORAVAK: a work confirmed as schema v3 leaves CONFLICT the way a
@@ -551,5 +552,86 @@ describe("PIL-K-V3-BEZ-MREZE: a v3 work opened again without a network", () => {
     await vi.waitFor(() => expect(session.snapshot().failure).toBe("unavailable"));
     expect(runners).toEqual([]);
     expect(await everything(journal)).toEqual(before);
+  });
+});
+
+/**
+ * F4-EDI-R05: the two ways out of a CONFLICT the author is offered. The
+ * server's version is read for the difference without writing anything; "keep
+ * the text of this device" takes the server's version as the base and sends
+ * the local text as a NEW commit on it, through the existing evidence route.
+ */
+describe.each([1, 3] as const)("F4-EDI-R05: the author's choice in a CONFLICT (schema v%i)", (version) => {
+  it("shows the server's version for the difference and writes nothing while it is read", async () => {
+    const { journal, local, serverWork } = await inConflict(version);
+    const { session } = sessionFor(journal, version, [opened(serverWork)]);
+    expect((await session.load()).kind).toBe("recovery");
+    const before = await everything(journal);
+    const theirs = await session.serverVersion();
+    expect(theirs).not.toBeNull();
+    expect(documentText(theirs!)).toBe("Uvod s drugog uređaja");
+    expect(documentText(local)).toBe("Moj izmišljeni uvod");
+    expect(await everything(journal)).toEqual(before);
+    expect(session.snapshot().state).toBe("CONFLICT");
+  });
+
+  it("says nothing when the server's answer cannot be had or is another work's", async () => {
+    const { journal, serverWork } = await inConflict(version);
+    const { session } = sessionFor(journal, version, [opened(serverWork), { status: "unavailable", offline: true }, opened({ ...serverWork, documentId: "bbbbbbbb-0000-4000-8000-000000000001" })]);
+    await session.load();
+    expect(await session.serverVersion()).toBeNull();
+    expect(await session.serverVersion()).toBeNull();
+  });
+
+  it("keep this device: the server's version becomes the base and the local text is one new commit on it", async () => {
+    const { journal, local, serverWork } = await inConflict(version);
+    const verified = version === 3
+      ? (await verifyWorkOpening(DOC, serverWork, V3_PROOF))! : undefined;
+    const { session } = sessionFor(journal, version, [opened(serverWork)]);
+    expect((await session.load()).kind).toBe("recovery");
+    expect(await session.adoptServer(true)).toMatchObject({ kind: "adopted" });
+
+    // The reload after the decision: a new session on the server's version, and the kept text typed in as a change.
+    const next = sessionFor(journal, version, [opened(serverWork)]).session;
+    const loaded = await next.load();
+    if (loaded.kind !== "ready") throw new Error(`load: ${loaded.kind}`);
+    expect(documentText(loaded.document)).toBe("Uvod s drugog uređaja");
+    const editor = new Editor({
+      element: null,
+      extensions: version === 3 ? createEditorExtensionsV3() : createEditorExtensions(),
+      content: version === 3 ? canonicalToTiptapV3(loaded.document as CanonicalDocumentV3) : canonicalToTiptap(loaded.document as CanonicalDocument),
+    });
+    editor.view.updateState(editor.state.reconfigure({ plugins: editor.extensionManager.plugins }));
+    editors.push(editor);
+    let at = Date.parse(NOW);
+    editor.on("transaction", ({ transaction, appendedTransactions }) => {
+      next.record([transaction, ...appendedTransactions], undefined, (at += 100));
+    });
+    expect(applyKeptDocument(editor, local, version)).toBe(true);
+    const candidate = sheetCandidate(editor, version);
+    if (!candidate) throw new Error("the sheet cannot be stored");
+    expect(documentText(candidate.doc)).toBe("Moj izmišljeni uvod");
+    next.edit();
+    await next.propose(candidate.doc);
+    await next.settled();
+
+    const { pending, snapshot } = await read(journal, verified);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]!.tx.sequenceFrom).toBe(serverWork.lastSequenceTo + 1);
+    expect(JSON.parse(new TextDecoder().decode(pending[0]!.tx.document))).toEqual(candidate.doc);
+    expect(documentText(snapshot!.document as SheetDocument)).toBe("Moj izmišljeni uvod");
+    // The kept copy stays beside it until the author discards it.
+    expect(await next.salvage()).toHaveLength(1);
+  });
+
+  it("take the server's version: the local text is discarded from the sheet and kept only as a copy", async () => {
+    const { journal, serverWork } = await inConflict(version);
+    const { session } = sessionFor(journal, version, [opened(serverWork)]);
+    await session.load();
+    expect(await session.adoptServer(true)).toMatchObject({ kind: "adopted", meta: { state: "SYNCED" } });
+    const verified = version === 3 ? (await verifyWorkOpening(DOC, serverWork, V3_PROOF))! : undefined;
+    const after = await read(journal, verified);
+    expect(after.pending).toHaveLength(0);
+    expect(documentText(after.snapshot!.document as SheetDocument)).toBe("Uvod s drugog uređaja");
   });
 });

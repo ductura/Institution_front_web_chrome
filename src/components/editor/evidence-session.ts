@@ -739,6 +739,27 @@ export class EvidenceSession {
   }
 
   /**
+   * F4-EDI-R05: the server's version of the work, for the difference the
+   * author sees before choosing a way out of a sticky state. Read only: the
+   * answer is asked for now, a v3 work only once it is verified again as this
+   * v3 work, and nothing is written. Null when there is no answer, it is
+   * another work's, it cannot be verified, or its document is not valid.
+   */
+  async serverVersion(): Promise<SheetDocument | null> {
+    if (this.closed) return null;
+    try {
+      const opened = await this.openSafely();
+      if (this.closed || opened.status !== "opened" || opened.work.documentId !== this.id) return null;
+      if (this.deps.schemaVersion === 3 && !(await verifiedV3(this.id, opened.work))) return null;
+      const parsed: unknown = JSON.parse(new TextDecoder().decode(opened.work.document));
+      const valid = this.deps.schemaVersion === 3 ? validV3(parsed) : validateDocument(parsed);
+      return valid.ok ? valid.doc : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * The copies `adoptServer` kept, newest first, read as the session reads
    * its journal: a v3 session's only under its verified opening. Null when
    * they cannot be read (no verified v3 opening, a journal error).

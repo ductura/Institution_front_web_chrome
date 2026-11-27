@@ -22,6 +22,7 @@ import N17Overview from "./n17/Overview";
 import { joinRows, type N17Port, type N17Read, type RowJoin } from "./n17/model";
 import N13Extensions from "./n13/Extensions";
 import type { N13Port, N13Read } from "./n13/model";
+import { readExtensionSubmissions, type SubmissionsCall } from "./n13/submissions";
 
 export type OverviewCall = ReturnType<typeof createApi>;
 /** `?kolegij=` and `?zadatak=` of the page: the overview of one course or one assignment (NZ-2). */
@@ -115,8 +116,9 @@ export function AssignmentOverviewPage() {
 const n13Port: N13Port = {
   async read(assignmentId): Promise<N13Read> {
     const client = createApi();
-    const [list, students, courses] = await Promise.all([
+    const [list, students, submissions, courses] = await Promise.all([
       readDeadlineExtensions(client, assignmentId), readExtensionStudents(client, assignmentId),
+      readExtensionSubmissions(createApi() as unknown as SubmissionsCall, assignmentId),
       readTeacherCourses(createApi() as unknown as TeacherCoursesCall),
     ]);
     if (list.kind === "session-expired") return { kind: "signedOut" };
@@ -128,6 +130,7 @@ const n13Port: N13Port = {
         context: { task: task?.title ?? null, course: course?.name ?? null, dueAt: task?.dueAt ?? null },
         extensions: list.kind === "ready" ? list.extensions : null,
         students,
+        submissions,
       },
     };
   },

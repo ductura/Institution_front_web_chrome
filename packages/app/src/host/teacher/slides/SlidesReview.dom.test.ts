@@ -9,7 +9,7 @@ import { slidesReviewText as t } from "./messages.hr.ts";
 
 const signIn = vi.hoisted(() => vi.fn());
 const reads = vi.hoisted(() => ({ revision: vi.fn() }));
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("../../../../../../src/client/api.ts", () => ({ goToSignIn: signIn, createApi: () => vi.fn(), SERVER_PREFIX: "/api/v1/", browserTransport: vi.fn() }));
 vi.mock("../../../../../../src/client/api", () => ({ goToSignIn: signIn, SERVER_PREFIX: "/api/v1/", browserTransport: vi.fn() }));
 vi.mock("../../../../../../src/components/editor/EarlierDraft", () => ({ downloadBlob: vi.fn() }));

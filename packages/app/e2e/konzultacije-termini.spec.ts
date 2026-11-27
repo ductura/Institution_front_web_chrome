@@ -70,7 +70,7 @@ async function skipGuide(page: Page) {
 
 /** Opens the "Mentor" tab by keyboard; on a phone first the panel's drawer. */
 async function studentSlots(page: Page, width: number) {
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   if (width <= 640) {
     await page.getByRole("button", { name: "Bočni panel" }).focus();
@@ -85,7 +85,7 @@ async function studentSlots(page: Page, width: number) {
 }
 
 async function teacherSlots(page: Page) {
-  await page.goto(`/app/web/nastavnik/rad/${ASSIGNMENT_ID}/konzultacije`);
+  await page.goto(`/aplikacija/nastavnik/rad/${ASSIGNMENT_ID}/konzultacije`);
   const slots = page.locator("section[aria-labelledby='konzultacije-termini']");
   await expect(slots.getByRole("heading", { level: 2, name: "Termini konzultacija · 3" })).toBeVisible();
   return slots;

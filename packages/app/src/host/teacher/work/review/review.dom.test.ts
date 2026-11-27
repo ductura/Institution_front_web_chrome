@@ -20,7 +20,7 @@ import { reviewMessages as t } from "./messages.hr";
 HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) { this.setAttribute("open", ""); };
 HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) { this.removeAttribute("open"); };
 
-const HOST = { base: "/app/web", page: { path: "/nastavnik/rad/[id]/pregled" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik/rad/[id]/pregled" }, role: "teacher" } as unknown as HostValue;
 const DOCUMENT = "rad-izmisljeni-b";
 const READY: HeaderRead = { kind: "ready", header: {
   facts: { studentName: "Student A", assignmentId: "00000000-0000-4000-8000-0000000000a1", state: "nije_predano", previousId: "rad-izmisljeni-a", nextId: null, receipt: null },
@@ -66,7 +66,7 @@ const DECLARATION: DeclarationPort = {
 
 describe("WEB-NUZ-PG Pregled rada", () => {
   let root: Root | undefined;
-  beforeEach(() => { window.history.replaceState(null, "", "/app/web/nastavnik/rad/rad-izmisljeni-b/pregled?kartica=sazetak"); });
+  beforeEach(() => { window.history.replaceState(null, "", "/aplikacija/nastavnik/rad/rad-izmisljeni-b/pregled?kartica=sazetak"); });
   afterEach(() => { act(() => root?.unmount()); document.body.innerHTML = ""; });
 
   const settle = async () => { for (let i = 0; i < 6; i += 1) await act(async () => { await Promise.resolve(); }); };
@@ -91,7 +91,7 @@ describe("WEB-NUZ-PG Pregled rada", () => {
     const tabs = [...el.querySelectorAll('[role="tab"]')];
     expect(tabs.map((tab) => tab.textContent)).toEqual([t.tabText, t.tabSummary, t.tabOrigin, t.tabReplay, t.tabCompare, t.tabDeclaration]);
     expect(el.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe(t.tabSummary);
-    expect(el.querySelector('a[data-step="prev"]')?.getAttribute("href")).toBe("/app/web/nastavnik/rad/rad-izmisljeni-a/pregled?kartica=sazetak");
+    expect(el.querySelector('a[data-step="prev"]')?.getAttribute("href")).toBe("/aplikacija/nastavnik/rad/rad-izmisljeni-a/pregled?kartica=sazetak");
     expect(el.textContent).toContain(t.next);
     expect(el.querySelector('a[data-step="next"]')).toBeNull();
     expect(el.textContent).toContain(t.backToTask);
@@ -102,7 +102,7 @@ describe("WEB-NUZ-PG Pregled rada", () => {
     const declaration = [...el.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find((b) => b.textContent === t.tabDeclaration)!;
     await act(async () => { declaration.click(); });
     expect(window.location.search).toBe("?kartica=izjava");
-    expect(el.querySelector('a[data-step="prev"]')?.getAttribute("href")).toBe("/app/web/nastavnik/rad/rad-izmisljeni-a/pregled?kartica=izjava");
+    expect(el.querySelector('a[data-step="prev"]')?.getAttribute("href")).toBe("/aplikacija/nastavnik/rad/rad-izmisljeni-a/pregled?kartica=izjava");
   });
 
   it("PG-4: a part the server does not give has no retry; a failed part says it and recovers", async () => {

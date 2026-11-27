@@ -2,7 +2,7 @@ import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 import type { NextConfig } from "next";
 
 // WEB-01 (Ductus#2028 c.7008147932): the Next.js App Router over src/app, on
-// :3000 for `pnpm next:dev`. packages/app (the host under /app/web/) and
+// :3000 for `pnpm next:dev`. packages/app (the host under /aplikacija/) and
 // dev-server.mjs (:5173) stay as they are until the pages replace them.
 // src/_cekanje is outside src/app, so it is neither routed nor built.
 const root = import.meta.dirname;

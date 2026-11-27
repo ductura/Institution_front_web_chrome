@@ -40,7 +40,7 @@ import SubmitStep from "./submit/SubmitStep";
 import SlidesSubmit from "../../slides/submit/SlidesSubmit";
 import { workKindOf } from "../../slides/editor/work-kind";
 import { extendedDueOf, submitStageOf } from "./submit/model";
-import { readException } from "./submit/exception";
+import { readException, withLateReads } from "./submit/exception";
 import { timingOf, type Timing } from "./submit/timing";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
@@ -126,7 +126,8 @@ async function timingFor(checked: Checked, id: string): Promise<Timing> {
   const now = Date.now();
   const stage = submitStageOf(checked.workState, checked.dueAt, checked.extendedDueAt, now);
   const exception = stage.kind === "extended" ? await readException(id, checked.dueAt, checked.extendedDueAt, now) : false;
-  return timingOf(stage, checked.dueAt, exception, now);
+  // F4-PRE-R01: past the deadline, the assignment's late rule and this student's exceptions say it before the click.
+  return withLateReads(timingOf(stage, checked.dueAt, exception, now), id, now);
 }
 
 /** The deadline in force: the extension when it is later than the deadline. */

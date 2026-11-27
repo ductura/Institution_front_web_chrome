@@ -40,10 +40,10 @@ async function server(page: Page, options: { startDelayMs?: number } = {}) {
 
 /** STU-R07: the home row has one button, "Otvori zadatak"; "Započni rad" is on the task page it opens. */
 async function openTask(page: Page) {
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   await expect(page.getByRole("button", { name: s.startFor.replace("{title}", TITLE) })).toHaveCount(0);
   await page.getByRole("link", { name: /^Otvori zadatak/ }).click();
-  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/rad/${ID}$`));
 }
 
 const startButton = (page: Page) => page.getByRole("button", { name: s.startFor.replace("{title}", TITLE) });
@@ -56,17 +56,17 @@ test("the student starts the work, refreshes, and the work is there; the row the
   expect(seen.starts).toBe(0);
 
   await startButton(page).click();
-  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/rad/${ID}$`));
   await page.reload();
-  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/rad/${ID}$`));
   await expect(page.getByText(TITLE).first()).toBeVisible();
   await expect(page.getByText("Rad još nije započet.")).toHaveCount(0);
   expect(seen).toEqual({ starts: 1, made: 1 });
 
   // INT-31: a started work no longer offers "Započni rad"; its row opens the same work without a new start.
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   await page.getByRole("link", { name: "Otvori rad" }).first().click();
-  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/rad/${ID}$`));
   await expect(startButton(page)).toHaveCount(0);
   expect(seen).toEqual({ starts: 1, made: 1 });
 });
@@ -88,7 +88,7 @@ test("after the start the task page leaves the empty state in place, with no sec
   await expect(page.getByText("Rad još nije započet.")).toBeVisible();
   await startButton(page).click();
   await expect(page.getByText("Rad još nije započet.")).toHaveCount(0);
-  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/rad/${ID}$`));
   expect(seen).toEqual({ starts: 1, made: 1 });
 });
 
@@ -97,7 +97,7 @@ test("a 404 leads to the no-access screen of WEB-1401, which does not say whethe
   await page.route(START, (route) => route.fulfill({ status: 404, json: { code: "not_found" } }));
   await openTask(page);
   await startButton(page).click();
-  await expect(page).toHaveURL(/\/app\/web\/nema-ovlasti\?kind=denied&returnTo=%2Fzadaci$/);
+  await expect(page).toHaveURL(/\/aplikacija\/nema-ovlasti\?kind=denied&returnTo=%2Fzadaci$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nemate ovlasti za ovaj prikaz");
 });
 
@@ -106,7 +106,7 @@ test("a 409 conflict (notice not acknowledged or not open yet) leads to the assi
   await page.route(START, (route) => route.fulfill({ status: 409, json: { code: "conflict" } }));
   await openTask(page);
   await startButton(page).click();
-  await expect(page).toHaveURL(new RegExp(`/app/web/zadatak/${ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/zadatak/${ID}$`));
   await expect(page.getByText(s.unknown)).toHaveCount(0);
 });
 
@@ -120,8 +120,8 @@ test("an unknown answer stays on the card with a note, and the next click opens 
   await openTask(page);
   await startButton(page).click();
   await expect(page.getByRole("alert").filter({ hasText: s.unknown })).toBeVisible();
-  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/rad/${ID}$`));
   await startButton(page).click();
-  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/aplikacija/rad/${ID}$`));
   expect(seen).toEqual({ starts: 1, made: 1 });
 });

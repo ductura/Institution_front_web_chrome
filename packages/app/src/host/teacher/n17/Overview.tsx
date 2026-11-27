@@ -2,15 +2,19 @@
 
 import { useEffect, useState } from "react";
 
+import { Select } from "@ductura/ui";
+
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { goToSignIn } from "../../../../../../src/client/api";
 import { useHost } from "../../context";
 import { TeacherPage, type TeacherRead } from "../shell/TeacherPage";
 import {
-  afterDeadlineText, cardDeadline, deadlineText, loadN17, recordText, revisionText, sortedRows, stateText, summaryLine, timeText,
-  unavailablePort, workHref, type N17Card, type N17Port, type N17Read,
+  afterDeadlineText, allRows, cardDeadline, filteredRows, groupFilterOptions, stateFilterOptions, type N17StateFilter, deadlineText, loadN17, recordText, revisionText, sortedRows, stateText, summaryLine, timeText,
+  unavailablePort, workHref, type N17Card, type N17Port, type N17Row, type N17Read,
 } from "./model";
 import { n17Messages as text } from "./messages.hr";
+import { useNarrow } from "../work/review/CardTable";
+import cardStyles from "../work/review/card-table.module.css";
 
 /**
  * N-17 "Zbirni pregled" (WEB-2149): one card per assignment with a meta line and a six-column table,
@@ -20,6 +24,11 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
   const { base } = useHost();
   const [read, setRead] = useState<N17Read | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [stateFilter, setStateFilter] = useState<N17StateFilter>("");
+  const [groupFilter, setGroupFilter] = useState("");
+  const narrow = useNarrow();
+  // A chosen group that the read no longer has counts as "all": the select, the rows and "Očisti filtre" agree.
+  const activeGroup = (cards: readonly N17Card[]): string => groupFilterOptions(allRows(cards)).some((o) => o.value === groupFilter) ? groupFilter : "";
 
   useEffect(() => {
     let live = true;
@@ -50,7 +59,25 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
         </section>
       ) : (
         <>
-          {cards.map((card) => (
+          {(() => {
+            const rows = allRows(cards);
+            const groups = groupFilterOptions(rows);
+            const group = activeGroup(cards);
+            return (
+              <div className="acts" role="group" aria-label={text.filters.label} data-testid="n17-filters">
+                <Select label={text.filters.stateLabel} options={[...stateFilterOptions(rows)]} value={stateFilter}
+                  onChange={(event) => setStateFilter(event.target.value as N17StateFilter)} />
+                {groups.length > 0 && (
+                  <Select label={text.filters.groupLabel} options={[...groups]} value={group}
+                    onChange={(event) => setGroupFilter(event.target.value)} />
+                )}
+                {stateFilter !== "" || group !== "" ? (
+                  <button type="button" className="btn secondary" onClick={() => { setStateFilter(""); setGroupFilter(""); }}>{text.filters.clear}</button>
+                ) : null}
+              </div>
+            );
+          })()}
+          {cards.map((card) => { const shown = (rows: readonly N17Row[]) => filteredRows(rows, stateFilter, activeGroup(cards)); return (
             <section key={card.assignmentId} className="card" aria-labelledby={`n17-${card.assignmentId}`} data-testid="n17-card">
               <h2 id={`n17-${card.assignmentId}`}>{text.cardTitle(card.courseName, card.title)}</h2>
               {cardDeadline(card, Date.now()) === null ? null : <p className="meta">{cardDeadline(card, Date.now())}</p>}
@@ -67,13 +94,35 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
               ) : card.rows.length === 0 ? <p className="note">{text.noStudents}</p> : (
                 <>
                   <p className="meta">{summaryLine(card.rows)}</p>
+                  {shown(card.rows).length === 0 ? <p className="note" role="status">{text.filters.noMatch}</p> : narrow ? (
+                    <ul className={cardStyles.cards} aria-label={text.tableLabel}>
+                      {sortedRows(shown(card.rows)).map((row) => {
+                        const href = workHref(row);
+                        const who = row.name ?? text.noName;
+                        const fields: readonly [string, string][] = [
+                          [text.columns.state, stateText(row)], [text.columns.submittedAt, timeText(row)], [text.columns.afterDeadline, afterDeadlineText(row)],
+                          [text.columns.deadline, deadlineText(row)], [text.columns.record, recordText(row)], [text.columns.revision, revisionText(row)],
+                        ];
+                        return (
+                          <li key={row.studentId} className={`panel ${cardStyles.card}`} data-testid="n17-row-card">
+                            <p>{href === null ? who : <a href={appHref(base, href)}>{who}</a>}</p>
+                            <dl className={cardStyles.fields}>
+                              {fields.map(([name, value]) => (
+                                <div key={name} className={cardStyles.field}><dt className="meta">{name}</dt><dd>{value}</dd></div>
+                              ))}
+                            </dl>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
                   <div className="tbl" tabIndex={0} role="region" aria-label={text.tableLabel}>
                     <table>
                       <thead>
                         <tr>{Object.values(text.columns).map((c) => <th key={c} scope="col">{c}</th>)}</tr>
                       </thead>
                       <tbody>
-                        {sortedRows(card.rows).map((row) => {
+                        {sortedRows(shown(card.rows)).map((row) => {
                           const href = workHref(row);
                           const who = row.name ?? text.noName;
                           return (
@@ -91,10 +140,11 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
                       </tbody>
                     </table>
                   </div>
+                  )}
                 </>
               )}
             </section>
-          ))}
+          ); })}
         </>
       )} />
   );

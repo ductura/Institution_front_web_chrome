@@ -84,7 +84,6 @@ export function SourcesMention({ documentId, openOrigin }: { documentId: string;
   const items = useMemo(() => mentionSources(sources, notes), [sources, notes]);
   if (signedOut || !editor) return null;
 
-  const trusted = <T,>(run: () => T) => (event: { isTrusted: boolean }) => { if (event.isTrusted) run(); };
   const write = (draft: SourceDraft, action: SourceFormAction) => {
     setQuick(null);
     if (editor.isDestroyed || !editor.isEditable) return setProblem("addFailed");
@@ -112,7 +111,7 @@ export function SourcesMention({ documentId, openOrigin }: { documentId: string;
     <div role="group" aria-label={t.plainCount(places.length)}>
       <CitationPopover editor={editor} sources={ids.map((s) => ({ id: s.id, label: s.label }))} />
       <span role="status">{t.plainCount(places.length)}</span>
-      {next !== null && <Button tone="quiet" onClick={trusted(() => { editor.view.dispatch(jumpTo(editor.state, next)); editor.commands.focus(); })}>
+      {next !== null && <Button tone="quiet" onClick={() => { editor.view.dispatch(jumpTo(editor.state, next)); editor.commands.focus(); }}>
         {t.plainNext}
       </Button>}
       {problem && <p role="alert">{t[problem]}</p>}

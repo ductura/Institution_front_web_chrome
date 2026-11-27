@@ -36,7 +36,7 @@ const COURSE = {
   id: K1, name: "Izmišljeni kolegij", academicYear: "2026/2027", aiPolicy: "partially_allowed",
   assignments: [task(A1, "Kućno kompostiranje", "2099-12-15T22:59:00.000Z"), task(A2, "Prikaz članka", "2020-11-08T22:59:00.000Z")],
 } as unknown as TeacherCourse;
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 
 describe("N-01 course card entries (NZ-1, NZ-2)", () => {
   let root: Root | undefined;
@@ -57,7 +57,7 @@ describe("N-01 course card entries (NZ-1, NZ-2)", () => {
     document.body.append(host);
     root = createRoot(host);
     await act(async () => {
-      root?.render(h(HostContext.Provider, { value: HOST }, h(AssignmentCards, { courses: [COURSE], here: "/app/web/nastavnik" })));
+      root?.render(h(HostContext.Provider, { value: HOST }, h(AssignmentCards, { courses: [COURSE], here: "/aplikacija/nastavnik" })));
     });
     return host;
   }
@@ -68,15 +68,15 @@ describe("N-01 course card entries (NZ-1, NZ-2)", () => {
   it("gives every assignment its six entries, each a page of the host", async () => {
     const host = await mount();
     expect(links(host, "Prikaz članka")).toEqual([
-      ["Predaje", `/app/web/nastavnik/zadatak/${A2}/predaje`],
-      ["Uredi (nova verzija)", `/app/web/nastavnik/zadatak/${A2}/uredi`],
-      ["Kopiraj zadatak", `/app/web/nastavnik/zadatak/${A2}/uredi?kopiraj=1`],
-      ["Produljenje", `/app/web/nastavnik/zadatak/${A2}/produljenje`],
-      ["Izvoz", `/app/web/nastavnik/zadatak/${A2}/merlin`],
-      ["Brz put kroz radove", `/app/web/nastavnik/brz-put?zadatak=${A2}`],
+      ["Predaje", `/aplikacija/nastavnik/zadatak/${A2}/predaje`],
+      ["Uredi (nova verzija)", `/aplikacija/nastavnik/zadatak/${A2}/uredi`],
+      ["Kopiraj zadatak", `/aplikacija/nastavnik/zadatak/${A2}/uredi?kopiraj=1`],
+      ["Produljenje", `/aplikacija/nastavnik/zadatak/${A2}/produljenje`],
+      ["Izvoz", `/aplikacija/nastavnik/zadatak/${A2}/merlin`],
+      ["Brz put kroz radove", `/aplikacija/nastavnik/brz-put?zadatak=${A2}`],
     ]);
     const overview = [...host.querySelectorAll("a")].find((a) => a.textContent === t.overview)!;
-    expect(overview.getAttribute("href")).toBe(`/app/web/nastavnik/zbirni?kolegij=${K1}`);
+    expect(overview.getAttribute("href")).toBe(`/aplikacija/nastavnik/zbirni?kolegij=${K1}`);
   });
 
   it("asks which assignment for an extension, offers a passed one and goes to its page", async () => {
@@ -93,7 +93,7 @@ describe("N-01 course card entries (NZ-1, NZ-2)", () => {
       select.dispatchEvent(new Event("change", { bubbles: true }));
     });
     const go = [...dialog.querySelectorAll("a")].find((a) => a.textContent === t.pickGo)!;
-    expect(go.getAttribute("href")).toBe(`/app/web/nastavnik/zadatak/${A2}/produljenje`);
+    expect(go.getAttribute("href")).toBe(`/aplikacija/nastavnik/zadatak/${A2}/produljenje`);
   });
 
   it("asks which assignment for the Merlin export", async () => {
@@ -105,7 +105,7 @@ describe("N-01 course card entries (NZ-1, NZ-2)", () => {
       select.dispatchEvent(new Event("change", { bubbles: true }));
     });
     const go = [...host.querySelectorAll("dialog a")].find((a) => a.textContent === t.pickGo)!;
-    expect(go.getAttribute("href")).toBe(`/app/web/nastavnik/zadatak/${A1}/merlin`);
+    expect(go.getAttribute("href")).toBe(`/aplikacija/nastavnik/zadatak/${A1}/merlin`);
   });
 
   it("opens dk-h for the holder when the empty roster sent `?kod=`", async () => {

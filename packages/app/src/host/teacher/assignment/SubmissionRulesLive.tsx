@@ -1,6 +1,7 @@
 "use client";
 
-// NZ-4 on the edit page: the two switches of a published assignment, read from and saved to the server.
+// NZ-4 on the edit page: the switches of a published assignment, read from and saved to the server. The late rule
+// (F4-NAS-R01) is a working choice once teacher.assignment-late-submission.get answers; otherwise it stays disabled.
 // Saving after publication changes rules students have already seen, so the dialog dz-h asks first; the note
 // "spremljeno" follows only the server's answer (B-6).
 import { ActionRow, Button, Dialog, FormSection as Section } from "@ductura/ui";
@@ -10,7 +11,7 @@ import { createApi, goToSignIn } from "@/client/api";
 import { appHref } from "@/components/shell/nav";
 
 import { assignmentFormHr as f } from "../assignment-form/messages.hr";
-import { readRules, setDeclarationRequired, setWithdrawal, type Call, type CurrentRules } from "../assignment-form/rules";
+import { readRules, setDeclarationRequired, setLateSubmission, setWithdrawal, type Call, type CurrentRules } from "../assignment-form/rules";
 import { SubmissionRules } from "../assignment-form/SubmissionRules";
 import { useHost } from "../../context";
 
@@ -50,6 +51,7 @@ export default function SubmissionRulesLive({ assignmentId, client }: { assignme
     const outcomes = await Promise.all([
       edit.withdrawal !== saved.withdrawal ? setWithdrawal(call, assignmentId, edit.withdrawal) : Promise.resolve("set" as const),
       edit.declarationRequired !== saved.declarationRequired ? setDeclarationRequired(call, assignmentId, edit.declarationRequired) : Promise.resolve("set" as const),
+      edit.lateAllowed !== undefined && edit.lateAllowed !== saved.lateAllowed ? setLateSubmission(call, assignmentId, edit.lateAllowed) : Promise.resolve("set" as const),
     ]);
     setBusy(false);
     setAsking(false);
@@ -70,7 +72,7 @@ export default function SubmissionRulesLive({ assignmentId, client }: { assignme
       </section>
     );
   }
-  const changed = edit.withdrawal !== saved.withdrawal || edit.declarationRequired !== saved.declarationRequired;
+  const changed = edit.withdrawal !== saved.withdrawal || edit.declarationRequired !== saved.declarationRequired || edit.lateAllowed !== saved.lateAllowed;
   return (
     // The section brings its own heading "Pravila predaje"; the wrapper is only the card.
     <div className="card">
