@@ -18,7 +18,7 @@ import TeacherQuestion from "../../statement/TeacherQuestion";
 import StepLink from "../steps/StepLink";
 import { chatDialogText as d, declarationStepText as t } from "./messages.hr";
 import {
-  canConfirm, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
+  attachedOf, canConfirm, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
   type Chat, type ConfirmState, type DeclarationRead, type FormChoice,
 } from "./model";
 import type { StepPorts, StepRead } from "./step-ports";
@@ -38,6 +38,7 @@ export function ChatDialog({ chat, onClose }: { chat: Chat | null; onClose: () =
     <Dialog open title={chatTitle(chat)} onClose={onClose} actions={<Button tone="secondary" onClick={onClose}>{d.close}</Button>}>
       <div ref={body} style={{ display: "grid", gap: 12 }}>
         <p className="meta">{d.meta}</p>
+        {chat.unreadable && <p className="note" role="alert">{t.chatUnavailable}</p>}
         {chat.entries.map((entry, index) => <StepEntry key={index} who={entryLabel(entry)} whoFirst>{entry.text}</StepEntry>)}
       </div>
     </Dialog>
@@ -66,6 +67,8 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<FormChoice | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
+  const [attaching, setAttaching] = useState<string | null>(null);
+  const [attachLine, setAttachLine] = useState<string | null>(null);
   const why = useId();
   const statementId = useId();
   const statementRef = useRef<HTMLDivElement>(null);
@@ -112,6 +115,25 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
     if (outcome === "saved" || outcome === "conflict" || outcome === "stale") reload();
   };
 
+  // F4-PRE-R02: a server conversation's messages are read when it is opened; a fake chat carries its own.
+  const openChat = async (c: Chat) => {
+    if (c.conversationId === undefined || !ports.chat) return setChat(c);
+    const entries = await ports.chat(c.conversationId);
+    setChat(entries === null ? { ...c, entries: [], unreadable: true } : { ...c, entries });
+  };
+
+  // Attaching changes the draft on the server; the step then reads what the server holds.
+  const toggle = async (conversationId: string, on: boolean) => {
+    if (!ports.attach) return;
+    setAttaching(conversationId);
+    setAttachLine(null);
+    const outcome = await ports.attach(assignmentId, conversationId, on);
+    setAttaching(null);
+    if (outcome === "signedOut") return signIn.current();
+    if (outcome !== "saved") setAttachLine(outcome === "conflict" ? t.conflict : outcome === "stale" ? t.attachStale : t.attachFailed);
+    reload();
+  };
+
   // The prototype's loading and error panels are titled "Izjava"; the full one carries the whole title.
   if (view === "loading") return <><div><StepNav current={2} /></div><StepPanel title={t.shortTitle} busy><StepLoading message={t.loading} /></StepPanel></>;
   const closed = view === "submitted";
@@ -135,7 +157,7 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
               })}
               {/* NF-3 PR-4 (E-9a): the block says what it holds; without conversations, that none can be attached. */}
               <p className="meta">{t.recordedExplained}</p>
-              {ready.chats.length === 0 && <p className="meta">{t.emptyChats}</p>}
+              {ready.chats.length === 0 && <p className="meta">{ready.chatsUnavailable ? t.chatsUnavailable : t.emptyChats}</p>}
             </StepDecl>
             <StepDecl title={t.declared} tag={<Tag tone="open">{t.declaredTag}</Tag>} own>
               {ready.declared === null ? <p className="note">{t.emptyDeclared}</p> : (
@@ -161,15 +183,27 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
               <>
                 <StepSub>{t.attachments}</StepSub>
                 <p className="note">{t.attachmentsNote}</p>
+                {attachedOf(ready.chats) !== null && (
+                  <p className="meta">{t.attachedCount.replace("{a}", String(attachedOf(ready.chats))).replace("{n}", String(ready.chats.length))}</p>
+                )}
+                {ready.chats.some((c) => c.conversationId !== undefined && c.attached === null) && <p className="meta">{t.attachUnavailable}</p>}
                 <ul className="list">
                   {ready.chats.map((c) => (
                     <li key={c.n} className="item">
                       <span className="title">{chatTitle(c)}</span>
                       {c.required && <span className="meta">{t.required}</span>}
-                      <StepActions><Button tone="secondary" size="small" onClick={() => setChat(c)}>{t.review}</Button></StepActions>
+                      {typeof c.attached === "boolean" && <span className="meta">{c.attached ? t.attachedMeta : t.notAttachedMeta}</span>}
+                      <StepActions>
+                        <Button tone="secondary" size="small" onClick={() => void openChat(c)}>{t.review}</Button>
+                        {!closed && typeof c.attached === "boolean" && c.conversationId !== undefined && ports.attach && !(c.required && c.attached) && (
+                          <Button tone="secondary" size="small" aria-pressed={c.attached} disabled={attaching !== null}
+                            onClick={() => void toggle(c.conversationId as string, !c.attached)}>{c.attached ? t.detach : t.attach}</Button>
+                        )}
+                      </StepActions>
                     </li>
                   ))}
                 </ul>
+                {attachLine !== null && <p className="note" role="alert">{attachLine}</p>}
               </>
             )}
             {/* NF-3 PR-20: the teacher's question and the answer, written on the step's read. */}

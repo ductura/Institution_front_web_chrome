@@ -151,6 +151,9 @@ export const checksText = {
   openDeclaration: "Otvori izjavu",
   conversations: "Razgovori uz izjavu",
   conversationsUnavailable: "Broj priloženih razgovora trenutačno nije dostupan.",
+  // F4-PRE-R02: the prototype's words (Ductura_student.html, step 3).
+  conversationsCount: "Razgovora: {n}, priloženo: {a}. Nastavnik vidi samo priložene razgovore.",
+  conversationsNone: "Nema razgovora za prilaganje.",
   placeholders: "Mjesta za izvor koja ste ostavili u tekstu",
   // NF-3 PR-3: lists, from the server's text and the process summary; neither holds the submission.
   placesLoading: "Učitavam tekst rada s poslužitelja.",
