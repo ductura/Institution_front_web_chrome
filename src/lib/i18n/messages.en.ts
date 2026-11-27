@@ -1316,6 +1316,7 @@ const en = {
     viewModes: "View",
     // #711 F1, za potvrdu: the name of the top bar region (course, assignment, view, submission).
     barLabel: "Assignment and view",
+    subtitleDue: "due {time}",
     modeWriting: "Writing",
     modeTeacherView: "As the teacher sees it",
     // #732 item 7 (owner 6397193676): the line above the teacher's view, and why the switch is off.
@@ -1865,6 +1866,7 @@ const en = {
     works: {
       title: "My works",
       lede: "Your works in all courses and their status.",
+      signedOut: "Sign in to see your works.",
       search: "Search by title or course",
       year: "Academic year",
       allYears: "All years",

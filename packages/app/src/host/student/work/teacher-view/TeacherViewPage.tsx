@@ -10,9 +10,11 @@ import { appHref } from "../../../../../../../src/components/index.ts";
 import { assignmentIdOf, editorWorkRead, type EditorWorkRead } from "../../../../../../../src/components/editor/EditorPage.read.ts";
 import { createApi, goToSignIn } from "../../../../../../../src/client/api.ts";
 import { withMentoredAssignments } from "../../../../../../../src/components/student/mentored-assignments.ts";
+import { messagesHr as shared } from "../../../../../../../src/lib/i18n/messages.hr.ts";
 
 import { nextPath } from "../../../../bases";
 import { useHost } from "../../../context";
+import { DeniedState } from "../../../states/States";
 import { momentHr } from "../frame";
 import { teacherViewText as t } from "./messages.hr";
 import { rowsOf } from "./model";
@@ -36,7 +38,7 @@ export default function TeacherViewPage({ assignmentId: raw }: { assignmentId: s
         client("student.assignments.get", NONE).catch(() => UNREACHED),
         client("student.assignment-work.get", NONE).catch(() => UNREACHED),
       ]);
-      if (live) setRead(editorWorkRead(id, assignments as never, work as never));
+      if (live) setRead(editorWorkRead(id, assignments as never, work as never, { refusals: true }));
     })();
     return () => { live = false; };
   }, [id, attempt]);
@@ -45,6 +47,10 @@ export default function TeacherViewPage({ assignmentId: raw }: { assignmentId: s
   const here = appHref(base, `/rad/${id}/nastavnik`);
   if (read?.kind === "signedOut") { goToSignIn(here); return null; }
   if (read?.kind === "noticeFirst") { router.replace(nextPath(base, `/zadatak/${id}`)); return null; }
+  // Design alignment 27. 11. 2026. (A3): a 403 is not a read error; the heading and the way back to one's own space.
+  if (read?.kind === "denied") {
+    return <div className="page"><DeniedState title={shared.access.deniedTitle} backLabel={shared.access.backToOwn} backHref={appHref(base, "/")} /></div>;
+  }
   const back = <p><a href={appHref(base, `/rad/${id}`)}>{t.back}</a></p>;
   const rows = read === null ? null : rowsOf(read);
   let body;
