@@ -10,7 +10,7 @@ export const myNumbersText = {
   notAvailable: "Nije dostupno",
   versions: "Spremljene verzije",
   versionsMore: (n: number) => `${n} ili više`,
-  days: "Dani s spremljenom verzijom",
+  days: "Dani sa spremljenom verzijom",
   daysMore: (n: number) => `${n} ili više`,
   daysLeft: "Dani do roka",
   dueToday: "Rok je danas",
