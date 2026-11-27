@@ -95,7 +95,8 @@ export function SlidesReview({ documentId, path, revisions, more }: {
   const doc: SlidesDocument | null = main !== "loading" && main.kind === "ready" ? main.document : null;
   const clamped = doc === null ? 0 : Math.min(slideIndex, Math.max(doc.slides.length - 1, 0));
   const failed = main !== "loading" && main.kind !== "ready" ? main : null;
-  if (failed?.kind === "signedOut") goToSignIn(appHref(base, path));
+  const otherFailed = other !== "loading" && other.kind !== "ready" ? other : null;
+  if (failed?.kind === "signedOut" || otherFailed?.kind === "signedOut") goToSignIn(appHref(base, path));
 
   return (
     <div className="page">

@@ -108,6 +108,15 @@ describe("SlidesOrWork", () => {
     expect(labels.join(" ")).not.toMatch(/\d{4}-\d{2}-\d{2}|T\d{2}:/);
   });
 
+  it("sends a teacher whose sign-in ran out while comparing to sign-in too", async () => {
+    await mount({ kind: "slides", revisions, more: false });
+    expect(signIn).not.toHaveBeenCalled();
+    reads.revision.mockImplementation(async (_d: string, n: number) => (n === 1 ? { kind: "signedOut" } : { kind: "ready", revision: n, document: DOCS[n]! }));
+    const select = [...host.querySelectorAll("select")].find((s) => s.labels?.[0]?.textContent?.includes(t.compareFrom))!;
+    await act(async () => { select.value = "1"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+    expect(signIn).toHaveBeenCalled();
+  });
+
   it("sends a signed-out teacher to sign-in", async () => {
     reads.revision.mockImplementation(async () => ({ kind: "signedOut" }));
     await mount({ kind: "slides", revisions, more: false });
