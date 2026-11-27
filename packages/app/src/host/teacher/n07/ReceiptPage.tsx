@@ -21,6 +21,7 @@ import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { fallbackKey, isSubmittedRead, qrCells, receiptView, type ReceiptInput, type ReceiptView, type Row } from "./model";
 import { n07Messages as text } from "./messages.hr";
 import { readWorkPractice, type PracticeCall } from "./practice";
+import { useTaskCrumb } from "../n06/task-context";
 import { Kv, StateBlock, WorkPage, WorkPanel, workPageStyles as styles } from "./WorkPage";
 
 const rows = (list: readonly Row[]) => list.map(({ id, label, value }) => <Kv key={id} label={label}>{value}</Kv>);
@@ -146,13 +147,15 @@ export default function N07ReceiptPage({ documentId, workHref, current, loadPdf 
   // N-10 (WEB-2157): the process summary is its own page under the work.
   const summaryHref = `${workHref}/sazetak`;
   const name = input?.kind === "ready" ? input.studentName : null;
+  // F4-NAS-R12: "Student · Seminarski rad „Naslov”" once read; until then, or when the work cannot be read, the name alone.
+  const crumb = useTaskCrumb(documentId) ?? name ?? undefined;
 
   const full = view.kind === "pending" || view.kind === "submitted";
   const back = <a className="btn secondary" href={workHref}>{text.backToWork}</a>;
   return (
     <RevisionSection documentId={documentId} current={current}>
       {(rev) => (
-    <WorkPage back={workHref} backLabel={text.backToWork} crumb={name ?? undefined}>
+    <WorkPage back={workHref} backLabel={text.backToWork} crumb={crumb}>
       {full && (
         <section className="panel">
           <div className={styles.body}>
