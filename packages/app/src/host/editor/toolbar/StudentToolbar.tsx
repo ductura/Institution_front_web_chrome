@@ -55,6 +55,7 @@ import { placeFromFlags, type ContextAction, type CursorPlace } from "./context-
 import { useOfferSlashCommands } from "../slash-commands";
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import { toolbarBehaviourHr } from "./messages.hr";
+import { listenCommentKey } from "./comment-key";
 import { MOBILE_MORE, type QuickTool } from "./quick-tools";
 import { canStep, DEFAULT_ZOOM, loadZoom, saveZoom, snapZoom, stepZoom, zoomPercent, zoomToast } from "./text-size";
 import { MobileQuickBar } from "./ToolbarBehaviour";
@@ -290,6 +291,11 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   // ED-46 (P2-18): "/fusnota" and "/ref" open the same dialogs as Umetni, and only when Umetni would.
   useOfferSlashCommands(editor, writeOk && v3.openInsert
     ? { fusnota: () => v3.openInsert?.("footnote"), ref: () => v3.openInsert?.("crossReference") } : {});
+  // ED-93: Ctrl+Alt+M, the comment on the selection the tool tip and the right-click menu name.
+  useEffect(() => {
+    if (!writeOk || !editor) return;
+    return listenCommentKey(editor, () => toast(toolbarBehaviourHr.commentNeedsSelection));
+  }, [writeOk, editor, toast]);
 
   const insert: Item[] = withPendingInserts([
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
