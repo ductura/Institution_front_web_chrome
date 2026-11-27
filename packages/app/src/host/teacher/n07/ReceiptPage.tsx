@@ -4,9 +4,12 @@ import { Button, Details } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
 import { createApi, goToSignIn } from "@/client/api";
+import { readTeacherWorkReceiptPdf, type ReceiptPdfRead, type SubmissionsCall } from "@/client/teacher-submissions";
 import { readTeacherWorkReceipt } from "@/client/teacher-work";
 import { appHref } from "@/components/shell/nav";
 import { useProcessSummary } from "@/components/teacher/SummaryCard";
+
+import { downloadBlob } from "@/components/editor/EarlierDraft";
 
 import { useHost } from "../../context";
 import AiDeclarationSection from "../ai-declaration/AiDeclarationSection";
@@ -85,13 +88,16 @@ export function ReceiptPanel({ view, onRetry, onCopy, verifyHref }: {
   );
 }
 
+/** The real read of "Preuzmi PDF potvrde" (teacher.receipt-pdf.get); a prop so the page can be driven without a server. */
+const realPdf = (documentId: string): Promise<ReceiptPdfRead> => readTeacherWorkReceiptPdf(createApi() as unknown as SubmissionsCall, documentId);
+
 /**
  * N-07 "Što je student predao" (WEB-2155): the frame, "Prije predaje", the receipt, the declaration and the
  * teacher's buttons. "Zatraži doradu" is the dd-h dialog of RevisionSection (NAS-38, F4-NAS-R07), the same as on N-06.
  * Reads only through src/client; the copy toast follows the browser's own answer.
  */
-export default function N07ReceiptPage({ documentId, workHref, current }: {
-  documentId: string; workHref: string; current: () => boolean;
+export default function N07ReceiptPage({ documentId, workHref, current, loadPdf = realPdf }: {
+  documentId: string; workHref: string; current: () => boolean; loadPdf?: (documentId: string) => Promise<ReceiptPdfRead>;
 }) {
   const { base } = useHost();
   const here = `${workHref}/predaja`;
@@ -121,6 +127,18 @@ export default function N07ReceiptPage({ documentId, workHref, current }: {
   const copy = (hex: string) => {
     void navigator.clipboard.writeText(hex)
       .then(() => toasts.show(text.copied), () => toasts.show(text.copyFailed, "error"));
+  };
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const savePdf = async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true);
+    const outcome = await loadPdf(documentId);
+    setPdfBusy(false);
+    if (!current()) return;
+    if (outcome.kind === "session-expired") return goToSignIn(here);
+    if (outcome.kind === "notFound") return toasts.show(text.pdfNotFound, "error");
+    if (outcome.kind === "failed") return toasts.show(text.pdfFailed, "error");
+    try { downloadBlob(outcome.blob, outcome.filename); toasts.show(text.pdfSaved); } catch { toasts.show(text.pdfFailed, "error"); }
   };
   const submitted = isSubmittedRead(input);
   const summary = useProcessSummary(documentId, current, submitted);
@@ -152,6 +170,7 @@ export default function N07ReceiptPage({ documentId, workHref, current }: {
       {(full || view.kind === "notSubmitted") && (
         <div className={styles.acts}>
           {back}
+          {view.kind === "submitted" && <Button tone="secondary" disabled={pdfBusy} onClick={() => void savePdf()}>{pdfBusy ? text.pdfLoading : text.pdf}</Button>}
           {full && rev.action}
           {full && <a className="btn secondary" href={appHref(base, "/nastavnik/brz-put")}>{text.fastPath}</a>}
         </div>
