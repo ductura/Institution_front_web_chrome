@@ -8,6 +8,10 @@ export const summaryText = {
   lengthNone: "Opseg nije određen.",
   allowed: "Dopušteno: {list}.",
   allowedNone: "Dopušteno: nijedna uporaba Asistenta s popisa.",
+  // ASIST-S1 (E-4): one line about the Assistant, from aiPolicy, aiPurposes and aiSummaryOnly. No provider or model name.
+  assistantPilot: "Asistent u Ducturi radi u pilotu za dopuštene svrhe; razgovori se bilježe, a Vi ih možete priložiti izjavi.",
+  assistantSummaryOnly: "Asistent u Ducturi radi u pilotu samo za sažimanje literature; razgovori se bilježe, a Vi ih možete priložiti izjavi.",
+  assistantUnavailable: "Asistent nije dostupan. Obavijest ovog zadatka ne dopušta alate.",
   recorded: "Najvažnije o bilježenju: bilježe se promjene teksta i njihovo vrijeme, ne pritisnute tipke.",
   notConsent: "Potvrda nije privola. Prije potvrde ništa se ne šalje na poslužitelj.",
   purposes: {

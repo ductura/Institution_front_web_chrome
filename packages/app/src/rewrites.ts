@@ -27,3 +27,20 @@ export function institutionRewrites(server: string, nodeEnv: string | undefined)
     rules.push({ source: "/__lazni/:path*", destination: `${server}/__lazni/:path*`, basePath: false });
   return rules;
 }
+
+export interface Redirect {
+  source: string;
+  destination: string;
+  basePath: false;
+  permanent: false;
+}
+
+/**
+ * F4-STU-R01: the server's failed or refused sign-in returns to /prijava?greska=<code> at the root
+ * (login_refused, login_failed, provider_unavailable), but the app has only /aplikacija/prijava.
+ * This sends the root path there, and Next carries the whole query (greska, returnTo) over. Not
+ * permanent: the answer depends on the code and must not be cached by the browser.
+ */
+export function institutionRedirects(): Redirect[] {
+  return [{ source: "/prijava", destination: "/aplikacija/prijava", basePath: false, permanent: false }];
+}

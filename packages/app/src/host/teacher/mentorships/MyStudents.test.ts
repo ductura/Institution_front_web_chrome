@@ -36,7 +36,7 @@ async function show(call: () => OverviewCall, works = WORKS) {
   const host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => { root!.render(h(MyStudents, { works, call, base: "/app/web", now: () => NOW })); });
+  await act(async () => { root!.render(h(MyStudents, { works, call, base: "/aplikacija", now: () => NOW })); });
   return host;
 }
 const cells = (host: HTMLElement) => [...host.querySelectorAll("tbody tr")].map((tr) => [...tr.children].map((c) => c.textContent));
@@ -61,7 +61,7 @@ describe("Moji studenti card (MK-11)", () => {
       ["Student AZavršni rad „Izmišljeni rad 1”", "Nacrt", "kod studenta, rok je bio prije 3 dana"],
       ["Student CDiplomski rad „Izmišljeni rad 3”", t.stageFinal, t.submitted],
     ]);
-    expect(host.querySelector("tbody a")?.getAttribute("href")).toBe("/app/web/nastavnik/rad/izmisljeni-rad-2");
+    expect(host.querySelector("tbody a")?.getAttribute("href")).toBe("/aplikacija/nastavnik/rad/izmisljeni-rad-2");
   });
 
   it("filters by work type and says when a type has no works", async () => {

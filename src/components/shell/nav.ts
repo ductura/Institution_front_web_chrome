@@ -105,8 +105,8 @@ export function homeHref(role: ShellRole | null): string {
 export const HOW_IT_WORKS_HREF = "/kako-radi";
 
 /**
- * A path of the app under `base`, the prefix the app is served under (/app/web
- * or /app/chrome, #2028 c.6993786629 §1): "/" is the base itself. An empty
+ * A path of the app under `base`, the prefix the app is served under (/aplikacija
+ * or /aplikacija, #2028 c.6993786629 §1): "/" is the base itself. An empty
  * base leaves the path as it is.
  */
 export function appHref(base: string, path: string): string {

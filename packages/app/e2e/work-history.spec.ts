@@ -56,7 +56,7 @@ async function server(page: Page, answer: Answer) {
 async function openEditor(page: Page, now: Reply) {
   const answer: Answer = { now };
   const asked = await server(page, answer);
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await expect(page.locator('.ProseMirror[contenteditable="true"]').first()).toBeVisible({ timeout: 20_000 });
   const skip = page.getByRole("button", { name: "Preskoči vodič" });
   await skip.waitFor({ state: "visible", timeout: 5000 }).then(() => skip.click(), () => undefined);

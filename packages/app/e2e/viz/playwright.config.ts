@@ -21,7 +21,7 @@ export default defineConfig({
     cwd: "../..",
     command: `pnpm run build && pnpm exec next start -p ${port}`,
     env: { INSTITUTION_SERVER_URL: "http://127.0.0.1:9" },
-    url: `http://127.0.0.1:${port}/app/web/`,
+    url: `http://127.0.0.1:${port}/aplikacija/`,
     reuseExistingServer: true,
     timeout: 600_000,
   },

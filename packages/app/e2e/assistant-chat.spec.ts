@@ -10,7 +10,7 @@ const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d50";
 const CONV = "9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f";
 const SCOPE = "d".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0010";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 const ANSWER = "Izmišljeni odgovor: rečenica je jasna, zarez nakon uvoda nije potreban.";
 
 const noticeBody = (over: Record<string, unknown> = {}) => ({
@@ -129,6 +129,22 @@ test.describe("ED-10 Asistent", () => {
     await chat.getByRole("button", { name: "Novi razgovor" }).click();
     await expect(chat.getByRole("status").filter({ hasText: "Novi razgovor. Sljedeći upit otvara novi zapis." })).toBeAttached();
     await expect(chat.getByRole("button", { name: "Novi razgovor" })).toBeDisabled();
+  });
+
+  test("F4-EDI-R08: samo sažimanje shows its state, no purpose, and needs 8 words", async ({ page }) => {
+    const { chat, state } = await openChat(page, noticeBody({ aiSummaryOnly: true }));
+    await expect(chat.getByText("samo sažimanje", { exact: true })).toBeVisible();
+    await expect(chat.getByText("Za ovaj zadatak Asistent samo sažima.")).toBeVisible();
+    await expect(chat.getByLabel("Svrha upita")).toHaveCount(0);
+    const field = chat.getByLabel("Tekst za sažimanje");
+    await field.fill("samo tri riječi");
+    await chat.getByRole("button", { name: "Sažmi" }).click();
+    await expect(chat.getByText("Upišite barem 8 riječi.")).toBeVisible();
+    expect(state.requests).toHaveLength(0);
+    await field.fill("jedna dvije tri četiri pet šest sedam osam");
+    await chat.getByRole("button", { name: "Sažmi" }).click();
+    await expect(chat.getByText(ANSWER)).toBeVisible();
+    expect(state.requests[0]!.body.purposeKey).toBe("literature_search");
   });
 
   test("an empty question is not sent", async ({ page }) => {

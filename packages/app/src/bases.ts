@@ -1,28 +1,27 @@
-// The two prefixes the front is served under (#2028 c.6993786629 §1). Apart
-// from routes.ts, so app/[base]/ can check its segment without the screens.
-export const BASES = ["/app/web", "/app/chrome"] as const;
+// The one prefix the front is served under: /aplikacija (D-318, DAN-1574). It
+// is the basePath of next.config.ts; /app/web and /app/chrome are gone (the
+// edge redirects the old addresses). Apart from routes.ts so the screens and
+// the config need not import each other.
+export const BASE_PATH = "/aplikacija";
+export const BASES = [BASE_PATH] as const;
 export type Base = (typeof BASES)[number];
-
-/** The base of a segment of app/[base]/, or null when it is neither. */
-export function baseOfSegment(segment: string): Base | null {
-  return BASES.find((b) => b === `/app/${segment}`) ?? null;
-}
+export const BASE: Base = BASE_PATH;
 
 /**
  * Next's path of an app route under a base: the browser's path without the
- * basePath "/app", as router.push and router.replace want it (they add the
- * basePath themselves; a path with it would open "/app/app/...").
+ * basePath, as router.push and router.replace want it (they add the basePath
+ * themselves; a path with it would open "/aplikacija/aplikacija/...").
  */
 export function nextPath(base: Base, route: string): string {
-  return (route === "/" ? `${base}/` : `${base}${route}`).slice("/app".length);
+  return route === "/" ? "/" : route;
 }
 
 /**
- * An address from appHref (with the basePath "/app", as a link's href has it)
- * as router.push and router.replace want it: without "/app", which they add
- * themselves. INT-10: the submission steps pushed appHref and landed on
- * "/app/app/web/...", a page that does not exist.
+ * An address from appHref (with the basePath, as a link's href has it) as
+ * router.push and router.replace want it: without "/aplikacija", which they
+ * add themselves.
  */
 export function routerPath(href: string): string {
-  return href.startsWith("/app/") ? href.slice("/app".length) : href;
+  if (href === BASE_PATH) return "/";
+  return href.startsWith(`${BASE_PATH}/`) ? href.slice(BASE_PATH.length) : href;
 }
