@@ -40,7 +40,10 @@ export function BeforeAfter({ quote, now }: { quote: string; now: string | null 
   );
 }
 
-export function CommentsPanel({ workId, role, submitted = false, port, selection, docSize, currentText, activeId, seen = 0, onJump, onSessionEnd, onSeen, now = Date.now, changes }: {
+/** ED-97: the chapter the cursor is in (level 2 heading up to the next one); null outside every chapter. */
+export type ChapterScope = { readonly title: string; readonly from: number; readonly to: number } | null;
+
+export function CommentsPanel({ workId, role, submitted = false, port, selection, docSize, currentText, activeId, seen = 0, onJump, onSessionEnd, onSeen, now = Date.now, changes, chapter }: {
   workId: string; role: Role; submitted?: boolean; port: CommentsPort | null;
   /** The text at a comment's place in the document as it is now; null when it cannot be read. */
   currentText?: (place: Place) => string | null;
@@ -49,8 +52,11 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
   onJump: (place: Place) => void; onSessionEnd?: () => void; onSeen?: () => void; now?: () => number;
   /** ED-42: the student's own changes since the last review; absent, the menu has no such item. */
   changes?: ReadMyChanges;
+  /** ED-97: absent, the card has no "Ovo poglavlje / Cijeli rad" scope (a view without the text). */
+  chapter?: ChapterScope;
 }) {
   const [load, setLoad] = useState<Load>({ kind: "loading" });
+  const [wholeWork, setWholeWork] = useState(false);
   const [turn, setTurn] = useState<TurnFilter>(null);
   const [kindFilter, setKindFilter] = useState<Kind | null>(null);
   const [replyFor, setReplyFor] = useState<string | null>(null);
@@ -114,7 +120,14 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
   const { comments, templates, round } = load;
   const live = comments;
   const counts = countsFor(live, role, seen);
-  const shown = applyFilters(live, role, seen, turn, kindFilter, activeId ?? replyFor);
+  const filtered = applyFilters(live, role, seen, turn, kindFilter, activeId ?? replyFor);
+  // ED-97: in "Ovo poglavlje" the comments placed elsewhere (or whose text is gone) step aside,
+  // except the one in focus and the one being answered; a link brings the whole work back.
+  const byChapter = chapter !== undefined && chapter !== null && !wholeWork;
+  const shown = byChapter
+    ? filtered.filter((c) => c.id === activeId || c.id === replyFor || (!c.place.lost && c.place.from >= chapter.from && c.place.from < chapter.to))
+    : filtered;
+  const elsewhere = filtered.length - shown.length;
   const at = shown.findIndex((c) => c.id === cursor);
   const step = (by: 1 | -1) => {
     if (shown.length === 0) return;
@@ -206,6 +219,15 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
   return (
     <section className={styles.root} aria-label={t.title}>
       <h3 className={styles.ptitle}>{t.title} ({live.length})</h3>
+      {chapter !== undefined && (
+        <div className={styles.scope}>
+          <div role="group" aria-label={t.scope}>
+            <Chip pressed={!wholeWork} onClick={() => setWholeWork(false)}>{t.scopeChapter}</Chip>
+            <Chip pressed={wholeWork} onClick={() => setWholeWork(true)}>{t.scopeWork}</Chip>
+          </div>
+          {!wholeWork && <p className={styles.muted} data-scope-where="">{chapter ? chapter.title : t.noChapter}</p>}
+        </div>
+      )}
       {role === "collaborator" && <p className={styles.muted}>{t.readOnly}</p>}
       <p className={styles.muted}>{t.noteScope}</p>
       {message && <p role="status" className={styles.muted}>{message}</p>}
@@ -244,7 +266,7 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
           onSkip={() => setWalk((w) => (w === null ? w : { ...w, i: w.i + 1 }))}
           onEnd={() => setWalk(null)} onCopy={(s) => void copyWalk(s)} />
       )}
-      {walk === null && shown.length === 0 && <p className={styles.muted}>{t.empty}</p>}
+      {walk === null && shown.length === 0 && <p className={styles.muted}>{byChapter ? t.emptyHere : t.empty}</p>}
       {walk === null && shown.length > 1 && (
         <div className={styles.actions} role="group" aria-label={t.stepGroup}>
           <Button tone="ghost" size="dense" onClick={() => step(-1)}>{t.prevComment}</Button>
@@ -316,6 +338,9 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
           );
         })}
       </ul>
+      {walk === null && elsewhere > 0 && (
+        <button type="button" className={styles.moreLink} onClick={() => setWholeWork(true)}>{t.moreElsewhere(elsewhere)}</button>
+      )}
 
       <Dialog open={dlg === "rounds"} title={t.rounds} onClose={() => setDlg(null)} actions={<Button tone="quiet" onClick={() => setDlg(null)}>{t.cancel}</Button>}>
         <p className={styles.muted}>{t.roundsNote}</p>
