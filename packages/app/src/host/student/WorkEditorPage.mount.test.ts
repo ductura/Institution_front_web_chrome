@@ -9,6 +9,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const ID = "11111111-1111-4111-8111-111111111111";
 const kinds: { documentKind?: unknown } = {};
 const calls: string[] = [];
+const mounted: { startContent?: (id: string) => Promise<readonly unknown[] | null> } = {};
+const template: { answer: { ok: boolean; status: number; body?: unknown } } = { answer: { ok: false, status: 404 } };
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: () => {}, push: () => {} }), notFound: () => { throw new Error("notFound"); } }));
 vi.mock("../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
@@ -22,10 +24,11 @@ vi.mock("../../../../../src/client/api.ts", async (importOriginal) => ({
       return { ok: true, status: 200, body: { courses: [{ name: "Kolegij A", assignments: [{ id: ID, title: "Prezentacija", dueAt: "2026-12-01T10:00:00Z", noticeFirst: false, ...kinds }] }] } };
     }
     if (op === "student.assignment-work.get") return { ok: true, status: 200, body: { assignments: [{ assignmentId: ID, workState: "in_progress" }] } };
+    if (op === "student.assignment-template.get") return template.answer;
     return { ok: false, status: 404, code: "not_found" };
   },
 }));
-vi.mock("../../../../../src/components/editor/EditorPageWork.tsx", () => ({ default: ({ topBar }: { topBar?: unknown }) => createElement("div", null, topBar as never, createElement("p", null, "TEKSTNI-UREDNIK")) }));
+vi.mock("../../../../../src/components/editor/EditorPageWork.tsx", () => ({ default: ({ topBar, startContent }: { topBar?: unknown; startContent?: typeof mounted.startContent }) => { mounted.startContent = startContent; return createElement("div", null, topBar as never, createElement("p", null, "TEKSTNI-UREDNIK")); } }));
 // WEB-V13-DNEVNIK-SINKRONIZACIJA: the slides page now opens a journal session (Web Locks, IndexedDB, the open
 // route), which jsdom has none of; the session is stood in for here (it has its own tests in slides/sync) so
 // that this test keeps checking what it always checked: which editor the kind of work mounts.
@@ -113,6 +116,18 @@ describe("WorkEditorPage by kind of work", { timeout: 30000 }, () => {
     const el = await open();
     expect(el.textContent).toContain("TEKSTNI-UREDNIK");
     expect(el.querySelector("[aria-label='Uređivač slajdova']")).toBeNull();
+  });
+  it("F4-V17-R01: the text editor is given the template skeleton for a new work, and none when the template is missing", async () => {
+    template.answer = { ok: true, status: 200, body: { version: 1, titlePage: ["title"], sections: [{ title: "Uvod", hint: "Opišite temu." }], citationStyle: "fpzg" } };
+    await open();
+    expect(mounted.startContent).toBeTypeOf("function");
+    const blocks = await mounted.startContent!(ID);
+    expect(blocks?.length).toBe(3);
+    expect(JSON.stringify(blocks)).toContain("Uvod");
+    template.answer = { ok: false, status: 404 };
+    expect(await mounted.startContent!(ID)).toBeNull();
+    template.answer = { ok: false, status: 500 };
+    expect(await mounted.startContent!(ID)).toBeNull();
   });
   it("the text editor's shell links \"Kako vidi nastavnik\" to the student's own read-only view (F4-EDI-R14)", async () => {
     const link = (await open()).querySelector("a[href$='/rad/" + ID + "/nastavnik']");

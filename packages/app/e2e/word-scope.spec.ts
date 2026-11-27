@@ -27,6 +27,9 @@ async function server(page: Page, range: () => Range) {
     json: { assignments: [{ assignmentId: ID, workState: "in_progress" }] },
   }));
   await page.route(`**/api/v1/student/assignments/${ID}/requirements`, (route) => route.fulfill({ json: { wordRange: range() } }));
+  // F4-V17-R01: an opened work with no text is given the template skeleton. This spec counts words from an empty
+  // work, so the assignment has no template here (404, the same as an assignment without one).
+  await page.route(`**/api/v1/student/assignments/${ID}/template`, (route) => route.fulfill({ status: 404, json: { code: "not_found" } }));
   // evidence/open: the shared fake answers with the contract's own opened work (fixtures/test).
 }
 
