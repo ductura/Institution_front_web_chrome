@@ -31,14 +31,37 @@ export function scopeRange(doc: ReviewDoc, scope: PregledScope): { first: number
 
 const clean = (text: string) => text.replaceAll(CITATION_MARK, "").replace(/\s+/g, " ").trim();
 
+// ED-72 (prototip right.js firstLines, „Obrnuti nacrt”): what a paragraph shows under its first sentence.
+export const SHOWN_SENTENCE_CHARS = 200;
+export const NO_CITATIONS_WORDS = 60;
+export const ONE_SENTENCE_WORDS = 12;
+export const LONG_PARAGRAPH_WORDS = 250;
+
+export type OutlineFlag = "noCitations" | "oneSentence" | "longParagraph";
+
 export type OutlineRow = {
   readonly key: string;
   readonly chapter: string | null;
   readonly sentence: string;
+  /** The sentence as listed: past 200 characters cut to 197 and "…". */
+  readonly shown: string;
   readonly words: number;
   readonly long: boolean;
+  /** Words and citations of the whole paragraph. */
+  readonly paragraphWords: number;
+  readonly citations: number;
+  readonly flags: readonly OutlineFlag[];
   readonly pos: number;
 };
+
+/** The paragraph's own warnings, in the prototype's order. */
+export function outlineFlags(paragraphWords: number, citations: number, sentences: number): OutlineFlag[] {
+  const flags: OutlineFlag[] = [];
+  if (citations === 0 && paragraphWords > NO_CITATIONS_WORDS) flags.push("noCitations");
+  if (sentences <= 1 && paragraphWords > ONE_SENTENCE_WORDS) flags.push("oneSentence");
+  if (paragraphWords > LONG_PARAGRAPH_WORDS) flags.push("longParagraph");
+  return flags;
+}
 
 /** The first sentence of every paragraph in scope; a chapter title opens its rows. */
 export function outlineRows(doc: ReviewDoc, scope: PregledScope): OutlineRow[] {
@@ -46,13 +69,20 @@ export function outlineRows(doc: ReviewDoc, scope: PregledScope): OutlineRow[] {
   const rows: OutlineRow[] = [];
   for (const block of doc.blocks.slice(first, end)) {
     if (block.kind !== "paragraph") continue;
-    const sentence = clean(sentencesOf(block.text)[0] ?? "");
+    const sentences = sentencesOf(block.text).filter((s) => clean(s) !== "");
+    const sentence = clean(sentences[0] ?? "");
     if (sentence === "") continue;
     const chapter = doc.chapters[block.chapter];
     const words = wordCount(sentence);
+    const paragraphWords = wordCount(clean(block.text));
     rows.push({
       key: `${block.pos}`, chapter: chapter ? `${chapter.number}. ${chapter.title}` : null,
-      sentence, words, long: words > LONG_FIRST_SENTENCE_WORDS, pos: block.pos,
+      sentence,
+      shown: sentence.length > SHOWN_SENTENCE_CHARS ? `${sentence.slice(0, SHOWN_SENTENCE_CHARS - 3)}…` : sentence,
+      words, long: words > LONG_FIRST_SENTENCE_WORDS,
+      paragraphWords, citations: block.citations,
+      flags: outlineFlags(paragraphWords, block.citations, sentences.length),
+      pos: block.pos,
     });
   }
   return rows;

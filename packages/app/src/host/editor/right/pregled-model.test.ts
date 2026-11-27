@@ -1,8 +1,11 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { pregledHr } from "./messages.hr";
 import { reviewDocOf } from "../../../../../../src/components/editor/review/model";
 import {
-  abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, MAX_TERMS, outlineRows, removeTerm, saveTerms, scopeRange, termCount, WHOLE,
+  abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, MAX_TERMS, outlineFlags, outlineRows, removeTerm, saveTerms, scopeRange, termCount, WHOLE,
 } from "./pregled-model";
 
 // WEB-2127: invented text only.
@@ -33,7 +36,47 @@ describe("Nacrt", () => {
     expect(rows.map((r) => r.sentence.slice(0, 12))).toEqual(["Prva rečenic", "da da da da ", "Upitnik ispi", "Završetak ra"]);
     expect(rows.map((r) => r.long)).toEqual([false, true, false, false]);
     expect(rows[0]!.chapter).toBe("1. Uvod");
+    expect(rows[1]!.words).toBe(36);
     expect(outlineRows(doc, { kind: "chapter", index: 1 })).toHaveLength(2);
+  });
+  it("ED-72: counts the paragraph's words and citations and cuts a sentence past 200 characters", () => {
+    const rows = outlineRows(doc, WHOLE);
+    expect(rows.map((r) => r.paragraphWords)).toEqual([6, 37, 10, 2]);
+    expect(rows.map((r) => r.citations)).toEqual([0, 0, 0, 0]);
+    const words = Array.from({ length: 50 }, (_, i) => `rijec${i}`).join(" ");
+    const cut = outlineRows(reviewDocOf([{ kind: "paragraph", text: `${words}.`, citations: 2 }]), WHOLE)[0]!;
+    expect(cut.sentence.length).toBeGreaterThan(200);
+    expect(cut.shown).toHaveLength(198);
+    expect(cut.shown.endsWith("…")).toBe(true);
+    expect(cut.shown.slice(0, 197)).toBe(cut.sentence.slice(0, 197));
+    expect(cut.citations).toBe(2);
+    expect(rows[0]!.shown).toBe(rows[0]!.sentence);
+  });
+  it("ED-72: flags a paragraph without citations, of one sentence, or too long", () => {
+    expect(outlineFlags(61, 0, 3)).toEqual(["noCitations"]);
+    expect(outlineFlags(60, 0, 3)).toEqual([]);
+    expect(outlineFlags(61, 1, 3)).toEqual([]);
+    expect(outlineFlags(13, 1, 1)).toEqual(["oneSentence"]);
+    expect(outlineFlags(12, 1, 1)).toEqual([]);
+    expect(outlineFlags(251, 0, 1)).toEqual(["noCitations", "oneSentence", "longParagraph"]);
+    expect(outlineFlags(250, 4, 9)).toEqual([]);
+    const one = Array.from({ length: 20 }, () => "riječ").join(" ");
+    expect(outlineRows(reviewDocOf([{ kind: "paragraph", text: `${one}.`, citations: 1 }]), WHOLE)[0]!.flags).toEqual(["oneSentence"]);
+  });
+  it("ED-72: speaks the prototype's words, without a middle dot", () => {
+    expect(pregledHr.nacrtIntro).toBe("Prva rečenica svakog odlomka. Ako se ovako čita kao argument, odlomci su dobro složeni.");
+    expect(pregledHr.nacrtEmpty).toBe("Ovdje još nema odlomaka.");
+    expect([1, 2, 5, 11, 21].map(pregledHr.citations)).toEqual(["1 navod", "2 navoda", "5 navoda", "11 navoda", "21 navod"]);
+    expect(pregledHr.words(1)).toBe("1 riječ");
+    expect(pregledHr.longFirstTag(41)).toBe("41 riječi");
+    expect(pregledHr.longFirst(41)).toBe("Prva rečenica ima 41 riječi; glavna misao se gubi.");
+    expect(Object.values(pregledHr.flags)).toEqual(["bez navoda", "jedna rečenica", "dug odlomak"]);
+    const source = readFileSync(join(__dirname, "PregledGroup.tsx"), "utf8");
+    const nacrt = source.slice(source.indexOf("function Nacrt("), source.indexOf("function Pojmovnik("));
+    expect(nacrt).toContain("row.shown");
+    expect(nacrt).toContain("t.citations(row.citations)");
+    expect(nacrt).toContain("t.flags[flag]");
+    expect(nacrt).not.toContain("·");
   });
   it("reads what is in scope, paragraph per line", () => {
     expect(listenText(doc, { kind: "chapter", index: 0 })).toBe("Uvod\nPrva rečenica uvoda. Druga rečenica uvoda.");
