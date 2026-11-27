@@ -67,6 +67,7 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
               ) : card.rows.length === 0 ? <p className="note">{text.noStudents}</p> : (
                 <>
                   <p className="meta">{summaryLine(card.rows)}</p>
+                  {card.accommodationsUnavailable === true ? <p className="note" role="status">{text.accommodationsUnavailable}</p> : null}
                   <div className="tbl" tabIndex={0} role="region" aria-label={text.tableLabel}>
                     <table>
                       <thead>
@@ -78,7 +79,10 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
                           const who = row.name ?? text.noName;
                           return (
                             <tr key={row.studentId}>
-                              <td>{href === null ? who : <a href={appHref(base, href)}>{who}</a>}</td>
+                              <td>
+                                {href === null ? who : <a href={appHref(base, href)}>{who}</a>}
+                                {row.accommodation === true ? <> <span>{text.accommodation}</span></> : null}
+                              </td>
                               <td>{stateText(row)}</td>
                               <td>{timeText(row)}</td>
                               <td>{afterDeadlineText(row)}</td>

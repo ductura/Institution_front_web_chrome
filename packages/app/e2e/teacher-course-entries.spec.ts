@@ -124,6 +124,27 @@ test("NZ-10: the overview of one course joins version, state, deadline and the l
     .toHaveAttribute("href", `/app/web/nastavnik/zadatak/${A2}/produljenje`);
 });
 
+test("F4-PM2-R08: the overview never shows an unread accommodation mark as unmarked; axe", async ({ page }) => {
+  await teacher(page);
+  const asked: string[] = [];
+  // D-50: the server answers the mark only. TODO(ugovor): until the extract has teacher.student-accommodation.get
+  // the client does not call it, so the card says the marks are unavailable; on the extract Ana shows the mark.
+  await page.route("**/api/v1/teacher/assignments/*/students/*/accommodation", (route) => {
+    asked.push(route.request().url());
+    return route.fulfill(json({ marked: route.request().url().includes(S1) }));
+  });
+  await page.goto(`/app/web/nastavnik/zbirni?kolegij=${K1}`);
+  const table = page.getByRole("region", { name: "Tablica predaja" }).first();
+  await expect(table.getByRole("row", { name: /Ana Izmišljenić/ })).toBeVisible();
+  await expect(page.getByText("Oznake odobrene prilagodbe trenutačno nisu dostupne. Pokušajte ponovno.").first()).toBeVisible();
+  await expect(page.getByText("(odobrena prilagodba)")).toHaveCount(0);
+  expect(asked).toEqual([]);
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await axe(page)).toEqual([]);
+  }
+});
+
 test("NZ-10: the roster says time, version and the extended deadline", async ({ page }) => {
   await teacher(page);
   await page.goto(`/app/web/nastavnik/kolegiji/${K1}/studenti`);
