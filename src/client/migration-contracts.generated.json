@@ -2726,6 +2726,164 @@
                 },
                 "aiSummaryOnly": {
                   "type": "boolean"
+                },
+                "previousVersion": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "versionNo",
+                        "title",
+                        "instructions",
+                        "workType",
+                        "opensAt",
+                        "dueAt",
+                        "aiPolicy",
+                        "aiPurposes",
+                        "evidenceProfile",
+                        "wordMin",
+                        "wordMax"
+                      ],
+                      "properties": {
+                        "versionNo": {
+                          "minimum": 1,
+                          "maximum": 2147483647,
+                          "type": "integer"
+                        },
+                        "title": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "instructions": {
+                          "type": "string"
+                        },
+                        "workType": {
+                          "anyOf": [
+                            {
+                              "const": "short_paper",
+                              "type": "string"
+                            },
+                            {
+                              "const": "essay",
+                              "type": "string"
+                            },
+                            {
+                              "const": "seminar_paper",
+                              "type": "string"
+                            },
+                            {
+                              "const": "bachelor_thesis",
+                              "type": "string"
+                            },
+                            {
+                              "const": "master_thesis",
+                              "type": "string"
+                            },
+                            {
+                              "const": "specialist_thesis",
+                              "type": "string"
+                            },
+                            {
+                              "const": "doctoral_thesis",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "opensAt": {
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                          "type": "string"
+                        },
+                        "dueAt": {
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                          "type": "string"
+                        },
+                        "aiPolicy": {
+                          "anyOf": [
+                            {
+                              "const": "prohibited",
+                              "type": "string"
+                            },
+                            {
+                              "const": "partially_allowed",
+                              "type": "string"
+                            },
+                            {
+                              "const": "encouraged",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "aiPurposes": {
+                          "maxItems": 5,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "const": "formatting",
+                                "type": "string"
+                              },
+                              {
+                                "const": "proofreading",
+                                "type": "string"
+                              },
+                              {
+                                "const": "literature_search",
+                                "type": "string"
+                              },
+                              {
+                                "const": "transcription",
+                                "type": "string"
+                              },
+                              {
+                                "const": "translation",
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        },
+                        "evidenceProfile": {
+                          "anyOf": [
+                            {
+                              "const": "basic",
+                              "type": "string"
+                            },
+                            {
+                              "const": "extended",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "wordMin": {
+                          "anyOf": [
+                            {
+                              "minimum": 1,
+                              "maximum": 1000000,
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "wordMax": {
+                          "anyOf": [
+                            {
+                              "minimum": 1,
+                              "maximum": 1000000,
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -60632,6 +60790,166 @@
       ],
       "422": [
         "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "work.imports.get": {
+    "path": "/api/v1/works/{documentId}/imports",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the imports of the work, newest first",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "imports"
+              ],
+              "properties": {
+                "imports": {
+                  "maxItems": 200,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "importId",
+                      "importKind",
+                      "fileFormat",
+                      "rawByteLength",
+                      "fileName",
+                      "baseRevision",
+                      "preparedAt",
+                      "state",
+                      "confirmedAt",
+                      "eventId"
+                    ],
+                    "properties": {
+                      "importId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "importKind": {
+                        "anyOf": [
+                          {
+                            "const": "file-upload",
+                            "type": "string"
+                          },
+                          {
+                            "const": "cloud-version",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "fileFormat": {
+                        "anyOf": [
+                          {
+                            "const": "docx",
+                            "type": "string"
+                          },
+                          {
+                            "const": "pdf",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "rawByteLength": {
+                        "minimum": 1,
+                        "maximum": 2097152,
+                        "type": "integer"
+                      },
+                      "fileName": {
+                        "anyOf": [
+                          {
+                            "minLength": 1,
+                            "maxLength": 400,
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "baseRevision": {
+                        "minimum": 0,
+                        "maximum": 9007199254740991,
+                        "type": "integer"
+                      },
+                      "preparedAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "state": {
+                        "anyOf": [
+                          {
+                            "const": "pending",
+                            "type": "string"
+                          },
+                          {
+                            "const": "confirmed",
+                            "type": "string"
+                          },
+                          {
+                            "const": "expired",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "confirmedAt": {
+                        "anyOf": [
+                          {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "eventId": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
       ],
       "503": [
         "unavailable"
