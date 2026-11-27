@@ -8,7 +8,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useAssignmentNotice } from "../assistant-rules/assistant-rules";
 import { assistantRulesHr } from "../assistant-rules/messages.hr";
 import {
-  SHOWN, askablePurposes, clockOf, createAssistantPort, exchangesOf, heldChat, keepConversation, keptConversations, mergeConversations, newKey, requestsLeft, titleOf,
+  SHOWN, SUMMARY_MIN_WORDS, SUMMARY_PURPOSE, askablePurposes, clockOf, createAssistantPort, exchangesOf, heldChat, keepConversation, keptConversations, mergeConversations, newKey, requestsLeft, summaryOnlyOf, titleOf, wordCount,
   type AssistantPort, type AvailabilityRead, type ConversationRead, type ConversationsRead, type RemainingRead, type HeldChat, type Kept,
 } from "./assistant-chat";
 import { assistantChatHr as t } from "./messages.hr";
@@ -148,7 +148,8 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
 
   const available = notice?.kind === "available" ? notice.view : null;
   const prohibited = available?.aiPolicy === "prohibited";
-  const purposes = useMemo(() => askablePurposes(available?.aiPurposes ?? []), [available]);
+  const summaryOnly = !prohibited && summaryOnlyOf(available);
+  const purposes = useMemo(() => summaryOnly ? [SUMMARY_PURPOSE] : askablePurposes(available?.aiPurposes ?? []), [available, summaryOnly]);
   useEffect(() => {
     if (purposes.length > 0 && !purposes.includes(purpose as (typeof purposes)[number])) setPurpose(purposes[0]!);
   }, [purposes, purpose, setPurpose]);
@@ -162,7 +163,7 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
 
   async function send() {
     if (busy || !online) return;
-    if (draft.trim() === "") {
+    if (draft.trim() === "" || (summaryOnly && wordCount(draft) < SUMMARY_MIN_WORDS)) {
       setFieldError(true);
       field.current?.focus();
       return;
@@ -223,7 +224,7 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
     field.current?.focus();
   }
 
-  const tag = prohibited ? t.tag.prohibited : banner === "disabled" || serverOff ? t.tag.disabled : banner === "limit" || serverLimit ? t.tag.limit : t.tag.on;
+  const tag = prohibited ? t.tag.prohibited : banner === "disabled" || serverOff ? t.tag.disabled : banner === "limit" || serverLimit ? t.tag.limit : summaryOnly ? t.tag.summaryOnly : t.tag.on;
   const newestFirst = [...kept].reverse();
   const purposeId = `${ids}-purpose`;
   const promptId = `${ids}-prompt`;
@@ -239,6 +240,7 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
 
       {!online ? <div className={`${styles.banner} ${styles.asb}`} role="status"><b>{t.offlineLead}</b>{t.offline}</div> : null}
       {prohibited ? <div className={`${styles.banner} ${styles.asb}`} role="status"><b>{t.prohibitedLead}</b>{t.prohibited}</div> : null}
+      {summaryOnly ? <div className={`${styles.banner} ${styles.asb}`} role="status" data-summary-only><b>{t.summaryOnlyLead}</b>{t.summaryOnly}</div> : null}
       {serverOff && banner === null ? <BannerView kind="disabled" onRetry={() => undefined} /> : null}
       {serverLimit && !serverOff && banner === null ? <BannerView kind="limit" onRetry={() => undefined} /> : null}
       {remaining?.kind === "ok" && remaining.limit !== null && !serverLimit
@@ -255,17 +257,19 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
       {canAsk ? (
         <form className={styles.form} onSubmit={(e) => { e.preventDefault(); void send(); }} aria-busy={busy || undefined}>
           <fieldset className={styles.fieldset} disabled={!online || busy}>
-            <label className={styles.f} htmlFor={purposeId}>{t.purpose}</label>
-            <select id={purposeId} className={styles.in} value={purpose} onChange={(e) => { setPurpose(e.target.value); setPendingKey(null); }}>
-              {purposes.map((p) => <option key={p} value={p}>{purposeLabel(p)}</option>)}
-            </select>
-            <label className={styles.f} htmlFor={promptId}>{t.prompt}</label>
+            {summaryOnly ? null : <>
+              <label className={styles.f} htmlFor={purposeId}>{t.purpose}</label>
+              <select id={purposeId} className={styles.in} value={purpose} onChange={(e) => { setPurpose(e.target.value); setPendingKey(null); }}>
+                {purposes.map((p) => <option key={p} value={p}>{purposeLabel(p)}</option>)}
+              </select>
+            </>}
+            <label className={styles.f} htmlFor={promptId}>{summaryOnly ? t.summaryPrompt : t.prompt}</label>
             <textarea id={promptId} ref={field} className={styles.ta} rows={4} maxLength={2000} value={draft}
               aria-invalid={fieldError || undefined} aria-describedby={fieldError ? errorId : undefined}
               onChange={(e) => { setDraft(e.target.value); setFieldError(false); setPendingKey(null); }} />
-            {fieldError ? <p id={errorId} className={styles.error}>{t.empty}</p> : null}
+            {fieldError ? <p id={errorId} className={styles.error}>{summaryOnly ? t.summaryTooShort(SUMMARY_MIN_WORDS) : t.empty}</p> : null}
             <div className={`${styles.row} ${styles.asl}`}>
-              <button type="submit" className={`${styles.btn} ${styles.pri}`}>{t.send}</button>
+              <button type="submit" className={`${styles.btn} ${styles.pri}`}>{summaryOnly ? t.summarySend : t.send}</button>
               <button type="button" className={styles.btn} disabled={current === null} onClick={fresh}>{t.newConversation}</button>
             </div>
           </fieldset>
