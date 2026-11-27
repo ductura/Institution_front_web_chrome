@@ -120,7 +120,7 @@ test("MK-1: a message read that fails leaves no badge and keeps the rest of the 
 test("MEN-R08: the mentor's consent in force shows the work as accepted", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, { consent: "given" });
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const card = await openMentor(page, 1280);
   await expect(card.getByText("Mentor je prihvatio rad", { exact: true })).toBeVisible();
