@@ -16,6 +16,12 @@ describe("next.config (LOK-WEB-6)", () => {
     expect(nextConfig.assetPrefix).toBeUndefined();
   });
 
+  it("redirects the root /prijava to the app's, so the server's greska codes land on E-1 (F4-STU-R01)", async () => {
+    expect(await nextConfig.redirects?.()).toContainEqual(
+      expect.objectContaining({ source: "/prijava", destination: "/aplikacija/prijava", basePath: false }),
+    );
+  });
+
   it("sends the frame's CSP on every code-run page and on nothing else (PL-CSP-OKVIR)", async () => {
     const rules = await nextConfig.headers!();
     expect(rules).toEqual([{ source: "/code-run/:path*", headers: [{ key: "Content-Security-Policy", value: CODE_RUN_FRAME_CSP }] }]);

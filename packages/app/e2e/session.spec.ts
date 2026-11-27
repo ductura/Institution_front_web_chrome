@@ -253,6 +253,26 @@ test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the
   expect(errors).toEqual([]);
 });
 
+// F4-STU-R01: the server returns a failed or refused sign-in to /prijava?greska=<code> at the ROOT.
+test("the root /prijava of the server's error codes reaches E-1 with the whole query", async ({ page }) => {
+  await fakeServer(page, { status: 401 });
+  const errors = errorsOf(page);
+  const cases: [string, RegExp][] = [
+    ["login_refused", /Prijava je odbijena/],
+    ["login_failed", /Prijava nije dovršena/],
+    ["provider_unavailable", /AAI@EduHr trenutačno ne odgovara|trenutačno ne odgovara/],
+  ];
+  for (const [code, heading] of cases) {
+    await page.goto(`/prijava?greska=${code}&returnTo=%2Fzadaci`, { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL((url) => url.pathname === "/aplikacija/prijava" && url.searchParams.get("greska") === code && url.searchParams.get("returnTo") === "/zadaci");
+    await expect(page.getByRole("main").getByRole("alert")).toContainText(heading);
+  }
+  // Without a code the root path still lands on the app's sign-in, with no query invented.
+  await page.goto("/prijava", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL((url) => url.pathname === "/aplikacija/prijava" && url.search === "");
+  expect(errors).toEqual([]);
+});
+
 test("an unanswering institution server shows a retry, not an empty app", async ({ page }) => {
   await page.route("**/api/v1/me", (route) => route.fulfill({ status: 503, contentType: "application/json", body: "{\"code\":\"unavailable\"}" }));
   await page.goto("/aplikacija/");
