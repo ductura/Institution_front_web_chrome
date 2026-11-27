@@ -79,8 +79,8 @@ for (const width of [390, 1280]) {
       const link = submitLink(page);
       // The draft is one thing before the submission; the places left in the text add to it.
       await expect(link).toHaveAccessibleName(/^Predaja rada: \d+ stvari? prije predaje$/);
-      // The host leads the base-less address to /aplikacija/rad/<id>/predaja (Host.tsx), as before.
-      await expect(link).toHaveAttribute("href", `/rad/${T1}/predaja`);
+      // ED-81 (NF2-P23): the link itself carries the base the app is served under.
+      await expect(link).toHaveAttribute("href", `/aplikacija/rad/${T1}/predaja`);
       await expect(link).toBeInViewport({ ratio: 1 });
       await expect(link).toHaveText(width <= 640 ? /^Predaja\s*\d+$/ : /^Predaja rada\s*\d+$/, { useInnerText: true });
       await link.focus();

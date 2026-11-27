@@ -34,6 +34,13 @@ describe("WorkspaceTopBarView", () => {
     expect(under()).toContain('href="/zadaci"');
   });
 
+  it("keeps Predaja rada under the same base (ED-81, NF2-P23)", () => {
+    const under = (base?: string) =>
+      renderToStaticMarkup(createElement(WorkspaceTopBarView, { assignmentId: ID, base, title: "Izmišljeni rad", online: true, theme: "dark", onTheme: () => {} }));
+    expect(under("/aplikacija")).toContain(`href="/aplikacija/rad/${ID}/predaja"`);
+    expect(under()).toContain(`href="/rad/${ID}/predaja"`);
+  });
+
   it("disables Predaja rada without a network and says why", () => {
     const html = bar(false);
     expect(html).not.toContain("/predaja");
