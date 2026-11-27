@@ -424,7 +424,8 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       }
     },
     onemogućeno: async (c) => {
-      await expect(c.getByRole("rowheader")).toHaveText(`${lib.teacherSummary.noName} · ${lib.teacherSummary.noGroup}`);
+      // Design alignment 27. 11. 2026.: name and group are two lines of the row header, no "·" between them.
+      await expect(c.getByRole("rowheader")).toHaveText(`${lib.teacherSummary.noName}${lib.teacherSummary.noGroup}`);
       await expect(c.getByRole("link")).toHaveCount(0);
     },
   },
