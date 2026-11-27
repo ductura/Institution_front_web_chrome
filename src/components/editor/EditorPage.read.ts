@@ -8,7 +8,10 @@ type Answer<Body> = { readonly ok: true; readonly status: number; readonly body:
 type AssignmentsBody = {
   readonly courses: readonly {
     readonly name: string;
-    readonly assignments: readonly { readonly id: string; readonly title: string; readonly dueAt: string; readonly noticeFirst: boolean; readonly workType?: string }[];
+    readonly assignments: readonly {
+      readonly id: string; readonly title: string; readonly dueAt: string; readonly noticeFirst: boolean;
+      readonly extendedDueAt?: string | null; readonly workType?: string;
+    }[];
   }[];
 };
 type WorkBody = { readonly assignments: readonly { readonly assignmentId: string; readonly workState: string }[] };
@@ -24,7 +27,13 @@ export type EditorWorkRead =
   | { readonly kind: "notFound" }
   /** The current notice is not acknowledged yet: the work opens on the notice (PRODUCT §5 rule 6). */
   | { readonly kind: "noticeFirst" }
-  | { readonly kind: "ready"; readonly course: string; readonly title: string; readonly dueAt: string; readonly workState: WorkState; /** The server's work type ("essay"), for the workspace subtitle; absent when the read does not give it. */ readonly workType?: string };
+  | {
+    readonly kind: "ready"; readonly course: string; readonly title: string; readonly dueAt: string; readonly workState: WorkState;
+    /** A later deadline the teacher gave this student; absent: none. */
+    readonly extendedDueAt?: string;
+    /** The kind of work as the contract gives it (`essay`); absent when the read does not give it. */
+    readonly workType?: string;
+  };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -38,7 +47,8 @@ export function assignmentIdOf(raw: string): string | null {
  * One read of the page. A 401 from either read means signed out; any other
  * failure, or a work state the read does not name, is unavailable: the page
  * never guesses a state. With `refusals` (the submission steps, S-08 X1 and
- * X2) a 403 is "denied" and a 404 is "notFound": neither is a read error.
+ * X2, and the workspace pages since the design alignment of 27. 11. 2026.)
+ * a 403 is "denied" and a 404 is "notFound": neither is a read error.
  * The other pages keep reading both as unavailable until their own screens
  * take the refusals over.
  */
@@ -60,7 +70,13 @@ export function editorWorkRead(assignmentId: string, assignments: Answer<Assignm
     if (row === undefined) return { kind: "unavailable" };
     const { workState } = row;
     if (workState !== "not_started" && workState !== "in_progress" && workState !== "submitted") return { kind: "unavailable" };
-    return { kind: "ready", course: course.name, title: assignment.title, dueAt: assignment.dueAt, workState, ...(assignment.workType === undefined ? {} : { workType: assignment.workType }) };
+    // The extended deadline and the kind of work only when the read gives them.
+    const extended = assignment.extendedDueAt;
+    return {
+      kind: "ready", course: course.name, title: assignment.title, dueAt: assignment.dueAt, workState,
+      ...(typeof extended === "string" && extended !== "" ? { extendedDueAt: extended } : {}),
+      ...(assignment.workType === undefined ? {} : { workType: assignment.workType }),
+    };
   }
   return { kind: "notFound" };
 }

@@ -39,14 +39,15 @@ describe("length line of the status bar (FE-D6)", () => {
 
   it("matches the design line with a range", () => {
     const line = lengthLine(210, 0, RANGE);
-    expect(line).toEqual({ selected: null, count: "210", rest: ` / 2${NBSP}000–2${NBSP}500 riječi · ≈ 1 str.` });
+    // Design alignment 27. 11. 2026. (S-07): the page estimate is its own part, no dot.
+    expect(line).toEqual({ selected: null, count: "210", rest: ` / 2${NBSP}000–2${NBSP}500 riječi`, pages: "≈ 1 str." });
   });
 
   it("states one-sided limits without inventing the other end", () => {
-    expect(lengthLine(210, 0, { min: 1, max: null }).rest).toBe(" / najmanje 1 riječ · ≈ 1 str.");
-    expect(lengthLine(210, 0, { min: 2000, max: null }).rest).toBe(` / najmanje 2${NBSP}000 riječi · ≈ 1 str.`);
-    expect(lengthLine(210, 0, { min: null, max: 2 }).rest).toBe(" / najviše 2 riječi · ≈ 1 str.");
-    expect(lengthLine(210, 0, { min: null, max: 1000000 }).rest).toBe(` / najviše 1${NBSP}000${NBSP}000 riječi · ≈ 1 str.`);
+    expect(lengthLine(210, 0, { min: 1, max: null }).rest).toBe(" / najmanje 1 riječ");
+    expect(lengthLine(210, 0, { min: 2000, max: null }).rest).toBe(` / najmanje 2${NBSP}000 riječi`);
+    expect(lengthLine(210, 0, { min: null, max: 2 }).rest).toBe(" / najviše 2 riječi");
+    expect(lengthLine(210, 0, { min: null, max: 1000000 }).rest).toBe(` / najviše 1${NBSP}000${NBSP}000 riječi`);
     expect(lengthLine(0, 0, { min: null, max: null }).rest).toBe(" riječi");
   });
 
@@ -54,19 +55,27 @@ describe("length line of the status bar (FE-D6)", () => {
     expect(lengthLine(450, 1, { min: 1000000, max: 1000000 })).toEqual({
       selected: "označeno 1 riječ",
       count: "450",
-      rest: ` / 1${NBSP}000${NBSP}000–1${NBSP}000${NBSP}000 riječi · ≈ 2 str.`,
+      rest: ` / 1${NBSP}000${NBSP}000–1${NBSP}000${NBSP}000 riječi`,
+      pages: "≈ 2 str.",
     });
   });
 
   it("without a range agrees the noun with the count", () => {
-    expect(lengthLine(1, 0, null).rest).toBe(" riječ · ≈ 1 str.");
-    expect(lengthLine(3, 0, null).rest).toBe(" riječi · ≈ 1 str.");
-    expect(lengthLine(11, 0, null).rest).toBe(" riječi · ≈ 1 str.");
+    expect(lengthLine(1, 0, null)).toMatchObject({ rest: " riječ", pages: "≈ 1 str." });
+    expect(lengthLine(3, 0, null)).toMatchObject({ rest: " riječi", pages: "≈ 1 str." });
+    expect(lengthLine(11, 0, null)).toMatchObject({ rest: " riječi", pages: "≈ 1 str." });
   });
 
   it("an empty document shows no page estimate", () => {
-    expect(lengthLine(0, 0, RANGE)).toEqual({ selected: null, count: "0", rest: ` / 2${NBSP}000–2${NBSP}500 riječi` });
-    expect(lengthLine(0, 0, null).rest).toBe(" riječi");
+    expect(lengthLine(0, 0, RANGE)).toEqual({ selected: null, count: "0", rest: ` / 2${NBSP}000–2${NBSP}500 riječi`, pages: null });
+    expect(lengthLine(0, 0, null)).toMatchObject({ rest: " riječi", pages: null });
+  });
+
+  it("never joins its parts with a dot", () => {
+    for (const words of [0, 1, 210, 2500]) {
+      const line = lengthLine(words, 3, RANGE);
+      expect([line.selected, line.rest, line.pages].join("")).not.toContain("·");
+    }
   });
 
   it("names a selection of words first, and only when there is one", () => {
@@ -102,18 +111,18 @@ describe("length line in English", () => {
   });
 
   it.each<[number, number, WordRange | null, ReturnType<typeof lengthLine>]>([
-    [0, 0, null, { selected: null, count: "0", rest: " words" }],
-    [1, 0, null, { selected: null, count: "1", rest: " word · ≈ 1 pp." }],
-    [2, 0, null, { selected: null, count: "2", rest: " words · ≈ 1 pp." }],
-    [11, 0, null, { selected: null, count: "11", rest: " words · ≈ 1 pp." }],
-    [1000, 0, null, { selected: null, count: "1,000", rest: " words · ≈ 3 pp." }],
-    [12500, 0, null, { selected: null, count: "12,500", rest: " words · ≈ 42 pp." }],
-    [0, 0, RANGE, { selected: null, count: "0", rest: " / 2,000–2,500 words" }],
-    [210, 0, RANGE, { selected: null, count: "210", rest: " / 2,000–2,500 words · ≈ 1 pp." }],
-    [210, 0, { min: 2000, max: null }, { selected: null, count: "210", rest: " / at least 2,000 words · ≈ 1 pp." }],
-    [210, 0, { min: null, max: 2 }, { selected: null, count: "210", rest: " / at most 2 words · ≈ 1 pp." }],
-    [210, 1, RANGE, { selected: "1 word selected", count: "210", rest: " / 2,000–2,500 words · ≈ 1 pp." }],
-    [210, 12, RANGE, { selected: "12 words selected", count: "210", rest: " / 2,000–2,500 words · ≈ 1 pp." }],
+    [0, 0, null, { selected: null, count: "0", rest: " words", pages: null }],
+    [1, 0, null, { selected: null, count: "1", rest: " word", pages: "≈ 1 pp." }],
+    [2, 0, null, { selected: null, count: "2", rest: " words", pages: "≈ 1 pp." }],
+    [11, 0, null, { selected: null, count: "11", rest: " words", pages: "≈ 1 pp." }],
+    [1000, 0, null, { selected: null, count: "1,000", rest: " words", pages: "≈ 3 pp." }],
+    [12500, 0, null, { selected: null, count: "12,500", rest: " words", pages: "≈ 42 pp." }],
+    [0, 0, RANGE, { selected: null, count: "0", rest: " / 2,000–2,500 words", pages: null }],
+    [210, 0, RANGE, { selected: null, count: "210", rest: " / 2,000–2,500 words", pages: "≈ 1 pp." }],
+    [210, 0, { min: 2000, max: null }, { selected: null, count: "210", rest: " / at least 2,000 words", pages: "≈ 1 pp." }],
+    [210, 0, { min: null, max: 2 }, { selected: null, count: "210", rest: " / at most 2 words", pages: "≈ 1 pp." }],
+    [210, 1, RANGE, { selected: "1 word selected", count: "210", rest: " / 2,000–2,500 words", pages: "≈ 1 pp." }],
+    [210, 12, RANGE, { selected: "12 words selected", count: "210", rest: " / 2,000–2,500 words", pages: "≈ 1 pp." }],
   ])("renders %i words, %i selected, range %j", (words, selected, range, line) => {
     expect(lengthLine(words, selected, range, "en")).toEqual(line);
   });
@@ -126,7 +135,7 @@ describe("length line in English", () => {
     "has no Croatian word, letter or no-break space",
     (words, selected, range) => {
       const line = lengthLine(words, selected, range, "en");
-      const text = [line.selected ?? "", line.count, line.rest, wordRange(range, "en") ?? ""].join(" ");
+      const text = [line.selected ?? "", line.count, line.rest, line.pages ?? "", wordRange(range, "en") ?? ""].join(" ");
       expect(text).not.toMatch(/[čćđšžČĆĐŠŽ\u00a0]|riječ|str\.|označeno|najmanje|najviše/u);
     },
   );
@@ -148,6 +157,7 @@ describe("length line in English", () => {
       expect(digits(en.count)).toBe(digits(hr.count));
       expect(digits(en.rest)).toBe(digits(hr.rest));
       expect(digits(en.selected)).toBe(digits(hr.selected));
+      expect(digits(en.pages)).toBe(digits(hr.pages));
     },
   );
 });

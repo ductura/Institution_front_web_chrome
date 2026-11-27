@@ -6,7 +6,7 @@ import styles from "@/components/student/upis/Enroll.module.css";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${t.student.enroll.title} · ${t.app.name}` };
+export const metadata = { title: `${t.student.enroll.title}, ${t.app.name}` };
 
 const HERE = "/upis";
 

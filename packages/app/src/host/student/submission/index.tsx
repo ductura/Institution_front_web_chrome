@@ -118,7 +118,8 @@ function Shown<T>({ shown, loading, children }: { shown: Shown<T>; loading: Load
   if (shown.kind === "notFound") notFound();
   if (shown.kind === "denied") {
     // X1: the catalogue's own words, and the way back to the student's own space.
-    return <DeniedState title={messagesHr.access.deniedTitle} backLabel={messagesHr.access.backToOwn} backHref={appHref(base, "/zadaci")} />;
+    // Design alignment 27. 11. 2026. (A3): inside the page frame, as the design draws it.
+    return <div className="page"><DeniedState title={messagesHr.access.deniedTitle} backLabel={messagesHr.access.backToOwn} backHref={appHref(base, "/zadaci")} /></div>;
   }
   if (shown.kind === "loading") return <StepsLoading {...loading} />;
   return <>{children(shown.value)}</>;

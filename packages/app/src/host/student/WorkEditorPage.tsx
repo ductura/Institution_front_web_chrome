@@ -19,11 +19,11 @@ import { ReadOnlyMentor } from "../../../../../src/components/editor/mentor/work
 import { readSubmittedWork } from "../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
 import StatusBar from "../../../../../src/components/editor/StatusBar.tsx";
 import WorkspaceTopBar from "../../../../../src/components/editor/WorkspaceTopBar.tsx";
+import { workspaceSubtitle } from "../../../../../src/components/editor/workspace-subtitle.ts";
 import { workspaceFrame, type WorkspaceVariant } from "../../../../../src/components/editor/workspace-variant.ts";
 import { browserTransport, createApi, goToSignIn } from "../../../../../src/client/api.ts";
 import { withMentoredAssignments } from "../../../../../src/components/student/mentored-assignments.ts";
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
-import { studentHostHr } from "./i18n/messages.hr.ts";
 
 import { SaveState } from "@ductura/ui";
 import { nextPath } from "../../bases";
@@ -73,7 +73,8 @@ import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
 import { WorkHistoryHost } from "../editor/work-history/WorkHistoryHost";
 import { readWordRange } from "./work/requirements";
 import { workText } from "./work/messages.hr";
-import { ErrorCard, FrameStatus, LoadingCard, OfflineBanner, SubmittedBanner, courseLine, momentHr } from "./work/frame";
+import { DeniedState } from "../states/States";
+import { ErrorCard, FrameStatus, LoadingCard, OfflineBanner, SubmittedBanner, momentHr } from "./work/frame";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
@@ -129,14 +130,19 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
         readWordRange(assignmentId),
       ]);
       if (!live) return;
-      const read = editorWorkRead(assignmentId, assignments as never, work as never);
+      const read = editorWorkRead(assignmentId, assignments as never, work as never, { refusals: true });
       if (read.kind === "signedOut") return goToSignIn(here);
       if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
+      // Design alignment 27. 11. 2026. (A3): a 403 is not a read error; the heading and the way back to one's own space.
+      if (read.kind === "denied") {
+        return setShown({ kind: "page", node: <div className="page"><DeniedState title={t.access.deniedTitle} backLabel={t.access.backToOwn} backHref={appHref(base, "/")} /></div> });
+      }
       const frame = workspaceFrame(read, undefined, { kind: "ready", wordRange });
       const title = read.kind === "ready" ? read.title : null;
       setName(title);
-      const subtitle = read.kind === "ready" ? courseLine(read.course, read.dueAt, read.workType === undefined ? undefined : (studentHostHr.teacher.assignment.workTypes as Record<string, string>)[read.workType]) : null;
+      // Design alignment 27. 11. 2026. (S-07): "{kolegij}, {vrsta}, rok {rok}", the extended deadline when there is one.
+      const subtitle = read.kind === "ready" ? workspaceSubtitle(read) : null;
       // WEB-NUZ-PREDAJA-1 (P-17): only the full editor has the text the count reads, so only it counts.
       const bar = <WorkspaceTopBar assignmentId={assignmentId} base={base} title={title} subtitle={subtitle}
         readOnly={frame.variant === "predano"} inert={frame.variant === "greska"}
