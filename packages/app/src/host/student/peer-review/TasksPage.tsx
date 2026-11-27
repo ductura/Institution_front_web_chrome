@@ -6,9 +6,9 @@ import { Card } from "@ductura/ui";
 import { createApi, goToSignIn } from "@/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
-import { Marks, notAnswer } from "./Frame";
+import { Marks, Denied, notAnswer } from "./Frame";
 import { peerReviewText as t } from "./messages.hr";
-import { dueLabel, mayWrite, workNumber } from "./model";
+import { dueLabel, mayWrite, taskStatus, workNumber } from "./model";
 import { readTasks, type Read, type TasksView } from "./read";
 
 type Api = ReturnType<typeof createApi>;
@@ -41,6 +41,7 @@ export default function TasksPage({ assignmentId, call = defaultCall }: { assign
 
   const back = <p><a href={appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}`)}><span aria-hidden="true">← </span>{t.back}</a></p>;
   const head = <header><h1>{t.title}</h1><p>{t.lead}</p></header>;
+  if (read?.kind === "denied") return <Denied />;
   const pending = notAnswer(read, t.list.title, retry);
   if (pending !== null || read === null || read.kind !== "ok") return <div className="page">{back}{head}{pending}</div>;
   const view = read.view;
@@ -58,8 +59,8 @@ export default function TasksPage({ assignmentId, call = defaultCall }: { assign
           <ul>
             {view.tasks.map((task, i) => (
               <li key={task.taskId} data-testid="peer-review-task" data-state={task.state}>
-                <strong>{t.list.workLabel.replace("{n}", String(workNumber(i)))}</strong>{" · "}
-                {task.state === "pending" ? t.list.pending : t.list.submitted}{" · "}
+                <strong>{t.list.workLabel.replace("{n}", String(workNumber(i)))}</strong>{", "}
+                {taskStatus(view, task)}{", "}
                 {t.list.due.replace("{date}", dueLabel(task.dueAt))}{" "}
                 {mayWrite(view, task) && (
                   <a className="btn" href={appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}/recenzija/rad/${encodeURIComponent(task.taskId)}`)}

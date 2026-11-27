@@ -1,11 +1,12 @@
 "use client";
 
 import { Button, DataTable, Details, Dialog, Tag, TextArea, TextField } from "@ductura/ui";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { zagrebParts } from "@/components/summary/zagreb-time";
 import { zagrebInstant, zagrebLocalMinute } from "@/lib/i18n/zagreb";
 
+import styles from "./Stages.module.css";
 import { mayDecide, mayDelete, optionalText, approvedCount, stageDot } from "./stage-model";
 import { approveStage, deleteStage, readStages, renameStage, requestStageRevision, type Stage } from "./stages-api";
 import { stagesHr as t } from "./stages-messages.hr";
@@ -16,7 +17,7 @@ type Done = { ok: true; body?: Stage } | Failure;
 
 const when = (iso: string | null) => {
   const parts = iso === null ? null : zagrebParts(iso);
-  return parts && iso ? <time dateTime={iso}>{parts.date} {parts.time}</time> : null;
+  return parts && iso ? <time dateTime={iso}>{parts.date} u {parts.time}</time> : null;
 };
 
 function DateLine({ label, iso }: { label: string; iso: string | null }) {
@@ -25,7 +26,11 @@ function DateLine({ label, iso }: { label: string; iso: string | null }) {
 }
 
 /** The "Etape" card of the mentor work header (WEB-1520). Only the mentor (`mentor`) decides or edits. */
-export function StagesCard({ mentor, ...access }: MentorAccess & { mentor: boolean }) {
+export function StagesCard({ mentor, onSessionEnd, ...rest }: MentorAccess & { mentor: boolean }) {
+  // A finished session draws no section: the shell takes the person to the AAI@EduHr sign-in.
+  const [ended, setEnded] = useState(false);
+  const endSession = useCallback(() => { setEnded(true); onSessionEnd(); }, [onSessionEnd]);
+  const access = { ...rest, onSessionEnd: endSession };
   const { data, setData, status, retry } = useMentorRead(readStages, access);
   const [decide, setDecide] = useState<{ stage: Stage; kind: "revision" | "approve" } | null>(null);
   const [editing, setEditing] = useState(false);
@@ -34,14 +39,19 @@ export function StagesCard({ mentor, ...access }: MentorAccess & { mentor: boole
 
   const replace = (saved: Stage) => setData((list) => list && { milestones: list.milestones.map((item) => item.id === saved.id ? saved : item) });
 
+  if (ended) return null;
+
   return <Details summary={heading}>
     {status === "loading" && <p role="status">{t.loading}</p>}
-    {(status === "unavailable" || status === "notFound") && <p role="alert">{t.unavailable}</p>}
-    {status === "unavailable" && <Button tone="quiet" onClick={retry}>{t.retry}</Button>}
+    {status === "unavailable" && <div>
+      <div role="alert" className={styles.alert}><p>{t.unavailable}</p></div>
+      <p className={styles.retry}><button type="button" className={styles.link} onClick={retry}>{t.retry}</button></p>
+    </div>}
+    {status === "notFound" && <div role="alert" className={styles.alert}><p>{t.notFound}</p></div>}
     {status === "ready" && stages.length === 0 && <p>{t.empty}</p>}
     {stages.length > 0 && <ol>
       {stages.map((stage) => <li key={stage.id} data-stage-dot={stageDot(stage)}>
-        <strong>{stage.title}</strong> <Tag tone={stage.state === "revision_requested" ? "warn" : stage.state === "approved" ? "accent" : "neutral"}>{t.state[stageDot(stage)]}</Tag>
+        <span className={styles.parts}><strong>{stage.title}</strong> <Tag tone={stage.state === "revision_requested" ? "warn" : stage.state === "approved" ? "accent" : "neutral"}>{t.state[stageDot(stage)]}</Tag></span>
         {stage.description && <p>{stage.description}</p>}
         {stage.dueAt === null ? <p>{t.noDue}</p> : <DateLine label={t.dates.due} iso={stage.dueAt} />}
         <DateLine label={t.dates.submitted} iso={stage.submittedAt} />
@@ -52,7 +62,7 @@ export function StagesCard({ mentor, ...access }: MentorAccess & { mentor: boole
         {stage.approvalMessage && <p>{stage.approvalMessage}</p>}
         {mentor && mayDecide(stage) && <>
           <Button tone="quiet" onClick={() => setDecide({ stage, kind: "revision" })}>{t.requestRevision}</Button>
-          <Button onClick={() => setDecide({ stage, kind: "approve" })}>{t.approve}</Button>
+          <Button tone="secondary" onClick={() => setDecide({ stage, kind: "approve" })}>{t.approve}</Button>
         </>}
       </li>)}
     </ol>}
@@ -125,6 +135,7 @@ function EditStages({ stages, access, onClose, onSaved, onDeleted }: {
   stages: readonly Stage[]; access: MentorAccess; onClose: () => void; onSaved: (saved: Stage) => void; onDeleted: (id: string) => void;
 }) {
   const { run, saving, error, setError } = useAction(access);
+  const [confirm, setConfirm] = useState<Stage | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { title: string; due: string }>>({});
   const draftOf = (stage: Stage) => drafts[stage.id] ?? { title: stage.title, due: stage.dueAt === null ? "" : zagrebLocalMinute(stage.dueAt) };
   const change = (stage: Stage, part: Partial<{ title: string; due: string }>) => {
@@ -152,7 +163,8 @@ function EditStages({ stages, access, onClose, onSaved, onDeleted }: {
     if (result?.ok) onDeleted(stage.id);
   };
 
-  return <Dialog open title={t.editTitle} error={error} dismissible={!saving} onClose={onClose}
+  return <>
+    <Dialog open title={t.editTitle} error={error} dismissible={!saving && confirm === null} onClose={onClose}
     actions={<Button tone="quiet" disabled={saving} onClick={onClose}>{t.close}</Button>}>
     <DataTable caption={t.editCaption} rows={stages} rowKey={(stage) => stage.id} empty={t.empty}
       columns={[
@@ -161,15 +173,19 @@ function EditStages({ stages, access, onClose, onSaved, onDeleted }: {
           <TextField label={t.titleLabel} value={draftOf(stage).title} maxLength={200} disabled={saving} onChange={(event) => change(stage, { title: event.target.value })} /> },
         { id: "due", header: t.colDue, cell: (stage) =>
           <TextField label={t.colDue} type="datetime-local" value={draftOf(stage).due} disabled={saving} hint={t.revisionDueHint} onChange={(event) => change(stage, { due: event.target.value })} /> },
-        { id: "submits", header: t.colSubmits, cell: () => <Tag>{t.submitsUnavailable}</Tag> },
         { id: "actions", header: t.colActions, cell: (stage) => <>
           <Button tone="quiet" disabled={saving} onClick={() => void save(stage)}>{t.save}</Button>
-          <Button tone="quiet" disabled={saving || !mayDelete(stage)} onClick={() => void remove(stage)}>{t.remove}</Button>
+          <Button tone="quiet" disabled={saving || !mayDelete(stage)} onClick={() => setConfirm(stage)}>{t.remove}</Button>
           {!mayDelete(stage) && <p>{t.removeBlocked}</p>}
         </> },
       ]} />
-    <Button tone="quiet" disabled aria-describedby="stages-na">{t.add}</Button>
-    <Button tone="quiet" disabled aria-describedby="stages-na">{t.template}</Button>
-    <p id="stages-na">{t.unavailableAction}</p>
-  </Dialog>;
+    </Dialog>
+    <Dialog open={confirm !== null} title={t.deleteTitle.replace("{title}", confirm?.title ?? "")} dismissible={!saving} onClose={() => setConfirm(null)}
+      actions={<>
+        <Button tone="quiet" disabled={saving} onClick={() => setConfirm(null)}>{t.cancel}</Button>
+        <Button disabled={saving} onClick={() => { const stage = confirm; setConfirm(null); if (stage) void remove(stage); }}>{t.deleteConfirm}</Button>
+      </>}>
+      <p>{confirm?.title}</p>
+    </Dialog>
+  </>;
 }

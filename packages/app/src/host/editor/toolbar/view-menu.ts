@@ -12,9 +12,10 @@ import { toolbarBehaviourHr as hr } from "./messages.hr";
 
 type Item = { id: string; label: string; disabled?: boolean; hint?: string };
 
-/** The prototype's Prikaz group: Sadržaj na listu, Promjene od predaje mentoru, Povijest rada, Prvi redovi. */
-export const PENDING_VIEWS = ["viewToc", "viewDiff", "viewHistory", "viewFirstLines"] as const;
-// "Struktura rada" (DraftPanelHost) and "Čisti tekst" are no longer pending: see viewItems.
+/** The rest of the prototype's Prikaz group: Promjene od predaje mentoru, Povijest rada. */
+export const PENDING_VIEWS = ["viewDiff", "viewHistory"] as const;
+// "Sadržaj na listu" (ED-71), "Struktura rada" (DraftPanelHost), "Čisti tekst" and
+// "Prvi redovi" (ED-71) are no longer pending: see viewItems.
 
 const mark = (on: boolean, label: string) => `${on ? "✓ " : ""}${label}`;
 
@@ -30,10 +31,17 @@ export function shellItems(shell: ShellTheme): Item[] {
 export const CLEAN_KEY = "ductura.editor.cleanText";
 export const CLEAN_ATTR = "data-clean-text";
 
-export function viewItems(clean: boolean): Item[] {
+/**
+ * The prototype's "Na zaslonu" items: "Sadržaj na listu" (ED-71: the table of contents on the
+ * sheet, ticked while shown), "Struktura rada", "Čisti tekst" and "Prvi redovi" (ED-71: the
+ * right panel's Pregled on its Nacrt, prototype `firstLines`).
+ */
+export function viewItems(clean: boolean, toc = false): Item[] {
   return [
+    { id: "viewToc", label: mark(toc, hr.viewToc) },
     { id: "structure", label: hr.viewStructure },
     { id: "cleanText", label: mark(clean, hr.viewCleanText) },
+    { id: "viewFirstLines", label: hr.viewFirstLines },
   ];
 }
 

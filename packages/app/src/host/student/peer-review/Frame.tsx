@@ -1,7 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Button, Card, RouteLoading } from "@ductura/ui";
+import { Card, RouteLoading } from "@ductura/ui";
+
+import { messagesHr as shell } from "../../../../../../locales/hr.ts";
+import { appHref } from "../../../../../../src/components/shell/nav";
+import { useHost } from "../../context";
+import { DeniedState, LoadAlert } from "../../states/States";
 
 import { peerReviewText as t } from "./messages.hr";
 import type { Read } from "./read";
@@ -22,16 +27,17 @@ export function Marks({ anonymous = true }: { anonymous?: boolean }) {
  */
 export function notAnswer<T>(read: Read<T> | null, title: string, retry: () => void): ReactNode | null {
   if (read === null || read.kind === "signedOut") return <RouteLoading label={t.loading} />;
-  if (read.kind === "notFound") return <Card level={2} title={title}><p role="alert">{t.gone}</p></Card>;
+  if (read.kind === "notFound") return <Card level={2} title={title}><LoadAlert body={t.gone} /></Card>;
   if (read.kind === "unavailable") {
-    return (
-      <Card level={2} title={title}>
-        <p role="alert">{t.unavailable}</p>
-        <p><Button tone="quiet" onClick={retry}>{t.retry}</Button></p>
-      </Card>
-    );
+    return <Card level={2} title={title}><LoadAlert body={t.unavailable} retry={{ label: t.retry, onRetry: retry }} /></Card>;
   }
   return null;
+}
+
+/** 403: the heading and the way back to the student's own space, instead of the page (V19, A3). */
+export function Denied() {
+  const { base } = useHost();
+  return <DeniedState title={shell.access.deniedTitle} backLabel={shell.access.backToOwn} backHref={appHref(base, "/")} />;
 }
 
 /** A text of a student as paragraphs, one per line; always text, never markup. */

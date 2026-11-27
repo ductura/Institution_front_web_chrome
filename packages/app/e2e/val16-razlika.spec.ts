@@ -284,7 +284,7 @@ test("the whole flow of a thesis: topic, stage, forms and consent, committee, de
   expect(w.sent.filter((s) => s.path.endsWith("/submit"))).toHaveLength(1);
   await mentorPanel(page, w);
   const plan = page.getByTestId("mentor-work-plan").first();
-  await plan.getByText(/Etape · 0 od 1 odobreno/).click();
+  await plan.getByText(/Etape, 0 od 1 odobreno/).click();
   await plan.getByRole("button", { name: "Odobri", exact: true }).click();
   await page.getByRole("dialog", { name: "Odobri etapu" }).getByRole("button", { name: "Odobri etapu" }).click();
   await expect.poll(() => w.milestone.state).toBe("approved");
@@ -348,7 +348,7 @@ test("the whole flow of a thesis: topic, stage, forms and consent, committee, de
   expect(w.sent.filter((s) => s.path.endsWith("/thesis-stage")).map((s) => s.body)).toEqual([{ stage: "defense_scheduled", defenseAt: DEFENSE_ISO }]);
   await studentPanel(page, w);
   const sStage = card(page, tg.title);
-  await expect(sStage.getByTestId("defense-at")).toContainText("15. 12. 2026.");
+  await expect(sStage.getByTestId("defense-at")).toContainText("15. prosinca 2026.");
   await expect(sStage.getByRole("button", { name: tg.save })).toHaveCount(0);
   await expect(sStage.getByText(tg.studentNote)).toBeVisible();
 

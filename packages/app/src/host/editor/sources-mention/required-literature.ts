@@ -2,6 +2,7 @@
 // student.course-literature.get. Read only: the student sees what the teacher marked as required for the
 // course; adding one to the work stays the existing "Dodaj izvor" flow.
 import { createApi } from "../../../../../../src/client/api.ts";
+import { MENTORED_GROUP_ID } from "../../../../../../src/components/student/mentored-assignments.ts";
 
 export type RequiredSource = { readonly id: string; readonly label: string };
 
@@ -66,6 +67,8 @@ export function courseIdOf(assignments: { readonly ok?: boolean; readonly body?:
   const wanted = assignmentId.toLowerCase();
   for (const course of courses as { id?: unknown; assignments?: unknown }[]) {
     if (!Array.isArray(course?.assignments) || typeof course.id !== "string") continue;
+    // The group of mentored works is not a course (a thesis has none): the route would answer 404, so no course.
+    if (course.id === MENTORED_GROUP_ID) continue;
     if ((course.assignments as { id?: unknown }[]).some((a) => typeof a?.id === "string" && a.id.toLowerCase() === wanted)) return course.id;
   }
   return null;

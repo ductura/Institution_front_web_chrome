@@ -13,6 +13,8 @@ import styles from "./enrol/EnrolledCourse.module.css";
 import { courseHref, noticeHref, readCourse, type CourseRead } from "./enrol/course-read.ts";
 import { createApi, leaveFor, signInHref } from "../../../../../src/client/api.ts";
 import { studentHostHr as t } from "./i18n/messages.hr.ts";
+import { LoadAlert } from "../states/States";
+import { StudentDenied } from "./read/denied";
 
 import { hostText } from "../../text";
 import { nextPath } from "../../bases";
@@ -83,13 +85,18 @@ export function EnrolledCoursePage({ courseId }: { courseId: string }) {
     // go and base are stable for this page; the read is what moves on.
   }, [read]);
   if (read === null || read.kind === "assignment" || read.kind === "signedOut") return <p role="status">{hostText.loading}</p>;
+  // DIZ S-05 (KU4): 403 is not a read error; the heading and the way back, no further text.
+  if (read.kind === "denied") return <div className={`page ${styles.screen}`}><StudentDenied base={base} /></div>;
   return (
     <div className={`page ${styles.screen}`}>
       <section className={styles.card}>
         <h1>{t.student.enroll.title}</h1>
-        <p className={styles.status} role="status">{c[read.kind]}</p>
+        {/* KU3: "unavailable" is a read error, so an alert frame in the error colour; the others are plain statuses. */}
+        {read.kind === "unavailable"
+          ? <LoadAlert body={c.unavailable} />
+          : <p className={styles.status} role="status">{c[read.kind]}</p>}
         <div className={styles.links}>
-          {read.kind === "unavailable" ? <button type="button" className="btn" onClick={() => setAttempt((n) => n + 1)}>{c.retry}</button> : null}
+          {read.kind === "unavailable" ? <button type="button" className={styles.retryLink} onClick={() => setAttempt((n) => n + 1)}>{c.retry}</button> : null}
           <a href={appHref(base, "/upis")}>{c.another}</a>
         </div>
       </section>

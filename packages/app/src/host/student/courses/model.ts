@@ -24,6 +24,12 @@ export function mentorLabel(mentor: Mentor | null | undefined): string | null {
   return mentor ? `${t.mentor}: ${mentor.givenName} ${mentor.familyName}` : null;
 }
 
+/** STU-R14 (A-3 on E-3): the work kind and the mentor, as the server's answer has them, joined; null when it has neither. */
+export function workMeta(a: { workType?: string; mentor?: Mentor | null }): string | null {
+  const parts = [workTypeLabel(a.workType), mentorLabel(a.mentor)].filter((x): x is string => x !== null);
+  return parts.length === 0 ? null : parts.join(" · ");
+}
+
 /** The row kind of INVENTAR "Redak zadatka": submitted, then notice, then started work, else a task. */
 export function rowKind(noticeFirst: boolean, state: "not_started" | "in_progress" | "submitted" | null): RowKind {
   if (state === "submitted") return "submitted";

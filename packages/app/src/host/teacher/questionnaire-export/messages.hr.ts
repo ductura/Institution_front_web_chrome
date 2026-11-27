@@ -8,7 +8,6 @@ export const questionnaireExportText = {
   loading: "Učitavanje izvoza…",
   unavailable: "Izvoz trenutačno nije dostupan. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",
-  notFound: { title: "Upitnik nije dostupan", body: "Upitnik ne postoji ili nije Vaš." },
   forTitle: "Upitnik: {title}",
   countTitle: "Broj odgovora",
   countLine: "Broj odgovora: {n}.",

@@ -46,8 +46,15 @@ describe("katalog analiza (WEB-V15-KLIJENT)", () => {
     await expect(readCatalogue({ baseUrl, fetchImpl: offline })).resolves.toEqual({ kind: "unavailable" });
   });
 
-  it("401 je greška s kodom, a ne katalog", async () => {
-    await expect(readCatalogue({ baseUrl, fetchImpl: answer("unauthorized") })).resolves.toMatchObject({ kind: "failed", status: 401 });
+  it("401 je odjavljen (prijava), 403 je zabranjeno; ni jedno nije katalog ni „nije uključeno”", async () => {
+    await expect(readCatalogue({ baseUrl, fetchImpl: answer("unauthorized") })).resolves.toEqual({ kind: "signedOut" });
+    const forbidden = async () => Response.json({ code: "forbidden" }, { status: 403 });
+    await expect(readCatalogue({ baseUrl, fetchImpl: forbidden })).resolves.toEqual({ kind: "denied" });
+  });
+
+  it("drugi statusi izvan ugovora ostaju greška s kodom", async () => {
+    const teapot = async () => Response.json({ code: "x" }, { status: 418 });
+    await expect(readCatalogue({ baseUrl, fetchImpl: teapot })).resolves.toMatchObject({ kind: "failed", status: 418 });
   });
 
   it("odbija odgovor izvan ugovora (nepoznato polje, drugačija ograničenja)", async () => {
