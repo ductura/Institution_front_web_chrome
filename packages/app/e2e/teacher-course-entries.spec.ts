@@ -124,11 +124,10 @@ test("NZ-10: the overview of one course joins version, state, deadline and the l
     .toHaveAttribute("href", `/aplikacija/nastavnik/zadatak/${A2}/produljenje`);
 });
 
-test("F4-PM2-R08: the overview never shows an unread accommodation mark as unmarked; axe", async ({ page }) => {
+test("F4-PM2-R08: the overview shows the accommodation mark the server holds, only on the marked student; axe", async ({ page }) => {
   await teacher(page);
   const asked: string[] = [];
-  // D-50: the server answers the mark only. TODO(ugovor): until the extract has teacher.student-accommodation.get
-  // the client does not call it, so the card says the marks are unavailable; on the extract Ana shows the mark.
+  // D-50: the server answers the mark only (teacher.student-accommodation.get); Ana is marked, the others are not.
   await page.route("**/api/v1/teacher/assignments/*/students/*/accommodation", (route) => {
     asked.push(route.request().url());
     return route.fulfill(json({ marked: route.request().url().includes(S1) }));
@@ -136,9 +135,10 @@ test("F4-PM2-R08: the overview never shows an unread accommodation mark as unmar
   await page.goto(`/aplikacija/nastavnik/zbirni?kolegij=${K1}`);
   const table = page.getByRole("region", { name: "Tablica predaja" }).first();
   await expect(table.getByRole("row", { name: /Ana Izmišljenić/ })).toBeVisible();
-  await expect(page.getByText("Oznake odobrene prilagodbe trenutačno nisu dostupne. Pokušajte ponovno.").first()).toBeVisible();
-  await expect(page.getByText("(odobrena prilagodba)")).toHaveCount(0);
-  expect(asked).toEqual([]);
+  await expect(page.getByText("Oznake odobrene prilagodbe trenutačno nisu dostupne. Pokušajte ponovno.")).toHaveCount(0);
+  await expect(table.getByRole("row", { name: /Ana Izmišljenić/ }).getByText("(odobrena prilagodba)")).toBeVisible();
+  await expect(table.getByRole("row", { name: /Iva Izmišljenić/ }).getByText("(odobrena prilagodba)")).toHaveCount(0);
+  expect(asked.length).toBeGreaterThan(0);
   for (const width of [390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await axe(page)).toEqual([]);

@@ -1,7 +1,6 @@
 // F4-PRE-R02: how many of the student's Asistent conversations go with the declaration, for step 3, step 4
 // and PD-3. Read from the server (declaration-v2 and the assistant's list), never from this browser.
-// TODO(ugovor): until the extract has student.declaration-second.*, the client rejects the read without a
-// request and the count is unknown (null), which the steps say rather than claiming "none attached".
+// When either read fails the count is unknown (null), which the steps say rather than claiming "none attached".
 import { createApi } from "../../../../../../../src/client/api.ts";
 import { readConversations, readSecond, type SecondCall } from "../../../../../../../src/client/declaration-attachments.ts";
 import { submitText } from "../submit/messages.hr";
@@ -9,7 +8,7 @@ import { checksText } from "../summary/messages.hr";
 
 export type AttachedCount = { readonly total: number; readonly attached: number };
 
-/** The count for one assignment; null when either read fails or the operation is not known yet. */
+/** The count for one assignment; null when either read fails or the client rejects the operation. */
 export type AttachedCountRead = (assignmentId: string) => Promise<AttachedCount | null>;
 
 export function attachedCountReader(call: ReturnType<typeof createApi> = createApi()): AttachedCountRead {
