@@ -33,6 +33,7 @@ import { usePageTitle, workTitle } from "../page-title";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { AssistantMatchNoticeHost } from "../editor/assistant-match-notice/AssistantMatchNoticeHost";
 import { PasteSourceHost } from "../editor/paste-source/PasteSourceHost";
+import { PasteWhatHost } from "../editor/paste-what/PasteWhatHost";
 import { ImportHost } from "../editor/import/ImportHost";
 import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
@@ -208,6 +209,8 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
               <AssistantMatchNoticeHost documentId={documentId} />
               {/* ED-76: a paste that holds a quote from the source notebook offers its citation. */}
               <PasteSourceHost documentId={documentId} />
+              {/* ED-108: after a paste, "Zalijepljeno. Što je ovo?": a quote, a source note, the stash or the text as it is. */}
+              <PasteWhatHost documentId={documentId} workId={assignmentId} />
               {/* ED-16 (NF2-P14): the one "Povijest i usporedba" dialog, asked by the header, Prikaz, Ctrl+K and the left panel. */}
               <WorkHistoryHost documentId={documentId} replayHref={appHref(base, `/rad/${assignmentId}/reprodukcija`)} />
               <ImportHost documentId={documentId} />
