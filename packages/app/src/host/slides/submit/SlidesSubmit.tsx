@@ -305,7 +305,7 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
               <Button tone="secondary" busy={sending} onClick={closeDialog}>{t.cancel}</Button>
             </>
           )}>
-          <p className="note">{t.newer.text}</p>
+          <p className="note">{s.newerText}</p>
           {late && <p className="note">{dialogLateLine(timing)}</p>}
           {sending && <p className="note" role="status"><StepSpinner /> {t.inProgress}</p>}
         </Dialog>

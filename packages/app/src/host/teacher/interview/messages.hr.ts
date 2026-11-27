@@ -36,7 +36,7 @@ export const interviewMessages = {
   partsEmpty: "Još nema pitanja za razgovor.",
   partsCaption: "Pitanja za razgovor; vidi ih i student.",
   studentSeesThem: "Pitanja vidi i student.",
-  addQuestion: "+ Dodaj opće pitanje",
+  addQuestion: "Dodaj opće pitanje",
   questionLabel: "Pitanje",
   paragraphLabel: "Oznaka odlomka (nije obavezna)",
   paragraphHint: "Odlomak se dodaje i radnjom „Dodaj u razgovor” u radu; ovdje se može upisati njegova oznaka.",

@@ -1,5 +1,5 @@
 // WEB-V13-PREDAJA: the words of the submission of a slides work. Outcomes, the late and
-// "not open" lines and the newer-version dialog keep the words of the text submission
+// "not open" lines and the newer-version dialog buttons keep the words of the text submission
 // (student/submission/submit/messages.hr.ts); only what is true of slides is written here.
 export const slidesSubmitText = {
   title: "Predati prezentaciju?",
@@ -17,4 +17,6 @@ export const slidesSubmitText = {
   dialogText: "Predaje se prezentacija „{title}” spremljena na poslužitelju",
   dialogSlides: ". Slajdova: {n}.",
   openWorkspace: "Otvori radni prostor",
+  // Owner decision 27. 11. 2026. (row 62): the newer-version dialog speaks of the slides, not of a text.
+  newerText: "Na ovom uređaju postoji novija verzija prezentacije koju poslužitelj još nije potvrdio. Pošaljite je najprije ili predajte verziju koju je poslužitelj potvrdio.",
 } as const;
