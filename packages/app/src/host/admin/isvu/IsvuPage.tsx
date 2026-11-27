@@ -8,6 +8,7 @@ import { goToSignIn } from "@/client/api";
 
 import { readAcademicYears, readAdminCourses, type InstitutionCourse } from "../../institution/reads";
 import { useHost } from "../../context";
+import { LoadAlert } from "../../states/States";
 import styles from "./isvu.module.css";
 import { countByStatus, countsSummary, hasNewStudents, reasonText, statusText } from "./model";
 import { isvuImportMessages as m, isvuPageMessages as t } from "./messages.hr";
@@ -21,7 +22,7 @@ type Shown = { kind: "none" } | { kind: "busy" } | { kind: "preview"; value: Imp
  * WEB-V22-UVOZ-EKRAN: the administrator's trial ISVU import. A read failure is its own state (never "no data"); a preview
  * enrols nobody; the confirmation is a dialog and a failed confirmation keeps the preview.
  */
-export default function IsvuPage() {
+export default function IsvuPage({ onDenied }: { readonly onDenied?: () => void } = {}) {
   const { base } = useHost();
   const [years, setYears] = useState<readonly string[]>([]);
   const [year, setYear] = useState("");
@@ -74,6 +75,10 @@ export default function IsvuPage() {
   useEffect(() => {
     if (load === "signedOut") goToSignIn(appHref(base, "/ustanova/isvu"));
   }, [load, base]);
+  // 403 is not a read error: the route shows the shared "no access" state instead of this page.
+  useEffect(() => {
+    if (load === "denied") onDenied?.();
+  }, [load, onDenied]);
 
   const pick = (setter: (v: string) => void) => (v: string) => { previewTicket.current += 1; setter(v); setShown({ kind: "none" }); setResult(null); };
 
@@ -109,25 +114,20 @@ export default function IsvuPage() {
     { id: "reason", header: t.colReason, cell: (r) => (r.status === "unsuitable" ? reasonText(r.reason) : t.noReason) },
   ];
 
-  if (load === "signedOut") return <p role="alert">{t.signedOut}</p>;
-  if (load === "denied") return <p role="alert">{t.denied}</p>;
+  // 401: only the redirect to the AAI@EduHr sign-in, no text on the page (Uvoz 14 "Prijava istekla" is outdated).
+  if (load === "signedOut") return null;
+  if (load === "denied") return null;
 
-  const failureText = (f: Failure): string =>
-    f === "expired" ? m.expired : f === "disabled" ? t.courseNotFound : f === "signedOut" ? t.signedOut : f === "denied" ? t.denied : m.readError;
+  const failureText = (f: Failure): string => (f === "expired" ? m.expired : f === "disabled" ? t.courseNotFound : m.readError);
 
   return (
     <div className={styles.stack}>
       <Notice tone="warn">{m.trialNotice}</Notice>
       <p>{t.lead}</p>
       {load === "loading" && <p role="status">{m.loading}</p>}
-      {load === "disabled" && <p role="alert">{m.disabled}</p>}
-      {load === "expired" && <p role="alert">{m.readError}</p>}
-      {load === "unavailable" && (
-        <div>
-          <p role="alert">{m.readError}</p>
-          <Button onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button>
-        </div>
-      )}
+      {load === "disabled" && <LoadAlert body={m.disabled} />}
+      {load === "expired" && <LoadAlert body={m.readError} />}
+      {load === "unavailable" && <LoadAlert body={m.readError} retry={{ label: t.retry, onRetry: () => setAttempt((n) => n + 1) }} />}
       {(load === "ready" || load === "empty" || load === "loading") && years.length > 0 && (
         <Select label={t.yearLabel} name="year" value={year} options={years.map((y) => ({ value: y, label: y }))} onChange={(e) => setYear(e.target.value)} />
       )}
@@ -143,9 +143,9 @@ export default function IsvuPage() {
               onClick={() => void runPreview()}>{shown.kind === "busy" ? t.previewing : t.preview}</Button>
           </div>
           {shown.kind === "failed" && (
-            <div>
-              <p role="alert">{failureText(shown.failure)}</p>
-              {shown.failure === "expired" && <Button onClick={() => void runPreview()}>{t.newPreview}</Button>}
+            <div className={styles.stack}>
+              <LoadAlert body={failureText(shown.failure)} />
+              {shown.failure === "expired" && <div className={styles.row}><Button onClick={() => void runPreview()}>{t.newPreview}</Button></div>}
             </div>
           )}
           {shown.kind === "preview" && (() => {
@@ -172,13 +172,14 @@ export default function IsvuPage() {
               {result.alreadyConfirmed && <p role="status">{t.alreadyConfirmed}</p>}
             </section>
           )}
-          <Dialog open={asking && shown.kind === "preview"} title={t.dialogTitle} error={confirmError} dismissible={!confirming}
+          <Dialog open={asking && shown.kind === "preview"} title={t.dialogTitle} dismissible={!confirming}
             onClose={() => setAsking(false)}
             actions={<>
               <Button tone="secondary" onClick={() => setAsking(false)} aria-disabled={confirming || undefined}>{t.dialogCancel}</Button>
               <Button busy={confirming} onClick={() => void runConfirm()}>{confirming ? t.confirming : t.dialogConfirm}</Button>
             </>}>
             <p>{shown.kind === "preview" ? t.dialogBody(countByStatus(shown.value.rows).new) : ""}</p>
+            {confirmError !== undefined && <LoadAlert body={confirmError} />}
           </Dialog>
         </>
       )}

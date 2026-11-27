@@ -66,8 +66,6 @@ export const isvuPageMessages = {
   disabled: "Izvor nije uključen za ovu ustanovu.",
   courseNotFound: "Kolegij nije dostupan u ovoj ustanovi ili izvor ne poznaje odabrani kolegij.",
   noCourses: "Ustanova nema kolegija u ovoj akademskoj godini.",
-  signedOut: "Prijava je istekla. Prijavite se ponovno.",
-  denied: "Ovaj ekran vidi samo administrator ustanove.",
   retry: "Pokušaj ponovno",
   newPreview: "Napravi novi pregled",
 } as const;
