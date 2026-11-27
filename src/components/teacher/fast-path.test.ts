@@ -100,7 +100,11 @@ describe("FastPath states", () => {
       expect(html).not.toContain("<nav");
       for (const s of SAMPLE) expect(html).not.toContain(s.surname!);
     }
-    expect(render({ state: "signedOut" })).toContain(`href="${signInHref()}"`);
+    expect(render({ state: "signedOut" })).toContain(`href="${signInHref("/nastavnik/brz-put")}"`);
+    // Design alignment 27. 11. 2026. (B3): the alert box, with the link to try again under it.
+    const unavailable = render({ state: "unavailable" });
+    expect(unavailable).toMatch(/<p role="alert"[^>]*>[^<]*<\/p><p[^>]*><a[^>]*href="\/nastavnik\/brz-put"/);
+    expect(unavailable).toContain(fastPathControlsHr.retry);
     expect(render({ state: "pickAssignment" })).toContain('href="/nastavnik"');
   });
 

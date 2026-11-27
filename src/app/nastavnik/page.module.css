@@ -34,15 +34,3 @@
   max-width: 62ch;
   color: var(--ink-2);
 }
-
-.alert {
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--error);
-}
-
-.retry {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}

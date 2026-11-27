@@ -46,7 +46,15 @@ describe("MerlinExport (WEB-1114)", () => {
     expect(columns.every((at) => at > 0)).toBe(true);
     expect([...columns].sort((a, b) => a - b)).toEqual(columns);
     expect(markup).toContain("anic-demo-000000e1.docx");
-    expect(markup).toContain("d".repeat(64));
+    // Design alignment 27. 11. 2026. (A5): the fingerprints stay in the CSV, not on screen.
+    expect(markup).not.toContain("d".repeat(64));
+    expect(markup).not.toContain("SHA-256");
+  });
+
+  it("says a missing given name in words, as the family name (design alignment 27. 11. 2026.)", () => {
+    const markup = render(ROWS.slice(3));
+    expect(markup.split(`>${t.unnamed}<`).length - 1).toBe(2);
+    expect(markup).not.toContain(`>${t.none}<`);
   });
 
   it("offers the package only when a work was submitted, and the CSV always", () => {
@@ -61,6 +69,8 @@ describe("MerlinExport (WEB-1114)", () => {
     const markup = renderToStaticMarkup(<MerlinExport assignmentId={A} roster={{ kind: "unavailable" }} />);
     expect(markup).toContain(t.unavailable);
     expect(markup).not.toContain(t.empty);
+    // Design alignment 27. 11. 2026. (D3): the alert box, with the link to try again under it.
+    expect(markup).toMatch(new RegExp(`<p role="alert"[^>]*>[^<]*</p><p[^>]*><a[^>]*href="${merlinHref(A)}"[^>]*>${t.retry}</a>`));
   });
 
   it("says the package is being prepared while it is queued, without a download", () => {

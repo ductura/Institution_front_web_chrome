@@ -13,6 +13,8 @@ import {
 import { formatDateTimeHr } from "../../lib/i18n/hr.ts";
 import { messagesHr } from "../../lib/i18n/messages.hr.ts";
 
+import LoadAlert from "../shell/LoadAlert.tsx";
+
 import styles from "./MentoredWorks.module.css";
 
 const t = messagesHr.mentorshipRequests;
@@ -81,10 +83,11 @@ export async function submitDecision(
   return note;
 }
 
-function requestMeta(request: MentorshipRequest): string {
+/** The type of the work and when the request was sent, as separate parts 12 px apart (design alignment 27. 11. 2026.). */
+function requestMeta(request: MentorshipRequest) {
   const type = workTypes[request.workType] ?? "";
-  const sent = t.sentOn.replace("{date}", formatDateTimeHr(request.requestedAt));
-  return type === "" ? sent : `${type} · ${sent}`;
+  const sent = t.sentOn.replace("{date}", () => formatDateTimeHr(request.requestedAt));
+  return <>{type === "" ? null : <span>{type}</span>}<span>{sent}</span></>;
 }
 
 /**
@@ -154,8 +157,7 @@ export function MentorshipRequestsView({ read, here, call, onDecided }: {
   if (read.kind === "unavailable") {
     return (
       <Card title={t.title}>
-        <p role="alert">{t.unavailable}</p>
-        <p><a href={here}>{t.retry}</a></p>
+        <LoadAlert retry={{ label: t.retry, href: here }}>{t.unavailable}</LoadAlert>
       </Card>
     );
   }
@@ -203,7 +205,7 @@ export function MentorshipRequestsView({ read, here, call, onDecided }: {
           </>
         }
       >
-        <p>{declining ? [declining.studentName ?? t.unnamed, workTypes[declining.workType]].filter(Boolean).join(" · ") : ""}</p>
+        <p>{declining ? [declining.studentName ?? t.unnamed, workTypes[declining.workType]].filter(Boolean).join(", ") : ""}</p>
         <TextArea
           label={t.reason}
           hint={t.reasonHint}

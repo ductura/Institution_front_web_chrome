@@ -40,7 +40,7 @@ const text = (markup: string) => markup.replace(/<[^>]*>/g, " ").replace(/\s+/g,
 const SAYS_SUBMITTED = /\bPredano\b|Rad je predan/;
 
 describe("ReceiptPanel (WEB-27, S: E-11)", () => {
-  it("variant puno: three rows in Zagreb time, one UTC block with the exact values, and the fingerprint", () => {
+  it("variant puno: three rows in Zagreb time, one UTC block with the exact values, and the copy button without the digest", () => {
     const markup = render({ kind: "potvrdeno", receipt: receipt() });
     const shown = text(markup);
     expect(shown).toContain("Predano");
@@ -54,8 +54,9 @@ describe("ReceiptPanel (WEB-27, S: E-11)", () => {
     expect(shown).toContain(`${t.assignmentVersion} 2`);
     expect(shown).toContain(`${t.revision} 7`);
     expect(shown).toContain(t.records.continuous);
-    expect(markup).toContain(`<span>${DIGEST.slice(0, 4)}</span>`);
-    expect(markup.match(/<code[^>]*>(<span>[0-9a-f]{4}<\/span>){16}<\/code>/)).not.toBeNull();
+    // Design alignment 27. 11. 2026. (A5): no digest for people.
+    expect(markup).not.toContain(DIGEST.slice(0, 4));
+    expect(markup.match(/<code[^>]*>(<span>[0-9a-f]{4}<\/span>){16}<\/code>/)).toBeNull();
     expect(shown).toContain("Otisak u međuspremnik");
     expect(shown).toContain(t.fingerprintNote);
     expect(markup).toContain(`href="/rad/x/predaja/pregled">${t.summary}`);
@@ -97,7 +98,7 @@ describe("ReceiptPanel (WEB-27, S: E-11)", () => {
     expect(empty).toContain(`href="/rad/x/predaja">${t.toSubmit}`);
     expect(render({ kind: "loading" })).toContain(`<p role="status">${t.loading}</p>`);
     const error = render({ kind: "error" });
-    expect(error).toContain(`<p role="alert">${t.error}</p>`);
+    expect(error).toMatch(new RegExp(`<p role="alert"[^>]*>${t.error.replace(/[.()]/g, "\\$&")}</p>`));
     expect(error).toContain(`href="/rad/x/predaja/potvrda">${t.retry}`);
     for (const markup of [empty, render({ kind: "loading" }), error]) {
       expect(text(markup)).not.toMatch(SAYS_SUBMITTED);

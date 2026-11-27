@@ -4,7 +4,8 @@
 .subtitle { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
 .note { margin: 0; font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
 .notice { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--ink); border: 1px solid var(--rule-2); border-radius: var(--radius-control); overflow-wrap: anywhere; }
-.alert { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--error); background: var(--error-soft); border-radius: var(--radius-control); overflow-wrap: anywhere; }
+/* Design alignment 27. 11. 2026. (A2, N-04 P13): a 1 px frame in the error colour, no error-soft fill. */
+.alert { margin: 0; padding: 10px 12px; font-size: 13.5px; color: var(--error); border: 1px solid var(--error); border-radius: var(--radius-sm, 4px); overflow-wrap: anywhere; }
 .acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .group { display: grid; gap: 8px; min-width: 0; }
 .share { display: grid; gap: 0; margin: 0; }

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  addConsultationNote, readConsultations, readConsultationVersions, saveConsultation,
+  addConsultationNote, readConsultationList, readConsultations, readConsultationVersions, saveConsultation,
 } from "../../../client/consultation-records";
 
 const baseUrl = "https://ductura.example.invalid";
@@ -24,6 +24,16 @@ describe("WEB-1109 consultation client", () => {
       [`${baseUrl}/api/v1/works/${work}/consultation-records`, "GET", undefined],
       [`${baseUrl}/api/v1/works/${work}/versions?beforeRevision=7`, "GET", undefined],
     ]);
+  });
+
+  it("tells 401, 403 and 404 apart from a read that can be tried again (N-11)", async () => {
+    const answer = async (status: number) => readConsultationList(work, {
+      baseUrl, fetchImpl: vi.fn<typeof fetch>().mockResolvedValue(Response.json({ error: "x" }, { status })),
+    });
+    expect((await answer(403)).kind).toBe("forbidden");
+    expect((await answer(404)).kind).toBe("not-found");
+    expect((await answer(503)).kind).toBe("unavailable");
+    expect((await answer(401)).kind).toBe("unauthorized");
   });
 
   it("posts only the contract fields, then reads the stored addition with the record", async () => {
