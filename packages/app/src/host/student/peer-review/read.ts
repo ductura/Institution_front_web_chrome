@@ -15,6 +15,7 @@ export type ReviewBody = NonNullable<Input<"student.peer-review.post">["body"]>;
 export type Read<T> =
   | { readonly kind: "ok"; readonly view: T }
   | { readonly kind: "notFound" }
+  | { readonly kind: "denied" }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
 
@@ -41,8 +42,9 @@ export async function attempt<T>(run: () => Promise<T>): Promise<T | null> {
   }
 }
 
-function refusal(r: { readonly status: number; readonly code: string }): "signedOut" | "notFound" | "unavailable" {
+function refusal(r: { readonly status: number; readonly code: string }): "signedOut" | "notFound" | "denied" | "unavailable" {
   if (isSignedOut(r)) return "signedOut";
+  if (r.status === 403) return "denied";
   return isNotFound(r) ? "notFound" : "unavailable";
 }
 
