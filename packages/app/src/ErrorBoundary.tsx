@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { Component, type ReactNode } from "react";
 
 import ErrorScreen from "../../../src/components/shell/ErrorScreen.ts";
@@ -40,4 +41,12 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (!this.state.failed) return this.props.children;
     return <ErrorScreen title={t.errorPage.errorTitle} body={t.errorPage.errorBody} onRetry={this.retry} />;
   }
+}
+
+/**
+ * The boundary of the host layout, which Next keeps while the person moves between pages: keyed by
+ * the path, so a page that threw does not keep its error screen on the next page the navigation opens.
+ */
+export function RouteErrorBoundary({ children }: { children: ReactNode }) {
+  return <ErrorBoundary key={usePathname()}>{children}</ErrorBoundary>;
 }
