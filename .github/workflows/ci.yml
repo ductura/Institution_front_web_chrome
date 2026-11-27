@@ -246,6 +246,7 @@ jobs:
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore tsbuildinfo
       # CI-WEB-TSBUILD: tsc writes .tsbuildinfo (also with --noEmit) and on the
       # next run re-checks only the files whose content or whose imports'
       # content changed. The key holds the hash of the lockfile and of every
@@ -255,7 +256,6 @@ jobs:
       # every run save its own entry; restore-keys takes the newest of the same
       # configuration. Nothing is skipped: the same `typecheck` script runs in
       # every package, only with the two incremental flags added.
-      - name: Restore tsbuildinfo
         if: matrix.part == 'checks'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
