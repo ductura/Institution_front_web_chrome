@@ -5,6 +5,7 @@
  * the literature. Pure functions; the document is read, never written.
  */
 import { bibliographyStudentHr as t } from "./messages.hr";
+import { HELP_CHAPTER_LEVEL, helpDocumentOf } from "../../left/chapter-help";
 
 type Json = { type?: unknown; attrs?: Record<string, unknown>; content?: readonly Json[]; text?: unknown };
 
@@ -119,6 +120,18 @@ export function relianceNotes(sources: readonly BibSource[], places: readonly Ci
     }
   }
   return out;
+}
+
+export type ChapterSources = { id: string; number: string; title: string; labels: readonly string[] };
+
+/**
+ * ED-115 (prototype features.js litExtra): every chapter (heading 2, as the chapter help reads it) with the
+ * sources it and its subchapters cite, each once in text order. A chapter without citations keeps an empty list.
+ */
+export function sourcesByChapter(doc: Json | null | undefined): ChapterSources[] {
+  const help = helpDocumentOf(doc);
+  return help.chapters.filter((c) => c.level === HELP_CHAPTER_LEVEL)
+    .map((c) => ({ id: c.id, number: c.number, title: c.title, labels: help.sourceLabels[c.id] ?? [] }));
 }
 
 const REQUIRED: Record<string, readonly [string, string][]> = {
