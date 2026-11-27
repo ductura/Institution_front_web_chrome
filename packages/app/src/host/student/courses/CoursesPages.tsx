@@ -18,15 +18,15 @@ import { nextPath, type Base } from "../../../bases";
 import { useHost } from "../../context";
 import { protoDateTime } from "../home/format";
 import { coursesText as t } from "./messages.hr";
-import { deadlineTagOf, effectiveDue, extensionText, groupLabels, nearTag, practiceOf, ROW_ACTION, rowKind, submittedLine, type ExtensionNote, type RowKind, type Submitted } from "./model";
+import { deadlineTagOf, effectiveDue, extensionText, groupLabels, nearTag, practiceOf, ROW_ACTION, rowKind, submittedLine, yearLabel, type ExtensionNote, type RowKind, type Submitted } from "./model";
 import { readCourses, readExtensions, serverHistory, type Assignment, type Course, type CoursesCall, type CoursesRead } from "./read";
 import own from "./courses.module.css";
 
 const home = messagesHr.student.home;
 
 export const whenHr = protoDateTime;
-const yearHr = (y: string) => /^(\d{4})\/(\d{4})$/.test(y) ? y.replace(/^(\d{4})\/(\d{4})$/, "$1./$2.") : y;
-export const yearLabel = yearHr;
+const yearHr = yearLabel;
+export { yearLabel };
 
 /** One read per visit and per "Pokušaj ponovno"; null while it runs. */
 function useCoursesRead(withStates: boolean): [CoursesRead | null, () => void] {

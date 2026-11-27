@@ -1,6 +1,6 @@
 import type { MyAssignment, MyCourse } from "../read/assignments";
 import type { WorkState } from "../read/works";
-import { deadlineTagOf, extensionText, practiceOf, submittedLine, type DeadlineTag, type ExtensionNote, type Submitted } from "../courses/model";
+import { deadlineTagOf, extensionText, nearTag, practiceOf, submittedLine, type DeadlineTag, type ExtensionNote, type Submitted } from "../courses/model";
 import { cleanCode } from "../enrol/code";
 import { homeText as t } from "./messages.hr";
 
@@ -118,17 +118,8 @@ export function coursesWithoutTask(courses: readonly MyCourse[]): MyCourse[] {
   return courses.filter((course) => course.assignments.length === 0);
 }
 
-const DAY_MS = 86_400_000;
-
-/** `Rok za N dana` within 7 days of the deadline, none after it has passed or far ahead; null otherwise. */
-export function nearTag(dueAt: string, now: number): string | null {
-  const due = Date.parse(dueAt);
-  if (Number.isNaN(due) || due < now) return null;
-  const days = Math.ceil((due - now) / DAY_MS);
-  if (days > 7) return null;
-  if (days <= 0) return t.nearToday;
-  return days === 1 ? t.nearOne : t.nearMany.replace("{n}", String(days));
-}
+/** PAR2-A3: E-2 uses the same deadline tag as E-3. */
+export { nearTag };
 
 /** P-3 (E-2a): the row's deadline tag; the rule itself is the one function of courses/model.ts, shared with E-3 and E-4. */
 export type { DeadlineTag };
