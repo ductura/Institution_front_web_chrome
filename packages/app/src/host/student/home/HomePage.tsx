@@ -11,6 +11,8 @@ import { createApi, signInHref } from "../../../../../../src/client/api.ts";
 import { withMentoredAssignments } from "../../../../../../src/components/student/mentored-assignments.ts";
 
 import { nextPath, type Base } from "../../../bases";
+import { LoadAlert } from "../../states/States";
+import { StudentDenied } from "../read/denied";
 import { useHost } from "../../context";
 import { CodeCard, CodeForm } from "./CodeForm";
 import { protoDateTime, protoToday } from "./format";
@@ -38,7 +40,7 @@ export function Row({ row, now, base }: { row: TaskRow; now: number; base: Base 
         <span className={styles.eyebrow}>{row.course}</span>
         <span className={styles.title}>{row.title}</span>
         <span className={styles.when} id={whenId}>
-          {row.kind === "predano" ? <span>{submittedText(row, dueText)}</span> : <span>{(row.extended ? t.extendedDue : t.due).replace("{due}", dueText(row.dueAt))}</span>}
+          {row.kind === "predano" ? <span>{submittedText(row, dueText)}</span> : dueText(row.dueAt) === "" ? null : <span>{(row.extended ? t.extendedDue : t.due).replace("{due}", dueText(row.dueAt))}</span>}
           {near === null ? null : <Tag tone="warn">{near}</Tag>}
           {deadline === null ? null : <Tag tone={deadline.kind === "late" ? "warn" : "neutral"}>{deadline.text}</Tag>}
           {extension === null ? null : <span className={styles.meta}>{extension}</span>}
@@ -153,14 +155,10 @@ export function HomePage() {
         <p><a className="btn" href={signInHref(appHref(base, "/zadaci"))}>{t.signIn}</a></p>
       </div>
     );
-  } else if (read.kind === "unavailable") {
-    body = (
-      <div className={styles.card} role="alert">
-        <h2>{t.errorHeading}</h2>
-        <p className={styles.note}>{t.errorBody}</p>
-        <Button className={styles.start} onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button>
-      </div>
-    );
+  } else if (read.kind === "denied") body = <StudentDenied base={base} />;
+  else if (read.kind === "unavailable") {
+    // DIZ S-02 (Z4, K3): the alert frame with "Pokušaj ponovno" as the link under it.
+    body = <LoadAlert title={t.errorHeading} body={t.errorBody} retry={{ label: t.retry, onRetry: () => setAttempt((n) => n + 1) }} />;
   } else if (read.courses.length === 0) body = <Empty />;
   else {
     const rows = flatRows(read.courses, read.states, extras);
@@ -170,9 +168,9 @@ export function HomePage() {
       <>
         {current === null ? null : (
           <section className={styles.continue} aria-labelledby="po-n">
-            <span className={styles.eyebrow}>{current.typeLabel} · {current.course}</span>
+            <span className={styles.eyebrow}><span>{current.typeLabel}</span><span>{current.course}</span></span>
             <b id="po-n">{current.title}</b>
-            <span className={styles.meta}>{t.continueMeta.replace("{due}", dueText(current.dueAt))}</span>
+            <span className={`${styles.meta} ${styles.parts}`}><span>{t.continueMeta}</span>{dueText(current.dueAt) === "" ? null : <span>{t.due.replace("{due}", dueText(current.dueAt))}</span>}</span>
             <Button aria-label={t.openFor.replace("{action}", t.openWork).replace("{title}", current.title)}
               onClick={() => go(rowRoute(current))}>{t.openWork}</Button>
           </section>

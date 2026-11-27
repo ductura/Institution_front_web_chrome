@@ -1,31 +1,34 @@
 /* E-2 (VIZ-S1): the prototype's po-* blocks (Ductura_student.html, pocetna) on the shared tokens. */
 .wrap { width: 100%; max-width: 640px; margin: 0 auto; display: grid; gap: 24px; min-width: 0; }
 .hero { display: grid; gap: 6px; text-align: center; }
-.hero h1 { margin: 0; font-size: 40px; font-weight: 400; font-family: var(--ff-display); letter-spacing: -0.015em; line-height: 1.15; color: var(--ink); }
+.hero h1 { margin: 0; font-size: var(--fs-hero); font-weight: 400; font-family: var(--ff-display); letter-spacing: -0.015em; line-height: 1.15; color: var(--ink); }
 .hero em { font-style: italic; color: var(--accent); }
 .lede { margin: 0; color: var(--ink-2); }
-.eyebrow, .meta { display: block; margin: 0; color: var(--ink-3); font-size: 12.5px; }
+.eyebrow, .meta { display: block; margin: 0; color: var(--ink-3); font-size: var(--fs-sm); }
+/* DIZ S-02: the parts of the line are separate elements 12 px apart, no "·". */
+.eyebrow { display: flex; flex-wrap: wrap; justify-content: inherit; gap: 0 12px; }
+.parts { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 12px; }
 .note { margin: 0; color: var(--ink-2); }
 .hidden { position: absolute; left: -9999px; }
 .card, .course, .continue { background: var(--card); border: 1px solid var(--rule-2); border-radius: 10px; display: grid; gap: 12px; width: 100%; min-width: 0; color: var(--ink); }
 .card { padding: 24px; }
 .course { background: var(--chrome); padding: 14px 16px; gap: 10px; }
-.course h2 { margin: 0; font: 500 20px/1.15 var(--ff-display); letter-spacing: -0.015em; }
-.card h2 { margin: 0; font: 500 20px/1.15 var(--ff-display); letter-spacing: -0.015em; }
-.card h3 { margin: 0; font: 600 13.5px/1.4 var(--ff-ui); letter-spacing: 0; }
+.course h2 { margin: 0; font: 500 var(--fs-title)/1.15 var(--ff-display); letter-spacing: -0.015em; }
+.card h2 { margin: 0; font: 500 var(--fs-title)/1.15 var(--ff-display); letter-spacing: -0.015em; }
+.card h3 { margin: 0; font: 600 var(--fs-ui)/1.4 var(--ff-ui); letter-spacing: 0; }
 .center { text-align: center; justify-items: center; }
 .continue { padding: 20px 24px; gap: 8px; justify-items: center; text-align: center; }
-.continue b { font: 600 21px/1.3 var(--ff-display); }
+.continue b { font: 600 var(--fs-title-lg)/1.3 var(--ff-display); }
 .section { display: grid; gap: 8px; }
-.section h2 { margin: 0; font: 500 20px/1.15 var(--ff-display); letter-spacing: -0.015em; }
+.section h2 { margin: 0; font: 500 var(--fs-title)/1.15 var(--ff-display); letter-spacing: -0.015em; }
 .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .item { background: var(--card); border: 1px solid var(--rule-2); border-radius: 6px; padding: 10px 12px; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: center; }
 .item > span:first-child { display: block; }
 .title { display: block; font-weight: 600; overflow-wrap: anywhere; }
-.when { display: flex; gap: 6px 12px; flex-wrap: wrap; align-items: center; color: var(--ink-2); font-size: 12.5px; margin-top: 2px; }
+.when { display: flex; gap: 6px 12px; flex-wrap: wrap; align-items: center; color: var(--ink-2); font-size: var(--fs-sm); margin-top: 2px; }
 .itemActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
 .code { display: flex; gap: 8px; width: 100%; max-width: 440px; }
-.codeInput { flex: 1; width: 0; min-width: 0; min-height: 44px; padding: 6px 10px; font: 15px var(--ff-mono); letter-spacing: 0.08em; text-transform: uppercase; text-align: center; color: var(--ink); background: var(--field); border: 1px solid var(--field-rule); border-radius: 5px; }
+.codeInput { flex: 1; width: 0; min-width: 0; min-height: 44px; padding: 6px 10px; font: var(--fs-md) var(--ff-mono); letter-spacing: 0.08em; text-transform: uppercase; text-align: center; color: var(--ink); background: var(--field); border: 1px solid var(--field-rule); border-radius: 5px; }
 .codeInput::placeholder { color: var(--field-placeholder); opacity: 1; }
 .steps { display: grid; gap: 12px; text-align: left; width: 100%; }
 .step { background: var(--card); border: 1px solid var(--rule-2); border-radius: 6px; padding: 10px 12px; display: grid; gap: 4px; text-align: left; width: 100%; }
@@ -34,7 +37,7 @@
 @keyframes skel { from { opacity: 0.55; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
 @media (max-width: 640px) {
-  .hero h1 { font-size: 30px; }
+  .hero h1 { font-size: var(--fs-page); }
   .card { padding: 16px; }
   .item { grid-template-columns: minmax(0, 1fr); }
   .itemActions { justify-content: stretch; } .itemActions > * { flex: 1; }
@@ -43,11 +46,11 @@
 .start { justify-self: start; }
 
 /* The row's open link: the prototype's .btn.small (secondary: .btn.secondary), a link so that it opens under the same base. */
-.open { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 10px; border-radius: 5px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font: 600 13.5px/1.1 var(--ff-ui); text-decoration: none; text-align: center; }
+.open { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 10px; border-radius: 5px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font: 600 var(--fs-ui)/1.1 var(--ff-ui); text-decoration: none; text-align: center; }
 .open:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .open[data-tone="secondary"] { background: transparent; color: var(--ink); border-color: var(--rule); }
 .open[data-tone="secondary"]:hover { background: var(--hover); border-color: var(--rule); }
 
 /* P-4: the sections of the list by deadline. Layout only. */
 .group { display: grid; gap: 8px; }
-.groupHeading { margin: 0; font: 600 13.5px/1.4 var(--ff-ui); color: var(--ink-2); }
+.groupHeading { margin: 0; font: 600 var(--fs-ui)/1.4 var(--ff-ui); color: var(--ink-2); }

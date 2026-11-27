@@ -7,7 +7,7 @@ export const homeText = {
   headingEm: "prostor",
   lede: "Zadaci na kolegijima.",
   continueHeading: "Nastavak rada",
-  continueMeta: "Rad je započet, nije predan · Rok: {due}",
+  continueMeta: "Rad je započet, nije predan",
   openWork: "Otvori rad",
   openTask: "Otvori zadatak",
   readNotice: "Pročitaj upute",
