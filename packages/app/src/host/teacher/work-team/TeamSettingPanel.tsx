@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Button, Card, Checkbox, RouteLoading, Select } from "@ductura/ui";
 
 import type { createApi } from "@/client/api";
+import { LoadAlert } from "../../states/States";
 import { teacherTeamText as t } from "./messages.hr";
 import { checkSetting, draftOf, SIZES, type SettingDraft, type SettingError } from "./model";
 import { putSetting, readSetting, type Read, type Setting, type Write } from "./read";
@@ -67,8 +68,8 @@ export function TeamSettingPanel({ assignmentId, call, onSignedOut, onChanged }:
   if (read.kind !== "ok" || draft === null) {
     return (
       <Card level={2} title={t.setting.title}>
-        <p role="alert">{read.kind === "notFound" ? t.gone : t.setting.unavailable}</p>
-        {read.kind === "unavailable" && <p><Button tone="quiet" onClick={() => { setRead(null); setAttempt((n) => n + 1); }}>{t.retry}</Button></p>}
+        <LoadAlert body={read.kind === "notFound" ? t.gone : t.setting.unavailable}
+          retry={read.kind === "unavailable" ? { label: t.retry, onRetry: () => { setRead(null); setAttempt((n) => n + 1); } } : undefined} />
       </Card>
     );
   }
@@ -76,7 +77,7 @@ export function TeamSettingPanel({ assignmentId, call, onSignedOut, onChanged }:
   const sizes = SIZES.map((n) => ({ value: String(n), label: String(n) }));
   return (
     <Card level={2} title={t.setting.title}>
-      {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
+      {note !== null && (note.tone === "alert" ? <LoadAlert body={note.text} /> : <p role="status">{note.text}</p>)}
       <form onSubmit={(event) => void save(event)} noValidate>
         <Checkbox label={t.setting.enabled} checked={draft.enabled} disabled={busy} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} />
         <Select label={t.setting.minSize} disabled={busy} value={draft.minSize} options={sizes} error={fieldError("minSize")} onChange={(e) => setDraft({ ...draft, minSize: e.target.value })} />
