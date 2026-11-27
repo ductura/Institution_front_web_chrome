@@ -55,6 +55,9 @@ const NO_MUTABLE_FIELDS = new Set<string>([
   "institution.teaching-team-view.get success-holder",
   "live.document.get state",
   "live.document.get submitted",
+  // mentorship.working-style.get (MEN-R09): the answer is anyOf (text or nulls), so no single properties list to mutate.
+  "mentorship.working-style.get not-written",
+  "mentorship.working-style.get written",
   "ops.events.get empty",
   "ops.events.get page",
   "profile.staff-affiliation.get confirmed",
@@ -88,6 +91,10 @@ const NO_MUTABLE_FIELDS = new Set<string>([
   "student.work-team.post left",
   "teacher.declaration.get bound-declaration",
   "teacher.declaration.get no-live-submission",
+  // teacher.declaration-second.get (declaration-v2): the answer is anyOf (bound or none), like teacher.declaration.get.
+  "teacher.declaration-second.get bound-declaration",
+  "teacher.declaration-second.get bound-with-conversation",
+  "teacher.declaration-second.get no-live-submission",
   "teacher.mentorship-request-decision.post approve",
   "teacher.mentorship-request-decision.post decline-with-reason",
   "teacher.mentorship-request-decision.post decline-without-reason",
