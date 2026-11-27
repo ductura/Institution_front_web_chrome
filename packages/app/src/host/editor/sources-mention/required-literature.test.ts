@@ -45,6 +45,9 @@ describe("EDI-R11 course of the assignment", () => {
     expect(courseIdOf({ ok: true, body }, "nema")).toBeNull();
     expect(courseIdOf({ ok: false }, A)).toBeNull();
     expect(courseIdOf(undefined, A)).toBeNull();
+    // A mentored work (thesis) sits in the synthetic group "mentorstvo", which is no course: no course, so no 404 call.
+    const mentored = { courses: [{ id: "mentorstvo", name: "Radovi uz mentora", assignments: [{ id: A }] }] };
+    expect(courseIdOf({ ok: true, body: mentored }, A)).toBeNull();
     // The bare body is not the answer: it must not be taken for it.
     expect(courseIdOf(body as never, A)).toBeNull();
   });

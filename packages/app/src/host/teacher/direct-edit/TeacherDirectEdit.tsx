@@ -16,8 +16,8 @@ import { directEditMessages as text } from "./messages.hr";
  * the work.
  */
 export default function TeacherDirectEdit(
-  { assignmentId, port, segments, onSaved }:
-  { assignmentId: string; port: TeacherEditPort; segments: readonly MarkedSegment[]; onSaved?: (body: string) => void },
+  { assignmentId, port, segments, onSaved, writable = true }:
+  { assignmentId: string; port: TeacherEditPort; segments: readonly MarkedSegment[]; onSaved?: (body: string) => void; writable?: boolean },
 ) {
   const [access, setAccess] = useState<EditAccess | null>(null);
   const [draft, setDraft] = useState("");
@@ -35,6 +35,7 @@ export default function TeacherDirectEdit(
 
   if (access === null) return null;
   const open = access.kind === "open";
+  const canType = open && writable;
 
   const save = async () => {
     setBusy(true);
@@ -60,12 +61,13 @@ export default function TeacherDirectEdit(
         })}
       </div>
       <p>{accessNote(access)}</p>
-      {open ? (
+      {open && !writable ? <p role="status">{text.noRoute}</p> : null}
+      {canType ? (
         <>
           <label>{text.field}<textarea value={draft} onChange={(event) => setDraft(event.target.value)} /></label>
           <Button disabled={busy || draft.trim() === ""} onClick={() => void save()}>{text.save}</Button>
         </>
-      ) : access.reason === "unavailable" ? (
+      ) : access.kind === "locked" && access.reason === "unavailable" ? (
         <Button onClick={() => setAttempt((n) => n + 1)}>{text.retry}</Button>
       ) : null}
       <p role="status" aria-live="polite">{note}</p>

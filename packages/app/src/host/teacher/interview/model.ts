@@ -15,12 +15,16 @@ export const isInvited = (p: InterviewPreparation): boolean => p.invitedAt !== n
 export function momentHr(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("hr-HR", { timeZone: "Europe/Zagreb", day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(d);
+  const zone = { timeZone: "Europe/Zagreb" } as const;
+  const date = new Intl.DateTimeFormat("hr-HR", { ...zone, day: "numeric", month: "long", year: "numeric" }).format(d);
+  const time = new Intl.DateTimeFormat("hr-HR", { ...zone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(d);
+  return `${date} u ${time}`;
 }
 
 export function dateHr(isoDate: string): string {
   const [y, m, d] = isoDate.split("-").map(Number);
-  return y && m && d ? `${d}. ${m}. ${y}.` : isoDate;
+  if (!y || !m || !d) return isoDate;
+  return new Intl.DateTimeFormat("hr-HR", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" }).format(new Date(Date.UTC(y, m - 1, d)));
 }
 
 export function appointmentLine(p: InterviewPreparation): string {
@@ -42,9 +46,21 @@ export function zagrebToIso(date: string, time: string): string | null {
   return new Date(guess.getTime() - offset).toISOString();
 }
 
-export function failureMessage(outcome: Exclude<InterviewOutcome<unknown>, { kind: "ok" }>): string {
+/** "Odlomak 3" for a number; anything else a server may hold is shown as it is. */
+export const paragraphLabel = (ref: string | null): string =>
+  ref === null ? text.generalParagraph : /^\d+$/.test(ref) ? text.paragraphN(ref) : ref;
+
+/** The teacher types only the number (or nothing); null when the input is not a number. */
+export function paragraphRefOf(input: string): { ok: true; value: string | null } | { ok: false } {
+  const v = input.trim();
+  if (v === "") return { ok: true, value: null };
+  return /^\d{1,4}$/.test(v) && Number(v) > 0 ? { ok: true, value: String(Number(v)) } : { ok: false };
+}
+
+/** null for 401: the shell leads to the AAI@EduHr sign-in and the page shows no message (A3). */
+export function failureMessage(outcome: Exclude<InterviewOutcome<unknown>, { kind: "ok" }>): string | null {
   switch (outcome.kind) {
-    case "signedOut": return text.signedOut;
+    case "signedOut": return null;
     case "notFound": return text.notFound;
     case "conflict": return text.conflict;
     case "rejected": return text.rejected;

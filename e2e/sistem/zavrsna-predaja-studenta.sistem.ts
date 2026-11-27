@@ -228,13 +228,18 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
 
   await test.step('Potvrda predaje prikazuje isti otisak i nakon osvježavanja', async () => {
     await expect(page).toHaveURL((url) => url.pathname === `${submissionPath}/potvrda`);
-    // E-11: the fingerprint in groups of four characters (receipt/model.ts fingerprintGroups).
-    const grouped = receipt.payload.artifactSha256.match(/.{4}/g).join(' ');
+    // S-08 K1/K2: the receipt no longer shows the fingerprint; the copy button hands it over as 64
+    // characters without spaces, so the check reads what the button copies (still the receipt's own).
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: webOrigin });
     await expect(page.getByRole('heading', { name: /^Predano / })).toBeVisible();
-    const fingerprint = page.getByText(grouped, { exact: true });
-    await expect(fingerprint, 'Otisak nakon predaje').toBeVisible();
+    const copiedFingerprint = async () => {
+      await page.getByRole('button', { name: 'Otisak u međuspremnik' }).click();
+      return page.evaluate(() => navigator.clipboard.readText());
+    };
+    expect(await copiedFingerprint(), 'Otisak nakon predaje').toBe(receipt.payload.artifactSha256);
     await page.reload();
-    await expect(fingerprint, 'Isti otisak nakon osvježavanja').toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Predano / })).toBeVisible();
+    expect(await copiedFingerprint(), 'Isti otisak nakon osvježavanja').toBe(receipt.payload.artifactSha256);
   });
 
   await test.step('Ponovno otvaranje rada dopušta samo čitanje', async () => {

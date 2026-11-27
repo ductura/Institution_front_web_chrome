@@ -1,0 +1,32 @@
+.alert {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--danger, currentColor);
+  border-radius: 4px;
+  color: var(--danger, inherit);
+}
+
+.alert p {
+  margin: 0;
+}
+
+.retry {
+  margin: var(--space-2, 8px) 0 0;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent, inherit);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  align-items: baseline;
+}

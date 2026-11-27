@@ -2,7 +2,7 @@
 // screens used to read from src/lib/i18n/messages.hr.ts. Only the keys the host
 // still uses, copied word for word and in the same shape, so every screen reads
 // `studentHostHr.<section>.<key>` exactly where it read `messagesHr.<section>.<key>`.
-// The editor and the work route (host/student/work.tsx, host/student/work/**) still
+// The editor and the work route (host/student/WorkEditorPage.tsx, host/student/work/**) still
 // read the shared catalogue; they are other lanes.
 export const studentHostHr = {
   student: {

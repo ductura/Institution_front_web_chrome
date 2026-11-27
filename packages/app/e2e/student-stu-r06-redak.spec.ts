@@ -65,6 +65,9 @@ for (const path of ["/aplikacija/zadaci", "/aplikacija/zadaci/kolegiji"]) {
 test("the course card on E-3 writes the year as 2026./27. (PAR2-A3)", async ({ page }) => {
   await student(page, { status: 200, json: COURSES });
   await page.goto("/aplikacija/zadaci/kolegiji");
-  await expect(page.getByText("Kolegij · 2026./27.", { exact: true })).toBeVisible();
+  // DIZ S-02: the parts of the eyebrow are separate elements, no middle dot.
+  const eyebrow = page.getByText("Kolegij", { exact: true }).locator("..");
+  await expect(eyebrow.getByText("2026./27.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Kolegij · 2026./27.")).toHaveCount(0);
   await expect(page.getByText("2026./2027.")).toHaveCount(0);
 });

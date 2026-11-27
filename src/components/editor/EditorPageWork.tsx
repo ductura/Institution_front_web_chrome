@@ -23,7 +23,7 @@ import type { SessionMark } from "@/client/session-marks";
 import SessionObserver from "@/components/shell/SessionObserver";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
-import EditorPage, { SheetNote } from "./EditorPage";
+import EditorPage, { SheetAlert, SheetNote } from "./EditorPage";
 import { openFailureExit, openFailureText, type OpenFailure } from "./open-failure";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
@@ -77,6 +77,8 @@ export type HostSections = {
   assistant?: (ctx: HostSectionContext) => ReactNode;
   /** ED-09 (NF2-P9): the assignment's instructions in "Prvi redak"; none without it. */
   instructions?: (ctx: HostSectionContext) => ReactNode;
+  /** ED-71: what the host shows on the sheet above the text (prototype `#toc`, "Sadržaj na listu"). */
+  sheetTop?: (ctx: HostSectionContext) => ReactNode;
 };
 
 export type OpenRead =
@@ -140,7 +142,7 @@ function Note({ read, assignmentId, base, onRetry }: {
   const exit = openFailureExit(read.failure, { assignmentId, base });
   return (
     <div role="alert" data-open-failure={read.failure}>
-      <p>{openFailureText(read.failure)}</p>
+      <SheetAlert announce={false}><p>{openFailureText(read.failure)}</p></SheetAlert>
       {exit.kind === "link"
         ? <a className="btn" href={exit.href}>{exit.label}</a>
         : <button type="button" className="btn" onClick={exit.kind === "retry" ? onRetry : () => globalThis.location.reload()}>{exit.label}</button>}
@@ -305,6 +307,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       <EditorNotices notices={!online
         ? [{ kind: "offline", savingLocally, resumesSync: true, waiting: pending ? offlineWaitingText(pending) : null }]
         : reconnected ? [{ kind: "reconnected", sending: reconnectText(pending) }] : []} />
+      {hostSections?.sheetTop?.(ctx)}
       <LocalEditor lastSignedAt={lastSignedAt} />
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
       <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId} assignmentId={assignmentId}

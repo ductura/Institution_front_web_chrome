@@ -5,11 +5,11 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (...parts: string[]) => readFileSync(join(import.meta.dirname, ...parts), "utf8");
-const work = read("..", "..", "student", "work.tsx");
+const work = read("..", "..", "student", "WorkEditorPage.tsx");
 const page = read("..", "..", "..", "..", "..", "..", "src", "components", "editor", "EditorPageWork.tsx");
 
 describe("Comments card in the student's editor", () => {
-  it("work.tsx gives the comments slot the CommentsHost and never the old panel", () => {
+  it("WorkEditorPage.tsx gives the comments slot the CommentsHost and never the old panel", () => {
     expect(work).toMatch(/import \{ CommentsHost \} from "\.\.\/editor\/comments\/CommentsHost"/);
     expect(work).toMatch(/comments: \(\{[^}]*\}\) =>\s*<CommentsHost /);
     expect(work).not.toMatch(/import [^;]*CommentPanel/);

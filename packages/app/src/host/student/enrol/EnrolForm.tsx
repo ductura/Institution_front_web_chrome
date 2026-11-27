@@ -101,7 +101,7 @@ export default function EnrolForm({ signInHref, navigate }: {
           )}
         />
         {sending ? <p className={styles.meta} role="status">{enrolText.sendingStatus}</p> : null}
-        {error.form === null ? null : <p className={styles.note} role="alert">{error.form}</p>}
+        {error.form === null ? null : <p className={styles.error} role="alert">{error.form}</p>}
         {result?.kind === "signedOut" ? <p><a href={signInHref}>{t.student.signIn}</a></p> : null}
       </form>
     </section>
