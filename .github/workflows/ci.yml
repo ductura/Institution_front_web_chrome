@@ -246,9 +246,28 @@ jobs:
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore tsbuildinfo
+      # CI-WEB-TSBUILD: tsc writes .tsbuildinfo (also with --noEmit) and on the
+      # next run re-checks only the files whose content or whose imports'
+      # content changed. The key holds the hash of the lockfile and of every
+      # tsconfig, so a change of dependencies or compiler options starts cold;
+      # tsc itself also drops the info when its options or version differ, and
+      # a stale file only costs time, never a missed error. The sha suffix makes
+      # every run save its own entry; restore-keys takes the newest of the same
+      # configuration. Nothing is skipped: the same `typecheck` script runs in
+      # every package, only with the two incremental flags added.
+        if: matrix.part == 'checks'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            **/.tsbuildinfo
+            !**/node_modules/**
+          key: tsbuildinfo-${{ runner.os }}-node22-${{ hashFiles('pnpm-lock.yaml', '**/tsconfig*.json', '!**/node_modules/**') }}-${{ github.sha }}
+          restore-keys: |
+            tsbuildinfo-${{ runner.os }}-node22-${{ hashFiles('pnpm-lock.yaml', '**/tsconfig*.json', '!**/node_modules/**') }}-
       - name: Typecheck
         if: matrix.part == 'checks'
-        run: pnpm -r run typecheck
+        run: pnpm -r run typecheck --incremental --tsBuildInfoFile .tsbuildinfo
       - name: Typecheck of src/client
         if: matrix.part == 'checks' && needs.changes.outputs.client == 'true'
         working-directory: src/client

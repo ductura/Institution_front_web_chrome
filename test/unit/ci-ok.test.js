@@ -442,7 +442,7 @@ test('ui runs typecheck and unit tests in two blocking parts of its matrix', () 
   assert.ok(parts.includes('checks') && parts.includes('unit'), parts.join(','));
   assert.ok(needsOf(ciOk).includes('ui'), 'ci-ok needs ui');
   assert.equal(ui.strategy['fail-fast'], false);
-  const [typecheck] = uiStep(/^pnpm -r run typecheck$/);
+  const [typecheck] = uiStep(/^pnpm -r run typecheck --incremental --tsBuildInfoFile \.tsbuildinfo$/);
   const [unit] = uiStep(/^pnpm -r --filter "\$PACKAGES" --filter "!\{\.\}" run test$/);
   assert.equal(unit?.env?.PACKAGES, '${{ matrix.packages }}');
   const withPackages = ui.strategy.matrix.include.filter((p) => p.packages !== undefined);
