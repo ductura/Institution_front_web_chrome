@@ -72,6 +72,15 @@ export function stepView(workState: string, read: DeclarationRead): StepView {
   return read.recorded.length === 0 && read.chats.length === 0 ? "empty" : "full";
 }
 
+/**
+ * F4-PRE-R06 (R-34): the "Obrazac izjave" menu only serves the mismatch line against what Ductura recorded.
+ * While the server fills no `recorded` block, the menu would change nothing, so it is not shown; the
+ * conversations alone do not bring it back.
+ */
+export function formMenuShown(recorded: readonly RecordedItem[]): boolean {
+  return recorded.length > 0;
+}
+
 /** The transfer the record holds, which the "no use" form contradicts. */
 export function mismatchTarget(recorded: readonly RecordedItem[], form: FormChoice): string | null {
   if (form !== "no_use") return null;
