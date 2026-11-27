@@ -54,6 +54,16 @@ export type VersionBody = VersionContent & { expectedVersion: number };
 
 export type ChangedField = "title" | "instructions" | "opensAt" | "dueAt" | "aiPurposes" | "wordRange";
 
+/**
+ * NAS-07: the changes that alter what the student's notice says (deadline, allowed use, word range). Publishing
+ * one asks the teacher to confirm; title, opening time and instructions are published without the extra step.
+ */
+export const SIGNIFICANT_CHANGES: readonly ChangedField[] = ["dueAt", "aiPurposes", "wordRange"];
+
+export function significantChanges(changes: readonly ChangedField[]): ChangedField[] {
+  return changes.filter((c) => SIGNIFICANT_CHANGES.includes(c));
+}
+
 export type VersionCheck =
   | { kind: "ready"; body: VersionBody; changes: ChangedField[] }
   | { kind: "invalid" | "widening" | "unchanged" };
