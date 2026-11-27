@@ -41,7 +41,8 @@ import { SkeletonDialog } from "../areas/skeleton/SkeletonDialog";
 import { PageFormatDialog } from "@/components/editor/pages/PageFormatDialog";
 import { pagesMessages } from "@/components/editor/pages/messages.hr";
 import { pageFormatOf } from "../page-format/page-format-of";
-import { skeletonAvailable } from "../areas/skeleton/skeleton";
+import { useActiveProfile } from "../areas/skeleton/active-profile";
+import { useSkeletonAvailability } from "../areas/skeleton/use-skeleton-availability";
 import { skeletonMessages } from "../areas/skeleton/messages.hr";
 import { assignmentIdFromPath, downloadLatex, latexMenuItem, useLatexStyle } from "../stem/latex-export-menu";
 import { stemHr } from "../stem/messages.hr";
@@ -246,8 +247,12 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const state = useEditorSnapshot(editor);
   const theme = useSheetTheme();
   const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
-  const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(skeletonProfile));
+  // The profile the student chose in "Zahtjevi rada" (WEB-DIZ-B-V21); a profile given by the caller wins.
+  const chosenProfile = useActiveProfile();
+  const workProfile = skeletonProfile ?? chosenProfile;
+  const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(workProfile));
   const code = useCodeBlockHost(editor, confirmedWorkSchemaVersion);
+  const skeletonState = useSkeletonAvailability(editor, workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null);
   const latexStyle = useLatexStyle(typeof window === "undefined" ? null : assignmentIdFromPath(window.location.pathname));
   const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | "structure" | "pageFormat" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
@@ -288,7 +293,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "codeBlock", label: code.inBlock ? codeBlockHr.edit : codeBlockHr.insert, disabled: !writeOk || !code.availability.enabled, hint: code.availability.enabled ? undefined : code.availability.reason },
     { id: "hole", label: t.toolbar.insertItems.hole, disabled: !writeOk },
     { id: "workParts", label: workPartsMessages.title, disabled: !writeOk },
-    { id: "skeleton", label: skeletonMessages.menu, disabled: !writeOk || !skeletonAvailable(skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null) },
+    { id: "skeleton", label: skeletonMessages.menu, disabled: !writeOk || !skeletonState.enabled, hint: skeletonState.enabled ? undefined : skeletonState.reason },
   ]);
   const convert: Item[] = [
     { id: "toQuote", label: t.toolbar.convertItems.toQuote, disabled: !writeOk || state.quote },
@@ -373,7 +378,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
           else if (id === "italic") run.toggleItalic();
         }} />
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
-      {dialog === "skeleton" && editor && <SkeletonDialog editor={editor} profile={skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null} onClose={() => setDialog(null)} />}
+      {dialog === "skeleton" && editor && <SkeletonDialog editor={editor} profile={workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null} onClose={() => setDialog(null)} />}
       {dialog === "structure" && (
         <Dialog open title={toolbarBehaviourHr.viewStructure} onClose={() => setDialog(null)}
           actions={<Button onClick={() => setDialog(null)}>{toolbarBehaviourHr.viewStructureClose}</Button>}>
@@ -381,7 +386,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         </Dialog>
       )}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
-      {dialog === "pageFormat" && <PageFormatDialog format={pageFormatOf(skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null)} onClose={() => setDialog(null)} />}
+      {dialog === "pageFormat" && <PageFormatDialog format={pageFormatOf(workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null)} onClose={() => setDialog(null)} />}
       {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
       <ReadingSettingsDialog open={dialog === "reading"} onClose={() => setDialog(null)} />
       {v3.dialog}

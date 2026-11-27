@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Button, Card, RouteLoading, TextArea, TextField } from "@ductura/ui";
 
+import { LoadAlert } from "../../states/States";
 import { codeTestsText as t } from "./messages.hr";
 import {
   byteLength, checkDraft, draftOf, emptyRow, isChanged, MAX_TESTS, MAX_TITLE, studentView,
@@ -46,10 +47,12 @@ export function CodeTestsForm({ assignmentId, port, onSignedOut }: { assignmentI
 
   if (read === null || read.kind === "signedOut") return <Card level={2} title={t.title}><RouteLoading label={t.loading} /></Card>;
   if (read.kind !== "ok") {
+    // A2: one role=alert frame; a retry only where it can help (503), as a link under the frame; 404 has none.
     return (
       <Card level={2} title={t.title}>
-        <p role="alert">{read.kind === "notFound" ? t.gone : t.unavailable}</p>
-        {read.kind === "unavailable" && <p><Button tone="quiet" onClick={() => { setRead(null); setAttempt((n) => n + 1); }}>{t.retry}</Button></p>}
+        {read.kind === "notFound"
+          ? <LoadAlert body={t.gone} />
+          : <LoadAlert body={t.unavailable} retry={{ label: t.retry, onRetry: () => { setRead(null); setAttempt((n) => n + 1); } }} />}
       </Card>
     );
   }
@@ -82,12 +85,19 @@ export function CodeTestsForm({ assignmentId, port, onSignedOut }: { assignmentI
     <>
       <Card level={2} title={t.title}>
         {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
-        <p>{t.language} · <span data-testid="revision">{t.revision.replace("{n}", String(saved.revisionNo))}</span></p>
+        <p>{t.language}</p>
+        <p data-testid="revision">{t.revision.replace("{n}", String(saved.revisionNo))}</p>
         <p>{t.limits.replace("{max}", String(MAX_TESTS))}</p>
-        <p data-testid="count">{t.count.replace("{n}", String(rows.length)).replace("{max}", String(MAX_TESTS))}{sizeNow !== null && ` · ${t.size.replace("{n}", String(sizeNow))}`}</p>
-        {error?.kind === "count" && <p role="alert">{t.errors.count}</p>}
+        <p data-testid="count">{t.count.replace("{n}", String(rows.length)).replace("{max}", String(MAX_TESTS))}</p>
+        {sizeNow !== null && <p data-testid="size">{t.size.replace("{n}", String(sizeNow))}</p>}
+        {error?.kind === "count" && <p role="alert">{t.errors.count.replace("{max}", String(MAX_TESTS))}</p>}
         {error?.kind === "size" && <p role="alert">{t.errors.size}</p>}
-        {rows.length === 0 && <p data-testid="no-tests">{t.empty}</p>}
+        {rows.length === 0 && (
+          <div data-testid="no-tests">
+            <p>{t.empty}</p>
+            <p><Button type="button" tone="secondary" disabled={busy} onClick={() => setRows([emptyRow(rows)])}>{t.add}</Button></p>
+          </div>
+        )}
         <form onSubmit={(event) => void save(event)} noValidate>
           {rows.map((row, index) => (
             <fieldset key={row.key} disabled={busy} data-testid="test-row">
@@ -99,10 +109,12 @@ export function CodeTestsForm({ assignmentId, port, onSignedOut }: { assignmentI
                 onClick={() => setRows(rows.filter((_, i) => i !== index))}>{t.test.remove.replace("{n}", String(index + 1))}</Button>
             </fieldset>
           ))}
-          <p>
-            <Button type="button" tone="secondary" disabled={busy || rows.length >= MAX_TESTS} onClick={() => setRows([...rows, emptyRow(rows)])}>{t.add}</Button>
-            {rows.length >= MAX_TESTS && <span data-testid="add-limit"> {t.addLimit}</span>}
-          </p>
+          {rows.length > 0 && (
+            <p>
+              <Button type="button" tone="secondary" disabled={busy || rows.length >= MAX_TESTS} onClick={() => setRows([...rows, emptyRow(rows)])}>{t.add}</Button>
+              {rows.length >= MAX_TESTS && <span data-testid="add-limit"> {t.addLimit.replace("{max}", String(MAX_TESTS))}</span>}
+            </p>
+          )}
           <p>
             <Button type="submit" busy={busy} disabled={!changed}>{busy ? t.saving : t.save}</Button>
             {changed && <Button type="button" tone="quiet" disabled={busy} onClick={() => { setRows(draftOf(saved)); setError(null); }}>{t.reset}</Button>}

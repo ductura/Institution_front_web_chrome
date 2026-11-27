@@ -19,7 +19,7 @@ export const formulaDialogHr = {
   holes: "Popunite sva prazna mjesta (□) ili ih obrišite.",
   broken: "Zapis formule nije ispravan. Unos je zadržan, ispravite ga.",
   tooLong: (length: number, max: number) => `Zapis je predug: ${length} od najviše ${max} znakova.`,
-  counter: (length: number, max: number) => `${length} / ${max} znakova`,
+  counter: (length: number, max: number) => `${length} od ${max} znakova`,
   refused: "Formulu nije moguće spremiti. Unos je zadržan, provjerite zapis.",
   confirm: "Spremi",
   cancel: "Odustani",
@@ -30,7 +30,7 @@ export const formulaHostHr = {
   insertBlock: "Formula…",
   insertInline: "Formula u retku…",
   editHint: "Dvaput kliknite za izmjenu formule.",
-  disabledSchema: "Formule nisu dostupne u ovom radu.",
+  disabledSchema: "Formule i kod traže rad u novom obliku dokumenta.",
   disabledTool: "Područje ovog rada ne nudi formule.",
   disabledReadOnly: "Rad se ne može uređivati.",
 } as const;
