@@ -20,6 +20,7 @@ import styles from "./Marks.module.css";
 import { reportAlert } from "../../../../../../src/components/editor/layout-prefs/context-alerts.ts";
 import { GHOST_KEY, ghostPlugin } from "./ghost";
 import { cardFits, requestCommentCard } from "../comments/comment-card";
+import { askSourceInstead, holeNeedsSource, linkHoleToSource, sourcesOf } from "./hole-source";
 
 const NEED_ALERT = "marks-need-proof";
 
@@ -51,17 +52,38 @@ function marksPlugin() {
  * when there is another mark of the kind, and for "Za provjeru" "Provjereno, ukloni" (only when the
  * text can be written; a submitted work only explains).
  */
-export function MarkActions({ place, more, editable, onNext, onRemove, onLink }: {
+export function MarkActions({ place, more, editable, onNext, onRemove, onLink, sources, onSource, onAskSource }: {
   place: Place; more: boolean; editable: boolean; onNext: () => void; onRemove: () => void; onLink: () => void;
+  /** ED-104: set when the hole asks for a source; the work's sources to choose from. */
+  sources?: readonly { id: string; label: string }[];
+  onSource?: (id: string) => void;
+  onAskSource?: () => void;
 }) {
   const hole = place.kind === "hole";
   const plain = place.kind === "plain";
+  if (hole && sources && editable && onSource) {
+    return (
+      <>
+        <p><b>{t.actions.sourceTitle}</b></p>
+        <p>{t.actions.sourceIntro}</p>
+        {sources.length > 0 && <p>{t.actions.allSources(sources.length)}</p>}
+        {sources.length > 0 && <ul>{sources.map((s) => (
+          <li key={s.id}><Button tone="quiet" onClick={() => onSource(s.id)}>{s.label}</Button></li>))}
+        </ul>}
+        <div className={styles.actions}>
+          <Button tone="quiet" onClick={onLink}>{t.actions.newSource}</Button>
+          {more && <Button tone="quiet" onClick={onNext}>{t.actions.next}</Button>}
+        </div>
+      </>
+    );
+  }
   return (
     <>
       <p>{t.explain[place.kind]}</p>
       {(more || ((hole || plain) && editable)) && (
         <div className={styles.actions}>
           {hole && editable && <Button onClick={onRemove}>{t.actions.checked}</Button>}
+          {hole && editable && onAskSource && <Button tone="quiet" onClick={onAskSource}>{t.actions.askSource}</Button>}
           {plain && editable && <Button onClick={onLink}>{t.actions.link}</Button>}
           {more && <Button tone="quiet" onClick={onNext}>{t.actions.next}</Button>}
         </div>
@@ -180,7 +202,10 @@ export function MarksHost() {
             </ul>
           ) : <MarkActions place={pick.at[0]!} more={hasNext(places, pick.at[0]!.kind)}
                 editable={editor.isEditable} onNext={() => jump(pick.at[0]!.kind)} onRemove={() => remove(pick.at[0]!)}
-                onLink={() => { setPick(null); requestPanel("sources"); }} />}
+                onLink={() => { setPick(null); requestPanel("sources"); }}
+                sources={holeNeedsSource(editor.state.doc, pick.at[0]!) ? sourcesOf(editor.state.doc) : undefined}
+                onSource={(id) => { const p = pick.at[0]!; setPick(null); linkHoleToSource(editor, p, id); }}
+                onAskSource={() => { const p = pick.at[0]!; setPick(null); askSourceInstead(editor, p); }} />}
           <Button tone="quiet" onClick={() => setPick(null)}>{t.close}</Button>
         </div>
       ) : null}

@@ -3,6 +3,13 @@ export const commentsHr = {
   title: "Komentari",
   loading: "Učitavanje komentara…",
   empty: "Nema komentara.",
+  // ED-97 (prototype right.js scopeBar, vCmt): the list shows this chapter first.
+  scope: "Opseg komentara",
+  scopeChapter: "Ovo poglavlje",
+  scopeWork: "Cijeli rad",
+  noChapter: "Kursor nije u poglavlju, pa je prikazan cijeli rad.",
+  emptyHere: "U ovom poglavlju nema komentara.",
+  moreElsewhere: (n: number) => `Još ${n} ${n % 10 === 1 && n % 100 !== 11 ? "komentar" : "komentara"} u drugim poglavljima`,
   unavailable: "Komentare trenutačno nije moguće učitati.",
   signedOut: "Prijava je istekla. Prijavite se ponovno.",
   refresh: "Osvježi komentare",

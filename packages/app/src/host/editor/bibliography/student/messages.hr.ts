@@ -79,4 +79,9 @@ export const bibliographyStudentHr = {
   styledInText: "Navodi u tekstu",
   styledOrphans: (n: number) => (n === 1 ? "1 navod upućuje na izvor kojeg nema među izvorima rada." : `${n} navoda upućuje na izvore kojih nema među izvorima rada.`),
   styledUnformatted: (labels: string) => `Nepotpuni izvori izostavljeni iz popisa: ${labels}.`,
+  // ED-106 (prototype copyCite): the source's in-text citation to the clipboard.
+  copyCite: "Kopiraj navod",
+  copyCiteDone: "Navod je kopiran.",
+  copyCiteBlocked: "Kopiranje nije dopušteno u ovom prikazu.",
+  copyCiteNone: "Navod se još ne može složiti: izvoru nedostaju podaci ili još nema broj.",
 } as const;

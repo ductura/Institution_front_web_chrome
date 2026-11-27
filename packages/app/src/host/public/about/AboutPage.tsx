@@ -1,6 +1,6 @@
 "use client";
 
-import { appHref } from "../../../../../../src/components/index.ts";
+import { appHref } from "../../../../../../src/components/shell/nav.ts";
 
 import { useLocale } from "../../../i18n";
 import { useHost } from "../../context";
