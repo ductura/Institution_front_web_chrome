@@ -52,7 +52,7 @@ for (const width of [1280, 390]) {
   test(`F4-MEN-R03: the mentor adds an agreed task and ticks it by keyboard (${width} px)`, async ({ page }, info) => {
     const sent = await serve(page, { status: 201, json: ADDED });
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/app/web/nastavnik/mentorstva");
+    await page.goto("/aplikacija/nastavnik/mentorstva");
     const plan = planOf(page);
     await expect(plan).toHaveCount(1);
     await expect(plan.getByRole("heading", { name: t.title })).toBeVisible();
@@ -83,7 +83,7 @@ for (const width of [1280, 390]) {
 
 test("F4-MEN-R03: a refused task is said as refused and the draft stays", async ({ page }) => {
   await serve(page, { status: 422, json: { error: "validation_failed", code: "validation_failed" } });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   const plan = planOf(page);
   await plan.getByLabel(t.field).fill("Izmišljeni zadatak");
   await plan.getByRole("button", { name: t.add }).click();

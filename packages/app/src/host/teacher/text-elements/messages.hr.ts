@@ -7,5 +7,6 @@ export const textElementsMessages = {
   notesLabel: "Fusnote",
   noteMark: (n: number) => `Fusnota ${n}`,
   noteBack: (n: number) => `Natrag na fusnotu ${n} u tekstu`,
+  crossReference: (heading: string) => (heading === "" ? " [upućivanje]" : ` [upućivanje: ${heading}]`),
   unavailable: "Navodi, otvorena mjesta za izvor i fusnote ovog rada trenutačno nisu dostupni; prikazan je običan tekst.",
 } as const;

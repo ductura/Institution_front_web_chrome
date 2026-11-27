@@ -24,7 +24,7 @@ test("ED-41: Sitnice lists a slip with Prije i poslije, fixes it and Vrati takes
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await student(page);
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
 
   // A space before a comma: the editor keeps it as typed (a double space would be folded by the browser).

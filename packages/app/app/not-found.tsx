@@ -6,7 +6,7 @@ import { messagesHr as t } from "../../../locales/hr.ts";
 // WCAG 2.4.2: a title of its own, not the root layout's bare "Ductura".
 export const metadata: Metadata = { title: `${t.errorPage.notFoundTitle} · ${t.app.name}` };
 
-/** A path under /app outside /app/web/ and /app/chrome/. */
+/** A path under /aplikacija/ that is not a page of the app. */
 export default function NotFound() {
   return <ErrorScreen title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />;
 }

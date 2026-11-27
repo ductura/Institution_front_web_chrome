@@ -11,7 +11,7 @@ export type Piece =
   | { kind: "cite"; label: string }
   | { kind: "open" }
   | { kind: "note"; number: number }
-  | { kind: "ref" };
+  | { kind: "ref"; heading: string };
 
 export type Block = { id: string; type: DocumentNode["type"]; level?: number; pieces: Piece[] };
 export type Elements = { blocks: Block[]; notes: { number: number; text: string }[]; hasElements: boolean };
@@ -47,9 +47,25 @@ export function buildElements(doc: VersionedDocument): Elements {
       } else if (child.type === "footnote") {
         notes.push({ number: notes.length + 1, text: child.text });
         pieces.push({ kind: "note", number: notes.length });
-      } else pieces.push({ kind: "ref" });
+      } else {
+        const target = (doc.nodes as readonly DocumentNodeV3[]).find((n) => n.id === child.targetId);
+        const heading = target?.type === "heading"
+          ? (target.children as readonly InlineNodeV3[]).map((c) => (c.type === "text" ? c.text : "")).join("").trim() : "";
+        pieces.push({ kind: "ref", heading });
+      }
     }
     return { id: node.id, type: node.type, ...(node.type === "heading" ? { level: node.level } : {}), pieces };
   });
   return { blocks, notes, hasElements };
+}
+
+/**
+ * The elements of the document the shared live reader already holds (NAS-R19): a v3 text with a
+ * citation or footnote is drawn by the elements view as the main path, not only when the reader fails.
+ * Null for any other text, which the shared reader draws as before.
+ */
+export function elementsOfLive(doc: { schemaVersion: number } | null): Elements | null {
+  if (doc === null || doc.schemaVersion !== 3) return null;
+  const elements = buildElements(doc as VersionedDocument);
+  return elements.hasElements ? elements : null;
 }

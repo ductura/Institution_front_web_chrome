@@ -22,6 +22,17 @@ export const n17Messages = {
     revision: "Dorada",
   },
   noName: "Ime nije dostupno",
+  // NAS-R15 (NZ-11)
+  filters: {
+    label: "Prikaz",
+    stateLabel: "Stanje",
+    groupLabel: "Grupa",
+    allStates: "Sva stanja",
+    allGroups: "Sve grupe",
+    state: { notStarted: "Nije započelo", writing: "Piše", submitted: "Predano", late: "Nakon roka", revision: "Dorada" } as Readonly<Record<"notStarted" | "writing" | "submitted" | "late" | "revision", string>>,
+    noMatch: "Nijedan student ne odgovara odabranom prikazu.",
+    clear: "Očisti filtre",
+  },
   state: {
     submitted: "predano",
     writing: "u pisanju",

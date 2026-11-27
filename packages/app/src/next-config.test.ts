@@ -10,9 +10,10 @@ describe("next.config (LOK-WEB-6)", () => {
     expect(nextConfig.allowedDevOrigins).toContain("127.0.0.1");
   });
 
-  it("keeps the host under /app/web/", () => {
-    expect(nextConfig.basePath).toBe("/app");
-    expect(nextConfig.assetPrefix).toBe("/app/web");
+  it("keeps the host under /aplikacija/", () => {
+    expect(nextConfig.basePath).toBe("/aplikacija");
+    // The build's own files go under the basePath too (/aplikacija/_next/); no second prefix (D-318).
+    expect(nextConfig.assetPrefix).toBeUndefined();
   });
 
   it("sends the frame's CSP on every code-run page and on nothing else (PL-CSP-OKVIR)", async () => {

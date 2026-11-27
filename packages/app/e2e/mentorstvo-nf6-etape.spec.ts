@@ -62,7 +62,7 @@ async function serveTeacher(page: Page, open: { status: number; json: unknown } 
 test("the mentor sees each work's stages and agreement, adds a stage, and is told a template conflict", async ({ page }, info) => {
   const sent = await serveTeacher(page);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   const plans = page.getByTestId("mentor-work-plan");
   await expect(plans).toHaveCount(2);
   const first = plans.first();
@@ -108,7 +108,7 @@ test("the mentor sees each work's stages and agreement, adds a stage, and is tol
 test("F4-MEN-R01: the mentor opens a mentorship by keyboard; only the 201 says opened, a 409 says it is already open", async ({ page }, info) => {
   const sent = await serveTeacher(page);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   const card = page.getByTestId("open-mentorship");
   await card.getByRole("button", { name: t.open.button }).click();
   await expect(page.getByText(t.open.studentRequired)).toBeVisible();
@@ -132,7 +132,7 @@ test("F4-MEN-R01: the mentor opens a mentorship by keyboard; only the 201 says o
 
 test("F4-MEN-R01: a mentorship of that kind already open is said as the server said it", async ({ page }) => {
   await serveTeacher(page, { status: 409, json: { error: "conflict", code: "conflict" } });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   const card = page.getByTestId("open-mentorship");
   await card.getByLabel(t.open.student).selectOption(S1);
   await card.getByRole("button", { name: t.open.button }).click();
@@ -143,7 +143,7 @@ test("F4-MEN-R01: a mentorship of that kind already open is said as the server s
 test("on a phone the mentor's plan has no sideways scroll and no axe findings", async ({ page }, info) => {
   await serveTeacher(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   await expect(page.getByTestId("mentor-work-plan")).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   for (const theme of ["dark", "light"] as const) {
@@ -178,7 +178,7 @@ for (const width of [1280, 390]) {
       return route.fulfill(result);
     });
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/app/web/zadaci/mentorstvo");
+    await page.goto("/aplikacija/zadaci/mentorstvo");
     await expect(page.getByTestId("my-mentorship")).toHaveText(/Doktorski rad: mentor Vesna Izmišljena/);
     await expect(page.getByTestId("my-mentorship")).toContainText(s.mine.openedNew);
     await expect(page.getByText(s.mine.openedOn.replace("{date}", "20. studenoga 2026."))).toBeVisible();
@@ -204,7 +204,7 @@ for (const width of [1280, 390]) {
       return route.fulfill(result);
     });
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/app/web/zadaci/mentorstvo");
+    await page.goto("/aplikacija/zadaci/mentorstvo");
     await expect(page.getByText(s.mine.openedUnavailable)).toBeVisible();
     await expect(page.getByTestId("my-mentorship")).toHaveText(/Diplomski rad: mentor Marko Izmišljeni/);
   });
@@ -225,7 +225,7 @@ for (const width of [1280, 390]) {
       return route.fulfill(result);
     });
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/app/web/zadaci/mentorstvo");
+    await page.goto("/aplikacija/zadaci/mentorstvo");
     await expect(page.getByRole("heading", { name: s.mine.title })).toBeVisible();
     await expect(page.getByTestId("my-mentorship")).toHaveText(/Diplomski rad: mentor Marko Izmišljeni/);
     await expect(page.getByText(s.mine.openedOn.replace("{date}", "3. studenoga 2026."))).toBeVisible();
