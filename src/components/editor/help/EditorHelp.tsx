@@ -4,7 +4,7 @@ import { Button, Checkbox, Dialog } from "@ductura/ui";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { editorHelpHr as t } from "../../../lib/i18n/messages.hr";
-import { defaultHelp, forLevel, levelOf, readHelp, settingsKey, toggleWarning, warningKeys, warnings, type HelpSettings, type Level, type Warning } from "./preferences";
+import { defaultHelp, forLevel, HELP_CHANGED, levelOf, readHelp, settingsKey, toggleWarning, warningKeys, warnings, type HelpSettings, type Level, type Warning } from "./preferences";
 import { WhatIsRecorded } from "./what-is-recorded";
 import styles from "./EditorHelp.module.css";
 
@@ -14,6 +14,7 @@ export function useEditorHelp() {
   const save = (next: HelpSettings) => {
     setSettings(next);
     try { localStorage.setItem(settingsKey, JSON.stringify(next)); } catch { /* The changes work for this page. */ }
+    window.dispatchEvent(new CustomEvent<HelpSettings>(HELP_CHANGED, { detail: next }));
   };
   return {
     ...settings,
