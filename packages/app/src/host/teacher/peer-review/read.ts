@@ -18,6 +18,7 @@ export type RoundBody = Input<"peer-review.round.put">["body"];
 export type Read<T> =
   | { readonly kind: "ok"; readonly value: T }
   | { readonly kind: "notFound" }
+  | { readonly kind: "denied" }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
 export type Write<T = undefined> =
@@ -33,8 +34,9 @@ export type Write<T = undefined> =
 
 type Refusal = { readonly status: number; readonly code: string };
 
-function failedRead(r: Refusal): { kind: "signedOut" | "notFound" | "unavailable" } {
+function failedRead(r: Refusal): { kind: "signedOut" | "notFound" | "denied" | "unavailable" } {
   if (isSignedOut(r)) return { kind: "signedOut" };
+  if (r.status === 403) return { kind: "denied" };
   return isNotFound(r) ? { kind: "notFound" } : { kind: "unavailable" };
 }
 function failedWrite(r: Refusal): { kind: "signedOut" | "notFound" | "already" | "tooFew" | "conflict" | "invalid" | "unknown" } {

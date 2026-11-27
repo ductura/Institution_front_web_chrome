@@ -21,7 +21,7 @@ export type WorkState = "not_started" | "in_progress" | "submitted";
 export type EditorWorkRead =
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" }
-  /** 403 from either read: the session has no access to this view; not a read error (design alignment 27. 11. 2026.). */
+  /** S-08 X1: the server refused the read (403); the page says so and offers the way back, it is not a read error. */
   | { readonly kind: "denied" }
   /** Not among the caller's assignments: foreign, unknown or not a student. */
   | { readonly kind: "notFound" }
@@ -44,15 +44,23 @@ export function assignmentIdOf(raw: string): string | null {
 }
 
 /**
- * One read of the page. A 401 from either read means signed out, a 403 denied
- * and a 404 not found; any other failure, or a work state the read does not
- * name, is unavailable: the page never guesses a state.
+ * One read of the page. A 401 from either read means signed out; any other
+ * failure, or a work state the read does not name, is unavailable: the page
+ * never guesses a state. With `refusals` (the submission steps, S-08 X1 and
+ * X2, and the workspace pages since the design alignment of 27. 11. 2026.)
+ * a 403 is "denied" and a 404 is "notFound": neither is a read error.
+ * The other pages keep reading both as unavailable until their own screens
+ * take the refusals over.
  */
-export function editorWorkRead(assignmentId: string, assignments: Answer<AssignmentsBody>, work: Answer<WorkBody>): EditorWorkRead {
-  const failed = (status: number) => (!assignments.ok && assignments.status === status) || (!work.ok && work.status === status);
-  if (failed(401)) return { kind: "signedOut" };
-  if (failed(403)) return { kind: "denied" };
-  if (failed(404)) return { kind: "notFound" };
+export function editorWorkRead(assignmentId: string, assignments: Answer<AssignmentsBody>, work: Answer<WorkBody>, options: { readonly refusals: true }): EditorWorkRead;
+export function editorWorkRead(assignmentId: string, assignments: Answer<AssignmentsBody>, work: Answer<WorkBody>, options?: { readonly refusals?: false }): Exclude<EditorWorkRead, { kind: "denied" }>;
+export function editorWorkRead(assignmentId: string, assignments: Answer<AssignmentsBody>, work: Answer<WorkBody>, options?: { readonly refusals?: boolean }): EditorWorkRead {
+  if ((!assignments.ok && assignments.status === 401) || (!work.ok && work.status === 401)) return { kind: "signedOut" };
+  if (options?.refusals === true) {
+    const statuses = [assignments, work].map((answer) => (answer.ok ? 200 : answer.status));
+    if (statuses.includes(403)) return { kind: "denied" };
+    if (statuses.includes(404)) return { kind: "notFound" };
+  }
   if (!assignments.ok || assignments.status !== 200 || !work.ok || work.status !== 200) return { kind: "unavailable" };
   for (const course of assignments.body.courses) {
     const assignment = course.assignments.find((a) => a.id.toLowerCase() === assignmentId);

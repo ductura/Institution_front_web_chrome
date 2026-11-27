@@ -38,7 +38,7 @@ export default function TeacherViewPage({ assignmentId: raw }: { assignmentId: s
         client("student.assignments.get", NONE).catch(() => UNREACHED),
         client("student.assignment-work.get", NONE).catch(() => UNREACHED),
       ]);
-      if (live) setRead(editorWorkRead(id, assignments as never, work as never));
+      if (live) setRead(editorWorkRead(id, assignments as never, work as never, { refusals: true }));
     })();
     return () => { live = false; };
   }, [id, attempt]);

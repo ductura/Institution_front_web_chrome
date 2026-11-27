@@ -145,7 +145,7 @@ export default function HostNotice({ view, timing, editorHref, backHref, onReloa
     dispatch({ type: "settled", result });
   }
 
-  const kindLine = [workTypes[view.workType], wordRangeHr({ min: view.wordMin, max: view.wordMax })].filter(Boolean).join(" · ");
+  const kindLine = [workTypes[view.workType], wordRangeHr({ min: view.wordMin, max: view.wordMax })].filter((part): part is string => Boolean(part));
   const lead = (
     <section className={own.lead} aria-label={view.title}>
       <h2>{view.title}</h2>

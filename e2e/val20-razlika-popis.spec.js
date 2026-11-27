@@ -1,5 +1,5 @@
 // WEB-V20-E2E, step "popis literature za stil ustanove" (V20-11, V20-14). StudentBibliographyHost is mounted in the
-// "Literatura" part of the sources card (packages/app/src/host/student/work.tsx, V18-22-R02), so this flow runs.
+// "Literatura" part of the sources card (packages/app/src/host/student/WorkEditorPage.tsx, V18-22-R02), so this flow runs.
 // Like val20-razlika.spec.js it registers its tests only on the stack (DUCTURA_STOG=1):
 //   DUCTURA_STOG=1 pnpm exec playwright test --project=chromium e2e/val20-razlika-popis.spec.js
 // The style is not chosen by the student: page.route intercepts student.text-check-config.get and answers

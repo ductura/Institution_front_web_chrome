@@ -148,7 +148,7 @@ describe("dismissing the footnote dialog", () => {
 describe("the student's editor", () => {
   const read = (...p: string[]) => readFileSync(join(import.meta.dirname, ...p), "utf8");
   it("passes the host dialog to the page and no longer relies on the copied one", () => {
-    expect(read("..", "..", "student", "work.tsx")).toMatch(/footnoteDialog=\{FootnoteDialogHost\}/);
+    expect(read("..", "..", "student", "WorkEditorPage.tsx")).toMatch(/footnoteDialog=\{FootnoteDialogHost\}/);
   });
 });
 

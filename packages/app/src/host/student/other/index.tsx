@@ -68,7 +68,7 @@ export function useWorkDocument(raw: string, suffix: string): WorkDocument | nul
         client("student.assignment-work.get", NONE).catch(() => UNREACHED),
       ]);
       if (!live) return;
-      const read = editorWorkRead(assignmentId, assignments as never, work as never);
+      const read = editorWorkRead(assignmentId, assignments as never, work as never, { refusals: true });
       if (read.kind === "signedOut") return goToSignIn(here);
       if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind !== "ready") return setShown({ kind: read.kind });

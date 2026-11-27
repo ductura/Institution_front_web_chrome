@@ -72,7 +72,7 @@ describe("draft comments port (WEB-1704)", () => {
     const port = draftCommentsPortFor(() => stub({ "work.comments.publish-selected.post": () => ({ ok: false, status: 409 }) }));
     const result = await publishDraftGroup(port, WORK, ["a"]);
     expect(result).toEqual({ kind: "changed" });
-    expect(publishMessage(result)).toBe("Nacrti su se u međuvremenu promijenili, osvježi popis");
+    expect(publishMessage(result)).toBe("Skice su se u međuvremenu promijenile. Osvježite popis.");
   });
 
   it("maps the other refusals as before: 401 signed out, 4xx rejected, 5xx unknown", async () => {

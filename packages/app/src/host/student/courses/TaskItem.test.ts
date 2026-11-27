@@ -26,3 +26,15 @@ describe("TaskItem deadline tag (P-3, E-3 and E-4)", () => {
     expect(draw({ a: a({ dueAt: "2026-12-30T10:00:00Z" }) })).not.toContain("prošao");
   });
 });
+
+describe("TaskItem work kind and mentor (STU-R14, E-3)", () => {
+  const mentor = { id: "m", givenName: "Iva", familyName: "Izmišljenić" };
+  it("shows kind and mentor only where asked (E-3), from the server's answer", () => {
+    const html = draw({ a: a({ workType: "essay", mentor }), showWork: true });
+    expect(html).toContain("Esej · Mentor: Iva Izmišljenić");
+    expect(draw({ a: a({ workType: "essay", mentor }) })).not.toContain("Mentor:");
+  });
+  it("draws no line when the answer has neither", () => {
+    expect(draw({ a: a({}), showWork: true })).not.toContain("data-work-meta");
+  });
+});
