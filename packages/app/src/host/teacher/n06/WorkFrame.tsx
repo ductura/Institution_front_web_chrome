@@ -9,15 +9,16 @@ import styles from "./frame.module.css";
 import { appHref } from "@/components/shell/nav";
 import { liveWorkHref } from "@/components/teacher/LiveWorkFrame";
 import { useHost } from "../../context";
-import { extensionPath, gapsBanner, heading, isSubmitted, links, sequence, showNotSubmittedBanner, stateLine, type Facts, type ProcessGap } from "./model";
+import { duePassed, extensionPath, gapsBanner, isSubmitted, links, sequence, showNotSubmittedBanner, stateLine, type Facts, type ProcessGap } from "./model";
 import { readFrame, type FrameRead } from "./read";
+import { taskHeading, useTaskContext } from "./task-context";
 import { workFrameMessages as text } from "./messages.hr";
 
 /**
  * N-06 frame around the work (WEB-2150): back link, heading, state line, "Slijed rada", links, previous/next work
  * and the banners. The text and the aside stay the page's (LiveText, comments, summary); nothing here writes.
  */
-export default function WorkFrame({ documentId, current = () => true, gaps, deadlinePassed = null, started = true, text: body, aside }: {
+export default function WorkFrame({ documentId, current = () => true, gaps, deadlinePassed: given = null, started = true, text: body, aside }: {
   documentId: string; current?: () => boolean; gaps: readonly ProcessGap[]; deadlinePassed?: boolean | null; started?: boolean;
   text: ReactNode; aside: ReactNode;
 }) {
@@ -30,6 +31,12 @@ export default function WorkFrame({ documentId, current = () => true, gaps, dead
     void readFrame(documentId).then((next) => { if (live) setRead(next); });
     return () => { live = false; };
   }, [documentId, attempt]);
+
+  // F4-NAS-R12: the assignment's title and kind in the heading; "Rad" until read or when the course list does not name it.
+  const context = useTaskContext(read?.kind === "ready" ? read.facts.assignmentId : null);
+  // NAS-R05: the deadline comes from the same teacher.courses.get read, only for an unsubmitted work; an explicit prop wins.
+  const courseDeadline = read?.kind === "ready" && read.facts.state === "nije_predano" ? duePassed(context?.dueAt, Date.now()) : null;
+  const deadlinePassed = given ?? courseDeadline;
 
   const workPath = liveWorkHref(documentId) ?? "";
   const backHref = appHref(base, "/nastavnik/kolegiji");
@@ -48,6 +55,7 @@ export default function WorkFrame({ documentId, current = () => true, gaps, dead
     );
   }
   const facts: Facts = read.facts;
+  const title = taskHeading(facts.studentName, context);
   const items = sequence(facts);
   const gapText = isSubmitted(facts) ? gapsBanner(gaps) : null;
   const step = (id: string | null, label: string, rel: "prev" | "next") => {
@@ -58,9 +66,9 @@ export default function WorkFrame({ documentId, current = () => true, gaps, dead
   return (
     <RevisionSection documentId={documentId} current={current} compareHref={isSubmitted(facts) && workPath !== "" ? appHref(base, `${workPath}/usporedba`) : undefined}>
       {(rev) => (
-        <WorkPage back={backHref} backLabel={text.backToCourses} crumb={heading(facts)} wide>
+        <WorkPage back={backHref} backLabel={text.backToCourses} crumb={title} wide>
           <section className={`panel ${styles.head}`}>
-            <h1>{heading(facts)}</h1>
+            <h1>{title}</h1>
             <p>{stateLine(facts)}</p>
             {items.length === 0 ? <p className="meta">{text.seqEmpty}</p>
               : <ol className="facts" aria-label={text.seqLabel}>{items.map((i) => <li key={i}>{i}</li>)}</ol>}

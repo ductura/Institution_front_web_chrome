@@ -201,11 +201,14 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
   const saved = useSavedOnServer(next?.offer === "retryWhenSaved" && ready !== null ? ready.documentId : null, deviceHasNewer);
 
   const late = isLate(timing);
-  const canSend = ready !== null && confirmed && online && !sending && (next === null || next.retry);
+  // F4-PRE-R01: the assignment takes no submission after the deadline and no exception is open: said before the click.
+  const closed = timing.kind === "forbidden";
+  const canSend = ready !== null && confirmed && online && !closed && !sending && (next === null || next.retry);
   const canConfirm = canSend || sending;
   const lateHold = late && !lateOk;
   const declarationWhy = declarationText(gate);
   const why = !online ? t.offline : !confirmed ? declarationWhy : undefined;
+  const describedBy = online && closed && !sending ? "sb-late" : why || sending ? WHY_ID : undefined;
   const words = ready === null ? 0 : wordCount(ready.nodes);
   const closeDialog = () => {
     if (sending) return;
@@ -254,9 +257,10 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
           )}
           {ready !== null && !offline && late_line !== null && (
             <>
-              <p className="note" id="sb-late">{late_line}</p>
+              <p className="note" id="sb-late" role={closed ? "note" : undefined}>{late_line}</p>
+              {closed && <p className="meta">{t.late.forbiddenMeta}</p>}
               {timing.kind === "exception" && <StepKv label={t.late.exceptionDue}>{atOf(timing.until)}</StepKv>}
-              <p className="note">{t.timeNote}</p>
+              {!closed && <p className="note">{t.timeNote}</p>}
             </>
           )}
           {ready !== null && !offline && timing.kind === "extended" && (
@@ -286,7 +290,7 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
           {next?.retry && next.offer === "declaration" && <Button tone="secondary" onClick={() => setDeclaring(true)}>{declareLabel ?? t.openDeclaration}</Button>}
           {sending && <p className="note" role="status" id={WHY_ID}><StepSpinner /> {t.inProgress}</p>}
           <StepActions>
-            <Button ref={mainSubmit} aria-disabled={!canSend || undefined} aria-describedby={why || sending ? WHY_ID : undefined}
+            <Button ref={mainSubmit} aria-disabled={!canSend || undefined} aria-describedby={describedBy}
               onClick={openDialog}>{sending ? t.inProgress : t.submit}</Button>
             <Button tone="secondary" onClick={goBack}>{t.back}</Button>
           </StepActions>

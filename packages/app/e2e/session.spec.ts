@@ -95,23 +95,25 @@ async function axe(page: Page) {
 
 test("401 sends the browser to AAI@EduHr sign-in with the current path as returnTo", async ({ page }) => {
   const seen = await fakeServer(page, { status: 401 });
-  await page.goto("/app/web/zadaci/kolegiji");
+  await page.goto("/aplikacija/zadaci/kolegiji");
   await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
-  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/web/zadaci/kolegiji");
+  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/aplikacija/zadaci/kolegiji");
 });
 
-test("401 under /app/chrome returns to /app/chrome", async ({ page }) => {
-  const seen = await fakeServer(page, { status: 401 });
-  await page.goto("/app/chrome/");
-  await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
-  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/chrome/");
-});
+// D-318 (DAN-1574): /app/web and /app/chrome are not served by this app; the edge redirects them to /aplikacija.
+for (const old of ["/app/web/", "/app/chrome/", "/app/web/zadaci", "/app/chrome/rad"]) {
+  test(`the old address ${old} is not a page of the app`, async ({ page }) => {
+    await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
+    const response = await page.goto(old);
+    expect(response?.status()).toBe(404);
+  });
+}
 
 test("a student lands on Vaš studentski prostor with the institution's name, without console errors", async ({ page }) => {
   const errors = errorsOf(page);
   const seen = await fakeServer(page, { status: 200, body: { role: "student", displayName: "Iva Izmišljena", institution: { slug: "izm", displayName: INSTITUTION } } });
-  await page.goto("/app/web/");
-  await expect(page).toHaveURL(/\/app\/web\/zadaci$/);
+  await page.goto("/aplikacija/");
+  await expect(page).toHaveURL(/\/aplikacija\/zadaci$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Vaš studentski prostor");
   await expect(page.getByText("Izmišljeni zadatak 1")).toBeVisible();
   await expect(page.getByText(INSTITUTION)).toBeVisible();
@@ -120,11 +122,11 @@ test("a student lands on Vaš studentski prostor with the institution's name, wi
 
   // The shell's navigation opens in place, under the same base.
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Moji kolegiji" }).click();
-  await expect(page).toHaveURL(/\/app\/web\/zadaci\/kolegiji$/);
+  await expect(page).toHaveURL(/\/aplikacija\/zadaci\/kolegiji$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji kolegiji");
   expect(seen.me).toBe(1);
   await page.goBack();
-  await expect(page).toHaveURL(/\/app\/web\/zadaci$/);
+  await expect(page).toHaveURL(/\/aplikacija\/zadaci$/);
   expect(errors).toEqual([]);
 });
 
@@ -144,15 +146,15 @@ async function institutionReads(page: Page) {
 test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({ page }) => {
   const errors = errorsOf(page);
   await fakeServer(page, { status: 200, body: { roles: ["teacher"], institutionName: INSTITUTION } });
-  await page.goto("/app/web/");
-  await expect(page).toHaveURL(/\/app\/web\/nastavnik$/);
+  await page.goto("/aplikacija/");
+  await expect(page).toHaveURL(/\/aplikacija\/nastavnik$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji kolegiji");
   await expect(page.getByText("Izmišljeni kolegij nastavnika")).toBeVisible();
   await expect(page.getByText(INSTITUTION)).toBeVisible();
   await axe(page);
 
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Radovi uz mentora" }).click();
-  await expect(page).toHaveURL(/\/app\/web\/nastavnik\/mentorstva$/);
+  await expect(page).toHaveURL(/\/aplikacija\/nastavnik\/mentorstva$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radovi uz mentora");
   // WEB-NF6-PREGLED: the title also stands in "Moji studenti", so the works list is named.
   await expect(page.getByTestId("mentored-work").getByText("Izmišljeni diplomski rad")).toBeVisible();
@@ -161,8 +163,8 @@ test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({
   await page.unrouteAll({ behavior: "wait" });
   await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
   await institutionReads(page);
-  await page.goto("/app/chrome/zadaci");
-  await expect(page).toHaveURL(/\/app\/chrome\/ustanova$/);
+  await page.goto("/aplikacija/zadaci");
+  await expect(page).toHaveURL(/\/aplikacija\/ustanova$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pregled ustanove");
   await expect(page.getByText(INSTITUTION)).toBeVisible();
   await axe(page);
@@ -171,7 +173,7 @@ test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({
 
 test("Odjava posts auth.logout.post and leaves for the preloader", async ({ page }) => {
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   await page.getByRole("button", { name: "Odjava" }).click();
   // A-6: the dialog asks first; "Ostani" ends nothing.
   const dialog = page.getByRole("dialog", { name: "Odjava" });
@@ -189,7 +191,7 @@ test("Odjava posts auth.logout.post and leaves for the preloader", async ({ page
 
 test("a 403 from /me shows the no-role card with Odjava, not the retry screen (E-1 bezuloge)", async ({ page }) => {
   const seen = await fakeServer(page, { status: 403, body: { code: "forbidden" } });
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   const card = page.getByRole("status").filter({ hasText: "Prijava je uspjela" });
   await expect(card.getByRole("heading", { level: 2 })).toHaveText("Prijava je uspjela");
   await expect(card).toContainText("Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti.");
@@ -205,23 +207,27 @@ test("a 403 from /me shows the no-role card with Odjava, not the retry screen (E
 test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the button", async ({ page }) => {
   const seen = await fakeServer(page, { status: 401 });
   const errors = errorsOf(page);
-  await page.goto("/app/web/prijava");
+  await page.goto("/aplikacija/prijava");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Dobro došli");
   await expect(page.getByRole("heading", { level: 2 })).toContainText("Vaš akademski identitet.");
   await expect(page.getByText("Lozinku upisujete samo kod AAI@EduHr.")).toBeVisible();
   await expect(page.getByText("Ne možete se prijaviti računom AAI@EduHr?")).toBeHidden();
+  // PAR2-A1: "Vaš prostor" in the role note, and the help lives in the card, not in the footer.
+  await expect(page.getByText("otvara se Vaš prostor prema dodijeljenoj ulozi")).toBeVisible();
+  await expect(page.getByRole("main").locator("details", { hasText: "Trebate pomoć?" })).toHaveCount(1);
+  await expect(page.getByRole("contentinfo").locator("details")).toHaveCount(0);
   await expect(page.locator("details", { hasText: "Prvi dolazak ili imate kod zadatka?" })).toHaveAttribute("open", "");
   await axe(page);
   expect(seen.login).toEqual([]);
   expect(seen.me).toBe(0);
 
-  await page.goto("/app/web/prijava?stanje=pomoc");
+  await page.goto("/aplikacija/prijava?stanje=pomoc");
   await expect(page.locator("details", { hasText: "Trebate pomoć?" })).toHaveAttribute("open", "");
   await expect(page.locator("details", { hasText: "Prvi dolazak ili imate kod zadatka?" })).not.toHaveAttribute("open", "");
   await expect(page.getByRole("link", { name: "Službena pomoć AAI@EduHr" })).toBeVisible();
 
   for (const query of ["stanje=greska", "greska=login_failed"]) {
-    await page.goto(`/app/web/prijava?${query}`);
+    await page.goto(`/aplikacija/prijava?${query}`);
     const alert = page.getByRole("main").getByRole("alert");
     await expect(alert.getByRole("heading", { level: 2 })).toHaveText("Prijava nije dovršena");
     await expect(alert).toContainText("Pokušajte ponovno; ako se ponovi, javite se koordinatoru");
@@ -229,26 +235,27 @@ test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the
     await axe(page);
   }
   for (const query of ["stanje=nedostupno", "greska=provider_unavailable"]) {
-    await page.goto(`/app/web/prijava?${query}`);
+    await page.goto(`/aplikacija/prijava?${query}`);
     const alert = page.getByRole("main").getByRole("alert");
     await expect(alert).toContainText("Prijava preko AAI@EduHr trenutačno ne odgovara. Pokušajte ponovno za nekoliko minuta.");
     await expect(alert.getByRole("link", { name: "Pokušaj ponovno" })).toBeVisible();
+    await expect(alert.getByRole("link", { name: "Na početnu" })).toHaveCount(0);
   }
 
-  await page.goto("/app/web/prijava?stanje=bezuloge");
+  await page.goto("/aplikacija/prijava?stanje=bezuloge");
   await expect(page.getByRole("status").filter({ hasText: "Prijava je uspjela" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Odjava" })).toBeVisible();
 
-  await page.goto("/app/web/prijava?stanje=greska&returnTo=%2Fzadaci%2Fkolegiji");
+  await page.goto("/aplikacija/prijava?stanje=greska&returnTo=%2Fzadaci%2Fkolegiji");
   await page.getByRole("link", { name: "Pokušaj ponovno" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
-  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/web/zadaci/kolegiji");
+  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/aplikacija/zadaci/kolegiji");
   expect(errors).toEqual([]);
 });
 
 test("an unanswering institution server shows a retry, not an empty app", async ({ page }) => {
   await page.route("**/api/v1/me", (route) => route.fulfill({ status: 503, contentType: "application/json", body: "{\"code\":\"unavailable\"}" }));
-  await page.goto("/app/web/");
+  await page.goto("/aplikacija/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Prijavu nije bilo moguće provjeriti");
   await expect(page.getByRole("button", { name: "Pokušaj ponovno" })).toBeVisible();
   await axe(page);
@@ -263,7 +270,7 @@ test("a teacher's read: 403 asks for a teacher account, 503 offers a retry that 
   });
   await page.route("**/api/v1/teacher/mentorships", (route) =>
     route.fulfill({ status: 403, contentType: "application/json", body: "{\"code\":\"forbidden\",\"error\":\"forbidden\"}" }));
-  await page.goto("/app/web/nastavnik");
+  await page.goto("/aplikacija/nastavnik");
   // Next keeps an empty role="alert" route announcer outside <main>. Inside it, the N-01 toast region
   // (WEB-2145) keeps its own role="alert" live region on the page before any message; it stays empty.
   await expect(page.getByRole("region", { name: "Obavijesti" }).getByRole("alert")).toBeEmpty();
@@ -271,7 +278,7 @@ test("a teacher's read: 403 asks for a teacher account, 503 offers a retry that 
   await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
   await expect.poll(() => courses).toBe(2);
   await axe(page);
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   await expect(page.getByText("Prijavite se nastavničkim računom.")).toBeVisible();
 });
 
@@ -279,44 +286,44 @@ test("a teacher's read answering 401 sends the browser to sign-in", async ({ pag
   const seen = await fakeServer(page, { status: 200, body: { role: "teacher" } });
   await page.route("**/api/v1/teacher/courses", (route) =>
     route.fulfill({ status: 401, contentType: "application/json", body: "{\"code\":\"unauthorized\",\"error\":\"unauthorized\"}" }));
-  await page.goto("/app/web/nastavnik");
+  await page.goto("/aplikacija/nastavnik");
   await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
-  expect(new URL(seen.login.at(-1)!).searchParams.get("returnTo")).toBe("/app/web/nastavnik");
+  expect(new URL(seen.login.at(-1)!).searchParams.get("returnTo")).toBe("/aplikacija/nastavnik");
 });
 
 test("a student's Ductus pages open at their addresses; the workspace without a work in progress points to Moji zadaci", async ({ page }) => {
   const errors = errorsOf(page);
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
-  await page.goto("/app/chrome/rad");
+  await page.goto("/aplikacija/rad");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radni prostor");
   // WEB-2105 (#359) connected /rad: it reads the works, and none is in progress here.
   await expect(page.getByText("Nemate rad u tijeku. Rad započnite na kartici zadatka.")).toBeVisible();
-  await expect(page.getByRole("main").getByRole("link", { name: "Moji zadaci" })).toHaveAttribute("href", "/app/chrome/zadaci");
+  await expect(page.getByRole("main").getByRole("link", { name: "Moji zadaci" })).toHaveAttribute("href", "/aplikacija/zadaci");
   await axe(page);
 
   // Moji radovi is connected (HOST-S5): it reads an empty list.
   await page.route("**/api/v1/student/assignments", (route) => route.fulfill({ json: { courses: [] } }));
   await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({ json: { assignments: [] } }));
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Moji radovi" }).click();
-  await expect(page).toHaveURL(/\/app\/chrome\/zadaci\/radovi$/);
+  await expect(page).toHaveURL(/\/aplikacija\/zadaci\/radovi$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji radovi");
   expect(seen.me).toBe(1);
   expect(errors).toEqual([]);
 
   await page.unrouteAll({ behavior: "wait" });
   await fakeServer(page, { status: 200, body: { roles: ["teacher"], institutionName: INSTITUTION } });
-  await page.goto("/app/web/rad/izm-zadatak-1/predaja");
-  await expect(page).toHaveURL(/\/app\/web\/nastavnik$/);
+  await page.goto("/aplikacija/rad/izm-zadatak-1/predaja");
+  await expect(page).toHaveURL(/\/aplikacija\/nastavnik$/);
 });
 
 test("a teacher's Ductus pages open at their addresses, and /nastavnik/kolegiji forwards to /nastavnik", async ({ page }) => {
   const errors = errorsOf(page);
   await fakeServer(page, { status: 200, body: { roles: ["teacher"], institutionName: INSTITUTION } });
-  await page.goto("/app/chrome/nastavnik/kolegiji");
-  await expect(page).toHaveURL(/\/app\/chrome\/nastavnik$/);
+  await page.goto("/aplikacija/nastavnik/kolegiji");
+  await expect(page).toHaveURL(/\/aplikacija\/nastavnik$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji kolegiji");
 
-  await page.goto("/app/web/nastavnik/brz-put");
+  await page.goto("/aplikacija/nastavnik/brz-put");
   // Brz put is mounted (WEB-2142): without ?zadatak= it asks for an assignment.
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Brz put");
   await expect(page.getByRole("status")).toBeVisible();
@@ -330,20 +337,20 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   // WEB-1406 (#303) put the faculty rules page here in place of the placeholder; no rule is published yet.
   await page.route("**/api/v1/institution/faculty-rules", (route) => route.fulfill({ json: { rules: [] } }));
   await institutionReads(page);
-  await page.goto("/app/web/ustanova/pravila");
+  await page.goto("/aplikacija/ustanova/pravila");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pravila fakulteta");
   await expect(page.getByText("Za ovu vrstu rada pravilo još nije objavljeno.")).toBeVisible();
   await axe(page);
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Korisnici" }).click();
-  await expect(page).toHaveURL(/\/app\/web\/ustanova\/korisnici$/);
+  await expect(page).toHaveURL(/\/aplikacija\/ustanova\/korisnici$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Korisnici");
   await expect(page.getByText("Ana Izmišljena")).toBeVisible();
   await expect(page.getByRole("button", { name: "Potvrdi ulogu" })).toBeVisible();
   expect(seen.me).toBe(1);
-  await page.goto("/app/web/ustanova");
+  await page.goto("/aplikacija/ustanova");
   await expect(page.getByText("Potvrđeni nastavnici")).toBeVisible();
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Kolegiji" }).click();
-  await expect(page).toHaveURL(/\/app\/web\/ustanova\/kolegiji$/);
+  await expect(page).toHaveURL(/\/aplikacija\/ustanova\/kolegiji$/);
   await expect(page.getByText("Izmišljeni seminar")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Novi kolegij" })).toBeVisible();
   expect(seen.me).toBe(2);
@@ -351,15 +358,15 @@ test("the administrator's Ductus pages open at their addresses, and only for the
 
   await page.unrouteAll({ behavior: "wait" });
   await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
-  await page.goto("/app/chrome/ustanova/kolegiji");
-  await expect(page).toHaveURL(/\/app\/chrome\/zadaci$/);
+  await page.goto("/aplikacija/ustanova/kolegiji");
+  await expect(page).toHaveURL(/\/aplikacija\/zadaci$/);
 });
 
 const ADMIN_COURSES = "**/api/v1/institution/admin/courses";
 const COURSE_NAME = "Izmišljeni seminar o gradskim vrtovima";
 const HOLDER_ID = "00000000-0000-4000-8000-000000000001";
 
-async function openNewCourse(page: Page, base: "/app/web" | "/app/chrome") {
+async function openNewCourse(page: Page, base: "/aplikacija") {
   await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
   await page.goto(`${base}/ustanova/kolegiji`);
   await page.getByLabel("Naziv kolegija").fill(COURSE_NAME);
@@ -367,7 +374,7 @@ async function openNewCourse(page: Page, base: "/app/web" | "/app/chrome") {
 }
 
 test("course creation reports a failed write and confirms only after the API responds", async ({ page }) => {
-  await openNewCourse(page, "/app/web");
+  await openNewCourse(page, "/aplikacija");
   await page.route(ADMIN_COURSES, (route) => route.fulfill({ status: 503, json: { code: "unavailable" } }));
   const submit = page.getByRole("button", { name: "Izradi kolegij" });
   const confirmed = page.getByText(`Kolegij „${COURSE_NAME}” je izrađen.`, { exact: true });
@@ -406,18 +413,18 @@ test("course creation reports a failed write and confirms only after the API res
 });
 
 test("401 during course creation returns to the administrator's Chrome route after sign-in", async ({ page }) => {
-  await openNewCourse(page, "/app/chrome");
+  await openNewCourse(page, "/aplikacija");
   await page.route(ADMIN_COURSES, (route) => route.fulfill({ status: 401, json: { code: "unauthorized" } }));
   await page.getByRole("button", { name: "Izradi kolegij" }).click();
   await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
-  expect(new URL(page.url()).searchParams.get("returnTo")).toBe("/app/chrome/ustanova/kolegiji");
+  expect(new URL(page.url()).searchParams.get("returnTo")).toBe("/aplikacija/ustanova/kolegiji");
 });
 
 test("Kako Ductura radi opens the explanation inside the signed-in shell", async ({ page }) => {
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institutionName: INSTITUTION } });
-  await page.goto("/app/web/zadaci");
+  await page.goto("/aplikacija/zadaci");
   await page.getByRole("link", { name: "Kako Ductura radi" }).click();
-  await expect(page).toHaveURL(/\/app\/web\/kako-radi$/);
+  await expect(page).toHaveURL(/\/aplikacija\/kako-radi$/);
   await expect(page.getByRole("heading", { name: "Kako Ductura radi", level: 1 })).toBeVisible();
   await expect(page.getByRole("table", { name: "Tko što vidi" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Kako se rad sprema" })).toBeVisible();
@@ -426,9 +433,9 @@ test("Kako Ductura radi opens the explanation inside the signed-in shell", async
 
 test("Kako Ductura radi preserves the current base when sign-in is needed", async ({ page }) => {
   const seen = await fakeServer(page, { status: 401 });
-  await page.goto("/app/chrome/kako-radi");
+  await page.goto("/aplikacija/kako-radi");
   await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
-  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/chrome/kako-radi");
+  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/aplikacija/kako-radi");
 });
 
 const STATUS_PATH = "**/api/v1/status";
@@ -444,9 +451,9 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
     expect(route.request().method()).toBe("GET");
     return route.fulfill({ status: 200, json: PUBLIC_STATUS });
   });
-  await page.goto("/app/chrome/stanje");
+  await page.goto("/aplikacija/stanje");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Stanje sustava");
-  await expect(page.getByRole("link", { name: "Ductura", exact: true })).toHaveAttribute("href", "/app/chrome/");
+  await expect(page.getByRole("link", { name: "Ductura", exact: true })).toHaveAttribute("href", "/aplikacija/");
   await expect(page.getByRole("status")).toHaveText("Neki dijelovi trenutačno ne rade.");
   await expect(page.getByRole("listitem").filter({ hasText: "Pisanje i slanje na poslužitelj" })).toContainText("Radi");
   await expect(page.getByRole("listitem").filter({ hasText: "Predaja rada" })).toContainText("Ne radi");
@@ -458,16 +465,16 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   await axe(page);
   expect(errors).toEqual([]);
 
-  await page.goto("/app/chrome/prijava?returnTo=%2Fzadaci%2Fkolegiji");
+  await page.goto("/aplikacija/prijava?returnTo=%2Fzadaci%2Fkolegiji");
   await page.getByRole("link", { name: "Prijava sustavom AAI@EduHr" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(seen.login).toHaveLength(1);
-  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/chrome/zadaci/kolegiji");
-  await page.goto("/app/web/prijava?returnTo=https%3A%2F%2Fexample.org%2F");
+  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/aplikacija/zadaci/kolegiji");
+  await page.goto("/aplikacija/prijava?returnTo=https%3A%2F%2Fexample.org%2F");
   await page.getByRole("link", { name: "Prijava sustavom AAI@EduHr" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(seen.login).toHaveLength(2);
-  expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/app/web/");
+  expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/aplikacija/");
   expect(seen.me).toBe(0);
 });
 
@@ -475,7 +482,7 @@ test("Stanje sustava has no horizontal scroll at 360 px", async ({ page }) => {
   await fakeServer(page, { status: 401 });
   await page.route(STATUS_PATH, (route) => route.fulfill({ status: 200, json: PUBLIC_STATUS }));
   await page.setViewportSize({ width: 360, height: 740 });
-  await page.goto("/app/chrome/stanje");
+  await page.goto("/aplikacija/stanje");
   await expect(page.getByText("Nema zabilježenih prekida.")).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
@@ -484,9 +491,9 @@ test("Stanje sustava has no horizontal scroll at 360 px", async ({ page }) => {
 test("Stanje sustava shows an API refusal without sending the reader to sign-in", async ({ page }) => {
   const seen = await fakeServer(page, { status: 401 });
   await page.route(STATUS_PATH, (route) => route.fulfill({ status: 401, json: { code: "unauthenticated" } }));
-  await page.goto("/app/web/stanje");
+  await page.goto("/aplikacija/stanje");
   await expect(page.getByRole("main").getByRole("alert")).toContainText("Rezultate provjera trenutačno nije moguće učitati.");
-  await expect(page).toHaveURL(/\/app\/web\/stanje$/);
+  await expect(page).toHaveURL(/\/aplikacija\/stanje$/);
   expect(seen.me).toBe(0);
   expect(seen.login).toEqual([]);
 });
@@ -496,7 +503,7 @@ test("Stanje sustava shows a service failure and recovers after retry", async ({
   await page.route(STATUS_PATH, (route) => route.fulfill(available
     ? { status: 200, json: PUBLIC_STATUS }
     : { status: 503, json: { code: "unavailable" } }));
-  await page.goto("/app/web/stanje");
+  await page.goto("/aplikacija/stanje");
   const alert = page.getByRole("main").getByRole("alert");
   await expect(alert).toContainText("Rezultate provjera trenutačno nije moguće učitati.");
   available = true;

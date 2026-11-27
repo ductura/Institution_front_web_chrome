@@ -16,11 +16,13 @@ import { readAssignmentOverview, type TeacherCall } from "../../../../../src/cli
 import { createTeachingTeam } from "../../../../../src/client/teaching-team.ts";
 
 import { roleOf, type CardRole } from "./assignment-card/model";
+import { followUp } from "./assignment-facts/read";
 
 import N17Overview from "./n17/Overview";
 import { joinRows, type N17Port, type N17Read, type RowJoin } from "./n17/model";
 import N13Extensions from "./n13/Extensions";
 import type { N13Port, N13Read } from "./n13/model";
+import { readExtensionSubmissions, type SubmissionsCall } from "./n13/submissions";
 
 export type OverviewCall = ReturnType<typeof createApi>;
 /** `?kolegij=` and `?zadatak=` of the page: the overview of one course or one assignment (NZ-2). */
@@ -80,14 +82,15 @@ export function overviewPort(scope: OverviewScope = { course: null, task: null }
         const works = courseWorks(call, course.id);
         const role = roleIn(call, course.id);
         return tasks.map(async (a) => {
-          const [overview, byTask, submissions, extensions, cardRole] = await Promise.all([
-            readAssignmentOverview(call as unknown as TeacherCall, a.id), works, submissionsOf(call, a.id), readDeadlineExtensions(call, a.id), role,
+          const [overview, byTask, submissions, extensions, cardRole, follow] = await Promise.all([
+            readAssignmentOverview(call as unknown as TeacherCall, a.id), works, submissionsOf(call, a.id), readDeadlineExtensions(call, a.id), role, followUp(call, a.id),
           ]);
           const join: RowJoin = {
             dueAt: a.dueAt,
             works: byTask === null ? null : byTask.get(a.id) ?? new Map(),
             submissions,
             extensions: extensions.kind === "ready" ? extensions.extensions : null,
+            followUp: follow,
           };
           return {
             assignmentId: a.id, title: a.title, courseName: course.name, courseId: course.id, dueAt: a.dueAt, role: cardRole,
@@ -113,8 +116,9 @@ export function AssignmentOverviewPage() {
 const n13Port: N13Port = {
   async read(assignmentId): Promise<N13Read> {
     const client = createApi();
-    const [list, students, courses] = await Promise.all([
+    const [list, students, submissions, courses] = await Promise.all([
       readDeadlineExtensions(client, assignmentId), readExtensionStudents(client, assignmentId),
+      readExtensionSubmissions(createApi() as unknown as SubmissionsCall, assignmentId),
       readTeacherCourses(createApi() as unknown as TeacherCoursesCall),
     ]);
     if (list.kind === "session-expired") return { kind: "signedOut" };
@@ -126,6 +130,7 @@ const n13Port: N13Port = {
         context: { task: task?.title ?? null, course: course?.name ?? null, dueAt: task?.dueAt ?? null },
         extensions: list.kind === "ready" ? list.extensions : null,
         students,
+        submissions,
       },
     };
   },

@@ -22,6 +22,17 @@ export const n17Messages = {
     revision: "Dorada",
   },
   noName: "Ime nije dostupno",
+  // NAS-R15 (NZ-11)
+  filters: {
+    label: "Prikaz",
+    stateLabel: "Stanje",
+    groupLabel: "Grupa",
+    allStates: "Sva stanja",
+    allGroups: "Sve grupe",
+    state: { notStarted: "Nije započelo", writing: "Piše", submitted: "Predano", late: "Nakon roka", revision: "Dorada" } as Readonly<Record<"notStarted" | "writing" | "submitted" | "late" | "revision", string>>,
+    noMatch: "Nijedan student ne odgovara odabranom prikazu.",
+    clear: "Očisti filtre",
+  },
   state: {
     submitted: "predano",
     writing: "u pisanju",
@@ -50,13 +61,14 @@ export const n17Messages = {
   revisionRequested: (state: string): string => `zatražena · ${state}`,
   revisionNone: "nije zatražena",
   revisionUnavailable: "nedostupno",
-  revisionStates: { open: "otvorena", reopened: "ponovno otvorena", accepted: "prihvaćena", closed: "zatvorena" } as Readonly<Record<string, string>>,
+  revisionStates: { open: "otvorena", reopened: "ponovno otvorena", accepted: "prihvaćena", closed: "zatvorena", responded: "student je odgovorio", withdrawn: "povučena" } as Readonly<Record<string, string>>,
   summary: {
     submitted: (n: number, late: number): string => `predano ${n}${late > 0 ? ` (od toga ${late} nakon roka)` : ""}`,
     writing: (n: number): string => `u pisanju ${n}`,
     notSubmitted: (n: number): string => `nije predano ${n}`,
     notStarted: (n: number): string => `nije započelo ${n}`,
     unconfirmed: (n: number): string => `obavijest nije potvrđena ${n}`,
+    acknowledged: (n: number, of: number): string => `potvrdilo ${n} od ${of}`,
     noRows: "nema studenata",
   },
 } as const;

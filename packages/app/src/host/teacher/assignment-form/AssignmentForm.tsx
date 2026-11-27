@@ -11,6 +11,7 @@ import { publishAssignment } from "@/components/teacher/TeacherSetup/assignment-
 import { assignmentSetupMessages as setup } from "@/components/teacher/TeacherSetup/messages.hr";
 import type { TeacherCourse } from "@/components/teacher/teacher-courses-read";
 import { formatDateTimeHr } from "@/lib/i18n/hr";
+import { zagrebInstant } from "@/lib/i18n/zagreb";
 import { wordRangeHr } from "@/lib/i18n/length-line";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
@@ -18,10 +19,10 @@ import { checkForm, errorSummary, withPractice, type FormErrors } from "./form-c
 import { DocumentKindField, withDocumentKind, kindOf, type DocumentKind } from "./DocumentKindField";
 import { ImportAllowedField } from "./ImportAllowedField";
 import { PracticeField } from "./PracticeField";
-import { QuestionField } from "./QuestionField";
+import { QuestionField, checkQuestion, normalizeQuestion, saveQuestion, type QuestionOutcome } from "./QuestionField";
 import { SubmissionRules, seesLine } from "./SubmissionRules";
 import { applyRules, bodyExtras, defaultChoices, groupsMissing, readGroups, type Call, type GroupsRead, type RuleChoices, type RuleName } from "./rules";
-import { assignmentFormHr as f, documentKindHr, templateFieldHr } from "./messages.hr";
+import { assignmentFormHr as f, declarationQuestionHr as questionHr, documentKindHr, templateFieldHr } from "./messages.hr";
 import { readOutline, saveTemplate, TemplateField, type LoadOutline, type TemplateOutcome } from "./TemplateField";
 import { rubricFormHr } from "../rubric/messages.hr";
 import { saveRubric, type SaveOutcome } from "../rubric/port";
@@ -30,6 +31,7 @@ import { checkRubric, type Rubric, type RubricErrors } from "../rubric/rubric-mo
 import { publishHr } from "../publish/messages.hr";
 import { CheckListLink, PublishDone } from "../publish/PublishDone";
 import { isUncertain, publishOutcome } from "../publish/publish-outcome";
+import { NoticePreview } from "../publish/NoticePreview";
 
 type Course = Pick<TeacherCourse, "id" | "name" | "academicYear" | "aiPolicy">;
 /** `isPractice` is the contract's practice-assignment flag (WEB-1901); the server stores it and returns it, no grade field exists for it. */
@@ -37,6 +39,7 @@ type PracticeBody = NonNullable<ReturnType<typeof assignmentBody>> & { isPractic
 type Publish = (courseId: string, body: PracticeBody, requestKey: string) => Promise<AssignmentCreation>;
 type LoadGroups = (courseId: string) => Promise<GroupsRead>;
 type SaveRubric = (assignmentId: string, rubric: Rubric) => Promise<SaveOutcome>;
+type SaveQuestion = (assignmentId: string, question: string) => Promise<QuestionOutcome>;
 type SaveTemplate = (assignmentId: string, use: boolean) => Promise<TemplateOutcome>;
 const loadOutlineDefault: LoadOutline = (workType) => readOutline(createApi() as Call, workType);
 type ApplyRules = (assignmentId: string, choices: RuleChoices) => Promise<RuleName[]>;
@@ -55,9 +58,9 @@ const initialDraft: FormDraft = {
  * "Pregled i objava" with "Objavi zadatak" and "Natrag na obrazac" (kartice: not a five-step wizard).
  * Publishing calls the existing create-assignment route (`publishAssignment`); `publish` is injectable for tests.
  */
-export default function AssignmentForm({ course, publish = publishAssignment, cancelHref = "/nastavnik", loadGroups, setRules, setRubricFor, setTemplateFor, loadOutline = loadOutlineDefault }: {
+export default function AssignmentForm({ course, publish = publishAssignment, cancelHref = "/nastavnik", loadGroups, setRules, setRubricFor, setTemplateFor, setQuestionFor, loadOutline = loadOutlineDefault }: {
   course: Course; publish?: Publish; cancelHref?: string; loadGroups?: LoadGroups; setRules?: ApplyRules; setRubricFor?: SaveRubric;
-  setTemplateFor?: SaveTemplate; loadOutline?: LoadOutline;
+  setTemplateFor?: SaveTemplate; setQuestionFor?: SaveQuestion; loadOutline?: LoadOutline;
 }) {
   const request = useRef<{ body: string; key: string } | null>(null);
   const summary = useRef<HTMLParagraphElement>(null);
@@ -73,6 +76,8 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
   const [rubricErrors, setRubricErrors] = useState<RubricErrors | undefined>(undefined);
   const [rubricOutcome, setRubricOutcome] = useState<SaveOutcome>("none");
   const [useTemplate, setUseTemplate] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [questionOutcome, setQuestionOutcome] = useState<QuestionOutcome>("none");
   const [templateOutcome, setTemplateOutcome] = useState<TemplateOutcome>("none");
   const courseProhibits = course.aiPolicy === "prohibited";
   const set = <K extends keyof FormDraft>(key: K, value: FormDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
@@ -101,7 +106,8 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
     setRubricErrors(rubricBad ? rubricFound : undefined);
     setErrors(found);
     setFailure(rubricBad ? rubricFormHr.summary : null);
-    if (Object.keys(found).length === 0 && !rubricBad) setPhase("review");
+    const questionBad = checkQuestion(question) !== null;
+    if (Object.keys(found).length === 0 && !rubricBad && !questionBad) setPhase("review");
   }
 
   async function confirm() {
@@ -120,9 +126,10 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
     if (outcome.ok) {
       // Withdrawal and the declaration are switches of the new assignment: set after the create answer, each by its route.
       const id = result.kind === "available" ? result.id : null;
-      setRuleFailures(id === null ? [] : await (setRules ?? ((assignmentId, picked) => applyRules(createApi() as Call, assignmentId, picked)))(id, choices).catch((): RuleName[] => ["withdrawal", "declaration"]));
+      setRuleFailures(id === null ? [] : await (setRules ?? ((assignmentId, picked) => applyRules(createApi() as Call, assignmentId, picked)))(id, choices).catch((): RuleName[] => ["late", "withdrawal", "declaration"]));
       setRubricOutcome(id === null ? "none" : await (setRubricFor ?? ((assignmentId, picked) => saveRubric(createApi() as Call, assignmentId, picked)))(id, rubric).catch((): SaveOutcome => "failed"));
       setTemplateOutcome(id === null ? "none" : await (setTemplateFor ?? ((assignmentId, use) => saveTemplate(createApi() as Call, assignmentId, use)))(id, useTemplate).catch((): TemplateOutcome => "failed"));
+      setQuestionOutcome(id === null ? "none" : await (setQuestionFor ?? ((assignmentId, text) => saveQuestion(createApi() as Call, assignmentId, text, { skipEmpty: true })))(id, question).catch((): QuestionOutcome => "failed"));
       setPhase("published");
     }
     else { setFailure(outcome.error ?? a.errors.unavailable); setPhase("review"); }
@@ -135,6 +142,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
       <section aria-label={`${course.name} · ${course.academicYear}`} className="card">
         <PublishDone />
         {rubricOutcome !== "saved" && rubricOutcome !== "none" && <p className="note" role="alert">{rubricFormHr.failed[rubricOutcome]}</p>}
+        {questionOutcome !== "saved" && questionOutcome !== "none" && <p className="note" role="alert">{questionHr.failed[questionOutcome]}</p>}
         {templateOutcome !== "saved" && templateOutcome !== "none" && <p className="note" role="alert">{templateFieldHr.failed[templateOutcome]}</p>}
         {ruleFailures.map((name) => <p key={name} className="note" role="alert">{f.submitRules.failed[name]}</p>)}
       </section>
@@ -165,10 +173,21 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
       { id: "tools", label: f.labels.tools, value: choices.externalTools ? f.values.toolsYes : f.values.toolsNo },
       { id: "rubric", label: rubricFormHr.reviewLabel, value: rubric.length > 0 ? rubricFormHr.review(rubric.length) : rubricFormHr.none },
       { id: "template", label: templateFieldHr.reviewLabel, value: useTemplate ? templateFieldHr.reviewOn : templateFieldHr.reviewOff },
-      { id: "late", label: f.labels.late, value: f.values.lateServer },
+      { id: "question", label: questionHr.reviewLabel, value: normalizeQuestion(question) ?? questionHr.reviewNone },
+      { id: "late", label: f.labels.late, value: choices.lateAllowed ? f.values.lateOn : f.values.lateOff },
       { id: "withdrawal", label: f.labels.withdrawal, value: choices.withdrawal ? f.values.withdrawalOn : f.values.withdrawalOff },
       { id: "declaration", label: f.labels.declaration, value: choices.declarationRequired ? f.values.declarationOn : f.values.declarationOff },
     ];
+    // NAS-R09: the notice the student will read, built from this form (version 1); the due time is read as Zagreb time.
+    const noticeFields = {
+      versionNo: 1,
+      dueAt: zagrebInstant(draft.dueAt) ?? draft.dueAt,
+      aiPolicy: course.aiPolicy,
+      aiPurposes: allowsHelp ? draft.aiPurposes : [],
+      importAllowed: draft.importAllowed === true,
+      wordMin: draft.wordMin.trim() ? Number(draft.wordMin) : null,
+      wordMax: draft.wordMax.trim() ? Number(draft.wordMax) : null,
+    };
     return (
       <>
         <p className="lede">{f.reviewIntro}</p>
@@ -176,6 +195,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
         <section className="card" aria-labelledby="po-h2">
           <h2 id="po-h2">{f.reviewHeading}</h2>
           <SummaryList rows={rows} />
+          <NoticePreview fields={noticeFields} />
           <p className="note">{seesLine(choices)}</p>
           <p className="note">{publishHr.reviewNote}</p>
           {failure && <p className="note" role="alert">{failure}</p>}
@@ -255,7 +275,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
             onChange={(value) => setChoices((current) => ({ ...current, externalTools: value === "yes" }))} />
           <p className="meta">{f.rules.toolsHint}</p>
           <ImportAllowedField value={draft.importAllowed === true} onChange={(value) => set("importAllowed", value)} />
-          <QuestionField />
+          <QuestionField value={question} onChange={setQuestion} />
           <p className="meta">{f.rules.seen}</p>
         </Section>
 

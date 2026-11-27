@@ -5,11 +5,12 @@ import { Button, DiffView } from "@ductura/ui";
 
 import { goToSignIn } from "../../../../../../src/client/api";
 import {
-  countWords, currentLine, defaultFrom, hasChanges, loadComparison, loadVersions, olderChoices, optionLabel, submittedVersions,
+  countWords, currentLine, defaultFrom, diffRows, hasChanges, loadComparison, loadVersions, olderChoices, optionLabel, submittedVersions,
   type N11Compare, type N11Port, type N11Version, type N11Versions,
 } from "./model";
 import { n11Messages as text } from "./messages.hr";
 import { Kv, WorkPage, WorkPanel, workPageStyles as styles } from "../n07/WorkPage";
+import { useTaskCrumb } from "../n06/task-context";
 
 const Lines = ({ message }: { message: string }) => (
   <><p className="note" role="status">{message}</p><div className="skel w80" /><div className="skel w60" /><div className="skel w40" /></>
@@ -53,9 +54,9 @@ function Result({ port, documentId, from, to, signInHref }: { port: N11Port; doc
       <p className="meta">{text.wordsNote}</p>
       {!hasChanges(read.blocks) && <p className="note" role="status">{text.noChanges}</p>}
       <div className={`sheet ${styles.paper} ${styles.cmp}`}>
-        {read.blocks.map(({ change, text: t }, index) => change === "unchanged"
-          ? <p key={index} style={wrap}>{t}</p>
-          : <DiffView key={index} parts={[{ kind: change, text: t }]} />)}
+        {diffRows(read.blocks).map((row, index) => row.change === "unchanged"
+          ? <p key={index} style={wrap}>{row.text}</p>
+          : <DiffView key={index} parts={row.change === "changed" ? row.parts : [{ kind: row.change, text: row.text }]} />)}
       </div>
     </>
   );
@@ -102,9 +103,11 @@ export default function N11Compare({ port, documentId, replayHref, signInHref, w
     return () => { live = false; };
   }, [port, documentId, attempt, signInHref]);
 
+  // F4-NAS-R12: the student, the kind of work and the assignment's title above the comparison.
+  const crumb = useTaskCrumb(documentId);
   const pending = read === null || read.kind === "signedOut";
   return (
-    <WorkPage back={workHref} backLabel={text.backToWork}>
+    <WorkPage back={workHref} backLabel={text.backToWork} crumb={crumb}>
       <WorkPanel id={read?.kind === "ready" && submittedVersions(read.versions).length > 1 ? "cp-h" : "pg-h"} title={text.title} busy={pending}>
         {pending && <Lines message={text.loadingVersions} />}
         {read?.kind === "unavailable" && <Failure message={text.versionsError} retry={() => setAttempt((n) => n + 1)} />}

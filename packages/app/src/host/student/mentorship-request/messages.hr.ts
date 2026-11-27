@@ -49,6 +49,10 @@ export const mentorshipRequestText = {
     openedOn: "Mentorstvo je otvoreno {date}",
     start: "Rad uz mentora započinjete s popisa zadataka.",
     toTasks: "Otvori moje zadatke",
+    // F4-MEN-R01: the mentorships a teacher opened (notifications.mentorship-opened).
+    openedTopic: "Tema: {topic}",
+    openedNew: "Novo",
+    openedUnavailable: "Mentorstva koja su Vam otvorili nastavnici trenutačno nisu dostupna.",
   },
   declinedReason: "Razlog odbijanja trenutačno nije dostupan.",
   retarget: "Zatraži drugog mentora",

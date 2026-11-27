@@ -44,7 +44,7 @@ async function teacher(page: Page, failReads = false) {
     return route.fulfill({ json: { milestones: [b ? milestone("Prvo poglavlje", "submitted", "2026-12-10T12:00:00.000Z") : milestone("Nacrt", "not_submitted", "2026-11-28T12:00:00.000Z")] } });
   });
   await page.route("**/api/v1/works/*/consultation-slots", (route) => route.fulfill({ json: { slots: [] } }));
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   await expect(page.getByRole("heading", { name: "Radovi uz mentora" })).toBeVisible();
 }
 
@@ -87,7 +87,7 @@ test("the student sees the same timeline for an approved mentorship (MK-13); axe
     workType: "bachelor_thesis", requestedAt: "2026-11-01T10:00:00.000Z", state: "approved", endedAt: "2026-11-02T10:00:00.000Z", mentorshipId: M1,
   }] } }));
   await page.route("**/api/v1/mentorships/*/key-dates", (route) => route.fulfill({ json: DATES }));
-  await page.goto("/app/web/zadaci/mentorstvo");
+  await page.goto("/aplikacija/zadaci/mentorstvo");
   const line = page.getByTestId("key-dates");
   await expect(line.getByRole("heading", { name: k.forMentor("Marko Izmišljeni") })).toBeVisible();
   await expect(line.locator('ol[data-list="past"] li')).toHaveText(["Etapa „Nacrt uvoda”: 20. 11. 2026. u 10:00 (prije 11 dana)"]);
@@ -124,5 +124,5 @@ test("MK-15: the filter and the work links are reached with the keyboard alone",
   await page.keyboard.press("Tab");
   await expect(page.getByTestId("my-students").getByRole("region", { name: o.caption })).toBeFocused();
   await page.keyboard.press("Tab");
-  await expect(page.locator(":focus")).toHaveAttribute("href", /\/app\/web\/nastavnik\/rad\//);
+  await expect(page.locator(":focus")).toHaveAttribute("href", /\/aplikacija\/nastavnik\/rad\//);
 });

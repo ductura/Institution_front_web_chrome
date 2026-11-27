@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// WEB-V22-RUTE: the three routes are mounted in app/[base]/ and render their heading from the host's page.
+// WEB-V22-RUTE: the three routes are mounted in app/(host)/ and render their heading from the host's page.
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -20,7 +20,7 @@ import StudomatEntryRoute from "./public/studomat-entry/StudomatEntryRoute";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const page = (path: string): Page => PAGES.find((p) => p.path === path)!;
-const appDir = join(__dirname, "../../app/[base]");
+const appDir = join(__dirname, "../../app/(host)");
 let root: Root | null = null;
 let el: HTMLElement | null = null;
 
@@ -28,7 +28,7 @@ function show(path: string, role: "admin" | "teacher" | null, child: ReturnType<
   el = document.createElement("div");
   document.body.append(el);
   root = createRoot(el);
-  act(() => root!.render(createElement(HostContext, { value: { base: "/app/web", page: page(path), role } }, child)));
+  act(() => root!.render(createElement(HostContext, { value: { base: "/aplikacija", page: page(path), role } }, child)));
   return el;
 }
 afterEach(() => {

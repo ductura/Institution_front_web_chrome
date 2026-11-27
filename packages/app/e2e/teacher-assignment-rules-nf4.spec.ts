@@ -52,7 +52,11 @@ test("NZ-3 and NZ-4: groups, summary-only, tools and the submission rules reach 
     calls.push(`withdrawal ${route.request().postData()}`);
     return route.fulfill(json({ allowed: false, changedAt: "2026-11-24T10:00:00.000Z" }));
   });
-  await page.goto(`/app/web/nastavnik/zadatak/novi?kolegij=${K1}`);
+  await page.route(`**/api/v1/institution/assignments/${A1}/late-submission`, (route) => {
+    calls.push(`late ${route.request().method()} ${route.request().postData()}`);
+    return route.fulfill(json({ lateSubmissionAllowed: false }));
+  });
+  await page.goto(`/aplikacija/nastavnik/zadatak/novi?kolegij=${K1}`);
   await expect(page.getByRole("group", { name: "Grupe" })).toBeVisible();
   await checkAxe(page, info, "form");
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -65,23 +69,25 @@ test("NZ-3 and NZ-4: groups, summary-only, tools and the submission rules reach 
   await page.keyboard.press("Space");
   await page.getByLabel("Samo sažimanje literature, uz izjavu").check();
   await page.getByLabel("Nisu dopušteni u ovom zadatku").check();
-  await expect(page.getByText("Zabrana predaje nakon roka trenutačno nije dostupna.")).toBeVisible();
-  await expect(page.getByLabel("Dopuštena (predaja se označi kao kasna)")).toBeDisabled();
+  // F4-NAS-R01: late submission is a working choice, allowed at the start.
+  await expect(page.getByLabel("Dopuštena (predaja se označi kao kasna)")).toBeChecked();
+  await page.getByLabel("Nije dopuštena", { exact: true }).check();
   await page.getByLabel("Student ne smije povući predaju").check();
-  await expect(page.getByText("Student na koraku predaje vidi: predaju ne može povući; izjavu mora ispuniti.")).toBeVisible();
+  await expect(page.getByText("Student na koraku predaje vidi: nakon roka ne može predati; predaju ne može povući; izjavu mora ispuniti.")).toBeVisible();
 
   await page.getByRole("button", { name: "Pregled i objava" }).click();
   await expect(page.getByText("Grupa A", { exact: true })).toBeVisible();
   await expect(page.getByText("Samo sažimanje literature", { exact: true })).toBeVisible();
+  await expect(page.getByText("nije dopuštena", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Objavi zadatak" }).click();
   await expect.poll(() => posts.length).toBe(1);
   expect(posts[0]).toMatchObject({ groupIds: [G1], aiSummaryOnly: true, externalToolsAllowed: false, aiPurposes: ["literature_search"] });
-  await expect.poll(() => calls).toEqual(['withdrawal {"allowed":false}']);
+  await expect.poll(() => calls).toEqual(['late PUT {"lateSubmissionAllowed":false}', 'withdrawal {"allowed":false}']);
 });
 
 test("NZ-3: no group ticked is refused with a sentence", async ({ page }) => {
   await teacher(page);
-  await page.goto(`/app/web/nastavnik/zadatak/novi?kolegij=${K1}`);
+  await page.goto(`/aplikacija/nastavnik/zadatak/novi?kolegij=${K1}`);
   await page.getByLabel("Naslov zadatka").fill("Izmišljeni seminar");
   await page.getByLabel("Otvaranje").fill("2027-01-10T10:00");
   await page.getByLabel("Rok", { exact: true }).fill("2027-01-30T16:00");
@@ -89,6 +95,46 @@ test("NZ-3: no group ticked is refused with a sentence", async ({ page }) => {
   await page.getByLabel("Grupa B").uncheck();
   await page.getByRole("button", { name: "Pregled i objava" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "odaberite barem jednu grupu" }).first()).toBeVisible();
+});
+
+test("F4-NAS-R01: the edit page reads the late rule and saves a change through the PUT after asking", async ({ page }, info) => {
+  await teacher(page);
+  const calls: string[] = [];
+  await page.route(`**/api/v1/institution/assignments/${A1}`, (route) => route.fulfill(json({
+    assignmentId: A1, courseId: K1, versionNo: 1, title: "Izmišljeni seminar", instructions: "", workType: "seminar_paper",
+    opensAt: "2026-10-01T08:00:00.000Z", dueAt: "2099-12-15T22:59:00.000Z", aiPolicy: "partially_allowed", aiPurposes: ["literature_search"],
+    evidenceProfile: "basic", importAllowed: false, wordMin: null, wordMax: null,
+  })));
+  await page.route(`**/api/v1/teacher/assignments/${A1}/submission-withdrawal`, (route) => route.fulfill(json({ allowed: true, changedAt: null })));
+  await page.route(`**/api/v1/teacher/assignments/${A1}/declaration-required`, (route) => route.fulfill(json({ required: true, changedAt: null })));
+  await page.route(`**/api/v1/teacher/assignments/${A1}/late-submission`, (route) => {
+    calls.push(`get ${route.request().method()}`);
+    return route.fulfill(json({ lateSubmissionAllowed: true }));
+  });
+  await page.route(`**/api/v1/institution/assignments/${A1}/late-submission`, (route) => {
+    calls.push(`put ${route.request().method()} ${route.request().postData()}`);
+    return route.fulfill(json({ lateSubmissionAllowed: false }));
+  });
+  await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/uredi`);
+  const panel = page.locator("div.card").filter({ has: page.getByRole("region", { name: "Pravila predaje" }) });
+  await expect(panel.getByLabel("Dopuštena (predaja se označi kao kasna)")).toBeChecked();
+  await expect(panel.getByLabel("Nije dopuštena")).toBeEnabled();
+  await expect(panel.getByText("Postavka predaje nakon roka ovdje se zasad ne može pročitati ni promijeniti.")).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "Spremi pravila predaje" })).toBeDisabled();
+  await checkAxe(page, info, "edit-late");
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  await panel.getByLabel("Nije dopuštena").check();
+  await expect(panel.getByText("nakon roka ne može predati")).toBeVisible();
+  await panel.getByRole("button", { name: "Spremi pravila predaje" }).focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog", { name: "Promjena pravila predaje" });
+  await expect(dialog.getByText("Ova izmjena mijenja pravila koja su studenti već vidjeli.")).toBeVisible();
+  expect(calls.filter((c) => c.startsWith("put"))).toEqual([]);
+  await dialog.getByRole("button", { name: "Spremi izmjenu" }).click();
+  await expect(panel.getByText("Pravila predaje su spremljena.")).toBeVisible();
+  expect(calls.filter((c) => c.startsWith("put"))).toEqual(['put PUT {"lateSubmissionAllowed":false}']);
+  expect(calls.filter((c) => c.startsWith("get"))).toEqual(["get GET"]);
 });
 
 test("NZ-4: the edit page reads the switches, asks first and says saved only after the answer", async ({ page }, info) => {
@@ -103,11 +149,15 @@ test("NZ-4: the edit page reads the switches, asks first and says saved only aft
     ? route.fulfill(json({ allowed: true, changedAt: null }))
     : (puts.push(route.request().postData() ?? ""), route.fulfill(json({ allowed: false, changedAt: "2026-11-24T10:00:00.000Z" }))));
   await page.route(`**/api/v1/teacher/assignments/${A1}/declaration-required`, (route) => route.fulfill(json({ required: true, changedAt: null })));
-  await page.goto(`/app/web/nastavnik/zadatak/${A1}/uredi`);
+  // F4-NAS-R01: here the late rule cannot be read (503), so only it stays disabled and says so.
+  await page.route(`**/api/v1/teacher/assignments/${A1}/late-submission`, (route) => route.fulfill(json({ status: "unavailable" }, 503)));
+  await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/uredi`);
   // The panel is the card around the section "Pravila predaje"; its button and note stand beside the section.
   const panel = page.locator("div.card").filter({ has: page.getByRole("region", { name: "Pravila predaje" }) });
   await expect(panel).toBeVisible();
   await expect(panel.getByRole("button", { name: "Spremi pravila predaje" })).toBeDisabled();
+  await expect(panel.getByText("Postavka predaje nakon roka ovdje se zasad ne može pročitati ni promijeniti.")).toBeVisible();
+  await expect(panel.getByLabel("Dopuštena (predaja se označi kao kasna)")).toBeDisabled();
   await checkAxe(page, info, "edit");
   await page.setViewportSize({ width: 1280, height: 900 });
 
@@ -134,23 +184,24 @@ test("NZ-5: a student without a submission after the deadline gets an exception 
       { studentId: S1, givenName: "Ana", familyName: "Izmišljenić", groupName: null, submitted: false, requestedMinute: null, afterDeadline: null, evidenceRecord: null },
     ] })));
     await page.route(`**/api/v1/teacher/assignments/${id}/submissions`, (route) => route.fulfill(json({ submissions: [] })));
-    await page.route(`**/api/v1/teacher/assignments/${id}/deadline-extensions`, (route) => {
-      if (route.request().method() === "GET") return route.fulfill(json({ extensions: [] }));
+    await page.route(`**/api/v1/teacher/assignments/${id}/deadline-extensions`, (route) => route.fulfill(json({ extensions: [] })));
+    await page.route(`**/api/v1/teacher/assignments/${id}/late-submission-exceptions`, (route) => {
+      if (route.request().method() === "GET") return route.fulfill(json({ exceptions: [] }));
       const body = route.request().postDataJSON() as Record<string, unknown>;
       posts.push(body);
-      return route.fulfill(json({ existingSubmissionsUnchanged: true, extension: {
-        id: "6b4b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c41", scope: "one", studentId: S1, previousDueAt: "2026-11-08T22:59:00.000Z",
-        dueAt: body.dueAt, reasonId: body.reasonId, createdBy: "6b3b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c31", createdAt: "2026-11-24T10:00:00.000Z",
+      return route.fulfill(json({ exception: {
+        id: "6b4b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c41", studentId: S1, untilAt: body.untilAt, reasonId: body.reasonId,
+        createdBy: "6b3b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c31", createdAt: "2026-11-24T10:00:00.000Z",
       } }, 201));
     });
   }
-  await page.goto("/app/web/nastavnik");
+  await page.goto("/aplikacija/nastavnik");
   // Only the assignment whose deadline has passed offers the action to a student who never opened the work.
   await expect(page.getByRole("button", { name: /Dopusti predaju nakon roka… Ana/ })).toHaveCount(1);
   await page.getByRole("button", { name: /Dopusti predaju nakon roka… Ana/ }).focus();
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: /Dopusti predaju nakon roka: Ana/ });
-  await expect(dialog.getByText("Student vidi novi rok i razlog, a zapis se ne briše.")).toBeVisible();
+  await expect(dialog.getByText("Student vidi do kada smije predati, a zapis se ne briše.")).toBeVisible();
   await checkAxe(page, info, "late");
   await page.setViewportSize({ width: 1280, height: 900 });
   await dialog.getByRole("button", { name: "Zabilježi iznimku" }).click();
@@ -160,5 +211,5 @@ test("NZ-5: a student without a submission after the deadline gets an exception 
   await dialog.getByRole("button", { name: "Zabilježi iznimku" }).click();
   // The message stays on screen after the facts are read again (it is not part of the row that is mounted again).
   await expect(page.getByRole("status").filter({ hasText: "Zabilježeno: predaja je dopuštena do" })).toBeVisible();
-  expect(posts).toEqual([{ scope: "one", studentId: S1, dueAt: "2099-01-10T11:00:00.000Z", reasonId: "technical" }]);
+  expect(posts).toEqual([{ studentId: S1, untilAt: "2099-01-10T11:00:00.000Z", reasonId: "technical" }]);
 });

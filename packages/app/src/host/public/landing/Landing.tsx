@@ -20,7 +20,7 @@ export function Landing({ base }: { base: string }) {
       <div className={styles.backdrop} aria-hidden="true" />
       <main id="sadrzaj" className={styles.main}>
         <div className={styles.opening}>
-          <Hero base={base} />
+          <Hero />
         </div>
         <How />
         <Teacher />

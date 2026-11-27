@@ -1,4 +1,9 @@
 export const sourcesMentionHr = {
+  requiredHeading: "Obvezna literatura kolegija",
+  requiredLoading: "Učitavam obveznu literaturu…",
+  requiredUnavailable: "Obveznu literaturu kolegija trenutačno nije moguće dohvatiti.",
+  requiredRetry: "Pokušaj ponovno",
+  requiredNone: "Nastavnik za ovaj kolegij nije naveo obveznu literaturu.",
   quickTitle: "Brzi izvor",
   cancel: "Odustani",
   plainCount: (n: number) => `Navodi bez izvora: ${n}`,

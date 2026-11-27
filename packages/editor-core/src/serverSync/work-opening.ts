@@ -9,6 +9,8 @@ import type { EvidenceStepFormat } from "../document/forensics/evidence-segment-
 import { SLIDES_REVISION_ZERO_SHA256, type SlidesDocument } from "../slides/model";
 import { verifySlidesSnapshot } from "../slides/json";
 import { SLIDE_STEP_FORMAT_V1 } from "../slides/steps";
+import type { SheetDocument } from "../sheet/model";
+import { SHEET_REVISION_ZERO_SHA256, SHEET_STEP_FORMAT_V1, verifySheetSnapshot } from "../sheet/steps";
 import type { EvidenceOpening, EvidenceSegmentTransaction } from "../sync/journal-types";
 
 const schema = {
@@ -37,7 +39,7 @@ export type VerifiedWorkOpening = Readonly<{
    * is a `SlidesDocument` (read it with `slidesOf`), its `schemaVersion` is the
    * slides line's own 1 and means nothing for the text schemas.
    */
-  documentKind?: "slides";
+  documentKind?: "slides" | "spreadsheet";
 }>;
 
 /**
@@ -45,11 +47,44 @@ export type VerifiedWorkOpening = Readonly<{
  * and, for a slides work, `documentKind: "slides"` as the server states it. (The
  * shared type in sync/journal-types.ts stays as it was: it belongs to another lane.)
  */
-export type OpeningInput = EvidenceOpening & Readonly<{ documentKind?: "slides" }>;
+export type OpeningInput = EvidenceOpening & Readonly<{ documentKind?: "slides" | "spreadsheet" }>;
 
 /** The slides document of an opening of a slides work, or null for any other opening. */
 export function slidesOf(work: VerifiedWorkOpening): SlidesDocument | null {
   return work.documentKind === "slides" ? (work.document as unknown as SlidesDocument) : null;
+}
+
+/**
+ * WEB-V14-SHEET-JOURNAL: the spreadsheet document of an opening of a spreadsheet
+ * work, or null for any other opening. Its `schemaVersion` is the sheet line's own 1.
+ */
+export function sheetOf(work: VerifiedWorkOpening): SheetDocument | null {
+  return work.documentKind === "spreadsheet" ? (work.document as unknown as SheetDocument) : null;
+}
+
+/**
+ * WEB-V14-SHEET-JOURNAL: the open answer of a spreadsheet work, verified as for
+ * slides: the exact JCS of a valid spreadsheet document with `documentHash`;
+ * revision 0 is the one constant revision zero with an empty chain.
+ */
+export async function verifySheetWorkOpening(
+  expectedDocumentId: string,
+  opened: OpeningInput,
+  proof?: RevisionZeroProof,
+): Promise<VerifiedWorkOpening | null> {
+  const { documentId, currentRevision, documentHash, document, headSegmentHash, lastSequenceTo } = opened;
+  if (documentId !== expectedDocumentId || documentId.length === 0 ||
+      !Number.isSafeInteger(currentRevision) || currentRevision < 0) return null;
+  if (proof !== undefined && (proof.documentId !== documentId || proof.sha256 !== SHEET_REVISION_ZERO_SHA256)) return null;
+  const snapshot = await verifySheetSnapshot(document);
+  if (!snapshot.ok || snapshot.sha256 !== documentHash) return null;
+  if (currentRevision === 0 &&
+      (snapshot.sha256 !== SHEET_REVISION_ZERO_SHA256 || lastSequenceTo !== 0 || headSegmentHash !== null)) return null;
+  return Object.freeze({
+    [verified]: true as const, documentId, revision: currentRevision, snapshotSha256: snapshot.sha256,
+    schemaVersion: 1 as const, transactionFormat: SHEET_STEP_FORMAT_V1,
+    document: snapshot.document as unknown as VersionedDocument, documentKind: "spreadsheet" as const,
+  });
 }
 
 /**
@@ -91,6 +126,7 @@ export async function verifyWorkOpening(
   proof?: RevisionZeroProof,
 ): Promise<VerifiedWorkOpening | null> {
   if (opened.documentKind === "slides") return verifySlidesWorkOpening(expectedDocumentId, opened, proof);
+  if (opened.documentKind === "spreadsheet") return verifySheetWorkOpening(expectedDocumentId, opened, proof);
   const { documentId, currentRevision, documentHash, document, headSegmentHash, lastSequenceTo } = opened;
   if (documentId !== expectedDocumentId || documentId.length === 0 ||
       !Number.isSafeInteger(currentRevision) || currentRevision < 0) return null;
@@ -125,6 +161,15 @@ export async function matchesWorkOpening(
     return slideSegment.ok && slideSnapshot.ok && slideSegment.sha256 === tx.segmentHash &&
       slideSegment.segment.documentId === documentId &&
       slideSegment.segment.finalDocumentHash === slideSnapshot.sha256;
+  }
+  if (opening.documentKind === "spreadsheet") {
+    const [sheetSegment, sheetSnapshot] = await Promise.all([
+      verifyCanonicalEvidencePayloadV2(tx.segment, SHEET_STEP_FORMAT_V1),
+      verifySheetSnapshot(tx.document),
+    ]);
+    return sheetSegment.ok && sheetSnapshot.ok && sheetSegment.sha256 === tx.segmentHash &&
+      sheetSegment.segment.documentId === documentId &&
+      sheetSegment.segment.finalDocumentHash === sheetSnapshot.sha256;
   }
   const [segment, snapshot] = await Promise.all([
     verifyCanonicalEvidencePayloadV2(tx.segment, opening.transactionFormat),

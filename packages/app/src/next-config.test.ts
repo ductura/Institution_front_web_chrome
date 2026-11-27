@@ -10,9 +10,24 @@ describe("next.config (LOK-WEB-6)", () => {
     expect(nextConfig.allowedDevOrigins).toContain("127.0.0.1");
   });
 
-  it("keeps the host under /app/web/", () => {
-    expect(nextConfig.basePath).toBe("/app");
-    expect(nextConfig.assetPrefix).toBe("/app/web");
+  it("keeps the host under /aplikacija/", () => {
+    expect(nextConfig.basePath).toBe("/aplikacija");
+    // The build's own files go under the basePath too (/aplikacija/_next/); no second prefix (D-318).
+    expect(nextConfig.assetPrefix).toBeUndefined();
+  });
+
+  it("sends the frame's CSP on every code-run page and on nothing else (PL-CSP-OKVIR)", async () => {
+    const rules = await nextConfig.headers!();
+    expect(rules).toEqual([{ source: "/code-run/:path*", headers: [{ key: "Content-Security-Policy", value: CODE_RUN_FRAME_CSP }] }]);
+    expect(rules.some((rule) => (rule as { basePath?: unknown }).basePath === false)).toBe(false);
+    for (const part of ["default-src 'none'", "script-src 'self'", "worker-src blob:", "frame-ancestors 'self'"])
+      expect(CODE_RUN_FRAME_CSP).toContain(part);
+    expect(CODE_RUN_FRAME_CSP).not.toMatch(/connect-src|unsafe-eval|unsafe-inline/);
+  });
+
+  it("matches the policy the frame e2e simulates", () => {
+    const spec = readFileSync(join(import.meta.dirname, "../e2e/code-run-frame.spec.ts"), "utf8");
+    expect(spec).toContain(`const FRAME_CSP = "${CODE_RUN_FRAME_CSP}"`);
   });
 
   it("sends the frame's CSP on every code-run page and on nothing else (PL-CSP-OKVIR)", async () => {

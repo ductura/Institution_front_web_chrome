@@ -2,7 +2,7 @@ name: CI
 on:
   push: { branches: [main, "migracija/kopija-ductus-front"] }
   pull_request:
-  # Full e2e matrix once a day (a pull request runs chromium only). The
+  # Full e2e matrix once a day (a pull request runs chromium, firefox and webkit). The
   # schedule runs on the default branch main only. Every job also by hand
   # (ZEL-CI-RED).
   schedule: [{ cron: "17 3 * * *" }]
@@ -140,20 +140,20 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-root-${{ github.event_name == 'pull_request' && 'chromium' || 'matrix' }}
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-root-${{ github.event_name == 'pull_request' && 'engines' || 'matrix' }}
       # e2e matrica (DAN-755): svi preglednici matrice; chrome i msedge su
       # pravi Google Chrome i Microsoft Edge, obvezni u CI-ju. Na pull
-      # requestu samo chromium (Daniel, 22. 11. 2026: brži CI); puna matrica
-      # na push (baza, main) i na noćnom rasporedu.
+      # requestu chromium, firefox i webkit (PM2-R13, plan M0.3); chrome, edge i
+      # mobilna emulacija samo na push (baza, main) i na noćnom rasporedu.
       - name: Instalacija preglednika
         if: ${{ github.event_name != 'pull_request' }}
         run: pnpm exec playwright install --with-deps chromium chrome msedge firefox webkit
-      - name: Instalacija preglednika (pull request, samo chromium)
+      - name: Instalacija preglednika (pull request, chromium, firefox, webkit)
         if: ${{ github.event_name == 'pull_request' }}
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
       - name: Funkcionalni testovi
         env:
-          DUCTURA_PR_CHROMIUM_ONLY: ${{ github.event_name == 'pull_request' }}
+          DUCTURA_PR_ENGINES: ${{ github.event_name == 'pull_request' }}
         run: pnpm run test:functional
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
@@ -496,7 +496,7 @@ jobs:
           retention-days: 1
 
   # The institution front's host (#2028 c.6993786629 §1, §3.3): packages/app
-  # built and served by dev-server.mjs under /app/web/ and /app/chrome/, over a
+  # built and served by dev-server.mjs under /aplikacija/, over a
   # fake institution server (page.route), with axe.
   #
   # The browser tests run as six shards of one job (ZEL-W23; six since

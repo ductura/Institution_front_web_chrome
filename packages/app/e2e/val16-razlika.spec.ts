@@ -3,9 +3,8 @@
 // (topic, stage, forms, consent, committee, stages), shared by both roles of the test; the role only decides whose
 // answers the VIZ "puno" scenario gives for everything else. Every person, text and identifier is invented.
 //
-// Not covered, and why: the administrator naming the committee. `CommitteeEditor` is not mounted on any route yet
-// (its page, WEB-V16-POPIS-FAKULTET, is not built), so that step is a `fixme` until it is. The committee the
-// student and the mentor read is therefore preset in the fake.
+// The administrator names the committee through the faculty's list of theses (`ThesisOverviewPage` at
+// /ustanova/zavrsni-radovi, which mounts `CommitteeEditor`); the student then reads the list the fake saved.
 import { axe, setTheme } from "./a11y/check";
 import { expect, test, type Page } from "./fixtures/test";
 import { FIKSNI_DATUM, T1 } from "../test-fakes/viz-scenariji";
@@ -18,14 +17,22 @@ import { stageHr as tg } from "../src/host/thesis/stage/messages.hr";
 import { stagesStudentHr as te } from "../src/host/thesis/stages-student/messages.hr";
 import { thesisHr } from "../src/host/thesis/messages.hr";
 import { committeeHr as tc } from "../src/host/thesis/committee/messages.hr";
+import { thesisOverviewMessages as to } from "../src/host/admin/thesis-overview/messages.hr";
 
 const FORM_CODE = "izmisljeni-obrazac";
 const MILESTONE = "00000000-0000-4000-8000-00000000f161";
+const CHAIR = "00000000-0000-4000-8000-0000000000c1";
+const MEMBER = "00000000-0000-4000-8000-0000000000c2";
+const TEACHERS = [
+  { personId: CHAIR, name: { givenName: "Ivana", familyName: "Izmišljena" } },
+  { personId: MEMBER, name: { givenName: "Petar", familyName: "Zamišljeni" } },
+];
 const OTHER_DOC = "izmisljeni-rad-0003"; // the second mentored work of the scenario: not this mentor's to see
 const DEFENSE_LOCAL = "2026-12-15T10:30";
 const DEFENSE_ISO = "2026-12-15T09:30:00.000Z"; // 10:30 Zagreb (CET)
 
-type Role = "student" | "teacher";
+type Role = "student" | "teacher" | "institution_admin";
+type Member = { userId: string; name: { givenName: string; familyName: string }; role: "chair" | "member" };
 type Version = { version: number; title: string; summary: string; proposedAt: string };
 type Sent = { method: string; path: string; body: unknown };
 
@@ -41,10 +48,7 @@ function newWorld() {
     consent: { state: "none" as "none" | "given" | "withdrawn", comment: null as string | null, changedAt: null as string | null, history: [] as unknown[] },
     stage: { stage: "none", defenseAt: null as string | null, changedBy: null as string | null, changedAt: null as string | null, changedByPart: null as string | null },
     milestone: { state: "not_submitted", submittedAt: null as string | null, approvedAt: null as string | null },
-    committee: { members: [
-      { userId: "00000000-0000-4000-8000-0000000000c1", name: { givenName: "Ivana", familyName: "Izmišljena" }, role: "chair" },
-      { userId: "00000000-0000-4000-8000-0000000000c2", name: { givenName: "Petar", familyName: "Zamišljeni" }, role: "member" },
-    ], changedAt: "2026-11-20T10:00:00.000Z", changedByPart: "faculty" },
+    committee: { members: [] as Member[], changedAt: null as string | null, changedByPart: null as "faculty" | null },
   };
   return w;
 }
@@ -142,8 +146,16 @@ async function serve(page: Page, w: World) {
           w.stage = { stage, defenseAt: (body?.defenseAt as string | undefined) ?? null, changedBy: WHO, changedAt: NOW, changedByPart: "mentor" };
           return json(w.stage);
         }
-        // --- committee (read only here)
+        // --- committee: read by everyone with the work, written by the administrator only (5 members, one chair at most)
         if (rest === "thesis-committee" && m === "GET") return json(w.committee);
+        if (rest === "thesis-committee" && m === "PUT") {
+          if (w.role !== "institution_admin") return json({ code: "forbidden" }, 403);
+          const members = (body?.members ?? []) as { userId: string; role: "chair" | "member" }[];
+          const named = members.map((x) => ({ ...x, name: TEACHERS.find((t) => t.personId === x.userId)?.name }));
+          if (members.length > 5 || members.filter((x) => x.role === "chair").length > 1 || named.some((x) => x.name === undefined)) return json({ code: "invalid" }, 422);
+          w.committee = { members: named as Member[], changedAt: NOW, changedByPart: "faculty" };
+          return json(w.committee);
+        }
         // --- stages
         if (rest === "milestone-states" && m === "GET") return json({ milestones: [milestoneBody(w)] });
         if (rest === `milestones/${MILESTONE}/submit` && m === "POST") {
@@ -157,6 +169,16 @@ async function serve(page: Page, w: World) {
           return json(milestoneBody(w));
         }
       }
+    }
+    // The faculty's list of theses and the teachers it chooses the committee from (administrator only).
+    if (m === "GET" && path === "/api/v1/institution/thesis-overview") {
+      if (w.role !== "institution_admin") return json({ code: "forbidden" }, 403);
+      return json({ works: [{ documentId: DOKUMENT_T1, workType: "master_thesis", mentorName: { givenName: "Izmišljena", familyName: "Mentorica" },
+        studentName: { givenName: "Izmišljeni", familyName: "Student" }, stage: "none", defenseAt: null, topicState: "approved", committeeSize: w.committee.members.length }], next: null });
+    }
+    if (m === "GET" && path === "/api/v1/institution/teachers") {
+      if (w.role !== "institution_admin") return json({ code: "forbidden" }, 403);
+      return json({ pending: [], confirmed: TEACHERS.map((t) => ({ ...t, confirmedAt: NOW, forReview: false })) });
     }
     const result = server.answer(w.role, m, path);
     if (result === "hang") return undefined;
@@ -173,7 +195,7 @@ async function skipGuide(page: Page) {
 async function studentPanel(page: Page, w: World, width = 1250) {
   w.role = "student";
   await page.setViewportSize({ width, height: 900 });
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   await skipGuide(page);
   const tab = page.getByRole("tab", { name: "Mentor" });
   await tab.focus();
@@ -181,10 +203,19 @@ async function studentPanel(page: Page, w: World, width = 1250) {
   await expect(page.getByRole("region", { name: tf.title })).toBeVisible();
 }
 
+/** The faculty's list of theses, as the administrator. */
+async function adminPage(page: Page, w: World, width = 1250) {
+  w.role = "institution_admin";
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto("/aplikacija/ustanova/zavrsni-radovi");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(to.title);
+  await expect(page.getByRole("table", { name: to.caption })).toBeVisible();
+}
+
 async function mentorPanel(page: Page, w: World, width = 1250) {
   w.role = "teacher";
   await page.setViewportSize({ width, height: 900 });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   // Both mentored works read at once; the second one answers 404 and drops out, so wait until one card is left.
   await expect(page.getByRole("region", { name: tf.title })).toHaveCount(1);
   await expect(page.getByRole("region", { name: tf.title })).toBeVisible();
@@ -276,7 +307,28 @@ test("the whole flow of a thesis: topic, stage, forms and consent, committee, de
   await expect(card(page, tf.title).getByTestId("consent")).toContainText("Izmišljeni komentar uz suglasnost.");
   await expect(card(page, tf.title).getByRole("button", { name: tf.withdraw })).toHaveCount(0);
 
-  // 7. The committee (named by the faculty, preset here): the student sees names and roles, no controls.
+  // 7. The administrator names the committee in the faculty's list: a second chair is refused before any request,
+  //    the list is saved only on the server's 200, and the list shows the new size.
+  await adminPage(page, w);
+  await expect(page.getByRole("cell", { name: to.committeeNone })).toBeVisible();
+  await page.getByRole("button", { name: to.openCommitteeFor.replace("{student}", "Izmišljeni Student") }).click();
+  const editor = page.getByRole("form", { name: tc.editor.title });
+  await expect(editor.getByText(tc.editor.empty)).toBeVisible();
+  await editor.getByLabel(tc.editor.addLabel).selectOption(CHAIR);
+  await editor.getByLabel(tc.editor.addLabel).selectOption(MEMBER);
+  await editor.getByLabel(tc.editor.roleLabel).first().selectOption("chair");
+  await editor.getByLabel(tc.editor.roleLabel).last().selectOption("chair");
+  await editor.getByRole("button", { name: tc.editor.save }).click();
+  await expect(editor.getByRole("alert").first()).toHaveText(tc.problems.manyChairs);
+  expect(w.sent.filter((s) => s.path.endsWith("/thesis-committee"))).toEqual([]);
+  await editor.getByLabel(tc.editor.roleLabel).last().selectOption("member");
+  await editor.getByRole("button", { name: tc.editor.save }).click();
+  await expect(editor.getByTestId("note")).toHaveText(tc.saved);
+  expect(w.sent.filter((s) => s.method === "PUT" && s.path.endsWith("/thesis-committee")).map((s) => s.body))
+    .toEqual([{ members: [{ userId: CHAIR, role: "chair" }, { userId: MEMBER, role: "member" }] }]);
+  await expect(page.getByRole("cell", { name: "2 člana" })).toBeVisible();
+  // The student sees names and roles, no controls.
+  await studentPanel(page, w);
   const committee = card(page, tc.title);
   await expect(committee.getByRole("list", { name: tc.listLabel })).toContainText("Ivana Izmišljena (Predsjednik)");
   await expect(committee.getByRole("list", { name: tc.listLabel })).toContainText("Petar Zamišljeni (Član)");

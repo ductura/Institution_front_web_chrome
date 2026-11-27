@@ -6,9 +6,10 @@ import type { CardRole } from "../assignment-card/model";
 import { compareHr } from "../../../../../editor-core/src/document/text/compare-hr";
 import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
 import { deadlineOf, whenHr, type Extension } from "../assignment-facts/model";
+import type { FollowUpStudent } from "../assignment-facts/read";
 import { n17Messages as text } from "./messages.hr";
 
-export type Revision = { readonly state: "open" | "reopened" | "accepted" | "closed" };
+export type Revision = { readonly state: "open" | "reopened" | "accepted" | "closed" | "responded" | "withdrawn" };
 export type N17Row = {
   readonly studentId: string;
   readonly name: string | null;
@@ -28,6 +29,10 @@ export type N17Row = {
   readonly dueAt?: string;
   /** Absent: the read does not say. `null`: no revision was requested. */
   readonly revision?: Revision | null;
+  /** NAS-08: did this student acknowledge the assignment notice (teacher.assignment-follow-up.get)? Absent: not read. */
+  readonly noticeAcknowledged?: boolean;
+  /** NAS-12: open revision requests of this student; absent when not read. */
+  readonly openRevisions?: number;
 };
 
 export type N17Card = {
@@ -100,6 +105,8 @@ export type RowJoin = {
   /** teacher.submissions.get, by student. */
   readonly submissions: ReadonlyMap<string, { readonly revision: number | null; readonly documentId: string | null }> | null;
   readonly extensions: readonly Extension[] | null;
+  /** NAS-R02: teacher.assignment-follow-up.get, by student; null or absent when it was not read. */
+  readonly followUp?: ReadonlyMap<string, FollowUpStudent> | null;
 };
 
 /**
@@ -114,10 +121,19 @@ export function joinRows(rows: readonly N17Row[], join: RowJoin, now: number): r
     const documentId = work?.documentId ?? sub?.documentId ?? row.documentId ?? null;
     const deadline = join.extensions === null ? null : deadlineOf(row.studentId, join.dueAt, join.extensions);
     const passed = deadline !== null && Date.parse(deadline.dueAt) <= now;
-    const phase: N17Row["phase"] = row.submitted || work === undefined ? row.phase
+    const follow = join.followUp?.get(row.studentId);
+    const base: N17Row["phase"] = row.submitted || work === undefined ? row.phase
       : work.state === "not_started" ? "notStarted" : work.state === "in_progress" && !passed ? "writing" : row.phase;
+    // NAS-08: a student who has not acknowledged the notice and has not submitted is "obavijest nije potvrđena".
+    const phase: N17Row["phase"] = follow !== undefined && follow.noticeAcknowledgedAt === null && !row.submitted && base !== "writing" ? "unconfirmed" : base;
     return {
       ...row,
+      ...(follow === undefined ? {} : {
+        noticeAcknowledged: follow.noticeAcknowledgedAt !== null,
+        openRevisions: follow.openRevisionCount,
+        // NAS-10: the revision column from the server; `responded` waits for the teacher.
+        revision: follow.revisionState === null ? null : { state: follow.revisionState },
+      }),
       ...(documentId === null ? {} : { documentId }),
       ...(phase === undefined ? {} : { phase }),
       ...(sub === undefined ? {} : { version: sub.revision }),
@@ -156,6 +172,10 @@ export function summaryLine(rows: readonly N17Row[]): string {
   if (not > 0) parts.push(text.summary.notSubmitted(not));
   if (notStarted > 0) parts.push(text.summary.notStarted(notStarted));
   if (unconfirmed > 0) parts.push(text.summary.unconfirmed(unconfirmed));
+  // NAS-08: "Potvrdilo n od m", only when every row says whether its notice was acknowledged.
+  if (rows.length > 0 && rows.every((r) => r.noticeAcknowledged !== undefined)) {
+    parts.push(text.summary.acknowledged(rows.filter((r) => r.noticeAcknowledged === true).length, rows.length));
+  }
   return parts.length === 0 ? text.summary.noRows : parts.join(", ");
 }
 
@@ -173,4 +193,47 @@ export function sortedRows(rows: readonly N17Row[]): readonly N17Row[] {
 export function workHref(row: N17Row): string | null {
   const id = row.documentId;
   return typeof id === "string" && /^[\w-]+$/.test(id) ? `/nastavnik/rad/${encodeURIComponent(id)}` : null;
+}
+
+// NAS-R15 (NZ-11): filters by state and group, and "Nije započelo n". Reading only; nothing ranks by a figure.
+export type N17StateFilter = "" | "notStarted" | "writing" | "submitted" | "late" | "revision";
+export const N17_STATE_FILTERS: readonly Exclude<N17StateFilter, "">[] = ["notStarted", "writing", "submitted", "late", "revision"];
+
+export function rowInState(row: N17Row, filter: Exclude<N17StateFilter, "">): boolean {
+  switch (filter) {
+    case "notStarted": return !row.submitted && (row.phase === "notStarted" || row.phase === "unconfirmed");
+    case "writing": return !row.submitted && row.phase === "writing";
+    case "submitted": return row.submitted;
+    case "late": return row.submitted && row.afterDeadline;
+    case "revision": return row.revision !== undefined && row.revision !== null;
+  }
+}
+
+/** Rows in the chosen state ("" = all) and group ("" = all); order is kept. */
+export function filteredRows(rows: readonly N17Row[], state: N17StateFilter, group: string): readonly N17Row[] {
+  return rows.filter((r) => (state === "" || rowInState(r, state)) && (group === "" || r.group === group));
+}
+
+/** "Sva stanja (n)" and one option per state with its count over all rows of all cards. */
+export function stateFilterOptions(rows: readonly N17Row[]): readonly { value: string; label: string }[] {
+  return [
+    { value: "", label: `${text.filters.allStates} (${rows.length})` },
+    ...N17_STATE_FILTERS.map((value) => ({ value, label: `${text.filters.state[value]} (${rows.filter((r) => rowInState(r, value)).length})` })),
+  ];
+}
+
+/** "Sve grupe (n)" and "Grupa X (n)" alphabetically; empty when no row has a group. */
+export function groupFilterOptions(rows: readonly N17Row[]): readonly { value: string; label: string }[] {
+  const counts = new Map<string, number>();
+  for (const r of rows) if (r.group !== null && r.group !== "") counts.set(r.group, (counts.get(r.group) ?? 0) + 1);
+  if (counts.size === 0) return [];
+  return [
+    { value: "", label: `${text.filters.allGroups} (${rows.length})` },
+    ...[...counts].sort(([a], [b]) => compareHr(a, b)).map(([value, n]) => ({ value, label: `${value} (${n})` })),
+  ];
+}
+
+/** Every row of every card that was read. */
+export function allRows(cards: readonly N17Card[]): readonly N17Row[] {
+  return cards.flatMap((c) => c.rows ?? []);
 }

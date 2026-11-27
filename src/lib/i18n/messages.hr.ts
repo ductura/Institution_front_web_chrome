@@ -955,6 +955,12 @@ export const hr = {
       reload: "Učitaj aktualnu verziju",
       missing: "Zadatak nije dostupan ovom računu.",
       unavailable: "Zadatak trenutačno nije moguće učitati. Pokušajte ponovno.",
+      confirm: {
+        title: "Objaviti verziju {n}?",
+        lead: "Mijenja se ono što student čita u obavijesti, pa će verziju {n} morati ponovno potvrditi prije nastavka pisanja. Već napisan tekst ostaje kakav jest. Mijenja se:",
+        publish: "Objavi verziju {n}",
+        cancel: "Natrag na izmjene",
+      },
       fields: {
         title: "Naslov",
         instructions: "Upute studentima",
@@ -1640,6 +1646,25 @@ export const hr = {
     failureUnknown: "Spremanje nije uspjelo. Izvezite tekst da ga ne izgubite.",
     failureInvalid: "Ovaj tekst nije moguće spremiti. Izvezite ga da ga ne izgubite.",
     recovery: "Lokalni zapis nije moguće pouzdano pročitati. Ostaje netaknut, a ova kartica ništa ne sprema.",
+    // F4-EDI-R05: the way out of a CONFLICT. The dialog says what each choice does to the text of
+    // this device; the notice above stays for a sheet that cannot offer it.
+    conflictDialog: {
+      open: "Odluči o razlici",
+      title: "Rad na poslužitelju razlikuje se od teksta na ovom uređaju",
+      intro: "Odaberite koja verzija ostaje u radu. Ništa se ne briše bez vašeg izbora.",
+      loading: "Učitavam verziju s poslužitelja…",
+      unavailable: "Verzija s poslužitelja trenutačno nije dostupna. Tekst ostaje na uređaju. Pokušajte ponovno.",
+      retry: "Pokušaj ponovno",
+      diffHeading: "Razlika: uklonjeno je ono što postoji samo na ovom uređaju, dodano je ono što postoji samo na poslužitelju.",
+      takeServer: "Uzmi verziju s poslužitelja",
+      takeServerHelp: "Lokalne promjene se odbacuju iz rada. Tekst s ovog uređaja ostaje samo kao kopija na uređaju.",
+      keepLocal: "Zadrži tekst s ovog uređaja",
+      keepLocalHelp: "Uzima se svježa verzija s poslužitelja, a tekst s ovog uređaja šalje se kao nova verzija iznad nje.",
+      working: "Radim…",
+      refused: "Odluka nije primijenjena. Tekst je ostao kakav je bio. Pokušajte ponovno.",
+      failed: "Odluka nije primijenjena jer poslužitelj ne odgovara. Tekst je ostao kakav je bio.",
+      cancel: "Zatvori",
+    },
     exportText: "Izvezi tekst",
   },
   // F-8 (DAN-211): the browser reports no network. Says nothing about the
@@ -2250,7 +2275,7 @@ export const hr = {
     button: "Prijava sustavom AAI@EduHr",
     passwordNote: "Lozinku upisujete samo kod AAI@EduHr.",
     roleTitle: "Jedan ulaz. Vaš prostor.",
-    roleBody: "Nakon prijave otvara se vaš prostor prema dodijeljenoj ulozi. Ulogu nastavnika potvrđuje administrator fakulteta.",
+    roleBody: "Nakon prijave otvara se Vaš prostor prema dodijeljenoj ulozi. Ulogu nastavnika potvrđuje administrator fakulteta.",
     codeSummary: "Prvi dolazak ili imate kod zadatka?",
     codeNote: "Prvo se prijavite sustavom AAI@EduHr. Kod zadatka od nastavnika upisujete nakon prijave.",
     footer: "Identitet AAI@EduHr · pristup prema dodijeljenoj ulozi",
@@ -3066,6 +3091,31 @@ export const whatIsRecordedHr = {
   not: { heading: "Što ne bilježi", text: "Koje tipke pritišćeš, koliko brzo tipkaš kao broj, ništa izvan Ducture." },
   who: { heading: "Tko vidi", text: "Ti i tvoj nastavnik ili mentor, isto i u isto vrijeme." },
   note: "Ništa od ovoga nije ocjena ni tvrdnja o autorstvu.",
+  /** F4-EDI-R06: read-only overview of what the work holds besides the text. */
+  recorded: {
+    heading: "Što je još zabilježeno uz rad",
+    loading: "Učitavam…",
+    unavailable: "Trenutačno nije dostupno.",
+    signedOut: "Sesija je istekla. Prijavi se ponovno pa opet otvori ovaj prozor.",
+    conversations: {
+      heading: "Razgovori s pomoćnikom",
+      none: "Nema razgovora.",
+      count: "Razgovora: {conversations}, upita: {requests}.",
+      last: "Zadnji upit: {date}.",
+      unknown: "Razgovori se prikazuju kad je rad otvoren iz zadatka.",
+    },
+    transfers: {
+      heading: "Prijenosi u rad",
+      imported_file: "Uvezeno iz datoteke",
+      pasted_known: "Zalijepljeno, s objašnjenjem",
+      pasted_unknown: "Zalijepljeno, bez objašnjenja",
+      percent: "{percent} %",
+    },
+    attachments: {
+      heading: "Prilozi",
+      unavailable: "Popis priloga trenutačno nije dostupan.",
+    },
+  },
 } as const;
 
 /** WEB-0910, PIL-P1-RITAM-PREKIDAC: the rhythm setting in the dialog "Što Ductura bilježi dok pišeš". */
