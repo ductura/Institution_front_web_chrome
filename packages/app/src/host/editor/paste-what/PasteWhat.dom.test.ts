@@ -13,6 +13,13 @@ import { pasteWhatHr as t } from "./messages.hr";
 import { PasteWhat } from "./PasteWhatHost";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+// jsdom measures nothing; ProseMirror asks text ranges where they stand when the editor scrolls to the
+// selection after a paste. Without these the scroll can throw after a test has ended (CI #1109, #1104).
+const rect = () => ({ x: 0, y: 0, left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, toJSON: () => ({}) }) as DOMRect;
+for (const proto of [Range.prototype, Element.prototype] as { getClientRects: unknown; getBoundingClientRect: unknown }[]) {
+  proto.getClientRects ??= () => [rect()] as unknown as DOMRectList;
+  proto.getBoundingClientRect ??= rect;
+}
 
 const SOURCE = "00000000-0000-4000-8000-00000000c0a1";
 const PASTE = "Kišni vrt zadržava vodu s krova.";

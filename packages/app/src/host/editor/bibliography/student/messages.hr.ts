@@ -28,6 +28,10 @@ export const bibliographyStudentHr = {
   reliance: (n: number, m: number, source: string) =>
     `${n} od ${m} navoda u ovom poglavlju je iz izvora ${source}. Provjerite treba li uz njega još koji izvor.`,
   relianceShow: "Pokaži navode ›",
+  // ED-115 (prototype features.js litExtra): which sources each chapter cites.
+  byChapter: "Izvori po poglavljima",
+  byChapterNone: "nema navoda",
+  byChapterNote: "Popis literature slaže se iz citiranih izvora.",
   // To complete.
   incomplete: (n: number) => `Za dopuniti (${n})`,
   missing: (fields: string) => `nedostaje: ${fields}`,

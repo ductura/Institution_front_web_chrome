@@ -8,6 +8,7 @@ import { Button, Chip, Dialog, PillTag } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useReportOpenComments } from "@/components/editor/layout-prefs/panel-counts";
+import { listsStartWholeWork } from "@/components/editor/layout-prefs/preferences";
 
 import { ASK_COMMENT_EVENT, askedComment, takeAskedComment } from "./ask-comment";
 import styles from "./comments.module.css";
@@ -56,7 +57,8 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
   chapter?: ChapterScope;
 }) {
   const [load, setLoad] = useState<Load>({ kind: "loading" });
-  const [wholeWork, setWholeWork] = useState(false);
+  // ED-116: "Popisi prvo pokazuju" in the right panel's settings chooses where the list opens.
+  const [wholeWork, setWholeWork] = useState(listsStartWholeWork);
   const [turn, setTurn] = useState<TurnFilter>(null);
   const [kindFilter, setKindFilter] = useState<Kind | null>(null);
   const [replyFor, setReplyFor] = useState<string | null>(null);
