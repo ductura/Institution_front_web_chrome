@@ -4,7 +4,7 @@ import { findForbiddenTerms } from "../../../../../../../scripts/forbidden-terms
 import { FAKE_CHATS, FAKE_READS, fakeReader } from "./fake-port";
 import { chatDialogText, declarationStepText } from "./messages.hr";
 import {
-  canConfirm, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
+  canConfirm, canProceed, chatTitle, confirmLine, entryLabel, formMenuShown, mismatchTarget, mismatchText, recordedLine, stepView,
 } from "./model";
 
 describe("E-9 variants (WEB-2107)", () => {
@@ -28,6 +28,9 @@ describe("E-9 variants (WEB-2107)", () => {
     expect(mismatchTarget(full.recorded, "no_use")).toBe("2. Teorijski okvir, odlomak 1");
     expect(mismatchTarget(full.recorded, "used")).toBeNull();
     expect(mismatchTarget([], "no_use")).toBeNull();
+    // F4-PRE-R06 (R-34): the menu is there only when something is recorded to compare it with.
+    expect(formMenuShown(full.recorded)).toBe(true);
+    expect(formMenuShown([])).toBe(false);
     expect(mismatchText("T")).toBe("Zapis bilježi prijenos iz Asistenta na T. Provjerite odabrani obrazac.");
   });
 
