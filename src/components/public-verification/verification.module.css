@@ -42,6 +42,11 @@
   overflow-wrap: anywhere;
 }
 
+/* Design alignment 27. 11. 2026. (J-02): the place of LoadAlert under the form. */
+.unavailable {
+  margin-block-start: 1.5rem;
+}
+
 .feedback p, .feedback dd {
   margin: 0;
 }

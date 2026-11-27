@@ -1,4 +1,5 @@
 export { default as AppShell, type AppShellProps } from "./shell/AppShell";
+export { default as LoadAlert, type LoadAlertProps, type Retry } from "./shell/LoadAlert";
 export { accountPlace, appHref, HOW_IT_WORKS_HREF, homeHref, navFor, type AccountPlace, type NavItem, type ShellRole } from "./shell/nav";
 export { default as EmptyHome } from "./student/EmptyHome";
 export { default as MyAssignments } from "./student/MyAssignments";

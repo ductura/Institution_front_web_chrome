@@ -38,7 +38,7 @@ export default function MentoredWorks({ works }: { works: readonly MentoredWork[
           return h("li", { key: work.mentorshipId, className: styles.work },
             h("span", { className: styles.name }, studentName(work)),
             h("span", { className: styles.title }, work.title),
-            h("span", { className: styles.meta }, type === "" ? stateText(work) : `${type} · ${stateText(work)}`),
+            h("span", { className: styles.meta }, type === "" ? null : h("span", null, type), h("span", null, stateText(work))),
             href === null ? null : h("a", { className: styles.open, href }, t.open));
         }))),
     h("p", { className: styles.note }, t.orderNote));

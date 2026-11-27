@@ -14,7 +14,7 @@ const t = messagesHr.deadlineExtensions;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
+export const metadata = { title: `${t.title}, ${messagesHr.app.name}` };
 
 /**
  * `/nastavnik/zadatak/[assignmentId]/produljenje` (WEB-1113, N-13, C-15): the

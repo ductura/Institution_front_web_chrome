@@ -4,6 +4,8 @@ import { formatDateTimeHr } from "@/lib/i18n/hr";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 import { COMPONENTS, type PublicStatus } from "@/lib/status/public-status";
 
+import LoadAlert from "../shell/LoadAlert";
+
 import styles from "./Status.module.css";
 
 const t = messagesHr.statusPage;
@@ -50,7 +52,8 @@ export default function StatusView({ phase, onRetry }: { phase: StatusPhase; onR
       "section",
       { className: styles.panel },
       head,
-      h("div", { className: styles.body }, h("p", { className: styles.note, role: "alert" }, t.error), h("p", null, retry)),
+      // Design alignment 27. 11. 2026. (J-01): the alert box with the link under it; it asks again in place.
+      h("div", { className: styles.body }, h(LoadAlert, { retry: { label: t.retry, onRetry } }, t.error)),
     );
   }
   const { status, stale } = phase;

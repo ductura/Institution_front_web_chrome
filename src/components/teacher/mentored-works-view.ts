@@ -15,7 +15,7 @@ function byId(a: MentoredWork, b: MentoredWork): number {
 }
 
 /**
- * DAN-492 (N-16), design pregled-radova-v2 "Radovi · abecedno": by family
+ * DAN-492 (N-16), design pregled-radova-v2 "Radovi, abecedno": by family
  * name, then given name, in Croatian order; a student without a name last.
  * The mentorship id only breaks a tie, so the order never depends on when a
  * mentorship began, and nothing is ordered by a number (D-80).

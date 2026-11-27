@@ -1,2 +1,5 @@
 /* The table scrolls inside its own region (DataTable); its width never widens the page or a grid around it. */
 .overview { contain: inline-size; min-inline-size: 0; }
+
+/* Design alignment 27. 11. 2026.: the name and the group are two parts 12 px apart, with no separator sign. */
+.who { display: inline-flex; flex-wrap: wrap; column-gap: 12px; }

@@ -68,7 +68,8 @@ describe("WEB-35 teacher receipt (N-07)", () => {
     const teacher = render(await readOf(work(200, WORK), receipt(200, SIGNED)));
     const student = render(studentReceiptRead(await readSubmissionState(async () => reply(200, SIGNED), ASSIGNMENT), "submitted"));
     expect(teacher).toBe(student);
-    expect(teacher.replace(/<[^>]*>/g, "")).toContain(PAYLOAD.artifactSha256);
+    // Design alignment 27. 11. 2026. (N-04): the digest is no longer shown; only its copy button stays.
+    expect(teacher.replace(/<[^>]*>/g, "")).not.toContain(PAYLOAD.artifactSha256);
     expect(teacher).toMatch(SAYS_SUBMITTED);
   });
 

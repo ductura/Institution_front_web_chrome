@@ -16,6 +16,7 @@ import { Details, Fingerprint, KeyValueList, StateTag, type KeyValueItem } from 
 import type { SubmissionRead, SubmissionReceipt } from "../../client/submission";
 import { messagesHr } from "../../lib/i18n/messages.hr";
 
+import LoadAlert from "../shell/LoadAlert";
 import { zagrebParts } from "../summary/zagreb-time";
 import styles from "./ReceiptPanel.module.css";
 
@@ -71,10 +72,7 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
   if (read.kind === "loading") return <p role="status">{t.loading}</p>;
   if (read.kind === "error") {
     return (
-      <div className="receipt">
-        <p role="alert">{t.error}</p>
-        <p><a className={styles.link} href={retryHref}>{t.retry}</a></p>
-      </div>
+      <LoadAlert className="receipt" retry={{ label: t.retry, href: retryHref }}>{t.error}</LoadAlert>
     );
   }
   if (read.kind === "none") {
@@ -111,7 +109,8 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
     { id: "record", label: t.record, value: t.records[p.evidenceRecord] },
     {
       id: "fingerprint", label: t.fingerprint,
-      value: <><Fingerprint value={p.artifactSha256} /><span className="receipt__note">{t.fingerprintNote}</span></>,
+      // Design alignment 27. 11. 2026. (A5): no digest for people; the copy button, the note and the notices stay.
+      value: <><Fingerprint value={p.artifactSha256} showDigest={false} /><span className="receipt__note">{t.fingerprintNote}</span></>,
     },
   ];
   return (
