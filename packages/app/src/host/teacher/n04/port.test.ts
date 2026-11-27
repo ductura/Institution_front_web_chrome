@@ -132,3 +132,12 @@ describe("N-04 real port (PIL-K-N04)", () => {
     expect(wrapper).toMatch(/port=\{port\}/);
   });
 });
+
+describe("N-04 change through the real port (F4-PM1-R09)", () => {
+  it("is exposed by the real port and refuses an id that is not a UUID without a call", async () => {
+    const real = courseStudentsPort();
+    expect(typeof real.change).toBe("function");
+    expect(await real.change!("remove", COURSE, "1")).toBe("invalid");
+    expect(await real.change!("return", COURSE, "../x")).toBe("invalid");
+  });
+});
