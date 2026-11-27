@@ -11,6 +11,7 @@ async function fake(page: Page, role: string, writes: string[]) {
   await page.route("**/api/v1/institution/faculty-rules", (route) => { if (route.request().method() !== "GET") writes.push(route.request().method()); return route.fulfill({ json: RULES }); });
   await page.route("**/api/v1/institution/origin-thresholds", (route) => route.fulfill({ json: { thresholds: [] } }));
   await page.route("**/api/v1/institution/retention", (route) => route.fulfill({ json: { classes: [{ key: "sessions", label: "retention.sessions", retentionDays: null, mode: "dry-run", candidates: null, lastRunAt: null }] } }));
+  await page.route("**/api/v1/institution/assistant-setting", (route) => { if (route.request().method() !== "GET") writes.push(route.request().method()); return route.fulfill({ json: { assistant: false, transcription: false, tools: false, settingVersion: 1, changeable: false } }); });
   await page.route("**/api/v1/institution/thesis-forms", (route) => { if (route.request().method() !== "GET") writes.push(route.request().method()); return route.fulfill({ json: { forms: [{ code: "izjava-mentora", version: 2, title: "Izjava mentora", workTypes: ["bachelor_thesis", "master_thesis"], active: true, publishedAt: "2026-10-02T10:00:00.000Z" }] } }); });
   await page.route("**/api/v1/institution/thesis-settings", (route) => { if (route.request().method() !== "GET") writes.push(route.request().method()); return route.fulfill({ json: { mentorConsentRequired: true, changedAt: "2026-10-03T10:00:00.000Z" } }); });
 }
