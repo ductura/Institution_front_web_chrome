@@ -16,7 +16,7 @@ import { WorkspaceTopBarView } from "../../src/components/editor/WorkspaceTopBar
 import { MentorshipRequestsView } from "../../src/components/teacher/MentorshipRequests.tsx";
 import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
-  AppShell, AssignmentOverview, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments,
+  AppShell, AssignmentOverview, CourseStudents, EmptyHome, LiveWorkFrame, LoadAlert, MentoredWorks, MentorshipRequests, MyAssignments,
   NoteDialog, OutlinePanel, ProvenancePanel, ReceiptPanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses, VerificationForm,
   type AssignmentSubmission, type LiveWorkFrameData, type ReceiptRead, type SubmissionViewProps, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
   type TeacherCourse,
@@ -1068,6 +1068,15 @@ export const SCREEN_ENTRIES = {
     puno: () => <AssignmentOverview assignmentTitle="Izmišljeni seminar" rows={overviewRows} />,
     // Names the server does not have: shown as missing, never as a stand-in.
     onemogućeno: () => <AssignmentOverview assignmentTitle="Izmišljeni esej" rows={[overviewRow(5, { name: null, group: null })]} />,
+  },
+  // Design alignment 27. 11. 2026. (A2): the one read-error frame of a page, list or card.
+  LoadAlert: {
+    prazno: () => <LoadAlert>{t.errorPage.errorBody}</LoadAlert>,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <LoadAlert retry={{ label: "Pokušaj ponovno", href: "/nastavnik/zbirni" }}>{t.errorPage.errorBody}</LoadAlert>,
+    puno: () => <LoadAlert retry={{ label: "Pokušaj ponovno", onRetry: () => {} }}>{t.errorPage.errorBody}</LoadAlert>,
+    // A button under the frame already reads again, so the alert carries no link of its own.
+    onemogućeno: () => <LoadAlert className="catalog-load-alert">{t.errorPage.errorBody}</LoadAlert>,
   },
   MentoredWorks: {
     prazno: () => <MentoredWorks works={[]} />,

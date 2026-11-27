@@ -1,6 +1,9 @@
 import { afterEach, expect, it, vi } from "vitest";
 
-import { DEFAULT_PREFERENCES, effectiveLayout, PREFERENCES_KEY, readPreferences, rowShows, withRowPart, writePreferences } from "./preferences";
+import {
+  DEFAULT_PREFERENCES, effectiveLayout, LEFT_PARTS, partOrder, PREFERENCES_KEY, readPreferences, rowShows, withPartMoved, withPartShown,
+  withRowPart, withSubs, writePreferences,
+} from "./preferences";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -52,4 +55,39 @@ it("keeps the chapter row parts switched off and nothing when all are on", () =>
   expect(withRowPart(withRowPart(off, "words", true), "flags", true)).toEqual({ layout: "a", mobile: "c", dense: true });
   values.set(PREFERENCES_KEY, '{"left":{"layout":"a","mobile":"c","hideRow":["status","bogus","status"]},"right":{"layout":"a","mobile":"same","hideRow":"words"}}');
   expect(readPreferences()).toEqual({ left: { layout: "a", mobile: "c", hideRow: ["status"] }, right: { layout: "a", mobile: "same" } });
+});
+
+// ED-70 "Donji dijelovi": the parts move one place at a time and stay in range; the default order and
+// "all shown" leave no key, so a reset and an untouched panel read the same.
+it("moves and hides the left parts and keeps no key for the defaults", () => {
+  const start = DEFAULT_PREFERENCES.left;
+  expect(partOrder(start)).toEqual([...LEFT_PARTS]);
+  const moved = withPartMoved(start, "thread", -1);
+  expect(moved.order).toEqual(["figures", "stash", "progress", "thread", "deadlines"]);
+  expect(withPartMoved(moved, "thread", 1)).toEqual(start);
+  expect(withPartMoved(start, "figures", -1)).toBe(start);
+  expect(withPartMoved(start, "thread", 1)).toBe(start);
+  const hidden = withPartShown(withPartShown(start, "thread", false), "stash", false);
+  expect(hidden.hideParts).toEqual(["stash", "thread"]);
+  expect(withPartShown(withPartShown(hidden, "stash", true), "thread", true)).toEqual(start);
+});
+
+// ED-70 "Potpoglavlja": "Rasklopljena" is the default (no key); only the left side keeps the parts.
+it("keeps the subchapter mode and reads only valid parts on the left", () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal("window", { localStorage: { getItem: values.get.bind(values), setItem: values.set.bind(values) } });
+  const closed = withSubs(DEFAULT_PREFERENCES.left, "closed");
+  expect(closed).toEqual({ layout: "a", mobile: "c", subs: "closed" });
+  expect(withSubs(closed, "open")).toEqual(DEFAULT_PREFERENCES.left);
+  const left = { ...withPartMoved(withSubs(DEFAULT_PREFERENCES.left, "active"), "stash", -1), hideParts: ["progress" as const] };
+  writePreferences({ left, right: DEFAULT_PREFERENCES.right });
+  expect(readPreferences().left).toEqual(left);
+  values.set(PREFERENCES_KEY, JSON.stringify({
+    left: { layout: "a", mobile: "c", order: ["thread", "bogus", "thread", 4], hideParts: ["deadlines", "x"], subs: "half" },
+    right: { layout: "a", mobile: "same", order: ["thread"], hideParts: ["stash"], subs: "closed" },
+  }));
+  expect(readPreferences()).toEqual({
+    left: { layout: "a", mobile: "c", order: ["thread", "figures", "stash", "progress", "deadlines"], hideParts: ["deadlines"] },
+    right: { layout: "a", mobile: "same" },
+  });
 });
