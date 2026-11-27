@@ -13,6 +13,7 @@ import { wordRangeHr } from "../../../../../../src/lib/i18n/length-line.ts";
 import { studentHostHr as t } from "../i18n/messages.hr.ts";
 
 import { noticeText } from "./messages.hr";
+import { NoticeChanges } from "./NoticeChanges";
 
 import { NoticeMeta } from "../notice/NoticeMeta";
 import styles from "../notice/Notice.module.css";
@@ -205,6 +206,7 @@ export default function HostNotice({ view, timing, editorHref, backHref, onReloa
       {lead}
       {note ? <p className={styles.window} role="status">{note}</p> : null}
       {error === "stale" ? <p className={styles.window} role="status">{s.staleTag.replace("{version}", String(view.versionNo))}</p> : null}
+      {view.previousVersion ? <NoticeChanges previous={view.previousVersion} current={view} time={time} /> : null}
       {body}
       <form className={styles.ack} onSubmit={confirm}>
         <label className={styles.check}>
