@@ -21,17 +21,20 @@ export default function CourseAssistantCard({ courseId, port, onSignedOut }: {
   const [working, setWorking] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const inFlight = useRef(false);
+  // A new callback each render of the parent must not read the switch again.
+  const signedOut = useRef(onSignedOut);
+  signedOut.current = onSignedOut;
 
   useEffect(() => {
     let live = true;
     setRead(null);
     void port.read(courseId).catch((): AssistantRead => ({ kind: "unavailable" })).then((next) => {
       if (!live) return;
-      if (next.kind === "signedOut") onSignedOut?.();
+      if (next.kind === "signedOut") signedOut.current?.();
       setRead(next);
     });
     return () => { live = false; };
-  }, [courseId, port, attempt, onSignedOut]);
+  }, [courseId, port, attempt]);
 
   const set = async (enabled: boolean) => {
     if (inFlight.current) return;
@@ -45,8 +48,8 @@ export default function CourseAssistantCard({ courseId, port, onSignedOut }: {
       setRead({ kind: "ready", enabled: out.enabled });
       setNotice({ tone: "status", line: out.enabled ? text.savedOn : text.savedOff });
     } else if (out.kind === "signedOut") {
-      onSignedOut?.();
-      setNotice({ tone: "alert", line: text.signedOut });
+      signedOut.current?.();
+      setRead({ kind: "signedOut" });
     } else if (out.kind === "notFound") {
       setRead({ kind: "notFound" });
     } else if (out.kind === "unknown") {

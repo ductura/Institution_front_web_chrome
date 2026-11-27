@@ -82,7 +82,7 @@ export default function CourseStudents({ courseId, port = unavailablePort, assis
   const shown = data === null ? [] : listedStudents(data.students, options.some((o) => o.value === group) ? group : "", state, order);
   const teacherRead: TeacherRead<RosterData> | null = read === null ? null : read.kind === "ready" ? { kind: "ready", value: read.data } : { kind: read.kind };
 
-  const assistantCard = assistant === undefined ? null : <CourseAssistantCard courseId={courseId} port={assistant} />;
+  const assistantCard = assistant === undefined ? null : <CourseAssistantCard courseId={courseId} port={assistant} onSignedOut={() => signInWhenSignedOut({ kind: "signedOut" }, base, courseId)} />;
 
   const dialog = (
     <Dialog open={ask !== null} dismissible={!working} onClose={() => setAsk(null)} initialFocus={safe}

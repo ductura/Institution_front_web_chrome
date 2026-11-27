@@ -75,4 +75,17 @@ describe("CourseAssistantCard", () => {
     expect(state()).toBe(t.stateOff);
     expect(document.querySelector('[data-testid="course-assistant-notice"]')?.textContent).toBe(t.saveFailed);
   });
+
+  it("a signed-out write goes to sign-in and leaves no active switch", async () => {
+    const out = vi.fn();
+    const port: CourseAssistantPort = { read: vi.fn(async () => ({ kind: "ready", enabled: false }) as AssistantRead), write: vi.fn(async () => ({ kind: "signedOut" }) as AssistantWrite) };
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => { root?.render(h(CourseAssistantCard, { courseId: "c1", port, onSignedOut: out })); });
+    await click(t.turnOn);
+    expect(out).toHaveBeenCalledTimes(1);
+    expect(document.body.textContent).toContain(t.signedOut);
+    expect(document.querySelectorAll("button")).toHaveLength(0);
+  });
 });
