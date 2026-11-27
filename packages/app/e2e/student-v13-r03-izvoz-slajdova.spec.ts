@@ -53,7 +53,7 @@ async function slidesWork(page: Page) {
 test("V13-R03: the slides editor offers .pptx and PDF, off with the reason until the server confirms", async ({ page }) => {
   expect(receiptKeys).toBeDefined();
   const seen = await slidesWork(page);
-  await page.goto(`/app/web/rad/${ID}`);
+  await page.goto(`/aplikacija/rad/${ID}`);
   await expect(page.getByLabel("Uređivač slajdova").first()).toBeVisible({ timeout: 20_000 });
   const region = page.getByRole("region", { name: "Izvoz slajdova" });
   await expect(region).toBeVisible();
