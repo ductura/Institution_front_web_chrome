@@ -100,7 +100,7 @@ export function entryLabel(entry: ChatEntry): string {
   const who = entry.who === "you" ? chatDialogText.you
     : entry.who === "ai" ? chatDialogText.ai
       : chatDialogText.transfer;
-  return `${who} · ${entry.time}`;
+  return `${who}, ${entry.time}`;
 }
 
 /**
