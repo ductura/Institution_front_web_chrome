@@ -15,7 +15,7 @@ import { createTocStore, EMPTY_TOC, goToHeading } from "../../../../../editor-co
 import { requestPanel } from "../../../../../../src/components/editor/layout-prefs/open-panel.ts";
 import { useLocalEditor } from "../../../../../../src/components/editor/LocalDocument.tsx";
 import {
-  allObservations, assistHr, BalancePanel, distribute, holesOf, EMPTY_NOTES, loadNotes, nextSteps, NextStepCard, notesKey, parseNotes, QuickJump, ResumeCard,
+  allObservations, assistHr, BalancePanel, distribute, holesOf, EMPTY_NOTES, loadNotes, nextSteps, NextStepCard, notesKey, parseNotes, QuickJump, ResumeCard, loadSeen, saveSeen, whatsNew, WhatsNewCard, type Change, type Seen,
   StartWizard, ThreadPanel, withLast, withSelfNote, withTargets, workStatus, type JumpKind, type JumpPlace, type NextStepInput,
   type StepTarget, type WorkNotes, type WorkRange,
 } from "../assist";
@@ -361,6 +361,9 @@ function StartWork({ workId, open, onClose }: Props & { open: boolean; onClose: 
   );
 }
 
+/** MEN-24: per work, for this page visit: the chapters as last left and what differed on first load. */
+const sinceSession = new Map<string, { leftAs: Seen | null; since: Change[] | null }>();
+
 /** EDI-R16: "Sljedeći korak", "Nastavi gdje ste stali", "Brzi skok" and "Ravnoteža poglavlja" over the work as it is now. */
 function WritingHelp({ workId, range = null }: Props & { range?: WorkRange | null }) {
   const { editor, help, live, current } = useHelpState();
@@ -371,6 +374,22 @@ function WritingHelp({ workId, range = null }: Props & { range?: WorkRange | nul
   const [resumeAt] = useState(() => readNotes(workId).lastChapterId);
   const [thread] = useDeviceValue("thread", workId, parseThread, EMPTY_THREAD);
   const { chapters } = help;
+  // MEN-24: the words of each chapter as they were left last time. The panel is unmounted when it is closed, so the starting point and
+  // the comparison live per work for the whole page visit (sinceSession), not in this component: closing and reopening the panel
+  // keeps what was shown, and the comparison is fixed on the first load of the chapters so this visit's own typing is not "new".
+  const [session] = useState(() => {
+    let kept = sinceSession.get(workId);
+    if (!kept) { kept = { leftAs: loadSeen(noteStorage(), workId), since: null }; sinceSession.set(workId, kept); }
+    return kept;
+  });
+  const [since, setSince] = useState<Change[] | null>(session.since);
+  useEffect(() => {
+    if (since !== null || chapters.length === 0) return;
+    const fixed = session.since ?? whatsNew(session.leftAs, chapters);
+    session.since = fixed;
+    setSince(fixed);
+  }, [since, chapters, session]);
+  useEffect(() => { if (live && chapters.length > 0) saveSeen(noteStorage(), workId, chapters); }, [live, chapters, workId]);
   const wholeRange: WorkRange = range ?? { min: null, max: null };
   // The chapter the person stopped at is kept as they move on, so "Nastavi gdje ste stali" has somewhere to go back to.
   useEffect(() => { if (current !== null && current !== notes.lastChapterId) change((n) => withLast(n, current)); },
@@ -399,6 +418,7 @@ function WritingHelp({ workId, range = null }: Props & { range?: WorkRange | nul
   return (
     <div className={styles.stack} data-writing-help="">
       <NextStepCard steps={nextSteps(stepInput)} onGo={onGo} />
+      <WhatsNewCard changes={since ?? []} onGo={go} />
       <ResumeCard chapter={resume} selfNote={notes.selfNote} editable={live} onGo={go} onSaveNote={(text) => change((n) => withSelfNote(n, text))} />
       <QuickJump chapters={chapters} places={places} onJump={go} />
       <BalancePanel chapters={chapters} targets={notes.targets} status={workStatus(snap.total, wholeRange)} onJump={go}
