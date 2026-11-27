@@ -12,17 +12,20 @@ import { withMentoredAssignments } from "../../../../../../src/components/studen
 
 import { nextPath, type Base } from "../../../bases";
 import { useHost } from "../../context";
-import { startWorkAction } from "../start-work/action";
 import { CodeCard, CodeForm } from "./CodeForm";
 import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
 import { readHomeExtras, serverHistory } from "../courses/read";
-import { continueRow, coursesWithoutTask, deadlineTag, extensionLine, flatRows, nearTag, ORDERS, rowAction, rowRoute, sections, startsWork, submittedText, type Extras, type Order, type RowKind, type TaskRow } from "./model";
+import { continueRow, coursesWithoutTask, deadlineTag, extensionLine, flatRows, nearTag, ORDERS, rowAction, rowRoute, sections, submittedText, type Extras, type Order, type RowKind, type TaskRow } from "./model";
 
 const dueText = protoDateTime;
 
-function Row({ row, now, base, action }: { row: TaskRow; now: number; base: Base; action: ReturnType<typeof startWorkAction> }) {
+/**
+ * One primary button per row (STU-R07, P-13, PAR2-A4): "Započni rad" is not drawn here; it stays on the
+ * course's own task cards (E-3), and the row's one link leads to the task.
+ */
+export function Row({ row, now, base }: { row: TaskRow; now: number; base: Base }) {
   const { label, primary } = rowAction(row.kind);
   const near = row.kind === "predano" ? null : nearTag(row.dueAt, now);
   const deadline = deadlineTag(row, now);
@@ -46,7 +49,6 @@ function Row({ row, now, base, action }: { row: TaskRow; now: number; base: Base
       <span className={styles.itemActions}>
         <a className={styles.open} data-tone={primary ? "primary" : "secondary"} aria-label={t.openFor.replace("{action}", label).replace("{title}", row.title)}
           aria-describedby={whenId} href={appHref(base, rowRoute(row))}>{label}</a>
-        {action}
       </span>
     </li>
   );
@@ -184,8 +186,7 @@ export function HomePage() {
               {order === "rok" ? <h3 className={styles.groupHeading}>{t.sections[group.key]}</h3> : null}
               <ul className={styles.list}>
                 {group.rows.map((row) => (
-                  <Row key={row.id} row={row} now={now} base={base}
-                    action={startsWork(row.kind) ? startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false }) : null} />
+                  <Row key={row.id} row={row} now={now} base={base} />
                 ))}
               </ul>
             </div>
