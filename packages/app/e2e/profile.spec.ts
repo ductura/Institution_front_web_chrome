@@ -75,7 +75,7 @@ test("switching to English saves it and changes the shell at once, without a new
   await expect(page.getByRole("navigation", { name: "Workspace" }).getByRole("link", { name: "My assignments" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
   expect(fake.login).toBe(0);
-  await expect(page).toHaveTitle("Profile settings · Ductura");
+  await expect(page).toHaveTitle("Profile settings, Ductura");
   await axe(page);
 
   // A new page load paints in the saved language.

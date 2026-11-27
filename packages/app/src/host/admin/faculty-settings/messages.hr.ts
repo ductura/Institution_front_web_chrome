@@ -1,5 +1,7 @@
 // Interface text of "Postavke fakulteta" (NF-7 OA-2) and "Asistent na fakultetu" (OA-9). Invented-free: nothing here names a
 // provider or a model, and nothing judges a student. The assistant is off in phase A (C15), so the page says so as a fact.
+import { oneDot } from "../../../i18n/date-dot";
+
 export const facultySettingsMessages = {
   title: "Postavke fakulteta",
   lead: "Jedno mjesto za pravila, pragove i čuvanje podataka vašeg fakulteta. Ovdje se samo čita; promjene se rade na stranicama kartica.",
@@ -13,7 +15,8 @@ export const facultySettingsMessages = {
     title: "Pravila fakulteta",
     none: "Nijedno pravilo još nije objavljeno.",
     count: (published: number, total: number) => `Pravilo je objavljeno za ${published} od ${total} vrsta rada.`,
-    changed: (date: string, who: string) => `Zadnja promjena: ${date}. Objavio: ${who}.`,
+    // The date ("27. stu 2026.") already ends with a dot (WEB-DATUM-TOCKA).
+    changed: (date: string, who: string) => oneDot(`Zadnja promjena: ${date}. Objavio: ${who}.`),
     link: "Otvori pravila fakulteta",
   },
   thresholds: {
@@ -35,7 +38,8 @@ export const facultySettingsMessages = {
     version: (n: number) => `verzija ${n}`,
     active: "na snazi",
     withdrawn: "povučen",
-    published: (date: string) => `objavljen ${date}`,
+    // Ends the sentence: the date's own dot is the full stop (WEB-DATUM-TOCKA).
+    published: (date: string) => oneDot(`objavljen ${date}.`),
     forTypes: "Vrste rada",
     workTypes: { bachelor_thesis: "Završni rad", master_thesis: "Diplomski rad", specialist_thesis: "Specijalistički rad", doctoral_thesis: "Doktorski rad" },
     note: "Obrasci se ovdje samo prikazuju; objava novog obrasca nije dio ovog ekrana.",
@@ -44,7 +48,7 @@ export const facultySettingsMessages = {
     title: "Postavke završnih radova",
     consentOn: "Suglasnost mentora potrebna je za predaju rada.",
     consentOff: "Suglasnost mentora nije uvjet za predaju rada.",
-    changed: (date: string) => `Zadnja promjena: ${date}.`,
+    changed: (date: string) => oneDot(`Zadnja promjena: ${date}.`),
     neverChanged: "Postavka nikad nije mijenjana.",
     note: "Prekidač se ovdje samo prikazuje; student i mentor vide isto pravilo uz svoj rad.",
   },
