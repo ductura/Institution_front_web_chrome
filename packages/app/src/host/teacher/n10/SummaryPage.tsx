@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { goToSignIn } from "../../../../../../src/client/api";
 import { Kv, WorkPage, WorkPanel, workPageStyles as styles } from "../n07/WorkPage";
+import { useTaskCrumb, type WorkContext } from "../n06/task-context";
 import {
   assistantAnchor, assistantTransfers, at, characters, charactersGenitive, duration, loadSummary, minutesGenitive, pasteAnchor,
   period, segmentLine, sessionLine, sessionsCount, sessionsGenitive, versionLines, type N10Port, type N10Read, type ThresholdRow,
@@ -147,9 +148,12 @@ function Sections({ read, anchors }: { read: Extract<N10Read, { kind: "ready" }>
  * (`map`, N-10 br. 18; not part of this task). "Prikaži mjesto u radu" is offered only for an anchor the map
  * reports in `anchors`. There is no role prop: the summary is the one the student sees (PRODUCT §5 rule 5).
  */
-export default function SummaryPage({ port, documentId, workHref, signInHref, map, anchors = new Set() }: {
+export default function SummaryPage({ port, documentId, workHref, signInHref, map, anchors = new Set(), task }: {
   port: N10Port; documentId: string; workHref: string; signInHref: string; map?: ReactNode; anchors?: ReadonlySet<string>;
+  task?: (documentId: string) => Promise<WorkContext | null>;
 }) {
+  // F4-NAS-R12: the student, the kind of work and the assignment's title above the summary.
+  const crumb = useTaskCrumb(documentId, task);
   const [read, setRead] = useState<N10Read | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -185,5 +189,5 @@ export default function SummaryPage({ port, documentId, workHref, signInHref, ma
       </>
     );
   }
-  return <WorkPage back={workHref} backLabel={text.backToWork} two={two}>{body}</WorkPage>;
+  return <WorkPage back={workHref} backLabel={text.backToWork} crumb={crumb} two={two}>{body}</WorkPage>;
 }
