@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Details, Dialog, TextArea } from "@ductura/ui";
+import { Button, Details, Dialog, Select, TextArea } from "@ductura/ui";
 import { TextSelection } from "@tiptap/pm/state";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { useLocalEditor } from "@/components/editor/LocalDocument";
@@ -17,6 +17,7 @@ import { RequiredLiterature } from "../../sources-mention/RequiredLiterature";
 import { useInstitutionStyle } from "../../citation-styles/use-institution-style";
 import { bibliographyStudentHr as t } from "./messages.hr";
 import { readStates, stateCounts, toggleState, writeStates, type SourceState, type SourceStates } from "./source-state";
+import { planChapters, planGaps, plannedChapters, readPlan, togglePlan, writePlan, type PlanChapter, type SourcePlan } from "./source-plan";
 
 type Editor = NonNullable<ReturnType<typeof useLocalEditor>>;
 type Props = {
@@ -83,6 +84,16 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId,
 
   useEffect(() => setStates(readStates(documentId)), [documentId]);
 
+  const chapters = useMemo(() => planChapters(json), [json]);
+  const [plan, setPlan] = useState<SourcePlan>(() => readPlan(documentId));
+  useEffect(() => setPlan(readPlan(documentId)), [documentId]);
+  const gaps = useMemo(() => planGaps(plan, chapters, sources), [plan, chapters, sources]);
+  const flipPlan = (sourceId: string, chapterId: string) => {
+    const result = togglePlan(plan, sourceId, chapterId);
+    setPlan(result);
+    writePlan(documentId, result);
+  };
+
   const counts = stateCounts(sources.map((s) => s.id), states);
   const shown = stats.filter((s) => filter === "all" || (filter === "get" ? states[s.id] === "get"
     : states[s.id] !== undefined && states[s.id] !== "read"));
@@ -139,6 +150,15 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId,
       </Button>
     </section>)}
 
+    {gaps.length > 0 && <Details summary={t.planGaps(gaps.reduce((n, g) => n + g.sources.length, 0))}>
+      <ul className={styles.list} data-plan-gaps="">
+        {gaps.map((g) => <li key={g.chapter.id} className={styles.item}>
+          <strong>{t.planChapter(g.chapter.number, g.chapter.title)}</strong>
+          <small>{g.sources.map((s) => s.label).join("; ")}</small>
+        </li>)}
+      </ul>
+    </Details>}
+
     <ul className={styles.list}>
       {shown.map((s) => <li key={s.id} className={styles.item}>
         <strong>{s.label}</strong>
@@ -151,8 +171,10 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId,
           <Button tone="quiet" onClick={() => void copyCite(citationToCopy(json, style.style, s.id), setMessage)}>{t.copyCite}</Button>
         </div>
         {s.places.length > 0 && <Where places={s.places} onJump={jump} onNext={() => next(s.id, s.places)} />}
+        {chapters.length > 0 && <PlanRow source={s} plan={plan} chapters={chapters} editable={editable} onFlip={flipPlan} />}
       </li>)}
     </ul>
+    {chapters.length > 0 && <p><small>{t.planDevice}</small></p>}
 
     {(incomplete.length > 0 || doubles.length > 0) && <Details summary={t.incomplete(incomplete.length + doubles.length)}>
       <ul className={styles.list}>
@@ -183,6 +205,23 @@ function Where({ places, onJump, onNext }: { places: readonly CitePlace[]; onJum
       </li>)}
     </ul>
     {places.length > 3 && <Button tone="quiet" onClick={onNext}>{t.more(places.length - 3)}</Button>}
+  </div>;
+}
+
+/** ED-117: the chapters a source is planned for, each removed with its chip, and the other chapters to add. */
+export function PlanRow({ source, plan, chapters, editable, onFlip }: {
+  source: BibSource; plan: SourcePlan; chapters: readonly PlanChapter[]; editable: boolean; onFlip: (sourceId: string, chapterId: string) => void;
+}) {
+  const planned = plannedChapters(plan, source.id, chapters);
+  const free = chapters.filter((c) => !planned.includes(c));
+  return <div className={styles.row} role="group" aria-label={`${t.planTitle}: ${source.label}`} data-plan={source.id}>
+    <small>{t.planTitle}</small>
+    {planned.map((c) => <Button key={c.id} tone="quiet" aria-pressed="true" disabled={!editable}
+      aria-label={t.planRemove(c.number, source.label)} onClick={() => onFlip(source.id, c.id)}>{t.planChip(c.number)}</Button>)}
+    {planned.length === 0 && (!editable || free.length === 0) && <small>{t.planNone}</small>}
+    {editable && free.length > 0 && <Select label={t.planAdd} placeholder={t.planPick} value=""
+      options={free.map((c) => ({ value: c.id, label: t.planChapter(c.number, c.title) }))}
+      onChange={(event) => { const id = event.currentTarget.value; if (id) onFlip(source.id, id); }} />}
   </div>;
 }
 
