@@ -1,3 +1,5 @@
+"use client";
+
 import { Component, type ReactNode } from "react";
 
 import ErrorScreen from "../../../src/components/shell/ErrorScreen.ts";
