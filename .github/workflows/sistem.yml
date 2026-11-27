@@ -16,12 +16,14 @@ name: Sistem
 on:
   workflow_call:
     inputs:
+      # WEB-SISTEM-PINS: no default here. Empty means "not given": a pull
+      # request then takes e2e/sistem/pins.json, a push the branch tip.
       server_ref:
         type: string
-        default: migracija/kopija-ductus-backend
+        required: false
       preloader_ref:
         type: string
-        default: migracija/nextjs
+        required: false
       # CI-WEB-NOGE: ci.yml passes true and the job takes the build of its
       # job `app-build` instead of building the host again (about 55 s).
       build_artifact:
@@ -51,17 +53,37 @@ jobs:
         with:
           path: Institution_front_web_chrome
           persist-credentials: false
+      # WEB-SISTEM-PINS (Ductus #835): a pull request runs against the server
+      # and Preloader commits of the last green push run on the base, read
+      # from e2e/sistem/pins.json, so its result does not depend on what was
+      # merged into the server meanwhile. A push to the base, a schedule and a
+      # manual run keep the branch tips (or the given inputs); given inputs
+      # win over the pins. Moving a pin: README in e2e/sistem.
+      - name: Pins
+        id: pins
+        if: ${{ github.event_name == 'pull_request' }}
+        working-directory: Institution_front_web_chrome
+        run: |
+          set -euo pipefail
+          server="$(jq -er '.server' e2e/sistem/pins.json)"
+          preloader="$(jq -er '.preloader' e2e/sistem/pins.json)"
+          for sha in "$server" "$preloader"; do
+            [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "::error file=e2e/sistem/pins.json::not a full commit SHA: $sha"; exit 1; }
+          done
+          echo "server=$server" >> "$GITHUB_OUTPUT"
+          echo "preloader=$preloader" >> "$GITHUB_OUTPUT"
+          echo "Pinned: server $server, Preloader $preloader"
       # Public repos, no token.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ductura/Institution_server
-          ref: ${{ inputs.server_ref || 'migracija/kopija-ductus-backend' }}
+          ref: ${{ inputs.server_ref || steps.pins.outputs.server || 'migracija/kopija-ductus-backend' }}
           path: Institution_server
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ductura/Preloader
-          ref: ${{ inputs.preloader_ref || 'migracija/nextjs' }}
+          ref: ${{ inputs.preloader_ref || steps.pins.outputs.preloader || 'migracija/nextjs' }}
           path: Preloader
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
