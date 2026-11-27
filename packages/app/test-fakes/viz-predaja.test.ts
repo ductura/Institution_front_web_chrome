@@ -26,6 +26,10 @@ describe("PR-19: the puno student submits T1 on the fake server", () => {
     const opened = body(s.answer("student", "POST", "/api/v1/evidence/open", JSON.stringify({ assignmentId: T1 })));
     const declaration = s.answer("student", "GET", paths.declaration);
     fits("student.declaration.get", declaration);
+    // F4-PRE-R02: the client reads declaration-v2 on the extract; the same declaration fits its schema.
+    const second = s.answer("student", "GET", `${paths.declaration}-v2`);
+    fits("student.declaration-second.get", second);
+    expect(body(second)).toEqual(body(declaration));
     expect(body(declaration)).toMatchObject({ state: "confirmed", currentRevision: opened.currentRevision, payload: { documentId: opened.documentId, revision: opened.currentRevision, assignmentId: T1 } });
     expect(opened).toMatchObject({ documentId: DOKUMENT_T1, currentRevision: REVIZIJA_T1, submitted: false });
     expect(body(s.answer("student", "GET", paths.state))).toEqual({ state: "none" });

@@ -3,8 +3,8 @@
  * teacher.student-accommodation.get answers `{ marked: boolean }` for one student of one assignment
  * (Institution_server#888). The teacher sees the mark only, never a reason.
  *
- * TODO(ugovor): the route is not in the WEB extract yet. Until it is, the shape is local (below) and the
- * caller passes the transport (`AccommodationCall`); on the extract the shape gives way to the contract's.
+ * The extract has the route with the same shape. The shape is checked locally (below) and the caller
+ * passes the transport (`AccommodationCall`), createApi by default.
  */
 
 import { matchesSchema, type Schema } from "./schema-check";

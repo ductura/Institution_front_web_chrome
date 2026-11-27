@@ -95,14 +95,28 @@ describe("N-17 overview port (NZ-2, NZ-10)", () => {
     expect(read.cards.map((c) => [c.courseId, c.assignmentId])).toEqual([[K1, A1]]);
     expect(asked.some((p) => p.includes(A2) || p.includes(K2))).toBe(false);
   });
-  it("F4-PM2-R08: marks the client cannot read yet say so once on the card, and no row is shown as unmarked", async () => {
+  it("F4-PM2-R08: marks that cannot be read say so once on the card, and no row is shown as unmarked", async () => {
     const asked: string[] = [];
-    const read = await overviewPort({ course: K1, task: null }, client(ANSWERS, asked)).read();
+    // Only Ana's mark answers: one failed read makes the whole card's marks unknown.
+    const answers = { ...ANSWERS, [`/teacher/assignments/${A1}/students/${S1}/accommodation`]: { marked: true } };
+    const read = await overviewPort({ course: K1, task: null }, client(answers, asked)).read();
     if (read.kind !== "ready") throw new Error(read.kind);
     expect(read.cards[0]!.accommodationsUnavailable).toBe(true);
     expect(read.cards[0]!.rows!.every((r) => r.accommodation === undefined)).toBe(true);
-    // TODO(ugovor): until the extract has teacher.student-accommodation.get the client rejects it without a request.
-    expect(asked.some((p) => p.endsWith("/accommodation"))).toBe(false);
+    expect(asked.filter((p) => p.endsWith("/accommodation")).sort()).toEqual([
+      `/teacher/assignments/${A1}/students/${S1}/accommodation`, `/teacher/assignments/${A1}/students/${S2}/accommodation`,
+    ]);
+  });
+  it("F4-PM2-R08: teacher.student-accommodation.get marks each student's row, the mark only", async () => {
+    const answers = {
+      ...ANSWERS,
+      [`/teacher/assignments/${A1}/students/${S1}/accommodation`]: { marked: true },
+      [`/teacher/assignments/${A1}/students/${S2}/accommodation`]: { marked: false },
+    };
+    const read = await overviewPort({ course: K1, task: null }, client(answers)).read();
+    if (read.kind !== "ready") throw new Error(read.kind);
+    expect(read.cards[0]!.accommodationsUnavailable).toBeUndefined();
+    expect(read.cards[0]!.rows!.map((r) => [r.studentId, r.accommodation])).toEqual([[S1, true], [S2, false]]);
   });
   it("an assignment no course has (a stale link) shows every assignment, never an empty overview", async () => {
     const read = await overviewPort({ course: null, task: "nepostojeci" }, client(ANSWERS)).read();

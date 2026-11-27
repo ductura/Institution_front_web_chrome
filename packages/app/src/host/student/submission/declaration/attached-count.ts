@@ -1,7 +1,7 @@
 // F4-PRE-R02: how many of the student's Asistent conversations go with the declaration, for step 3, step 4
 // and PD-3. Read from the server (declaration-v2 and the assistant's list), never from this browser.
-// TODO(ugovor): until the extract has student.declaration-second.*, the client rejects the read without a
-// request and the count is unknown (null), which the steps say rather than claiming "none attached".
+// A client that does not know student.declaration-second.* rejects the read without a request; the count
+// is then unknown (null), which the steps say rather than claiming "none attached".
 import { createApi } from "../../../../../../../src/client/api.ts";
 import { readConversations, readSecond, type SecondCall } from "../../../../../../../src/client/declaration-attachments.ts";
 import { submitText } from "../submit/messages.hr";

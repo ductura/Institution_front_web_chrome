@@ -124,21 +124,36 @@ test("NZ-10: the overview of one course joins version, state, deadline and the l
     .toHaveAttribute("href", `/aplikacija/nastavnik/zadatak/${A2}/produljenje`);
 });
 
-test("F4-PM2-R08: the overview never shows an unread accommodation mark as unmarked; axe", async ({ page }) => {
+test("F4-PM2-R08: the overview marks the student with an approved accommodation, the mark only; axe", async ({ page }) => {
   await teacher(page);
   const asked: string[] = [];
-  // D-50: the server answers the mark only. TODO(ugovor): until the extract has teacher.student-accommodation.get
-  // the client does not call it, so the card says the marks are unavailable; on the extract Ana shows the mark.
+  // D-50: teacher.student-accommodation.get answers the mark only, never a reason.
   await page.route("**/api/v1/teacher/assignments/*/students/*/accommodation", (route) => {
     asked.push(route.request().url());
     return route.fulfill(json({ marked: route.request().url().includes(S1) }));
   });
   await page.goto(`/aplikacija/nastavnik/zbirni?kolegij=${K1}`);
   const table = page.getByRole("region", { name: "Tablica predaja" }).first();
+  await expect(table.getByRole("row", { name: /Ana Izmišljenić/ })).toContainText("(odobrena prilagodba)");
+  await expect(table.getByRole("row", { name: /Iva Izmišljenić/ })).not.toContainText("(odobrena prilagodba)");
+  await expect(page.getByText("Oznake odobrene prilagodbe trenutačno nisu dostupne. Pokušajte ponovno.")).toHaveCount(0);
+  expect(asked.some((u) => u.includes(`/assignments/${A1}/students/${S1}/accommodation`))).toBe(true);
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await axe(page)).toEqual([]);
+  }
+});
+
+test("F4-PM2-R08: a mark that cannot be read is said once on the card, never shown as unmarked", async ({ page }) => {
+  await teacher(page);
+  await page.route("**/api/v1/teacher/assignments/*/students/*/accommodation", (route) => route.request().url().includes(S2)
+    ? route.fulfill(json({ code: "unavailable" }, 503))
+    : route.fulfill(json({ marked: route.request().url().includes(S1) })));
+  await page.goto(`/aplikacija/nastavnik/zbirni?kolegij=${K1}`);
+  const table = page.getByRole("region", { name: "Tablica predaja" }).first();
   await expect(table.getByRole("row", { name: /Ana Izmišljenić/ })).toBeVisible();
   await expect(page.getByText("Oznake odobrene prilagodbe trenutačno nisu dostupne. Pokušajte ponovno.").first()).toBeVisible();
   await expect(page.getByText("(odobrena prilagodba)")).toHaveCount(0);
-  expect(asked).toEqual([]);
   for (const width of [390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await axe(page)).toEqual([]);
