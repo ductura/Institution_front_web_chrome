@@ -1,4 +1,4 @@
-// WEB-DIZ-B-V21: the rule profile the student has chosen for this work, handed from "Zahtjevi rada" (RulesHost) to the
+// WEB-DIZ-B-V21: the rule profile the student has chosen for this work, handed over by the "Zahtjevi rada" card (RulesHost) to the
 // toolbar, so that "Kostur rada" and the formula and code tools follow the profile instead of the general one.
 // Held in memory for the page's lifetime; until a profile is chosen the toolbar keeps the general academic work.
 import { useSyncExternalStore } from "react";
