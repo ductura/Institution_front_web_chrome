@@ -11,8 +11,7 @@ const ID = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4e";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d2f";
 const SCOPE = "b".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0003";
-const PATH = `/app/web/rad/${ID}`;
-const CHROME_PATH = `/app/chrome/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 
 async function server(page: Page) {
   await page.route("**/api/v1/me", (route) => route.fulfill({
@@ -158,7 +157,7 @@ for (const { id, label } of SHORTCUTS) {
 test("Lab S12: moves past the abbreviation and decimal, with separate undo and redo", {
   tag: "@ductura-lab-sentence-move",
 }, async ({ page }) => {
-  const editor = await openEditor(page, CHROME_PATH);
+  const editor = await openEditor(page, PATH);
   const paragraph = editor.locator("p").last();
   const first = "Rezultat je npr. dobar.";
   const second = "Vrijednost je 3.14.";
@@ -181,7 +180,7 @@ test("Lab S12: moves past the abbreviation and decimal, with separate undo and r
 test("Lab S13: moves a formatted quotation with its citation past initials and a date", {
   tag: "@ductura-lab-sentence-move",
 }, async ({ page }) => {
-  const editor = await openEditor(page, CHROME_PATH);
+  const editor = await openEditor(page, PATH);
   const paragraph = editor.locator("p").last();
   const first = "Prof. dr. sc. A. B. Čičak pisao je 12. 3. 2024.";
   const quote = "„Zašto?”";

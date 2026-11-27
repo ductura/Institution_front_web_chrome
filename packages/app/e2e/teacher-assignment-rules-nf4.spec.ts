@@ -56,7 +56,7 @@ test("NZ-3 and NZ-4: groups, summary-only, tools and the submission rules reach 
     calls.push(`late ${route.request().method()} ${route.request().postData()}`);
     return route.fulfill(json({ lateSubmissionAllowed: false }));
   });
-  await page.goto(`/app/web/nastavnik/zadatak/novi?kolegij=${K1}`);
+  await page.goto(`/aplikacija/nastavnik/zadatak/novi?kolegij=${K1}`);
   await expect(page.getByRole("group", { name: "Grupe" })).toBeVisible();
   await checkAxe(page, info, "form");
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -87,7 +87,7 @@ test("NZ-3 and NZ-4: groups, summary-only, tools and the submission rules reach 
 
 test("NZ-3: no group ticked is refused with a sentence", async ({ page }) => {
   await teacher(page);
-  await page.goto(`/app/web/nastavnik/zadatak/novi?kolegij=${K1}`);
+  await page.goto(`/aplikacija/nastavnik/zadatak/novi?kolegij=${K1}`);
   await page.getByLabel("Naslov zadatka").fill("Izmišljeni seminar");
   await page.getByLabel("Otvaranje").fill("2027-01-10T10:00");
   await page.getByLabel("Rok", { exact: true }).fill("2027-01-30T16:00");
@@ -115,7 +115,7 @@ test("F4-NAS-R01: the edit page reads the late rule and saves a change through t
     calls.push(`put ${route.request().method()} ${route.request().postData()}`);
     return route.fulfill(json({ lateSubmissionAllowed: false }));
   });
-  await page.goto(`/app/web/nastavnik/zadatak/${A1}/uredi`);
+  await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/uredi`);
   const panel = page.locator("div.card").filter({ has: page.getByRole("region", { name: "Pravila predaje" }) });
   await expect(panel.getByLabel("Dopuštena (predaja se označi kao kasna)")).toBeChecked();
   await expect(panel.getByLabel("Nije dopuštena")).toBeEnabled();
@@ -151,7 +151,7 @@ test("NZ-4: the edit page reads the switches, asks first and says saved only aft
   await page.route(`**/api/v1/teacher/assignments/${A1}/declaration-required`, (route) => route.fulfill(json({ required: true, changedAt: null })));
   // F4-NAS-R01: here the late rule cannot be read (503), so only it stays disabled and says so.
   await page.route(`**/api/v1/teacher/assignments/${A1}/late-submission`, (route) => route.fulfill(json({ status: "unavailable" }, 503)));
-  await page.goto(`/app/web/nastavnik/zadatak/${A1}/uredi`);
+  await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/uredi`);
   // The panel is the card around the section "Pravila predaje"; its button and note stand beside the section.
   const panel = page.locator("div.card").filter({ has: page.getByRole("region", { name: "Pravila predaje" }) });
   await expect(panel).toBeVisible();
@@ -195,7 +195,7 @@ test("NZ-5: a student without a submission after the deadline gets an exception 
       } }, 201));
     });
   }
-  await page.goto("/app/web/nastavnik");
+  await page.goto("/aplikacija/nastavnik");
   // Only the assignment whose deadline has passed offers the action to a student who never opened the work.
   await expect(page.getByRole("button", { name: /Dopusti predaju nakon roka… Ana/ })).toHaveCount(1);
   await page.getByRole("button", { name: /Dopusti predaju nakon roka… Ana/ }).focus();

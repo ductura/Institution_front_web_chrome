@@ -22,7 +22,7 @@ export async function otvori(page: Page, screen: Screen, scenarij: Scenarij) {
     if (result === "hang") return undefined;
     return route.fulfill(result);
   });
-  await page.goto(`/app/web${screen.path}`);
+  await page.goto(`/aplikacija${screen.path}`);
   if (scenarij === "ucitavanje") {
     await expect(page.locator("main, body").first()).toBeVisible();
     await page.waitForTimeout(500);

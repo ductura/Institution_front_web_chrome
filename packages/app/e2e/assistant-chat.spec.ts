@@ -10,7 +10,7 @@ const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d50";
 const CONV = "9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f";
 const SCOPE = "d".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0010";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 const ANSWER = "Izmišljeni odgovor: rečenica je jasna, zarez nakon uvoda nije potreban.";
 
 const noticeBody = (over: Record<string, unknown> = {}) => ({
