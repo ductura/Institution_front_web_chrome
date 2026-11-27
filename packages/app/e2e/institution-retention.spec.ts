@@ -56,7 +56,7 @@ const serious = async (page: Page) =>
 
 test("the data classes card shows period and mode, with no deleting control", async ({ page }) => {
   await fakeServer(page, "institution_admin", fresh());
-  await page.goto("/app/web/ustanova/cuvanje");
+  await page.goto("/aplikacija/ustanova/cuvanje");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Čuvanje podataka");
   const table = page.getByRole("table", { name: /Klase podataka, rokovi i način čuvanja/ });
   await expect(table.getByRole("row")).toHaveCount(3);
@@ -71,7 +71,7 @@ test("the data classes card shows period and mode, with no deleting control", as
 test("a hold is placed with the keyboard on a typed subject", async ({ page }) => {
   const fake = fresh();
   await fakeServer(page, "institution_admin", fake);
-  await page.goto("/app/web/ustanova/cuvanje");
+  await page.goto("/aplikacija/ustanova/cuvanje");
   await page.getByRole("tab", { name: "Pravna zadržavanja" }).click();
   await expect(page.getByRole("listitem").filter({ hasText: "IZM-2026-001" })).toContainText("Zadatak: a1301000-0000-4000-8000-000000000001");
   await expect(page.getByText(PLACER)).toHaveCount(0);
@@ -89,7 +89,7 @@ test("a hold is placed with the keyboard on a typed subject", async ({ page }) =
 test("a refused release of an own hold (403) shows the catalogue text", async ({ page }) => {
   const fake: Fake = { ...fresh(), releaseReply: { status: 403, body: FORBIDDEN } };
   await fakeServer(page, "institution_admin", fake);
-  await page.goto("/app/web/ustanova/cuvanje");
+  await page.goto("/aplikacija/ustanova/cuvanje");
   await page.getByRole("tab", { name: "Pravna zadržavanja" }).click();
   await page.getByRole("button", { name: "Skini zadržavanje" }).click();
   await page.getByLabel("Razlog skidanja").fill("Izmišljeni slučaj je zatvoren.");
@@ -101,7 +101,7 @@ test("a refused release of an own hold (403) shows the catalogue text", async ({
 test("another administrator's hold is released with a reason", async ({ page }) => {
   const fake = fresh();
   await fakeServer(page, "institution_admin", fake);
-  await page.goto("/app/web/ustanova/cuvanje");
+  await page.goto("/aplikacija/ustanova/cuvanje");
   await page.getByRole("tab", { name: "Pravna zadržavanja" }).click();
   await page.getByRole("button", { name: "Skini zadržavanje" }).click();
   await page.getByRole("button", { name: "Skini zadržavanje" }).last().click();
@@ -116,7 +116,7 @@ test("another administrator's hold is released with a reason", async ({ page }) 
 
 test("a 403 shows the catalogue text, not the raw code", async ({ page }) => {
   await fakeServer(page, "institution_admin", fresh(), true);
-  await page.goto("/app/web/ustanova/cuvanje");
+  await page.goto("/aplikacija/ustanova/cuvanje");
   await expect(page.getByRole("alert").filter({ hasText: "administrator ustanove" })).toHaveCount(1);
   await page.getByRole("tab", { name: "Pravna zadržavanja" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "administrator ustanove" })).toBeVisible();
@@ -126,7 +126,7 @@ test("a 403 shows the catalogue text, not the raw code", async ({ page }) => {
 test("a refused placing (403) shows the catalogue text under the form", async ({ page }) => {
   const fake: Fake = { ...fresh(), postReply: { status: 403, body: FORBIDDEN } };
   await fakeServer(page, "institution_admin", fake);
-  await page.goto("/app/web/ustanova/cuvanje");
+  await page.goto("/aplikacija/ustanova/cuvanje");
   await page.getByRole("tab", { name: "Pravna zadržavanja" }).click();
   await page.getByLabel("Vrsta predmeta").selectOption("work");
   await page.getByLabel("Oznaka predmeta").fill("rad-izm-3");
@@ -138,7 +138,7 @@ test("a refused placing (403) shows the catalogue text under the form", async ({
 
 test("a teacher does not see the cards", async ({ page }) => {
   await fakeServer(page, "teacher", fresh());
-  await page.goto("/app/web/ustanova/cuvanje");
+  await page.goto("/aplikacija/ustanova/cuvanje");
   await expect(page.getByRole("table", { name: /Klase podataka/ })).toHaveCount(0);
   await expect(page.getByRole("tab", { name: "Pravna zadržavanja" })).toHaveCount(0);
 });

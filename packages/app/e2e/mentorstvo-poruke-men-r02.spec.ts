@@ -36,7 +36,7 @@ for (const width of [1280, 390]) {
   test(`F4-MEN-R02: the mentor reads the student's message and replies by keyboard (${width} px)`, async ({ page }, info) => {
     const sent = await serve(page, { status: 201, json: REPLY });
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/app/web/nastavnik/mentorstva");
+    await page.goto("/aplikacija/nastavnik/mentorstva");
     const plan = page.getByTestId("mentor-work-plan").filter({ has: page.getByText(/Izmišljeno pitanje o metodi\./) });
     await expect(plan).toHaveCount(1);
     await plan.getByText(m.count.replace("{total}", "1")).click();
@@ -56,7 +56,7 @@ for (const width of [1280, 390]) {
 
 test("F4-MEN-R02: a refused message is said as refused and the draft stays", async ({ page }) => {
   await serve(page, { status: 422, json: { error: "validation_failed", code: "validation_failed" } });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   const plan = page.getByTestId("mentor-work-plan").filter({ has: page.getByText(/Izmišljeno pitanje o metodi\./) });
   await plan.getByText(m.count.replace("{total}", "1")).click();
   await plan.getByLabel(m.label.teacher).fill("Izmišljeni odgovor.");

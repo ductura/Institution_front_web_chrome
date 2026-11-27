@@ -83,7 +83,7 @@ describe("submissions port over the contract (PIL-D2-PREDAJE)", () => {
 
   it("links the page of one assignment", () => {
     expect(submissionsHref("3a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c01")).toBe("/nastavnik/zadatak/3a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c01/predaje");
-    expect(signInReturn("/app/chrome", "z1")).toBe("/app/chrome/nastavnik/zadatak/z1/predaje");
-    expect(signInReturn("/app/web", "z1")).toBe("/app/web/nastavnik/zadatak/z1/predaje");
+    expect(signInReturn("/aplikacija", "z1")).toBe("/aplikacija/nastavnik/zadatak/z1/predaje");
+    expect(signInReturn("/aplikacija", "z1")).toBe("/aplikacija/nastavnik/zadatak/z1/predaje");
   });
 });

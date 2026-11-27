@@ -11,7 +11,7 @@ const kinds: { documentKind?: unknown } = {};
 const calls: string[] = [];
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: () => {}, push: () => {} }), notFound: () => { throw new Error("notFound"); } }));
-vi.mock("../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("../../../../../src/client/api.ts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   browserTransport: async () => new Response("{}"),

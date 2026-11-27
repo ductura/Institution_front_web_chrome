@@ -13,7 +13,7 @@ import { assignmentFactsMessages as text } from "./messages.hr";
 // jsdom has no modal dialog: opening only sets the attribute.
 HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) { this.setAttribute("open", ""); };
 HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) { this.removeAttribute("open"); };
-const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
+const HOST = { base: "/aplikacija", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
 const NOW = Date.parse("2027-02-01T10:00:00Z");
 
 describe("LateException (NZ-5)", () => {

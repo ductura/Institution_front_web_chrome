@@ -105,7 +105,7 @@ for (const width of [390, 1280]) {
     test(`PR-5: a stale declaration is one sentence on step 3 and is confirmed again in its dialog, by keyboard (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       const { puts } = await student(page, { declaration: STALE, after: RECONFIRMED });
-      await page.goto(`/app/web/rad/${T1}/predaja/pregled`);
+      await page.goto(`/aplikacija/rad/${T1}/predaja/pregled`);
       await setTheme(page, theme);
       const stale = "Tekst rada se promijenio nakon potvrde. Izjavu treba potvrditi ponovno.";
       await expect(main(page).getByText(stale, { exact: true })).toHaveCount(1);
@@ -140,7 +140,7 @@ for (const width of [390, 1280]) {
 test("PR-5: step 4 opens the declaration as a dialog and Zatvori returns the focus to the step", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await student(page, { declaration: STALE });
-  await page.goto(`/app/web/rad/${T1}/predaja/slanje`);
+  await page.goto(`/aplikacija/rad/${T1}/predaja/slanje`);
   await expect(main(page).getByRole("button", { name: "Predaj rad", exact: true })).toHaveAttribute("aria-disabled", "true");
   const open = main(page).getByRole("button", { name: "Potvrdi izjavu ponovno" });
   await open.click();
@@ -156,7 +156,7 @@ for (const width of [390, 1280]) {
     test(`PR-6: a note is added only on the server's note and says who reads it (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await student(page);
-      await page.goto(`/app/web/rad/${T1}/predaja/pregled`);
+      await page.goto(`/aplikacija/rad/${T1}/predaja/pregled`);
       await setTheme(page, theme);
       await main(page).getByRole("link", { name: "Dodaj napomenu (nije obavezna)" }).click();
       const field = page.getByLabel("Napomena uz rad (nije obavezna)");
@@ -174,7 +174,7 @@ for (const width of [390, 1280]) {
 test("PR-6: an answer that does not add the note is an alert, and nothing is shown as added", async ({ page }, info) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await student(page, { addNote: 503 });
-  await page.goto(`/app/web/rad/${T1}/predaja/pregled`);
+  await page.goto(`/aplikacija/rad/${T1}/predaja/pregled`);
   await main(page).getByRole("link", { name: "Dodaj napomenu (nije obavezna)" }).click();
   await page.keyboard.type("Izmišljena napomena uz rad.");
   await page.keyboard.press("Tab");
@@ -188,7 +188,7 @@ test("PR-6: an answer that does not add the note is an alert, and nothing is sho
 test("PR-17: after the deadline step 3 says calmly that the submission will be marked late, and names no consequence", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await student(page, { now: "2026-11-10T12:00:00+01:00", lateUnknown: true });
-  await page.goto(`/app/web/rad/${T1}/predaja/pregled`);
+  await page.goto(`/aplikacija/rad/${T1}/predaja/pregled`);
   const late = main(page).locator("#sb-late");
   await expect(late).toHaveText(/^Rok je prošao 8\. 11\. 2026\. u 23:59\. Predaja će biti označena kao predaja nakon roka;/);
   await expect(late).not.toContainText(/kazn|bodov|ocjen|sankcij/iu);
@@ -222,7 +222,7 @@ for (const width of [390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await workspace(page);
     const opened = page.waitForResponse((r) => new URL(r.url()).pathname === "/api/v1/evidence/open");
-    await page.goto(`/app/web/rad/${W_ID}`);
+    await page.goto(`/aplikacija/rad/${W_ID}`);
     const { documentId } = await (await opened).json() as { documentId: string };
     const editor = page.locator('.ProseMirror[contenteditable="true"]').first();
     await expect(editor).toBeVisible({ timeout: 20_000 });
@@ -238,7 +238,7 @@ for (const width of [390, 1280]) {
     await context.setOffline(false);
     // Step 3: the server has confirmed revision 2 of this document; the device holds the change after it.
     await page.route("**/api/v1/evidence/open", (route) => route.fulfill({ json: { ...OPENED, documentId } }));
-    await page.goto(`/app/web/rad/${W_ID}/predaja/pregled`);
+    await page.goto(`/aplikacija/rad/${W_ID}/predaja/pregled`);
     await expect(main(page).getByText("Na uređaju je novija verzija", { exact: true })).toBeVisible({ timeout: 15_000 });
     await expect(next(page)).toHaveAttribute("aria-disabled", "true");
     await expect(main(page).getByText("Odaberite koju verziju predajete.", { exact: true })).toBeVisible();

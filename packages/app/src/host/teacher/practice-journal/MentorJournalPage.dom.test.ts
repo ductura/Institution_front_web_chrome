@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mentorJournalText as t } from "./messages.hr";
 
 const signIn = vi.hoisted(() => vi.fn());
-vi.mock("../../context", () => ({ useHost: () => ({ base: "/app/web" }) }));
+vi.mock("../../context", () => ({ useHost: () => ({ base: "/aplikacija" }) }));
 vi.mock("@/client/api", () => ({ createApi: vi.fn(), goToSignIn: signIn }));
 // The teacher read hook of pages.tsx, without pulling the whole host in: the same states, read once per attempt.
 vi.mock("../../pages", async () => {
@@ -208,6 +208,6 @@ describe("MentorJournalPage in the browser", () => {
   it("goes to sign-in when the session is gone", async () => {
     const { call } = apiOf({ "practice.placements.get": () => fail(401, "unauthorized") });
     await render(call);
-    expect(signIn).toHaveBeenCalledWith("/app/web/nastavnik/mentorstva/dnevnik-prakse");
+    expect(signIn).toHaveBeenCalledWith("/aplikacija/nastavnik/mentorstva/dnevnik-prakse");
   });
 });
