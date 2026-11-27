@@ -59,6 +59,7 @@ describe("CodeRunMount", () => {
     expect(text).toContain("Pokrenuto u vašem pregledniku; to nije provjera nastavnika i ne ulazi u ocjenu.");
     expect(text).toContain("Prošlo 1 od 2 testova.");
     expect(text).toContain(FAKE_CODE_TESTS[1].title);
+    expect(text).toContain("Ulaz: [2,3]");
   });
 
   it("offers nothing on a block of another language, or when the assignment has no tests", async () => {

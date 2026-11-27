@@ -336,7 +336,11 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
   TeacherCourses: {
     prazno: async (c) => {
       await expect(c.getByRole("heading", { level: 2 })).toHaveText(t.teacherCourses.empty);
-      await expect(c.getByRole("link", { name: t.teacherCourses.newCourse })).toHaveAttribute("href", "/nastavnik/zadatak/novi");
+      // Design alignment 27. 11. 2026.: the faculty administrator creates a course, so the
+      // empty state explains that and offers no new-course link of the teacher's own.
+      await expect(c.getByText(t.teacherCourses.emptyBody)).toBeVisible();
+      await expect(c.getByText(t.teacherCourses.emptyNext)).toBeVisible();
+      await expect(c.getByRole("link", { name: t.teacherCourses.newCourse })).toHaveCount(0);
       await expect(c.getByText(t.teacherCourses.countNote)).toHaveCount(0);
     },
     učitavanje: loading(t.workspace.panelLoading),
@@ -409,7 +413,8 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(c.getByRole("link", { name: lib.teacherSummary.retry })).toHaveAttribute("href", "/nastavnik/zbirni");
     },
     puno: async (c) => {
-      await expect(c.getByRole("columnheader")).toHaveText(Object.values(lib.teacherSummary.columns).map((h) => new RegExp(`^${h}`)));
+      // Design alignment 27. 11. 2026.: the "revision" column stays hidden until wave 8 brings its data.
+      await expect(c.getByRole("columnheader")).toHaveText(Object.entries(lib.teacherSummary.columns).filter(([id]) => id !== "revision").map(([, h]) => new RegExp(`^${h}`)));
       await expect(c.getByRole("rowheader")).toHaveText([/Osoba 1/, /Osoba 2/, /Osoba 3/, /Osoba 4/]);
       // Each state tag carries its text beside the colour (WEB-29).
       for (const [state, count, text] of [["submitted", 3, "Predano"], ["not_submitted", 1, "Nije predano"], ["late", 1, "Nakon roka"],

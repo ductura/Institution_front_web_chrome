@@ -21,6 +21,7 @@ import {
 } from "../assist";
 import { EMPTY_HELP, helpDocumentOf } from "./chapter-help";
 import { ChapterLength } from "../chapter-length/ChapterLength";
+import { WorkPlanner } from "../chapter-length/WorkPlanner";
 import { useChapterTargets } from "../chapter-length/use-chapter-targets";
 import {
   addDeadline, daysUntil, EMPTY_THREAD, goalStatus, MAX_HYPOTHESES, pagesOf, parseDeadlines, parseStash, parseThread, preview,
@@ -42,6 +43,12 @@ function dueDays(dueAt: string | null | undefined, now: Date): string | null {
   const day = dueAt ? zagrebDay(dueAt) : null;
   const days = day === null ? null : daysUntil(day, now);
   return days === null ? null : days < 0 ? t.deadlines.late(-days) : t.deadlines.in(days);
+}
+
+/** Whole days to the deadline (negative once passed), or null without a usable deadline; feeds the work planner. */
+function dueDaysCount(dueAt: string | null | undefined, now: Date): number | null {
+  const day = dueAt ? zagrebDay(dueAt) : null;
+  return day === null ? null : daysUntil(day, now);
 }
 
 /** "15. 12. 2099., 23:59 · za 3 dana", or null when there is no readable deadline. */
@@ -186,6 +193,10 @@ function Progress({ dueAt, now = new Date() }: Due & { now?: Date }) {
           );
         })}
       </ul>
+      <WorkPlanner
+        chapters={snap.headings.map((h, i) => ({ id: h.id ?? String(h.pos), label: `${h.number}. ${h.title}`, words: snap.words[i] ?? 0, target: h.id ? targets.get(h.id) : undefined }))}
+        daysLeft={dueDaysCount(dueAt, now)}
+      />
     </div>
   );
 }

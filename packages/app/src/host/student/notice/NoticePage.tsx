@@ -12,6 +12,7 @@ import { noticeWindow } from "./window";
 import { studentHostHr as t } from "../i18n/messages.hr";
 import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
+import { LoadAlert } from "../../states/States";
 import HostNotice from "../enrol/HostNotice";
 import { editorPath } from "../enrol/model";
 import NoticeSummary from "./NoticeSummary";
@@ -75,11 +76,21 @@ export default function NoticePage({ assignmentId }: { assignmentId: string }) {
             onOpenWork={openWork}
           />
         </>
+      ) : notice.kind === "signedOut" ? (
+        // G4: a 401 goes straight to AAI@EduHr and back (returnTo), as on /rad; no sign-in card.
+        <RouteLoading label={t.student.loading} />
       ) : (
         <section className={styles.card} aria-labelledby="zadatak">
           <h1 id="zadatak">{t.student.title}</h1>
-          <p className={styles.status} role="status">{t.student[notice.kind]}</p>
-          {notice.kind === "unavailable" ? <Button onClick={retry}>{t.auth.retry}</Button> : null}
+          {notice.kind === "unavailable" ? (
+            // G2: the shared role=alert frame in the error colour; the button below stays, so no extra link.
+            <>
+              <LoadAlert body={t.student.unavailable} />
+              <Button onClick={retry}>{t.auth.retry}</Button>
+            </>
+          ) : (
+            <p className={styles.status} role="status">{t.student[notice.kind]}</p>
+          )}
           {notice.kind === "notFound" ? <a className="btn" href={appHref(base, "/upis")}>{t.student.enroll.title}</a> : null}
         </section>
       )}
