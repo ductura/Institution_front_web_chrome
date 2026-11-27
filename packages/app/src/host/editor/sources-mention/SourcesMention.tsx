@@ -119,7 +119,8 @@ export function SourcesMention({ documentId, openOrigin }: { documentId: string;
   return <>
     <TriggerPopover editor={editor} sources={items} actions={actions} />
     <div role="group" aria-label={t.plainCount(places.length)}>
-      <CitationPopover editor={editor} sources={ids.map((s) => ({ id: s.id, label: s.label }))} />
+      <CitationPopover editor={editor} sources={ids.map((s) => ({ id: s.id, label: s.label }))}
+        onNewSource={editor?.isEditable ? () => setQuick({ author: "" }) : undefined} />
       <span role="status">{t.plainCount(places.length)}</span>
       {next !== null && <Button tone="quiet" onClick={() => { editor.view.dispatch(jumpTo(editor.state, next)); editor.commands.focus(); }}>
         {t.plainNext}
