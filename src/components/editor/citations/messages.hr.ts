@@ -16,4 +16,8 @@ export const citationMessagesHr = {
   chapter: "Poglavlje {number}",
   beforeChapter: "Prije prvog poglavlja",
   close: "Zatvori",
+  recent: "Zadnje korišteni",
+  allSources: "Svi izvori",
+  newSource: "Dodaj novi izvor…",
+  fasterHint: "Brže bez miša: u tekstu upišite @ i početak prezimena, pa Enter. Novi izvor dodajete na istom mjestu.",
 } as const;

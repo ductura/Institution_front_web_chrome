@@ -13,6 +13,7 @@ import { documentSources } from "@/components/editor/sources/proofs/proof-source
 import { TriggerPopover } from "@/components/editor/triggers/TriggerPopover";
 import { useSlashCommands } from "../slash-commands";
 import { loadNotebook } from "../source-notebook/notebook";
+import { NEW_SOURCE_REQUEST } from "./new-source-request";
 import { addSourceAt, jumpTo, mentionSources, nextPlace, unsourcedCitationPlaces, type MentionNote } from "./mention-model";
 import { sourcesMentionHr as t } from "./messages.hr";
 
@@ -81,6 +82,15 @@ export function SourcesMention({ documentId, openOrigin }: { documentId: string;
     // `ids` is read through its key: the same sources must not read the notes again.
   }, [documentId, idsKey, signedOut]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ED-92: Umetni and the palette ask for this dialog ("Novi izvor"); only a sheet that can be written takes it.
+  const writable = !signedOut && !!editor && read.editable;
+  useEffect(() => {
+    if (!writable) return;
+    const take = (event: Event) => { event.preventDefault(); setQuick({ author: "" }); };
+    document.addEventListener(NEW_SOURCE_REQUEST, take);
+    return () => document.removeEventListener(NEW_SOURCE_REQUEST, take);
+  }, [writable]);
+
   const items = useMemo(() => mentionSources(sources, notes), [sources, notes]);
   if (signedOut || !editor) return null;
 
@@ -109,7 +119,8 @@ export function SourcesMention({ documentId, openOrigin }: { documentId: string;
   return <>
     <TriggerPopover editor={editor} sources={items} actions={actions} />
     <div role="group" aria-label={t.plainCount(places.length)}>
-      <CitationPopover editor={editor} sources={ids.map((s) => ({ id: s.id, label: s.label }))} />
+      <CitationPopover editor={editor} sources={ids.map((s) => ({ id: s.id, label: s.label }))}
+        onNewSource={editor?.isEditable ? () => setQuick({ author: "" }) : undefined} />
       <span role="status">{t.plainCount(places.length)}</span>
       {next !== null && <Button tone="quiet" onClick={() => { editor.view.dispatch(jumpTo(editor.state, next)); editor.commands.focus(); }}>
         {t.plainNext}
