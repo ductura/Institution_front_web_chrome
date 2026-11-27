@@ -12,6 +12,12 @@ import styles from "./TriggerPopover.module.css";
 type Menu = { trigger: Trigger; items: readonly Item[]; active: number };
 type Props = { editor: Editor | null; sources?: readonly Source[]; actions?: Actions };
 const emptySources: readonly Source[] = [];
+const CITE_REQUEST = "ductura:editor-cite";
+
+/** ED-82: asks the open editor's source list at the caret; false when no list took it. */
+export function requestCiteAtCaret(editor: Editor, target: EventTarget = document): boolean {
+  return !target.dispatchEvent(new CustomEvent<Editor>(CITE_REQUEST, { detail: editor, cancelable: true }));
+}
 const noActions: Actions = {};
 
 function triggerIn(editor: Editor, citeAt: number | null): Trigger | null {
@@ -101,6 +107,15 @@ export function TriggerPopover({ editor, sources = emptySources, actions = noAct
     const onCompositionStart = () => { update(null); };
     const onCompositionEnd = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(onRefresh); };
     const onTransaction = () => { onRefresh(); };
+    // ED-82: "Umetni navod" of a hint opens the source list where the caret now stands.
+    const onCiteRequest = (event: Event) => {
+      if (editor.isDestroyed || !editor.isEditable || (event as CustomEvent<unknown>).detail !== editor) return;
+      event.preventDefault();
+      dismissed.current = null;
+      citeAt.current = editor.state.selection.from;
+      onRefresh();
+    };
+    document.addEventListener(CITE_REQUEST, onCiteRequest);
     editor.on("transaction", onTransaction).on("focus", onTransaction).on("blur", onTransaction);
     editor.on("update", onTransaction);
     element.addEventListener("keydown", onKey, true);
@@ -110,6 +125,7 @@ export function TriggerPopover({ editor, sources = emptySources, actions = noAct
     window.addEventListener("resize", onGeometry);
     return () => {
       cancelAnimationFrame(frame);
+      document.removeEventListener(CITE_REQUEST, onCiteRequest);
       editor.off("transaction", onTransaction).off("focus", onTransaction).off("blur", onTransaction);
       editor.off("update", onTransaction);
       element.removeEventListener("keydown", onKey, true);
