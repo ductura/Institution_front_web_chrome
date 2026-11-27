@@ -13,7 +13,6 @@ import { committeeHr as t } from "./messages.hr";
 import { readCandidates, type Candidate, type CommitteeMember, type CommitteeRole, type PersonName } from "./read";
 
 type Api = ReturnType<typeof createApi>;
-const nameText = (n: PersonName | null | undefined, id: string) => (n ? `${n.givenName} ${n.familyName}` : `${t.unnamed} (${id.slice(0, 8)})`);
 
 export type CommitteeEditorProps = {
   readonly documentId: string;
@@ -43,6 +42,13 @@ export function CommitteeEditor({ documentId, value, call = () => createApi(), o
   const names = new Map<string, PersonName | null>();
   for (const m of current) names.set(m.userId, m.name);
   if (Array.isArray(candidates)) for (const c of candidates as readonly Candidate[]) names.set(c.personId, c.name);
+  // A person without a shown name is told apart by a number, never by an identifier: "… 1", "… 2" (only when there are several).
+  const unnamed = [...names].filter(([, n]) => !n).map(([id]) => id);
+  const nameText = (n: PersonName | null | undefined, id: string) => {
+    if (n) return `${n.givenName} ${n.familyName}`;
+    const at = unnamed.indexOf(id);
+    return unnamed.length > 1 && at >= 0 ? `${t.unnamed} ${at + 1}` : t.unnamed;
+  };
   const free = Array.isArray(candidates) ? (candidates as readonly Candidate[]).filter((c) => !draft.some((d) => d.userId === c.personId)) : [];
   const problem = checkCommittee(draft);
   const full = draft.length >= MAX_MEMBERS;

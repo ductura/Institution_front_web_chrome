@@ -79,6 +79,8 @@ export type HostSections = {
   instructions?: (ctx: HostSectionContext) => ReactNode;
   /** ED-77: the row at the foot of the right panel (the writing session); none without it. */
   footer?: (ctx: HostSectionContext) => ReactNode;
+  /** ED-71: what the host shows on the sheet above the text (prototype `#toc`, "Sadržaj na listu"). */
+  sheetTop?: (ctx: HostSectionContext) => ReactNode;
 };
 
 export type OpenRead =
@@ -308,6 +310,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       <EditorNotices notices={!online
         ? [{ kind: "offline", savingLocally, resumesSync: true, waiting: pending ? offlineWaitingText(pending) : null }]
         : reconnected ? [{ kind: "reconnected", sending: reconnectText(pending) }] : []} />
+      {hostSections?.sheetTop?.(ctx)}
       <LocalEditor lastSignedAt={lastSignedAt} />
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
       <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId} assignmentId={assignmentId}

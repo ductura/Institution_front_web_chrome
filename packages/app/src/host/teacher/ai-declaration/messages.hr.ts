@@ -3,8 +3,8 @@ export const aiDeclarationMessages = {
   recordedNote: "Zabilježeno u Ducturi i izjava studenta.",
   review: "Pregledaj razgovor",
   conversationsHeading: "Razgovori uz izjavu",
-  /** „Razgovor 1 · 28. 10. 2026.” */
-  dialogTitle: (n: number, date: string) => `Razgovor ${n} · ${date}`,
+  /** „Razgovor 1, 28. 10. 2026.” */
+  dialogTitle: (n: number, date: string) => `Razgovor ${n}, ${date}`,
   dialogNote: "Točno kako je zabilježen; isti razgovor vidi i student.",
   close: "Zatvori",
   unavailable: "Izjava o korištenju AI-ja trenutačno nije dostupna.",

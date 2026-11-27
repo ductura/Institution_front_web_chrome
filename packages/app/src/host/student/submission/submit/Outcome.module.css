@@ -1,0 +1,4 @@
+/* S-08: the line of an outcome that reports an error is written in the error colour (token, no own colour). */
+.error {
+  color: var(--color-error);
+}

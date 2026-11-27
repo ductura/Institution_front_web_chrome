@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // PIL-K-SHEMA-V3: the real student page (EditorPageWork with the host's StudentToolbar and
-// FootnoteDialogHost, as host/student/work.tsx mounts it) builds the sheet in LocalDocument by the
+// FootnoteDialogHost, as host/student/WorkEditorPage.tsx mounts it) builds the sheet in LocalDocument by the
 // work's server-confirmed schema version. A work confirmed as 3 gets the v3 schema, and the toolbar's
 // Umetni > Fusnota opens the host's dialog and inserts a footnote node; a work confirmed as 1, any
 // other version or none keeps the v1 schema, with no footnote node and no dialog. Another confirmed

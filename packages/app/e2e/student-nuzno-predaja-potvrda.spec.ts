@@ -108,13 +108,21 @@ for (const width of [390, 1280]) {
   }
 }
 
-test("PR-18: the fingerprint is read as one string, the groups are for the eye only", async ({ page }) => {
+test("S-08 K1, K2: the SHA-256 fingerprint is not shown in any form; the note and the copy button stay", async ({ page }) => {
   await student(page);
   await page.goto(`/aplikacija/rad/${T3}/predaja/potvrda`);
-  const groups = main(page).locator("[aria-hidden=true]").filter({ hasText: /^([0-9a-f]{4} ){15}[0-9a-f]{4}$/ });
-  await expect(groups).toHaveCount(1);
-  const whole = (await groups.innerText()).replaceAll(" ", "");
-  await expect(main(page).locator(".visually-hidden").filter({ hasText: new RegExp(`^${whole}$`) })).toHaveCount(1);
+  await expect(main(page).getByText(/[0-9a-f]{64}/)).toHaveCount(0);
+  await expect(main(page).getByText(/^([0-9a-f]{4} ){15}[0-9a-f]{4}$/)).toHaveCount(0);
+  await expect(main(page).getByText("Niz znakova izračunan iz točnog predanog teksta.", { exact: false })).toBeVisible();
+  await expect(main(page).getByRole("button", { name: "Otisak u međuspremnik" })).toBeVisible();
+});
+
+test("S-08: the UTC block gives the receipt's times in words, not as ISO text", async ({ page }) => {
+  await student(page);
+  await page.goto(`/aplikacija/rad/${T3}/predaja/potvrda`);
+  await main(page).getByText("Točna vremena iz potvrde (UTC)").click();
+  await expect(main(page).getByText(/\d{1,2}\. [a-zšđčćž]+ 20\d\d\. u \d{2}:\d{2}/).first()).toBeVisible();
+  await expect(main(page).getByText(/20\d\d-\d\d-\d\dT/)).toHaveCount(0);
 });
 
 test("PR-12: „Preuzmi zapis” saves the receipt's PDF from student.receipt-pdf.get", async ({ page }) => {

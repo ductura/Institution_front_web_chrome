@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button, Card, Dialog, RouteLoading, Select, TextField } from "@ductura/ui";
 
+import { LoadAlert } from "../../states/States";
+
 import type { createApi } from "@/client/api";
 import { teacherPeerReviewText as t } from "./messages.hr";
-import { checkRound, draftOf, isSaved, mayAllocate, mayEdit, nextKey, MAX_RUBRICS, PER_STUDENT, type RoundDraft, type RoundError } from "./model";
+import { checkRound, draftOf, isSaved, mayAllocate, mayEdit, nextKey, MAX_LABEL, MAX_RUBRICS, PER_STUDENT, type RoundDraft, type RoundError } from "./model";
 import { allocate, putRound, readRound, type Read, type RoundView, type Write } from "./read";
 
 type Api = ReturnType<typeof createApi>;
@@ -26,8 +28,8 @@ const ALLOCATE_FAILURE: Readonly<Record<Exclude<Write["kind"], "done" | "signedO
  * reviews are allocated the form is read-only (the server refuses a change then). A standalone component,
  * mounted by OverviewPage.
  */
-export function RoundPanel({ assignmentId, call, onSignedOut, onChanged }: {
-  assignmentId: string; call: () => Api; onSignedOut: () => void; onChanged: () => void;
+export function RoundPanel({ assignmentId, call, onSignedOut, onDenied, onChanged }: {
+  assignmentId: string; call: () => Api; onSignedOut: () => void; onDenied: () => void; onChanged: () => void;
 }) {
   const [read, setRead] = useState<Read<RoundView> | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -43,6 +45,7 @@ export function RoundPanel({ assignmentId, call, onSignedOut, onChanged }: {
     void readRound(call(), assignmentId).then((result) => {
       if (!live) return;
       if (result.kind === "signedOut") onSignedOut();
+      if (result.kind === "denied") onDenied();
       setRead(result);
       if (result.kind === "ok") setDraft(draftOf(result.value.round));
     });
@@ -90,11 +93,13 @@ export function RoundPanel({ assignmentId, call, onSignedOut, onChanged }: {
   }
 
   if (read === null || read.kind === "signedOut") return <Card level={2} title={t.round.title}><RouteLoading label={t.round.loading} /></Card>;
+  if (read.kind === "denied") return null;
   if (read.kind !== "ok" || draft === null) {
     return (
       <Card level={2} title={t.round.title}>
-        <p role="alert">{read.kind === "notFound" ? t.gone : t.round.unavailable}</p>
-        {read.kind === "unavailable" && <p><Button tone="quiet" onClick={() => { setRead(null); setAttempt((n) => n + 1); }}>{t.retry}</Button></p>}
+        {read.kind === "unavailable"
+          ? <LoadAlert body={t.round.unavailable} retry={{ label: t.retry, onRetry: () => { setRead(null); setAttempt((n) => n + 1); } }} />
+          : <LoadAlert body={t.gone} />}
       </Card>
     );
   }
@@ -106,6 +111,7 @@ export function RoundPanel({ assignmentId, call, onSignedOut, onChanged }: {
   return (
     <Card level={2} title={t.round.title}>
       {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
+      <p>{t.round.lead}</p>
       <p data-testid="round-state">{t.round.state[view.state]}</p>
       <p>{t.round.submittedWorks.replace("{n}", String(view.submittedWorks))} {t.round.minSubmissions.replace("{n}", String(view.minSubmissions))}</p>
       {!editable && <p data-testid="round-locked">{t.round.locked}</p>}
@@ -122,7 +128,7 @@ export function RoundPanel({ assignmentId, call, onSignedOut, onChanged }: {
           {fieldError("rubrics") !== undefined && <p role="alert">{fieldError("rubrics")}</p>}
           {draft.rubrics.map((rubric, index) => (
             <div key={rubric.key} data-testid="rubric">
-              <TextField label={t.round.rubricLabel.replace("{n}", String(index + 1))} value={rubric.label} maxLength={400} onChange={(e) => setRubric(index, e.target.value)} />
+              <TextField label={t.round.rubricLabel.replace("{n}", String(index + 1))} value={rubric.label} maxLength={MAX_LABEL} onChange={(e) => setRubric(index, e.target.value)} />
               {draft.rubrics.length > 1 && (
                 <Button type="button" tone="quiet" aria-label={t.round.removeRubric.replace("{n}", String(index + 1))}
                   onClick={() => setDraft({ ...draft, rubrics: draft.rubrics.filter((_, i) => i !== index) })}>{t.round.removeRubric.replace("{n}", String(index + 1))}</Button>

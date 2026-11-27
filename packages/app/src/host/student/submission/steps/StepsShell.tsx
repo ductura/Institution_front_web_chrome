@@ -7,6 +7,7 @@ import { Button, StepActions, StepFrame, StepLoading, StepPanel } from "@ductura
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { LoadAlert } from "../../../states/States";
 import { stepsText as text } from "./messages.hr";
 import { pathOf, stepPanelOf, type StepKind, type StepWork } from "./model";
 import StepLink from "./StepLink";
@@ -57,8 +58,14 @@ export default function StepsShell({ step, work, workHref, receiptHref, requeste
     <>
       {panel.kind === "error" && (
         <StepPanel title={text.panelTitle}>
-          <p className="note" role="alert">{text.workError}</p>
-          <StepActions><Button tone="secondary" onClick={onRetry}>{text.retry}</Button></StepActions>
+          {/* S-08 I6: on the declaration the frame in the error colour has "Pokušaj ponovno" as a link under it. R8 and D3 keep
+              their own way on (no link, or the button), so the other steps keep the button under the frame. */}
+          {step === "declaration"
+            ? <LoadAlert body={text.workError} retry={{ label: text.retry, onRetry }} />
+            : <>
+              <LoadAlert body={text.workError} />
+              <StepActions><Button tone="secondary" onClick={onRetry}>{text.retry}</Button></StepActions>
+            </>}
         </StepPanel>
       )}
       {panel.kind === "notStarted" && (

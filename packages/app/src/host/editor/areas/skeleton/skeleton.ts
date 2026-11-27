@@ -3,6 +3,7 @@
 import type { Editor } from "@tiptap/core";
 import type { Node } from "@tiptap/pm/model";
 
+import { skeletonMessages as msg } from "./messages.hr";
 import { setupOf } from "../../rules/rules-model";
 import type { RuleProfile } from "../../rules/profiles";
 
@@ -12,6 +13,7 @@ export const DEFAULT_SECTIONS = [
 ] as const;
 
 /** Profile section keys that have their own tool (declaration in "Dijelovi rada", contents generated), so no heading here. */
+const LITERATURE = "literatura";
 const HAS_OWN_TOOL: ReadonlySet<string> = new Set(["izjava", "sadržaj"]);
 
 const normal = (s: string) => s.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/\s+/g, " ");
@@ -34,8 +36,29 @@ export function presentTitles(doc: Node, titles: readonly string[]): Set<string>
   return new Set(titles.filter((t) => have.has(normal(t))));
 }
 
+export type SkeletonAvailability = { readonly enabled: true } | { readonly enabled: false; readonly reason?: string };
+
+/** The menu item: off, with the reason, outside area "dru" or when every section of the list is already in the work. */
+export function skeletonAvailability(editor: Editor | null, profile: RuleProfile | null): SkeletonAvailability {
+  if (!skeletonAvailable(profile)) return { enabled: false, reason: msg.unavailable };
+  if (!editor || editor.isDestroyed) return { enabled: true };
+  const titles = skeletonSections(profile);
+  return presentTitles(editor.state.doc, titles).size >= titles.length ? { enabled: false, reason: msg.none } : { enabled: true };
+}
+
+/** Where headings before "Literatura" go: the start of the document's own Literatura heading, or null when it has none. */
+function literaturePos(doc: Node): number | null {
+  let at: number | null = null;
+  doc.descendants((node, pos) => {
+    if (at === null && node.type.name === "heading" && normal(node.textContent) === LITERATURE) at = pos;
+    return at === null;
+  });
+  return at;
+}
+
 /**
- * Appends the chosen headings (level 2) in one transaction, skipping titles the document already has.
+ * Adds the chosen headings (level 2) in one transaction, skipping titles the document already has. They go before the
+ * work's own "Literatura" heading (the list stays last), otherwise at the end; a chosen "Literatura" goes last.
  * Returns how many were added, or null when the editor refuses (gone, read-only).
  */
 export function applySkeleton(editor: Editor | null, chosen: readonly string[]): number | null {
@@ -52,7 +75,16 @@ export function applySkeleton(editor: Editor | null, chosen: readonly string[]):
   });
   if (add.length === 0) return 0;
   const tr = editor.state.tr;
-  tr.insert(tr.doc.content.size, add.map((t) => heading.create({ level: 2 }, editor.schema.text(t))));
+  const node = (title: string) => heading.create({ level: 2 }, editor.schema.text(title));
+  const last = add.filter((title) => normal(title) === LITERATURE);
+  const before = add.filter((title) => normal(title) !== LITERATURE);
+  const lit = literaturePos(editor.state.doc);
+  if (lit === null) tr.insert(tr.doc.content.size, [...before, ...last].map(node));
+  else {
+    // The later position first, so the earlier one is still where it was measured.
+    if (last.length > 0) tr.insert(tr.doc.content.size, last.map(node));
+    if (before.length > 0) tr.insert(lit, before.map(node));
+  }
   editor.view.dispatch(tr);
   return add.length;
 }

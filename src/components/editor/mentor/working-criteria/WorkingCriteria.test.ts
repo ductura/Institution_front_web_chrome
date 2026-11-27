@@ -22,14 +22,14 @@ describe("CriteriaView", () => {
     expect(html).not.toContain("workingCriteria.");
     for (const label of Object.values(t.assessments)) expect(html).toContain(label);
     expect(html.match(/aria-pressed/g)).toHaveLength(18);
-    expect(html).toContain("Kriteriji ocjene · 0 od 6");
+    expect(html).toContain("Kriteriji ocjenjivanja, procijenjeno 0 od 6");
     expect(html).toContain(t.note);
     expect(html).toContain(t.addNote);
   });
   it("shows a saved assessment as pressed, the note and the count", () => {
     const list = [{ ...six[0], assessment: 1 as const, note: "Dobro." }, ...six.slice(1)];
     const html = view({ kind: "ready", criteria: list });
-    expect(html).toContain("Kriteriji ocjene · 1 od 6");
+    expect(html).toContain("Kriteriji ocjenjivanja, procijenjeno 1 od 6");
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
     expect(html).toMatch(/aria-pressed="true"[^>]*>dobro</);
     expect(html).toContain("Dobro.");

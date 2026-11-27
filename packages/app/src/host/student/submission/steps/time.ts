@@ -1,5 +1,6 @@
 // VIZ-S4: the times of steps 3 to 5 as the prototype writes them (Ductura_student.html, fmt(), day(), zoned()):
 // "5. 11. 2026. u 21:14", numeric day and month, Europe/Zagreb. A plain module, tested without rendering.
+import { MONTHS_GENITIVE_HR } from "../../../../../../../src/components/i18n/hr.ts";
 import { zagrebEpochMs, zagrebOffset, zagrebWall } from "../../../../../../../src/lib/i18n/zagreb.ts";
 
 const two = (n: number) => (n < 10 ? `0${n}` : String(n));
@@ -32,4 +33,15 @@ export function zonedOf(iso: string): string {
   const base = atOf(iso);
   if (zagrebEpochMs(iso) === null) return base;
   return `${base} (UTC+${zagrebOffset(iso) === "+01:00" ? 1 : 2})`;
+}
+
+/**
+ * S-08 K: an instant on the UTC clock written as the Croatian reader writes it, "27. studenoga 2026. u 14:32";
+ * null when the text is no instant, so a block of exact values leaves it out rather than show a raw ISO string.
+ */
+export function utcAtOf(iso: string): string | null {
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return null;
+  const d = new Date(ms);
+  return `${d.getUTCDate()}. ${MONTHS_GENITIVE_HR[d.getUTCMonth()]} ${d.getUTCFullYear()}. u ${two(d.getUTCHours())}:${two(d.getUTCMinutes())}`;
 }

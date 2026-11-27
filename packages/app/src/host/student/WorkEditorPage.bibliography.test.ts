@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// V18-22-R02 (V20-11, V20-14): WorkPage really mounts StudentBibliographyHost in the sources card ("Literatura"),
+// V18-22-R02 (V20-11, V20-14): WorkEditorPage really mounts StudentBibliographyHost in the sources card ("Literatura"),
 // with the live editor and the assignment, and mounts nothing while there is no editor.
 import { createElement, act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -46,16 +46,16 @@ let host: HTMLElement | null = null;
 afterEach(() => { act(() => root?.unmount()); host?.remove(); root = host = null; editorState.editor = { fake: true }; });
 
 async function open() {
-  const { WorkPage } = await import("./work.tsx");
+  const { WorkEditorPage } = await import("./WorkEditorPage.tsx");
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => root!.render(createElement(WorkPage, { assignmentId: ID })));
+  await act(async () => root!.render(createElement(WorkEditorPage, { assignmentId: ID })));
   for (let n = 0; n < 100 && !seen.props; n += 1) await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
   return host;
 }
 
-describe("WorkPage mounts the bibliography host", { timeout: 30000 }, () => {
+describe("WorkEditorPage mounts the bibliography host", { timeout: 30000 }, () => {
   it("passes the document, the assignment, its course and the live editor", async () => {
     expect((await open()).textContent).toBe(`POPIS doc-1 ${ID} course-1 true`);
   });

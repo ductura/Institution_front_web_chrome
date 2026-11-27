@@ -85,6 +85,23 @@ describe("peer review in the browser", () => {
       await render(h(TasksPage, { assignmentId: A, call: apiOf({ "student.peer-review-tasks.get": () => fail(404, "not_found") }).call }));
       expect(text()).toContain(t.gone);
     });
+    it("V19: a waiting work of a closed round says the round is closed, never 'waits for your review'; 403 is the denied state, no page", async () => {
+      await render(h(TasksPage, { assignmentId: A, call: tasks("closed", [{ taskId: T1, state: "pending", dueAt: DUE }]).call }));
+      const row = host.querySelector("[data-testid=peer-review-task]")!.textContent!;
+      expect(row).toContain(t.list.roundClosed);
+      expect(row).not.toContain(t.list.pending);
+      expect(row).not.toContain("·");
+      expect(row).toContain("20. prosinca 2026. u 11:00");
+      await render(h(TasksPage, { assignmentId: A, call: apiOf({ "student.peer-review-tasks.get": () => fail(403, "forbidden") }).call }));
+      expect(host.querySelector("h1")!.textContent).toBe("Nemate pristup ovom prikazu");
+      expect(host.querySelectorAll("h1")).toHaveLength(1);
+      expect(text()).toContain("Natrag na moj prostor");
+    });
+    it("V19: an unavailable read is a role=alert frame with a retry link, not a button", async () => {
+      await render(h(TasksPage, { assignmentId: A, call: apiOf({ "student.peer-review-tasks.get": () => fail(503, "unavailable") }).call }));
+      expect(host.querySelector("[role=alert]")!.textContent).toContain(t.unavailable);
+      expect(text()).toContain(t.retry);
+    });
     it("a lost session goes to the sign-in", async () => {
       await render(h(TasksPage, { assignmentId: A, call: apiOf({ "student.peer-review-tasks.get": () => fail(401, "unauthorized") }).call }));
       expect(signIn).toHaveBeenCalled();

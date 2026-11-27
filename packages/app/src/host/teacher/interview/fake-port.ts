@@ -6,7 +6,7 @@ const NOW = "2026-11-22T09:00:00.000Z";
 
 export const FAKE_PREPARATION: InterviewPreparation = {
   invitedAt: null,
-  questions: [{ id: Q1, paragraphRef: "p-3", questionText: "Kako si došao do ove tvrdnje?", createdAt: NOW, mine: true }],
+  questions: [{ id: Q1, paragraphRef: "3", questionText: "Kako si došao do ove tvrdnje?", createdAt: NOW, mine: true }],
   explanations: [],
   appointment: null,
   heldOn: null,

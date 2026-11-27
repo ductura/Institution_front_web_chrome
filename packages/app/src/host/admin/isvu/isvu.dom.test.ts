@@ -207,9 +207,61 @@ describe("Povezivanje s ISVU-om", () => {
     errors.mockRestore();
   });
 
-  it("a 401 on the confirmation is signed out, not a retry loop", async () => {
+  it("a 401 on the confirmation leaves only the redirect to the sign-in, no text on the page", async () => {
     stub((c) => (isPreview(c) ? Response.json(mixed) : isConfirm(c) ? Response.json({ error: "unauthorized" }, { status: 401 }) : undefined));
     await mount(); await pick(); await click("Pregledaj popis"); await click("Potvrdi upis…"); await click("Potvrdi upis");
-    expect(text()).toContain("Prijava je istekla");
+    expect(text()).not.toContain("Prijava je istekla");
+    expect(host!.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it("a 403 on the source list shows the shared no-access state with the way back, and no other text", async () => {
+    stub((c) => (c.path.endsWith("/isvu/courses") ? Response.json({ error: "forbidden" }, { status: 403 }) : undefined));
+    await mount();
+    expect(host!.querySelectorAll("h1")).toHaveLength(1);
+    expect(host!.querySelector("h1")?.textContent).toBe("Nemate pristup ovom prikazu");
+    const back = host!.querySelector("a") as HTMLAnchorElement;
+    expect(back.textContent).toBe("Natrag na moj prostor");
+    expect(back.getAttribute("href")).toBe("/aplikacija/ustanova");
+    expect(text()).not.toContain("administrator");
+    expect(host!.querySelector("select")).toBeNull();
+  });
+
+  it("the read error is one role=alert frame and the retry is a link-styled button under it, not a primary button", async () => {
+    stub((c) => (c.path.endsWith("/isvu/courses") ? new Response("{}", { status: 503 }) : undefined));
+    await mount();
+    const alerts = host!.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]!.textContent).toContain("Čitanje nije uspjelo");
+    expect(alerts[0]!.textContent).not.toContain("Pokušaj ponovno");
+    expect(button("Pokušaj ponovno")!.className).not.toBe("");
+    expect(alerts[0]!.contains(button("Pokušaj ponovno")!)).toBe(false);
+  });
+
+  it("source off and an expired preview are alert frames; the expired one keeps its new-preview button in the actions row", async () => {
+    stub((c) => (isPreview(c) ? Response.json(mixed) : isConfirm(c) ? Response.json({ error: "import_expired" }, { status: 410 }) : undefined));
+    await mount(); await pick(); await click("Pregledaj popis"); await click("Potvrdi upis…"); await click("Potvrdi upis");
+    const frame = [...host!.querySelectorAll('[role="alert"]')].find((n) => n.textContent?.includes("Pregled je istekao"));
+    expect(frame).toBeTruthy();
+    expect(frame!.contains(button("Napravi novi pregled")!)).toBe(false);
+  });
+
+  it("a failed confirmation is an alert frame inside the dialog, not a Notice", async () => {
+    stub((c) => (isPreview(c) ? Response.json(mixed) : isConfirm(c) ? new Response("{}", { status: 503 }) : undefined));
+    await mount(); await pick(); await click("Pregledaj popis"); await click("Potvrdi upis…"); await click("Potvrdi upis");
+    const dialog = document.querySelector("dialog")!;
+    const frames = [...dialog.querySelectorAll('[role="alert"]')];
+    expect(frames).toHaveLength(1);
+    expect(frames[0]!.textContent).toBe("Upis nije uspio. Pregled je sačuvan; pokušajte ponovno.");
+  });
+
+  it("a 403 on the preview or on the confirmation also shows the no-access state", async () => {
+    stub((c) => (isPreview(c) ? Response.json({ error: "forbidden" }, { status: 403 }) : undefined));
+    await mount(); await pick(); await click("Pregledaj popis");
+    expect(host!.querySelector("h1")?.textContent).toBe("Nemate pristup ovom prikazu");
+    expect(text()).not.toContain("Čitanje nije uspjelo");
+    act(() => root!.unmount()); root = null; host!.remove();
+    stub((c) => (isPreview(c) ? Response.json(mixed) : isConfirm(c) ? Response.json({ error: "forbidden" }, { status: 403 }) : undefined));
+    await mount(); await pick(); await click("Pregledaj popis"); await click("Potvrdi upis…"); await click("Potvrdi upis");
+    expect(host!.querySelector("h1")?.textContent).toBe("Nemate pristup ovom prikazu");
   });
 });

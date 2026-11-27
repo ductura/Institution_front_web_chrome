@@ -5,28 +5,29 @@ import { useEffect, useState } from "react";
 
 import type { SummaryOutcome } from "@/client/process-summary";
 import { StateBlock, WorkPanel, workPageStyles as styles } from "../n07/WorkPage";
-import { readVersionedDocument, type ElementsRead } from "../text-elements/reader";
+import type { ElementsRead } from "../text-elements/reader";
+import { readSubmittedVersion } from "./read";
 import { fallbackText, placesFromRead, preSubmit, type Fallback, type Places } from "./model";
 import { preSubmitMessages as text } from "./messages.hr";
 
-/** The open places for a source of one work, read once from its versioned document (NAS-R20). Without a document id: unavailable. */
-export function useOpenPlaces(documentId: string | undefined, read: typeof readVersionedDocument = readVersionedDocument): Places {
+/** The open places for a source of one work, read once from the submitted revision through the teacher route (NAS-R20). Without a document id or revision: unavailable. */
+export function useOpenPlaces(documentId: string | undefined, revision: number | undefined, read: typeof readSubmittedVersion = readSubmittedVersion): Places {
   const [result, setResult] = useState<ElementsRead | null>(null);
   useEffect(() => {
-    if (documentId === undefined) return;
+    if (documentId === undefined || revision === undefined) return;
     let active = true;
     setResult(null);
-    void read(documentId).then((next) => { if (active) setResult(next); });
+    void read(documentId, revision).then((next) => { if (active) setResult(next); });
     return () => { active = false; };
-  }, [documentId, read]);
-  return documentId === undefined ? { kind: "unavailable" } : placesFromRead(result);
+  }, [documentId, revision, read]);
+  return documentId === undefined || revision === undefined ? { kind: "unavailable" } : placesFromRead(result);
 }
 
 /** N-07 `pp-h`: what the student saw before submitting (prototype `beforePanel`). Read-only; the full summary is one link away. */
-export function PreSubmitPanel({ outcome, summaryHref, onReload, documentId }: {
-  outcome: SummaryOutcome | null; summaryHref: string; onReload: () => void; documentId?: string;
+export function PreSubmitPanel({ outcome, summaryHref, onReload, documentId, revision }: {
+  outcome: SummaryOutcome | null; summaryHref: string; onReload: () => void; documentId?: string; revision?: number;
 }) {
-  const places = useOpenPlaces(documentId);
+  const places = useOpenPlaces(documentId, revision);
   const body = outcome?.kind === "ok" ? preSubmit(outcome.summary) : null;
   return (
     <WorkPanel id="pp-h" title={text.title} level={2} busy={outcome === null}>
