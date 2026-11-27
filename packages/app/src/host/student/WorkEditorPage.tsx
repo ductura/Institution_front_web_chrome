@@ -55,6 +55,7 @@ import { ChapterMarks } from "../editor/left/ChapterMarks";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
 import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
+import { SelectionBubbleHost } from "../editor/selection-bubble/SelectionBubbleHost";
 import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { SheetToc } from "../editor/toc/SheetToc";
@@ -168,7 +169,8 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
           node: <EditorPageWork assignmentId={assignmentId} base={base} course={read.course} title={read.title} topBar={topBar} length={length}
             startContent={startContentFor(readTemplate, startWorkText.titleFields)}
             statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost}
-            toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
+            toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} />
+              <SelectionBubbleHost workId={assignmentId} confirmedWorkSchemaVersion={ctx.confirmedWorkSchemaVersion} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
             triggers={({ documentId }) => <SourcesMention documentId={documentId}
               openOrigin={() => router.push(nextPath(base, `/rad/${encodeURIComponent(assignmentId)}/podrijetlo`))} />}
             literature={({ documentId }) => <><LiteratureList courseId={courseIdOf(assignments, assignmentId)} /><BibliographyMount documentId={documentId} assignmentId={assignmentId} courseId={courseIdOf(assignments, assignmentId)} /></>}
