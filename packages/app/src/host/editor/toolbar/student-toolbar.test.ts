@@ -114,6 +114,8 @@ describe("student toolbar over the editor", () => {
   // ED-44 (P2-16): every "Umetni" item of the prototype is there; those the host cannot do yet are off, never hidden.
   it("shows the prototype's whole Umetni, with what is not there yet disabled", () => {
     const items = withPendingInserts([
+      { id: "newSource", label: "Novi izvor" },
+      { id: "cite", label: "Navod" },
       { id: "footnote", label: "Fusnota" },
       { id: "hole", label: "Za provjeru" },
       { id: "workParts", label: "Dijelovi rada", disabled: true },
@@ -125,6 +127,10 @@ describe("student toolbar over the editor", () => {
       expect(items.find((i) => i.id === id)).toMatchObject({ disabled: true, hint: "nedostupno" });
     }
     expect(items.find((i) => i.id === "footnote")!.disabled).toBeUndefined();
+    // ED-100: Navod and Novi izvor are the host's own now, in the prototype's first places.
+    expect(PENDING_INSERTS).not.toContain("cite");
+    expect(PENDING_INSERTS).not.toContain("newSource");
+    expect(items.find((i) => i.id === "cite")!.disabled).toBeUndefined();
     expect(items.find((i) => i.id === "workParts")!.disabled).toBe(true);
   });
 

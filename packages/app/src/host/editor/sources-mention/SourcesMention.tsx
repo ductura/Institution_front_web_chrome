@@ -15,6 +15,7 @@ import { useSlashCommands } from "../slash-commands";
 import { loadNotebook } from "../source-notebook/notebook";
 import { addSourceAt, jumpTo, mentionSources, nextPlace, unsourcedCitationPlaces, type MentionNote } from "./mention-model";
 import { sourcesMentionHr as t } from "./messages.hr";
+import { onSourceRequest } from "./source-requests";
 
 /** Notes are read for the first sources only: a long bibliography must not start hundreds of requests (as the notebook). */
 const MAX_NOTE_SOURCES = 30;
@@ -61,6 +62,12 @@ export function SourcesMention({ documentId, openOrigin }: { documentId: string;
   const [notes, setNotes] = useState<readonly MentionNote[]>([]);
   const [quick, setQuick] = useState<{ author: string } | null>(null);
   const [problem, setProblem] = useState<"addFailed" | "limit" | null>(null);
+  // ED-100: the toolbar's "Navod" opens the picker below, "Novi izvor" the quick source dialog.
+  const [citeAsked, setCiteAsked] = useState(0);
+  useEffect(() => onSourceRequest((request) => {
+    if (request === "newSource") setQuick({ author: "" });
+    else setCiteAsked((n) => n + 1);
+  }), []);
 
   const offered = useSlashCommands(editor);
   const read = useRead(editor);
@@ -109,7 +116,7 @@ export function SourcesMention({ documentId, openOrigin }: { documentId: string;
   return <>
     <TriggerPopover editor={editor} sources={items} actions={actions} />
     <div role="group" aria-label={t.plainCount(places.length)}>
-      <CitationPopover editor={editor} sources={ids.map((s) => ({ id: s.id, label: s.label }))} />
+      <CitationPopover editor={editor} sources={ids.map((s) => ({ id: s.id, label: s.label }))} openRequest={citeAsked} />
       <span role="status">{t.plainCount(places.length)}</span>
       {next !== null && <Button tone="quiet" onClick={() => { editor.view.dispatch(jumpTo(editor.state, next)); editor.commands.focus(); }}>
         {t.plainNext}

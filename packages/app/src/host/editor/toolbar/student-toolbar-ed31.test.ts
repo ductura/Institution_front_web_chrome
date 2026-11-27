@@ -137,8 +137,8 @@ describe("text size on the screen", () => {
 });
 
 describe("Brzi alati on a phone", () => {
-  it("leaves out Navod and Komentar, which this editor cannot do yet", () => {
-    expect(HIDDEN_QUICK_TOOLS).toEqual(["cite", "comment"]);
+  it("leaves out Komentar, which this editor cannot do yet; Navod opens the picker (ED-100)", () => {
+    expect(HIDDEN_QUICK_TOOLS).toEqual(["comment"]);
   });
 
   it("offers redo, bold and italic in Više, redo only when the editor can", () => {

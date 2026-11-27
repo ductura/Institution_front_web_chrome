@@ -10,13 +10,18 @@ import { citationMessagesHr as t } from "./messages.hr";
 export type CitationSource = { id: string; label: string; description?: string };
 type Range = NonNullable<ReturnType<typeof citationRange>>;
 
-export function CitationPopover({ editor, sources, pending, error }: {
+export function CitationPopover({ editor, sources, pending, error, openRequest }: {
   editor: Editor | null; sources: readonly CitationSource[]; pending?: boolean; error?: string;
+  /** ED-100: each new number opens the picker, as the button does (the toolbar's "Navod"); 0 or absent opens nothing. */
+  openRequest?: number;
 }) {
   const anchor = useRef<HTMLButtonElement>(null);
   const [range, setRange] = useState<Range | null>(null);
   const canInsert = useEditorState({ editor, selector: ({ editor }) =>
     Boolean(editor?.isEditable && !editor.isDestroyed && citationRange(editor.state)) }) ?? false;
+  useEffect(() => {
+    if (openRequest && editor?.isEditable && !editor.isDestroyed) setRange(citationRange(editor.state));
+  }, [openRequest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <>
     <Button ref={anchor} tone="quiet" disabled={!canInsert} aria-haspopup="dialog" aria-expanded={range !== null}

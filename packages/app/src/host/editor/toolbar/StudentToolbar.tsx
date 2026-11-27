@@ -65,6 +65,7 @@ import { DraftPanelHost } from "../draft-panel/DraftPanelHost";
 import { requestPanel } from "@/components/editor/layout-prefs/open-panel";
 import { readSheetToc, setSheetToc, sheetTocKeyOf, subscribeSheetToc } from "../toc/sheet-toc";
 import { requestPregledView } from "../right/pregled-view";
+import { requestSourceAction, type SourceRequest } from "../sources-mention/source-requests";
 
 /** The browser's storage, reached lazily: even reaching it can throw. */
 const localStore = () => window.localStorage;
@@ -157,8 +158,8 @@ export function runContextAction(editor: Editor | null, id: ContextAction, openC
   else if (id === "list.leave") commands.toggleBulletList();
 }
 
-/** Quick tools with no action in this editor yet: Navod needs the citation picker, Komentar the comment action. */
-export const HIDDEN_QUICK_TOOLS: readonly QuickTool["id"][] = ["cite", "comment"];
+/** Quick tools with no action in this editor yet: Komentar needs the comment action (Navod opens the picker, ED-100). */
+export const HIDDEN_QUICK_TOOLS: readonly QuickTool["id"][] = ["comment"];
 
 /** The phone's "Više" as far as this editor has the actions (MOBILE_MORE without its three submenus and the palette). */
 export function quickMoreItems(s: EditorState): { id: string; label: string; disabled?: boolean }[] {
@@ -200,7 +201,8 @@ function useEditorFocused(editor: Editor | null): boolean {
 type Item = { id: string; label: string; disabled?: boolean; /** The reason an item is off, shown beside it. */ hint?: string };
 
 /** ED-44 (P2-16): the prototype's "Umetni" items the host cannot insert yet; shown, never hidden (Val 6). */
-export const PENDING_INSERTS = ["cite", "newSource", "table", "image", "phrase", "variant"] as const;
+export const PENDING_INSERTS = ["table", "image", "phrase", "variant"] as const;
+// "Navod" and "Novi izvor" are no longer pending (ED-100): they open the sources line's picker and dialog.
 /** The prototype's order of "Umetni"; the host's own items not in the prototype follow. */
 const INSERT_ORDER = ["cite", "newSource", "table", "image", "footnote", "xref", "formula", "inlineFormula", "codeBlock", "hole", "phrase", "variant"];
 
@@ -291,7 +293,11 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   useOfferSlashCommands(editor, writeOk && v3.openInsert
     ? { fusnota: () => v3.openInsert?.("footnote"), ref: () => v3.openInsert?.("crossReference") } : {});
 
+  // ED-100: "Navod" and "Novi izvor" ask the sources line under the sheet; without it on the page, the toast says so.
+  const askSources = (request: SourceRequest) => { if (!requestSourceAction(request)) toast(toolbarBehaviourHr.menuUnavailable); };
   const insert: Item[] = withPendingInserts([
+    { id: "cite", label: t.toolbar.insertItems.cite, disabled: !writeOk },
+    { id: "newSource", label: t.toolbar.insertItems.newSource, disabled: !writeOk },
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
     { id: "xref", label: crossReferenceMessages.title, disabled: !writeOk || !v3.openInsert },
     { id: "formula", label: formulaHostHr.insertBlock, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
@@ -329,6 +335,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         }} />
       <Menu label={t.toolbar.insert} items={insert} onSelect={(id) => {
         if (id === "footnote") v3.openInsert?.("footnote");
+        else if ((id === "cite" || id === "newSource") && writeOk) askSources(id);
         else if (id === "xref") v3.openInsert?.("crossReference");
         else if (id === "workParts" && writeOk) setDialog("parts");
         else if (id === "formula" || id === "inlineFormula") formula.open(id === "formula" ? "block" : "inline");
@@ -374,6 +381,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         onTool={(id, at) => {
           if (id === "undo") toolbarCommands(editor).undo();
           else if (id === "hole") insertHole(editor);
+          else if (id === "cite") askSources("cite");
           else if (id === "more") setQuickMore(at);
         }} />
       <ContextMenu anchor={quickMore} label={toolbarBehaviourHr.mobileMore} onClose={() => setQuickMore(null)}
