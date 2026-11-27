@@ -8,6 +8,7 @@ import { Button, Checkbox, Details, Dialog, Tag } from "@ductura/ui";
 
 import { useDialogRequest } from "../../../../../../src/components/editor/commands/dialog-request.ts";
 import { fill, rulesHr as t } from "./messages.hr";
+import { setActiveProfile } from "../areas/skeleton/active-profile";
 import { AREA_ORDER, DEFAULT_PROFILE_ID, UNITS, profileById, profilesOf, unitById, type RuleProfile } from "./profiles";
 import {
   GROUP_ORDER, cardLine, itemsOf, kindText, scopeText, setupOf, tableRow, toggleTick, toolsText, unitsByArea,
@@ -39,6 +40,13 @@ export function RulesHost({ role = "student", readOnly = false, stats = null, pr
   const locked = readOnly || role === "collaborator";
   const profile = profileById(chosen);
   const items = useMemo(() => (profile ? itemsOf(profile, stats) : []), [profile, stats]);
+
+  // WEB-DIZ-B-V21: the toolbar (formula, code, "Kostur rada") follows the profile chosen here.
+  useEffect(() => {
+    if (role !== "student") return;
+    setActiveProfile(chosen);
+    return () => setActiveProfile(null);
+  }, [chosen, role]);
 
   useEffect(() => {
     if (!toast) return;
