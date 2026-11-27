@@ -2,6 +2,10 @@ export const addonsMessages = {
   markerTitle: "Marker",
   markerColor: (name: string) => `Marker: ${name}`,
   markerRemove: "Ukloni marker",
+  // ED-107 (prototype pages.js menu-hl).
+  markerOther: "Druga boja…",
+  markerOtherHint: "bilo koja",
+  markerNote: "Marker je Vaše označavanje. Mentor ga ne vidi i ne ide u izvoz.",
   dictate: "Diktiraj",
   dictateStop: "Stani",
   dictating: "Diktiranje je uključeno. Govorite, tekst se umeće na mjesto kursora.",
