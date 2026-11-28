@@ -99,6 +99,15 @@ const PROBES: Record<string, Probe> = {
     await page.keyboard.press("Control+.");
     await expect(page.locator('[data-focus="true"]')).toHaveCount(0);
   },
+  // ED-112: Ctrl+\ hides the structure and shows it again, read from its button's state.
+  outline: async (page) => {
+    const toggle = page.getByRole("button", { name: "Struktura rada", exact: true });
+    const before = await toggle.getAttribute("aria-expanded");
+    await page.keyboard.press("Control+\\");
+    await expect(toggle).not.toHaveAttribute("aria-expanded", before!);
+    await page.keyboard.press("Control+\\");
+    await expect(toggle).toHaveAttribute("aria-expanded", before!);
+  },
   // ED-33 (P2-2): Alt+↑/↓ swaps the sentence with its neighbour, Alt+Shift+↑/↓ the chapter.
   moveSentence: async (page) => {
     const paragraph = page.locator(".ProseMirror p", { hasText: "Izmišljena prva." });

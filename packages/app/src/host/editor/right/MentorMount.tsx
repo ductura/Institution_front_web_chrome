@@ -13,12 +13,13 @@ import { readWorkMessages, type WorkMessage } from "../../../../../../src/client
 import { readWorkMilestones, type WorkMilestone } from "../../../../../../src/client/work-milestones.ts";
 
 import {
-  currentReturn, MentorCard, OwnPanel, PrepPanel, prepPort, SaidPanel, withReturn,
+  currentReturn, DefensePanel, MentorCard, OwnPanel, PrepPanel, prepPort, SaidPanel, withReturn,
   type ReadingPlace, type ReadingPort, type ReadingWrite, type ReturnNotice, type TasksRead,
 } from "../mentor";
 import { placeOf, positionOf, type PlaceEditor } from "../mentor/own-place";
 import { ThesisPanel } from "../../thesis/ThesisPanel";
 import { ConsultPanel } from "../work/consult/ConsultPanel";
+import type { DefenseNode } from "../mentor/defense-model";
 import { docWords } from "../mentor/prep-model";
 import { latestReturn } from "../mentor/round-feedback";
 import { readRubric } from "../../student/rubric/read";
@@ -192,6 +193,8 @@ export function MentorMount({ assignmentId, documentId, submitted, editor }: {
         howText={null} words={words} prep={null}
         said={<SaidPanel read={said} now={new Date()} onShown={onShown} onRetry={() => setAttempt((n) => n + 1)} />}
         prepPanel={<PrepPanel port={prep} words={allWords} editable={!submitted} onCopy={copyText} />}
+        defense={<DefensePanel workId={assignmentId ?? documentId} onCopy={copyText}
+          doc={() => (editor ? editor.state.doc as unknown as DefenseNode : null)} />}
         consult={<ConsultPanel documentId={documentId} role="student" revision={1} slotsCall={slotsCall} criteriaCall={null} studentCriteriaCall={studentCriteriaCall} byRubric={byRubric} />} />
       {/* WEB-NF6-RUNDA (MK-9): only in the student's own editor, only before submission. */}
       {!submitted && <OwnPanel documentId={documentId} reading={reads.reading} mark={mark}

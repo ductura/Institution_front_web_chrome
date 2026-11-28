@@ -17,7 +17,7 @@ import { blockPosition } from "@/editor";
 
 import { runChecks, type Finding } from "./checks";
 import { digestOf } from "./digest";
-import { ignore, readIgnored, restore, splitIgnored, writeIgnored } from "./ignored";
+import { ignore, kindCounts, kindsOff, readIgnored, restore, splitIgnored, toggleKind, writeIgnored } from "./ignored";
 import { reviewMessagesHr as t } from "./messages.hr";
 import { readReviewDoc } from "./model";
 import { inScope, validScope, WHOLE_WORK, type Scope } from "./scope";
@@ -53,7 +53,8 @@ export function ReviewPanel({ editor, documentId, enabledCheckIds, loading = fal
   const [marked, setMarked] = useState<string[]>([]);
   const [digestOpen, setDigestOpen] = useState(false);
   const [copyNote, setCopyNote] = useState<string | null>(null);
-  useEffect(() => { setMarked(readIgnored(storage(), documentId)); }, [documentId]);
+  const [kindNote, setKindNote] = useState<string | null>(null);
+  useEffect(() => { setMarked(readIgnored(storage(), documentId)); setKindNote(null); }, [documentId]);
   if (!editor || editor.isDestroyed || !model) return null;
 
   const current = validScope(model, scope);
@@ -61,6 +62,13 @@ export function ReviewPanel({ editor, documentId, enabledCheckIds, loading = fal
   const shown = open.filter((finding) => inScope(model, current, finding));
   const shownIgnored = ignored.filter((finding) => inScope(model, current, finding));
   const mark = (next: string[]) => { setMarked(next); writeIgnored(storage(), documentId, next); };
+  const kinds = kindCounts(shown);
+  const off = kindsOff(marked);
+  const flipKind = (kind: Finding["kind"]) => {
+    const next = toggleKind(marked, kind);
+    mark(next);
+    setKindNote(kindsOff(next).includes(kind) ? t.kindOffDone : t.kindOnDone);
+  };
   const digest = digestOf(model, open);
   const extras: DigestExtras = { question, wordRange };
   const copy = async () => {
@@ -99,6 +107,28 @@ export function ReviewPanel({ editor, documentId, enabledCheckIds, loading = fal
           <Button tone="quiet" onClick={() => mark(marked.filter((key) => !shownIgnored.some((finding) => finding.key === key)))}>{t.restoreAll}</Button>
         </details>
       )}
+      {kinds.length > 0 && (
+        <details data-review-kinds="">
+          <summary>{t.kindsTitle}</summary>
+          <ul>
+            {kinds.map(({ kind, n }) => (
+              <li key={kind}>
+                {t.kindRow.replace("{kind}", t.kind[kind]).replace("{n}", String(n))}{" "}
+                <Button tone="quiet" aria-label={t.kindOffLabel.replace("{kind}", t.kind[kind])} onClick={() => flipKind(kind)}>{t.kindOff}</Button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      {off.length > 0 && (
+        <p data-review-kinds-off="">
+          {t.kindsOff}{" "}
+          {off.map((kind) => (
+            <Button key={kind} tone="quiet" aria-label={t.kindOnLabel.replace("{kind}", t.kind[kind])} onClick={() => flipKind(kind)}>{t.kind[kind]}</Button>
+          ))}
+        </p>
+      )}
+      {kindNote && <p role="status">{kindNote}</p>}
       <Button tone="quiet" onClick={() => setDigestOpen(true)} aria-haspopup="dialog">{t.digestOpen}</Button>
       <Dialog open={digestOpen} title={t.digest.title} onClose={() => { setDigestOpen(false); setCopyNote(null); }}
         actions={<><Button tone="quiet" onClick={copy}>{t.digest.copy}</Button><Button onClick={() => { setDigestOpen(false); setCopyNote(null); }}>{t.digest.close}</Button></>}>

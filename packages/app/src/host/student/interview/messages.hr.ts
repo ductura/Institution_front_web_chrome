@@ -20,7 +20,7 @@ export const interviewMessages = {
   attachNoteHint: "Bilješke su vidljive nastavniku koji te poziva na razgovor. Dopušteni su .txt i .pdf do 1 MB.",
   attached: "Priloženo",
   attaching: "Šaljem bilješku.",
-  noteSaved: "Bilješka je spremljena.",
+  noteSaved: "Bilješka je spremljena na poslužitelju.",
   noteHeld: "Razgovor je održan, nove bilješke više se ne primaju.",
   noteRejected: "Poslužitelj nije prihvatio bilješku.",
   noteFailed: "Bilješku nije bilo moguće spremiti. Pokušaj ponovno.",

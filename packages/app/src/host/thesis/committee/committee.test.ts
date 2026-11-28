@@ -135,7 +135,7 @@ describe("CommitteeEditor (administrator)", () => {
     await change(host.querySelector('select[name="add"]')!, id(1));
     await submit(host);
     expect(call).toHaveBeenCalledWith("work.thesis-committee.put", { params: { documentId: DOC }, query: undefined, body: { members: [{ userId: id(1), role: "member" }] } });
-    expect(host.querySelector('[data-testid="note"]')?.textContent).toBe("Povjerenstvo je spremljeno.");
+    expect(host.querySelector('[data-testid="note"]')?.textContent).toBe("Povjerenstvo je spremljeno na poslužitelju.");
   });
   it("two chairs are refused before any request", async () => {
     const call = base(ok(committee([])));

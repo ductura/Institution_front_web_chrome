@@ -24,7 +24,7 @@ export const stageHr = {
   defenseAtHint: "Obavezno za „Zakazana obrana”, a za ostala stanja se ne unosi. Vrijeme je po zagrebačkom vremenu.",
   save: "Spremi",
   saving: "Spremanje…",
-  saved: "Spremljeno.",
+  saved: "Spremljeno na poslužitelju.",
   changedBy: { mentor: "Zadnju promjenu unio je mentor.", faculty: "Zadnju promjenu unijela je ustanova." },
   studentNote: "Stanje i termin unosi mentor; ovdje ih samo pregledavate.",
   errors: {
@@ -33,6 +33,6 @@ export const stageHr = {
     invalid: "Poslužitelj nije prihvatio unos. Provjerite stanje i datum.",
     forbidden: "Nemate pravo promijeniti stanje ovog rada.",
     notFound: "Ovaj rad nije dostupan.",
-    unknown: "Nije poznato je li promjena spremljena. Osvježite prikaz prije ponovnog pokušaja.",
+    unknown: "Nije poznato je li promjena spremljena na poslužitelju. Osvježite prikaz prije ponovnog pokušaja.",
   },
 } as const;

@@ -66,6 +66,6 @@ describe("NZ-2: the task chooser", () => {
     expect(t.extension).toBe("Produljenje roka…");
     expect(t.merlin).toBe("Izvoz za Merlin…");
     expect([t.submissions, t.edit, t.copy, t.taskExtension, t.taskMerlin, t.fastPath])
-      .toEqual(["Predaje", "Uredi (nova verzija)", "Kopiraj zadatak", "Produljenje", "Izvoz", "Brz put kroz radove"]);
+      .toEqual(["Predaje", "Uredi (nova verzija)", "Dupliciraj zadatak", "Produljenje", "Izvoz", "Brz put kroz radove"]);
   });
 });

@@ -52,6 +52,7 @@ import {
 
 import { isAllowedText } from "../document/document/forbidden";
 import { isSourceId, MAX_CITATION_LOCATOR_CODE_POINTS } from "../document/document/schema";
+import { createCitationPage } from "./citation-page";
 
 export const CITATION = "citation";
 
@@ -247,7 +248,8 @@ export const Citation = Node.create({
   },
 
   addProseMirrorPlugins() {
-    return [createCitationGuard()];
+    // ED-105: ":31" typed right after a citation becomes its page.
+    return [createCitationGuard(), createCitationPage(CITATION)];
   },
 
   onCreate() {

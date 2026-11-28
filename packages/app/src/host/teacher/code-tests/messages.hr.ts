@@ -11,7 +11,7 @@ export const codeTestsText = {
   unavailable: "Testovi trenutačno nisu dostupni. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",
   empty: "Za ovaj zadatak još nema testova.",
-  revision: "Spremljena revizija: {n}",
+  revision: "Revizija na poslužitelju: {n}",
   limits: "Najviše {max} testova, ukupno najviše 16 KiB. Ulaz i očekivani izlaz pišu se kao JSON.",
   count: "Testova: {n} od {max}",
   size: "Veličina: {n} od 16384 bajtova",
@@ -27,7 +27,7 @@ export const codeTestsText = {
   addLimit: "Dosegnut je najveći broj testova ({max}).",
   save: "Spremi testove",
   saving: "Sprema se…",
-  saved: "Testovi su spremljeni.",
+  saved: "Testovi su spremljeni na poslužitelju.",
   reset: "Odbaci promjene",
   errors: {
     title: "Naziv testa ima 1 do 120 znakova.",
@@ -37,7 +37,7 @@ export const codeTestsText = {
     size: "Testovi su preveliki: ukupno najviše 16 KiB.",
   },
   writeFailure: {
-    notFound: "Ovaj zadatak nije dostupan, testovi nisu spremljeni.",
+    notFound: "Ovaj zadatak nije dostupan, testovi nisu spremljeni na poslužitelju.",
     invalid: "Poslužitelj je odbio testove. Provjerite nazive, JSON i veličinu.",
     forbidden: "Testove može spremiti samo nastavnik kolegija.",
     unknown: "Nije poznato je li spremanje uspjelo. Učitajte testove ponovno prije nego što spremite.",

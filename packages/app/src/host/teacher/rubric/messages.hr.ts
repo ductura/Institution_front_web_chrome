@@ -18,8 +18,8 @@ export const rubricFormHr = {
   reviewLabel: "Kriteriji",
   none: "Nisu zadani",
   failed: {
-    failed: "Kriteriji nisu spremljeni. Zadatak je objavljen bez kriterija.",
-    conflict: "Kriteriji nisu spremljeni jer već postoje u drugoj verziji. Zadatak je objavljen.",
-    signedOut: "Kriteriji nisu spremljeni jer ste odjavljeni. Zadatak je objavljen.",
+    failed: "Kriteriji nisu spremljeni na poslužitelju. Zadatak je objavljen bez kriterija.",
+    conflict: "Kriteriji nisu spremljeni na poslužitelju jer već postoje u drugoj verziji. Zadatak je objavljen.",
+    signedOut: "Kriteriji nisu spremljeni na poslužitelju jer ste odjavljeni. Zadatak je objavljen.",
   },
 } as const;

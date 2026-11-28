@@ -28,6 +28,10 @@ export const bibliographyStudentHr = {
   reliance: (n: number, m: number, source: string) =>
     `${n} od ${m} navoda u ovom poglavlju je iz izvora ${source}. Provjerite treba li uz njega još koji izvor.`,
   relianceShow: "Pokaži navode ›",
+  // ED-115 (prototype features.js litExtra): which sources each chapter cites.
+  byChapter: "Izvori po poglavljima",
+  byChapterNone: "nema navoda",
+  byChapterNote: "Popis literature slaže se iz citiranih izvora.",
   // To complete.
   incomplete: (n: number) => `Za dopuniti (${n})`,
   missing: (fields: string) => `nedostaje: ${fields}`,
@@ -70,8 +74,8 @@ export const bibliographyStudentHr = {
   scanNone: "Na slici nije pronađen crtični kod. Slikajte poleđinu knjige izbliza.",
   scanFailed: "Crtični kod se ne može pročitati. Upišite ISBN ručno.",
   scanFound: (isbn: string) => `Pročitan ISBN ${isbn}. Upišite ga u brzi unos izvora.`,
-  scanCopy: "Kopiraj ISBN",
-  scanCopied: "ISBN je kopiran.",
+  scanCopy: "Stavi ISBN u međuspremnik",
+  scanCopied: "ISBN: kopirano u međuspremnik.",
   // WEB-V20-STIL-POPIS: the list and in-text citations in the style of the institution (read only).
   styledTitle: "Popis literature u stilu ustanove",
   styledNone: "Nijedan izvor još nije citiran, pa popis literature ostaje prazan.",
@@ -79,4 +83,19 @@ export const bibliographyStudentHr = {
   styledInText: "Navodi u tekstu",
   styledOrphans: (n: number) => (n === 1 ? "1 navod upućuje na izvor kojeg nema među izvorima rada." : `${n} navoda upućuje na izvore kojih nema među izvorima rada.`),
   styledUnformatted: (labels: string) => `Nepotpuni izvori izostavljeni iz popisa: ${labels}.`,
+  // ED-106 (prototype copyCite): the source's in-text citation to the clipboard.
+  copyCite: "Kopiraj navod",
+  copyCiteDone: "Navod: kopirano u međuspremnik.",
+  copyCiteBlocked: "Međuspremnik nije dostupan u ovom prikazu.",
+  copyCiteNone: "Navod se još ne može složiti: izvor je nepotpun ili još nema broj.",
+  // ED-117 (prototype sources2.js srcPlan): the chapters a source is meant for, kept on this device.
+  planTitle: "Planirano za poglavlja",
+  planNone: "nije planirano",
+  planAdd: "Dodaj poglavlje",
+  planPick: "Odaberite poglavlje",
+  planChip: (number: string) => `${number}. ×`,
+  planRemove: (number: string, label: string) => `Makni ${number}. poglavlje iz plana za ${label}`,
+  planChapter: (number: string, title: string) => `${number}. ${title}`,
+  planGaps: (n: number) => `Planirano za poglavlja, još nije citirano (${n})`,
+  planDevice: "Plan se čuva samo na ovom uređaju.",
 } as const;

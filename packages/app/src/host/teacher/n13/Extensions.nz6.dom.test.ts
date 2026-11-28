@@ -48,7 +48,7 @@ describe("N13Extensions filter (NZ-6)", () => {
     const [own, other] = rows(host);
     expect(own).toContain("Student vidi: Bio 8. 11. 2026. u 23:59, razlog: Opravdan razlog");
     expect(own).not.toContain(t.studentSeesHidden);
-    expect(other).toContain("Student vidi: Bio 12. 11. 2026. u 23:59, razlog: (skriven Vama)");
+    expect(other).toContain("Student vidi: Bio 12. 11. 2026. u 23:59, razlog: (nije prikazano Vama)");
     expect(other).toContain(t.studentSeesHidden);
   });
 

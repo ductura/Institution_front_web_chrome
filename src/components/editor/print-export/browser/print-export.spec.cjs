@@ -98,14 +98,14 @@ test("the DOCX client sends the saved revision, shows progress and maps 404 and 
     await page.getByRole("button", { name: "Pregled ispisa" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByText("PDF — Uskoro")).toBeVisible();
-    await expect(dialog.getByText(/Spremljena verzija od 21\.\s*11\.\s*2026\./)).toBeVisible();
+    await expect(dialog.getByText(/Verzija na poslužitelju od 21\.\s*11\.\s*2026\./)).toBeVisible();
     const button = dialog.getByRole("button", { name: "Preuzmi DOCX" });
     await button.click();
     const busy = dialog.getByRole("button", { name: "Preuzimam DOCX…" });
     await expect(busy).toBeDisabled();
     await expect(busy).toHaveAttribute("aria-busy", "true");
     respond(404);
-    await expect(dialog.getByRole("alert")).toHaveText("Rad ili spremljena verzija nisu dostupni.");
+    await expect(dialog.getByRole("alert")).toHaveText("Rad ili verzija na poslužitelju nisu dostupni.");
     await button.click();
     await expect(dialog.getByRole("alert")).toHaveText("Zahtjev za izvoz nije valjan.");
     expect(calls).toBe(2);

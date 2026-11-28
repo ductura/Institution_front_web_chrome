@@ -4,8 +4,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import { DEFAULT_UI_LOCALE, htmlLang, UiLocaleContext, type UiLocale } from "@ductura/ui";
 
-import { createApi } from "../../../../src/client/api.ts";
-
 import { cataloguesFor, type Catalogues } from "./catalogue";
 import { readInterfaceLocale, readStoredLocale, saveInterfaceLocale, storeLocale, type LocaleCall, type LocaleSave } from "./interface-locale";
 
@@ -29,7 +27,9 @@ function storage(): Storage | undefined {
   }
 }
 
-const liveCall: LocaleCall = (id, input) => createApi()(id, input as never) as ReturnType<LocaleCall>;
+// DAN-1571: the API client (with the generated contracts) loads on the first call, so public pages do not download it.
+const liveCall: LocaleCall = (id, input) =>
+  import("../../../../src/client/api.ts").then(({ createApi }) => createApi()(id, input as never)) as ReturnType<LocaleCall>;
 
 /**
  * The interface language of everything under app/(host)/ (D-70, M11.5). It

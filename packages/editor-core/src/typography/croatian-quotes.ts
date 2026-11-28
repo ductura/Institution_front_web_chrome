@@ -27,6 +27,8 @@
 
 import { Extension, InputRule } from "@tiptap/core";
 
+import { typingTypographyOn } from "./typing-switch";
+
 export const LOW_DOUBLE = "„";
 export const HIGH_DOUBLE = "”";
 export const LOW_SINGLE = "‚";
@@ -69,6 +71,8 @@ export const CroatianQuotes = Extension.create({
       new InputRule({
         find: TYPED_QUOTE,
         handler: ({ state, range, match }) => {
+          // ED-99: "Tipografija dok tipkam" switched off leaves the quote straight.
+          if (!typingTypographyOn()) return null;
           const $from = state.doc.resolve(range.from);
           const before = $from.parent.textBetween(0, $from.parentOffset, undefined, "￼");
           const mark = croatianQuote(before, match[0]);
