@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { pregledHr } from "./messages.hr";
 import { reviewDocOf } from "../../../../../../src/components/editor/review/model";
 import {
-  abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, MAX_TERMS, outlineFlags, outlineRows, removeTerm, saveTerms, scopeRange, termCount, WHOLE,
+  abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, MAX_TERMS, nextTermPlace, outlineFlags, outlineRows, removeTerm, saveTerms, scopeRange, termCount, WHOLE,
 } from "./pregled-model";
 
 // WEB-2127: invented text only.
@@ -89,6 +89,16 @@ describe("Pojmovnik", () => {
     expect(termCount("Upitnik, upitnika i UPITNIK.", "upitnik")).toBe(2);
     expect(termCount("EU i eu", "EU")).toBe(1);
     expect(termCount("tekst", " ")).toBe(0);
+  });
+  it("ED-124: goes to the next paragraph that uses a term, round again, only in scope", () => {
+    const places = doc.blocks.filter((b) => b.kind !== "heading").map((b) => b.pos);
+    expect(nextTermPlace(doc, WHOLE, "rečenica", -1)).toBe(places[0]);
+    expect(nextTermPlace(doc, WHOLE, "upitnik", places[0]!)).toBe(places[2]);
+    expect(nextTermPlace(doc, WHOLE, "upitnik", places[2]!)).toBe(places[2]);
+    expect(nextTermPlace(doc, WHOLE, "EU", places[3]!)).toBe(places[2]);
+    expect(nextTermPlace(doc, { kind: "chapter", index: 2 }, "upitnik", 0)).toBeNull();
+    expect(nextTermPlace(doc, WHOLE, "Metoda", 0)).toBeNull(); // headings are not uses
+    expect(pregledHr.termWhere).toBe("Gdje se koristi");
   });
   it("lists frequent words and abbreviations in scope, no roman numerals", () => {
     expect(frequentWords(doc, WHOLE)).toEqual([{ word: "upitnik", count: 3 }]);
