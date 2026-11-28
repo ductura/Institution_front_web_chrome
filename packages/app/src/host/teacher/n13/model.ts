@@ -83,11 +83,11 @@ export function whoText(extension: DeadlineExtension, students: readonly Extensi
   return (students ?? []).find((s) => s.studentId === extension.studentId)?.name ?? text.unnamed;
 }
 
-/** "Stari rok …, razlog: …": the reason of another teacher stays hidden. */
+/** "razlog: …, zabilježio …": the old deadline has its own column; the reason of another teacher stays hidden. */
 export function detailText(extension: DeadlineExtension): string {
   const reason = extension.reasonId === null ? text.reasonHidden : text.reasons[extension.reasonId];
   const by = extension.reasonId === null ? text.byOther : text.byYou;
-  return `${text.oldDue} ${formatDateTimeHr(extension.previousDueAt)}, ${text.reasonLabel}: ${reason}, ${text.recordedBy} ${by}, ${formatDateTimeHr(extension.createdAt)}`;
+  return `${text.reasonLabel}: ${reason}, ${text.recordedBy} ${by}, ${formatDateTimeHr(extension.createdAt)}`;
 }
 
 export function titleText(extension: DeadlineExtension, students: readonly ExtensionStudent[] | null): string {

@@ -78,6 +78,7 @@ export default function N13Extensions({ assignmentId, port = unavailablePort, re
   const extensionColumns: DataTableColumn<DeadlineExtension>[] = [
     { id: "student", header: text.student, rowHeader: true, cell: (e) => whoText(e, students) },
     { id: "due", header: text.due, cell: (e) => momentHr(e.dueAt) },
+    { id: "previous", header: text.oldDue, cell: (e) => momentHr(e.previousDueAt) },
     {
       id: "reason", header: text.reason, cell: (e) => (
         <>
