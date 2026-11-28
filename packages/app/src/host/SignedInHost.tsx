@@ -45,14 +45,15 @@ export default function SignedInHost({ base, route, navigate, detail, signedOutP
 
   const load = useCallback(() => {
     setSession(null);
-    void readSession().then((read) => {
-      if (read.kind === "signedOut" && !keepsSignIn) goToSignIn(appHref(base, browserRoute(window.location.pathname, base)));
-      setSession(read);
-    });
-  }, [base, keepsSignIn]);
+    void readSession().then(setSession);
+  }, []);
   useEffect(() => {
     load();
   }, [load]);
+  // Moving between a shelled public page and a signed-in route keeps the session already read; only a route that needs it sends to sign-in.
+  useEffect(() => {
+    if (session?.kind === "signedOut" && !keepsSignIn) goToSignIn(appHref(base, browserRoute(window.location.pathname, base)));
+  }, [session, keepsSignIn, base]);
 
   const signedIn = session?.kind === "signedIn" ? session.session : null;
   const role = signedIn === null ? null : shellRole(signedIn.role);
