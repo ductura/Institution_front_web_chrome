@@ -11,16 +11,22 @@ export type LeftPart = (typeof LEFT_PARTS)[number];
 /** ED-70 ("Potpoglavlja"): "open" is the default and kept as no key. */
 export const SUB_MODES = ["open", "closed", "active"] as const;
 export type SubMode = (typeof SUB_MODES)[number];
+/** ED-118 (prototype right.js "Dijelovi panela i redoslijed"): the right panel's groups, in default order. */
+export const RIGHT_GROUPS = ["sources", "comments", "review", "work", "assistant"] as const;
+export type PanelGroup = (typeof RIGHT_GROUPS)[number];
 /**
  * `dense` (ED-39, "Gustoća: Zbijeno") is kept only when chosen; without it the side is "Prozračno".
  * `hideRow` (ED-37) lists the row parts switched off, in ROW_PARTS order; without it the row shows all.
  * `order` (ED-70) is the order of LEFT_PARTS when it differs from the default; `hideParts` the parts
  * switched off, in LEFT_PARTS order; `subs` the "Potpoglavlja" choice other than "open".
  * `scope` (ED-116, right only, "Popisi prvo pokazuju") is kept only as "all"; without it lists open on this chapter.
+ * `groups` (ED-118, right only) is the order of RIGHT_GROUPS when it differs from the default; `hideGroups`
+ * the groups switched off, in RIGHT_GROUPS order. At least one group always stays shown.
  */
 export type LayoutPreferences = Record<Side, {
   layout: PanelLayout; mobile: MobileLayout; dense?: true; hideRow?: RowPart[];
   order?: LeftPart[]; hideParts?: LeftPart[]; subs?: Exclude<SubMode, "open">; scope?: "all";
+  groups?: PanelGroup[]; hideGroups?: PanelGroup[];
 }>;
 /** ED-116: what the comment and review lists of the right panel show first. */
 export const LIST_SCOPES = ["chapter", "all"] as const;
@@ -40,10 +46,12 @@ export function isPanelLayout(value: unknown): value is PanelLayout {
 function readSide(side: Side, value: unknown): LayoutPreferences[Side] {
   const defaults = DEFAULT_PREFERENCES[side];
   if (typeof value !== "object" || value === null) return defaults;
-  const { layout, mobile, dense, hideRow, order, hideParts, subs, scope } = value as Record<string, unknown>;
+  const { layout, mobile, dense, hideRow, order, hideParts, subs, scope, groups, hideGroups } = value as Record<string, unknown>;
   const hidden = Array.isArray(hideRow) ? ROW_PARTS.filter((part) => hideRow.includes(part)) : [];
   const off = Array.isArray(hideParts) ? LEFT_PARTS.filter((part) => hideParts.includes(part)) : [];
   const ordered = partOrder({ order: Array.isArray(order) ? order : undefined });
+  const groupsOrdered = groupOrder({ groups: Array.isArray(groups) ? groups : undefined });
+  const groupsOff = Array.isArray(hideGroups) ? RIGHT_GROUPS.filter((group) => hideGroups.includes(group)) : [];
   return {
     layout: isPanelLayout(layout) ? layout : defaults.layout,
     mobile: mobile === "same" || isPanelLayout(mobile) ? mobile : defaults.mobile,
@@ -53,6 +61,8 @@ function readSide(side: Side, value: unknown): LayoutPreferences[Side] {
     ...(side === "left" && off.length > 0 ? { hideParts: off } : {}),
     ...(side === "left" && (subs === "closed" || subs === "active") ? { subs } : {}),
     ...(side === "right" && scope === "all" ? { scope: "all" as const } : {}),
+    ...(side === "right" && !isDefaultGroupOrder(groupsOrdered) ? { groups: groupsOrdered } : {}),
+    ...(side === "right" && groupsOff.length > 0 && groupsOff.length < RIGHT_GROUPS.length ? { hideGroups: groupsOff } : {}),
   };
 }
 
@@ -94,6 +104,40 @@ export function withPartShown(value: LayoutPreferences[Side], part: LeftPart, sh
   const { hideParts, ...rest } = value;
   const hidden = LEFT_PARTS.filter((p) => (p === part ? !shown : hideParts?.includes(p) ?? false));
   return hidden.length > 0 ? { ...rest, hideParts: hidden } : rest;
+}
+
+const isDefaultGroupOrder = (order: readonly PanelGroup[]) => order.every((group, index) => group === RIGHT_GROUPS[index]);
+
+/** ED-118: the right panel's groups in the person's order: known groups once each, then missing ones in default order. */
+export function groupOrder(value: { groups?: readonly unknown[] }): PanelGroup[] {
+  const known = (value.groups ?? []).filter((group, index, all): group is PanelGroup =>
+    (RIGHT_GROUPS as readonly unknown[]).includes(group) && all.indexOf(group) === index);
+  return [...known, ...RIGHT_GROUPS.filter((group) => !known.includes(group))];
+}
+
+/** ED-118: the groups the right panel shows, in the person's order. */
+export function visibleGroups(value: LayoutPreferences[Side]): PanelGroup[] {
+  return groupOrder(value).filter((group) => !(value.hideGroups?.includes(group) ?? false));
+}
+
+/** The side with one right group moved one place up (-1) or down (1); the default order leaves no key. */
+export function withGroupMoved(value: LayoutPreferences[Side], group: PanelGroup, step: -1 | 1): LayoutPreferences[Side] {
+  const order = groupOrder(value);
+  const from = order.indexOf(group);
+  const to = from + step;
+  if (from === -1 || to < 0 || to >= order.length) return value;
+  [order[from], order[to]] = [order[to]!, order[from]!];
+  const next: LayoutPreferences[Side] = { ...value, groups: order };
+  if (isDefaultGroupOrder(order)) delete next.groups;
+  return next;
+}
+
+/** The side with one right group shown or hidden; the last shown group cannot be hidden. */
+export function withGroupShown(value: LayoutPreferences[Side], group: PanelGroup, shown: boolean): LayoutPreferences[Side] {
+  const { hideGroups, ...rest } = value;
+  const hidden = RIGHT_GROUPS.filter((g) => (g === group ? !shown : hideGroups?.includes(g) ?? false));
+  if (hidden.length === RIGHT_GROUPS.length) return value;
+  return hidden.length > 0 ? { ...rest, hideGroups: hidden } : rest;
 }
 
 /** The side with a "Potpoglavlja" choice; "open" leaves no key. */

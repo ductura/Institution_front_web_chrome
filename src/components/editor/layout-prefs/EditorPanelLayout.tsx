@@ -17,7 +17,7 @@ import { LeftPanel, type LeftSections } from "./LeftPanel";
 import { PanelSettings } from "./PanelSettings";
 import { FOCUS_MODE_EVENT, togglesFocus } from "./focus-mode";
 import { OPEN_PANEL_EVENT, requestedPanel } from "./open-panel";
-import { DEFAULT_PREFERENCES, effectiveLayout, readPreferences, rowShows, writePreferences, type LayoutPreferences, type Side } from "./preferences";
+import { DEFAULT_PREFERENCES, effectiveLayout, readPreferences, rowShows, visibleGroups, writePreferences, type LayoutPreferences, type Side } from "./preferences";
 import { RightPanel, type PanelGroup, type RightSections } from "./RightPanel";
 import { STRUCTURE_RAIL_EVENT, togglesRail } from "./structure-rail";
 
@@ -166,7 +166,7 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
     settings={<PanelSettings side="left" value={prefs.left} onChange={(value) => setSide("left", value)}
       width={sizes.rail} onWidth={pickWidth("rail")} />} />);
   const sections = renderWork ? { ...rightSections, work: renderWork(close) } : rightSections;
-  const right = withDensity("right", <RightPanel layout={rightLayout} sections={sections} drawer={narrowPanel}
+  const right = withDensity("right", <RightPanel layout={rightLayout} sections={sections} drawer={narrowPanel} groups={visibleGroups(prefs.right)}
     selection={rightLayout === "b" ? contextView : selection} onSelect={rightLayout === "b" ? setContextView : setSelection}
     settings={<PanelSettings side="right" value={prefs.right} onChange={(value) => setSide("right", value)}
       width={sizes.panel} onWidth={pickWidth("panel")} />} />);
