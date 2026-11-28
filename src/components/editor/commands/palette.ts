@@ -56,7 +56,8 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
     ...(["table", "image"] as const).map((key) => action(key, t.toolbar.insertItems[key])),
     action("footnote", t.toolbar.insertItems.footnote, later(offered.fusnota), "/fusnota", !state.editable || !offered.fusnota),
     action("xref", t.toolbar.insertItems.xref, later(offered.ref), "/ref", !state.editable || !offered.ref),
-    action("phrase", t.toolbar.insertItems.phrase),
+    // ED-122: Fraza opens "Fraze" through "/fraza" (ED-94), whenever the toolbar offers it.
+    action("phrase", t.toolbar.insertItems.phrase, later(offered.fraza), "/fraza", !state.editable || !offered.fraza),
     // A comment stands on the selected text, as the selection bubble's Komentar.
     action("comment", text.comment, edit(() => { requestPanel("comments"); askComment(""); }), text.selectedText,
       !state.editable || !selected),
