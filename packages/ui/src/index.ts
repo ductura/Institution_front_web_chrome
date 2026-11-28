@@ -40,7 +40,7 @@ export {
   StepSection, StepSpinner, StepSub, type StepFrameProps, type StepPanelProps,
 } from "./submission-step";
 export { Steps, type StepNumber, type StepsProps } from "./steps";
-export { StateTag, SUBMISSION_STATES, type StateTagProps, type SubmissionState } from "./state-tag";
+export { StateTag, STATE_TAG_STATES, SUBMISSION_STATES, type StateTagProps, type StateTagState, type SubmissionState } from "./state-tag";
 export { DataTable, type DataTableColumn, type DataTableProps } from "./table";
 export { FindBar, type FindBarLabels, type FindBarProps } from "./components/find-bar/FindBar";
 export { findKeyAction, findStatus, stepHit, type FindKeyAction, type FindStatus } from "./components/find-bar/find-logic";

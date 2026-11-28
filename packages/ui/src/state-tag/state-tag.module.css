@@ -6,6 +6,6 @@
 }
 .mark { font-size: 11px; line-height: 1; }
 .tag[data-state="submitted"] { border-color: var(--synced); }
-.tag[data-state="pending"] { border-color: var(--accent); }
+.tag[data-state="pending"], .tag[data-state="writing"], .tag[data-state="notice_pending"] { border-color: var(--accent); }
 .tag[data-state="late"], .tag[data-state="gap"] { border-color: var(--warn); }
-.tag[data-state="gap"] { border-style: dashed; }
+.tag[data-state="gap"], .tag[data-state="notice_pending"] { border-style: dashed; }
