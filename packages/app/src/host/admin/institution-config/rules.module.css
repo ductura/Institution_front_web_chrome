@@ -1,5 +1,5 @@
 .section { margin-block-start: 1.5rem; }
-.meta { color: var(--ink-2, inherit); margin-block: 0.25rem 0.75rem; }
+.meta { color: var(--ink-2, inherit); margin-block: 0.25rem 0.75rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1.25rem; margin: 0; }
 .kv dt { font-weight: 600; }
 .kv dd { margin: 0; }

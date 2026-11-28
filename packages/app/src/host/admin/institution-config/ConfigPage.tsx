@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox, DataTable, Select, type DataTableColumn } from "@ductura/ui";
+import { Button, Checkbox, DataTable, Select, Tag, type DataTableColumn } from "@ductura/ui";
 import { useCallback, useEffect, useId, useState } from "react";
 
 import { configMessages as t } from "./messages.config.hr";
@@ -63,8 +63,8 @@ function ConfigForm({ current, versions, onPublished, onStale, onDenied }: {
         {current === null ? <p>{t.noVersion}</p> : (
           <>
             <p className={styles.meta}>
-              {t.versionOf.replace("{n}", String(current.version)).replace("{date}", date.format(new Date(current.effectiveFrom)))}
-              {" · "}{t.readOnlyVersion}
+              <span>{t.versionOf.replace("{n}", String(current.version)).replace("{date}", date.format(new Date(current.effectiveFrom)))}</span>
+              <Tag>{t.readOnlyVersion}</Tag>
             </p>
             <dl className={styles.kv}>
               <dt>{t.citationStyle}</dt><dd>{t.citationStyleValue}</dd>
