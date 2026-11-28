@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { knownCheckIds, runChecks, sentencesOf } from "./checks";
 import { digestOf } from "./digest";
-import { ignore, readIgnored, restore, splitIgnored, writeIgnored } from "./ignored";
+import { ignore, kindCounts, kindsOff, readIgnored, restore, splitIgnored, toggleKind, writeIgnored } from "./ignored";
 import { readReviewDoc, reviewDocOf, type BlockInput } from "./model";
 import { inScope, validScope } from "./scope";
 import { detailOf, digestText, rowsOf, summaryLine } from "./view";
@@ -129,6 +129,22 @@ describe("ignored findings", () => {
     expect(readIgnored(storage, "w3")).toEqual([]);
     expect(readIgnored(null, "w1")).toEqual([]);
     expect(() => writeIgnored({ setItem: () => { throw new Error("full"); } }, "w1", ["x"])).not.toThrow();
+  });
+
+  it("switches a whole kind off and on again, but never a mark left for later (ED-123)", () => {
+    const kind = all.find((f) => f.kind !== "hole")!.kind;
+    const off = toggleKind([], kind);
+    expect(kindsOff(off)).toEqual([kind]);
+    const split = splitIgnored(all, off);
+    expect(split.open.some((f) => f.kind === kind)).toBe(false);
+    expect(split.ignored.some((f) => f.kind === kind)).toBe(false);
+    expect(splitIgnored(all, toggleKind(off, kind)).open).toEqual(all);
+    expect(toggleKind([], "hole")).toEqual([]);
+    expect(kindsOff(["kind:hole"])).toEqual([]);
+    expect(kindCounts(all).map((row) => row.kind)).toContain(kind);
+    expect(kindCounts(all).some((row) => row.kind === "hole")).toBe(false);
+    const n = kindCounts(all).reduce((sum, row) => sum + row.n, 0);
+    expect(n).toBe(all.filter((f) => f.kind !== "hole").length);
   });
 });
 
