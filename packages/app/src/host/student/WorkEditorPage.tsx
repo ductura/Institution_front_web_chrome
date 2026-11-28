@@ -53,6 +53,7 @@ import { MarksHost } from "../editor/marks/MarksHost";
 import { HintsHost } from "../editor/hints/HintsHost";
 import { ReadAloudHost } from "../editor/read-aloud/ReadAloudHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
+import { WritingSessionHost } from "../editor/writing-session/WritingSessionHost";
 import { CommentCardHost } from "../editor/comments/CommentCard";
 import { ChapterMarks } from "../editor/left/ChapterMarks";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
@@ -196,6 +197,9 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
                 <AssistantRules assignmentId={assignmentId} base={base} />
               </>,
               instructions: () => <><NoticeInstructions assignmentId={assignmentId} /><RubricCard assignmentId={assignmentId} here={here} /></>,
+              // ED-77: "Sesija pisanja" at the foot of the right panel, kept on this device under the person's scope.
+              footer: ({ editor, scope, submitted, signedOut }) => submitted || signedOut ? null
+                : <WritingSessionHost editor={editor} scope={scope} workId={assignmentId} readOnly={false} />,
               // ED-71: "Prikaz › Sadržaj na listu" puts the table of contents on the sheet above the text.
               // ED-79: "Dijelovi rada › Popis kratica" puts the list of abbreviations under it.
               sheetTop: ({ editor, scope, documentId }) => <>
