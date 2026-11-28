@@ -99,6 +99,7 @@ if (process.env.DUCTURA_STOG === '1') {
       const teacherContext = await browser.newContext({ baseURL: webOrigin });
       const studentContext = await browser.newContext({ baseURL: webOrigin, acceptDownloads: true });
       const otherContext = await browser.newContext({ baseURL: webOrigin });
+      const freshContext = await browser.newContext({ baseURL: webOrigin });
       try {
         const teacher = await teacherContext.newPage();
         const student = await studentContext.newPage();
@@ -158,6 +159,15 @@ if (process.env.DUCTURA_STOG === '1') {
           return commit.request().postDataJSON().documentId;
         });
 
+        await test.step('Sinkronizacija: svjež kontekst bez lokalnog dnevnika čita isti naslov s poslužitelja; axe', async () => {
+          const fresh = await freshContext.newPage();
+          await signInDemoStudent(fresh, 'demo-student-2');
+          await fresh.goto(app(`/rad/${assignmentId}`));
+          await expect(fresh.getByRole('textbox', { name: 'Naslov', exact: true }).first()).toHaveValue(title, { timeout: 30_000 });
+          await axe(fresh);
+          await fresh.close();
+        });
+
         await test.step('Izvoz: .pptx je ZIP, a PDF počinje s %PDF', async () => {
           const [pptx] = await Promise.all([student.waitForEvent('download', { timeout: 60_000 }), student.getByRole('button', { name: 'Preuzmi .pptx' }).click()]);
           expect(pptx.suggestedFilename()).toMatch(/\.pptx$/);
@@ -190,9 +200,11 @@ if (process.env.DUCTURA_STOG === '1') {
           await signInDemoStudent(other, 'demo-student');
           const exported = await other.request.get(`/api/v1/works/${documentId}/export-slides?format=pptx`);
           expect(exported.status(), 'work.export-slides.get za tuđi rad').toBe(404);
+          const versions = await other.request.get(`/api/v1/works/${documentId}/versions`);
+          expect(versions.status(), 'work.versions.get za tuđi rad').toBe(404);
         });
       } finally {
-        await Promise.all([teacherContext.close(), studentContext.close(), otherContext.close()]);
+        await Promise.all([teacherContext.close(), studentContext.close(), otherContext.close(), freshContext.close()]);
       }
     });
   });
