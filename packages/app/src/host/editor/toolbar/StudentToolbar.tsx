@@ -213,7 +213,7 @@ type Item = { id: string; label: string; disabled?: boolean; /** The reason an i
 /** ED-44 (P2-16): the prototype's "Umetni" items the host cannot insert yet; shown, never hidden (Val 6). */
 export const PENDING_INSERTS = ["table", "image", "phrase", "variant"] as const;
 /** The prototype's order of "Umetni"; the host's own items not in the prototype follow. */
-const INSERT_ORDER = ["cite", "newSource", "table", "image", "footnote", "xref", "formula", "inlineFormula", "codeBlock", "hole", "phrase", "variant"];
+const INSERT_ORDER = ["cite", "newSource", "table", "image", "footnote", "xref", "formula", "inlineFormula", "chem", "codeBlock", "hole", "phrase", "variant"];
 
 /** The host's insert items with the prototype's pending ones put in their place, disabled and marked "nedostupno". */
 export function withPendingInserts(items: readonly Item[]): Item[] {
@@ -264,7 +264,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   // The profile the student chose in "Zahtjevi rada" (WEB-DIZ-B-V21); a profile given by the caller wins.
   const chosenProfile = useActiveProfile();
   const workProfile = skeletonProfile ?? chosenProfile;
-  const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(workProfile));
+  const workTools = formulaToolsOf(workProfile);
+  const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, workTools);
   const code = useCodeBlockHost(editor, confirmedWorkSchemaVersion);
   const skeletonState = useSkeletonAvailability(editor, workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null);
   const latexStyle = useLatexStyle(typeof window === "undefined" ? null : assignmentIdFromPath(window.location.pathname));
@@ -322,6 +323,10 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "xref", label: crossReferenceMessages.title, disabled: !writeOk || !v3.openInsert },
     { id: "formula", label: formulaHostHr.insertBlock, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
     { id: "inlineFormula", label: formulaHostHr.insertInline, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
+    // ED-128: as in the prototype, only in a field with chemistry (the profile's `chem` tool).
+    ...(workTools.includes("chem")
+      ? [{ id: "chem", label: formulaHostHr.insertChem, disabled: !writeOk || !formula.chem.enabled, hint: formula.chem.enabled ? undefined : formula.chem.reason }]
+      : []),
     { id: "codeBlock", label: code.inBlock ? codeBlockHr.edit : codeBlockHr.insert, disabled: !writeOk || !code.availability.enabled, hint: code.availability.enabled ? undefined : code.availability.reason },
     { id: "hole", label: t.toolbar.insertItems.hole, disabled: !writeOk },
     { id: "phrase", label: t.toolbar.insertItems.phrase, disabled: !writeOk },
@@ -366,6 +371,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         else if (id === "xref") v3.openInsert?.("crossReference");
         else if (id === "workParts" && writeOk) setDialog("parts");
         else if (id === "formula" || id === "inlineFormula") formula.open(id === "formula" ? "block" : "inline");
+        else if (id === "chem") formula.openChem();
         else if (id === "codeBlock" && writeOk) code.open(code.inBlock);
         else if (id === "skeleton" && writeOk) setDialog("skeleton");
         else if (id === "hole") insertHole(editor);

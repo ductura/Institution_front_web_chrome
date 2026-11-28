@@ -32,6 +32,19 @@ export function formulaAvailability(
   return { enabled: true };
 }
 
+/** ED-128: "Kemijska formula", an inline formula in \ce{...}; on for a v4 work whose field offers the `chem` tool. */
+export function chemAvailability(
+  schema: Schema, schemaVersion: number | undefined, tools: readonly ToolKey[], editable: boolean,
+): FormulaAvailability {
+  if (!supportsFormulas(schema, schemaVersion)) return { enabled: false, reason: t.disabledSchema };
+  if (!tools.includes("chem")) return { enabled: false, reason: t.disabledChem };
+  if (!editable) return { enabled: false, reason: t.disabledReadOnly };
+  return { enabled: true };
+}
+
+/** The example the chemistry dialog opens with, as in the prototype (acChem). */
+export const CHEM_EXAMPLE = "\\ce{H2SO4}";
+
 export type FormulaTarget = { readonly pos: number; readonly kind: FormulaKind; readonly tex: string };
 
 /** The formula node at `pos`, or null when none stands there. */
