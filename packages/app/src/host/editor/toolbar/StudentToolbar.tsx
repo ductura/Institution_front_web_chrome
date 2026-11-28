@@ -60,6 +60,9 @@ import { selectionToFootnote, selectionToFootnoteHr } from "../footnote/selectio
 import { insertPhrase } from "../phrases/phrases";
 import { PhrasesDialog } from "../phrases/PhrasesDialog";
 import { listenCommentKey } from "./comment-key";
+import { applyLink, linkActive, linkAvailable, removeLink } from "../link/link-commands";
+import { LinkDialog } from "../link/LinkDialog";
+import { linkHr } from "../link/messages.hr";
 import { MOBILE_MORE, type QuickTool } from "./quick-tools";
 import { canStep, DEFAULT_ZOOM, loadZoom, saveZoom, snapZoom, stepZoom, zoomPercent, zoomToast } from "./text-size";
 import { MobileQuickBar } from "./ToolbarBehaviour";
@@ -266,6 +269,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const skeletonState = useSkeletonAvailability(editor, workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null);
   const latexStyle = useLatexStyle(typeof window === "undefined" ? null : assignmentIdFromPath(window.location.pathname));
   const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | "structure" | "pageFormat" | "phrases" | null>(null);
+  // ED-127: the selection the link goes on, kept while its dialog has the focus.
+  const [linkAt, setLinkAt] = useState<{ from: number; to: number; href: string } | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
   const toast = useStudentToast();
@@ -320,6 +325,10 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "codeBlock", label: code.inBlock ? codeBlockHr.edit : codeBlockHr.insert, disabled: !writeOk || !code.availability.enabled, hint: code.availability.enabled ? undefined : code.availability.reason },
     { id: "hole", label: t.toolbar.insertItems.hole, disabled: !writeOk },
     { id: "phrase", label: t.toolbar.insertItems.phrase, disabled: !writeOk },
+    // ED-127: the prototype's acLink and acLinkDel; v4 works only, as the mark is there only.
+    // Whether the caret is in a link is read on the click: the snapshot does not follow the caret.
+    { id: "link", label: linkHr.insert, disabled: !writeOk || !linkAvailable(editor), hint: linkAvailable(editor) ? undefined : linkHr.unavailable },
+    { id: "unlink", label: linkHr.remove, disabled: !writeOk || !linkAvailable(editor), hint: linkAvailable(editor) ? undefined : linkHr.unavailable },
     { id: "workParts", label: workPartsMessages.title, disabled: !writeOk },
     { id: "skeleton", label: skeletonMessages.menu, disabled: !writeOk || !skeletonState.enabled, hint: skeletonState.enabled ? undefined : skeletonState.reason },
   ]);
@@ -361,6 +370,13 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         else if (id === "skeleton" && writeOk) setDialog("skeleton");
         else if (id === "hole") insertHole(editor);
         else if (id === "phrase" && writeOk) setDialog("phrases");
+        else if (id === "link" && writeOk && editor) {
+          if (linkActive(editor)) editor.commands.extendMarkRange("link");
+          const { from, to } = editor.state.selection;
+          if (from === to) toast(linkHr.noSelection, "error");
+          else setLinkAt({ from, to, href: (editor.getAttributes("link").href as string | undefined) ?? "" });
+        }
+        else if (id === "unlink" && writeOk && editor) { if (removeLink(editor)) toast(linkHr.removed); else toast(linkHr.noLink, "error"); }
       }} />
       <Menu label={t.toolbar.convert} items={convert} onSelect={(id) => {
         if (id === "toQuote" || id === "fromQuote") convertBlock(editor, id === "toQuote" ? "quote" : "paragraph");
@@ -431,6 +447,14 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       )}
       {dialog === "phrases" && editor && <PhrasesDialog onClose={() => setDialog(null)}
         onPick={(phrase) => { setDialog(null); setTimeout(() => { insertPhrase(editor, phrase); }, 0); }} />}
+      {linkAt && editor && <LinkDialog initial={linkAt.href} onClose={() => setLinkAt(null)}
+        onSave={(href) => {
+          const done = applyLink(editor, href, linkAt);
+          if (done === "invalid") return false;
+          setLinkAt(null);
+          if (done === "done") toast(linkHr.done); else toast(linkHr[done], "error");
+          return true;
+        }} />}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
       {dialog === "pageFormat" && <PageFormatDialog format={pageFormatOf(workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null)} onClose={() => setDialog(null)} />}
       {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
