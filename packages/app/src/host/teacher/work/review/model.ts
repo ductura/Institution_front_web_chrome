@@ -51,13 +51,13 @@ export type Grade = "eligible" | "practice" | "unknown";
 
 export type Header = { readonly facts: Facts; readonly context: Context | null; readonly grade: Grade };
 
-/** „Kolegij A · zadatak „Naslov” · probni zadatak”. */
+/** „Kolegij A, zadatak „Naslov”, probni zadatak”. */
 export function contextLine(h: Header): string {
   const parts = h.context === null ? [t.courseUnavailable, t.titleUnavailable] : [h.context.course, t.task(h.context.title)];
-  return [...parts, ...(h.grade === "practice" ? [t.practice] : [])].join(" · ");
+  return [...parts, ...(h.grade === "practice" ? [t.practice] : [])].join(", ");
 }
 
-/** „Student A · Seminarski rad „Naslov””, or „Student A · Rad” without the assignment. */
+/** „Student A, Seminarski rad „Naslov””, or „Student A, Rad” without the assignment. */
 export function headingOf(h: Header): string {
   const student = h.facts.studentName ?? t.noName;
   return h.context === null ? t.heading(student, t.workKind, null) : t.heading(student, WORK_TYPES[h.context.workType], h.context.title);
@@ -67,7 +67,7 @@ export function headingOf(h: Header): string {
 export function stateOf(h: Header): string {
   const line = stateLine(h.facts);
   if (h.facts.receipt !== null && isSubmitted(h.facts)) return line;
-  return `${line} · ${h.context === null ? t.dueUnavailable : t.due(formatDateTimeHr(h.context.dueAt))}`;
+  return `${line}, ${h.context === null ? t.dueUnavailable : t.due(formatDateTimeHr(h.context.dueAt))}`;
 }
 
 /** PG-10: the grade stays in Merlin and Studomat; a practice assignment is not graded or exported. */
@@ -116,10 +116,10 @@ export function matchPart(read: MatchRead): Part<{ readonly percent: number; rea
   }
 }
 
-/** „Udio teksta koji se podudara: 4 % · nije dokaz autorstva”; null without a share. */
+/** „Udio teksta koji se podudara: 4 %, nije dokaz autorstva”; null without a share. */
 export function matchShareLine(percent: number): string | null {
   if (percent <= 0) return null;
-  return `${t.matchShare(percentText({ percent: Math.round(percent), codePoints: 1 }))} · ${t.notProof}`;
+  return `${t.matchShare(percentText({ percent: Math.round(percent), codePoints: 1 }))}, ${t.notProof}`;
 }
 
 /** „Uvezeno iz datoteke: za pregled”, in the closed order of the server rows. */

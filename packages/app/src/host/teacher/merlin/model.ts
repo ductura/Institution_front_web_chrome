@@ -17,14 +17,14 @@ export type AssignmentChoice = {
   readonly dueAt?: string | null;
 };
 
-/** NZ-16: "Naslov · Esej · rok je prošao": the kind of work and a passed deadline are said in the option. */
+/** NZ-16: "Naslov, Esej, rok je prošao": the kind of work and a passed deadline are said in the option. */
 export function choiceLabel(choice: AssignmentChoice, now: number): string {
   const parts = [choice.title ?? text.taskUnnamed];
   const kind = typeof choice.workType === "string" ? text.workType[choice.workType] : undefined;
   if (kind !== undefined) parts.push(kind);
   const due = typeof choice.dueAt === "string" ? Date.parse(choice.dueAt) : Number.NaN;
   if (!Number.isNaN(due) && due < now) parts.push(text.deadlinePassed);
-  return parts.join(" · ");
+  return parts.join(", ");
 }
 
 /**

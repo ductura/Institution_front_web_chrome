@@ -16,14 +16,14 @@ const context: Context = { course: "Izmišljeni kolegij", title: "Izmišljeni es
 
 describe("taskHeading (F4-NAS-R12)", () => {
   it("names the student, the kind of work and the title", () => {
-    expect(taskHeading("Ana Izmišljenić", context)).toBe("Ana Izmišljenić · Esej „Izmišljeni esej”");
-    expect(taskHeading("Ana Izmišljenić", { ...context, workType: "master_thesis" })).toBe("Ana Izmišljenić · Diplomski rad „Izmišljeni esej”");
+    expect(taskHeading("Ana Izmišljenić", context)).toBe("Ana Izmišljenić, Esej „Izmišljeni esej”");
+    expect(taskHeading("Ana Izmišljenić", { ...context, workType: "master_thesis" })).toBe("Ana Izmišljenić, Diplomski rad „Izmišljeni esej”");
   });
   it("keeps the plain kind and no title without the assignment (B-6)", () => {
-    expect(taskHeading("Ana Izmišljenić", null)).toBe(`Ana Izmišljenić · ${text.workKind}`);
+    expect(taskHeading("Ana Izmišljenić", null)).toBe(`Ana Izmišljenić, ${text.workKind}`);
   });
   it("says the name is unavailable rather than inventing one", () => {
-    expect(taskHeading(null, context)).toBe(`${text.noName} · Esej „Izmišljeni esej”`);
+    expect(taskHeading(null, context)).toBe(`${text.noName}, Esej „Izmišljeni esej”`);
   });
 });
 
@@ -55,11 +55,11 @@ async function crumbOf(read: (id: string) => Promise<WorkContext | null>): Promi
 describe("useTaskCrumb (F4-NAS-R12)", () => {
   it("gives the heading line once the work and its assignment are read", async () => {
     const read = vi.fn(async () => ({ studentName: "Ana Izmišljenić", context }));
-    expect(await crumbOf(read)).toBe("Ana Izmišljenić · Esej „Izmišljeni esej”");
+    expect(await crumbOf(read)).toBe("Ana Izmišljenić, Esej „Izmišljeni esej”");
     expect(read).toHaveBeenCalledWith("d1");
   });
   it("gives the plain kind when the course list does not name the assignment", async () => {
-    expect(await crumbOf(async () => ({ studentName: "Ana Izmišljenić", context: null }))).toBe(`Ana Izmišljenić · ${text.workKind}`);
+    expect(await crumbOf(async () => ({ studentName: "Ana Izmišljenić", context: null }))).toBe(`Ana Izmišljenić, ${text.workKind}`);
   });
   it("gives nothing when the work cannot be read, so the page keeps its own line", async () => {
     expect(await crumbOf(async () => null)).toBe("(bez retka)");

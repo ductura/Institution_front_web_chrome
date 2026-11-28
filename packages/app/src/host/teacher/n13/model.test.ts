@@ -7,7 +7,7 @@ const draft = { scope: "all", studentId: "", dueAt: "2026-11-15T22:59:00.000Z", 
 
 describe("N-13 model", () => {
   it("leads with task, course and the deadline in Zagreb time", () => {
-    expect(leadText(FAKE_DATA.context)).toBe("Zadatak „Lokalni mediji i izborna kampanja”, Kolegij A · rok 8. 11. 2026. u 23:59. Produljenje pokrećete samo Vi; student ga ne traži kroz Ducturu.");
+    expect(leadText(FAKE_DATA.context)).toBe("Zadatak „Lokalni mediji i izborna kampanja”, Kolegij A, rok 8. 11. 2026. u 23:59. Produljenje pokrećete samo Vi; student ga ne traži kroz Ducturu.");
     expect(leadText({ task: null, course: null, dueAt: null })).toBe("Produljenje pokrećete samo Vi; student ga ne traži kroz Ducturu.");
   });
   it("offers the reason for all only for all students", () => {
@@ -18,9 +18,9 @@ describe("N-13 model", () => {
     expect(whoText(FAKE_EXTENSIONS[0]!, students)).toBe("Dora Matić");
     expect(whoText(FAKE_EXTENSIONS[1]!, students)).toBe("Svi studenti zadatka");
     expect(whoText({ ...FAKE_EXTENSIONS[0]!, studentId: "x" }, students)).toBe("Ime nije dostupno");
-    expect(titleText(FAKE_EXTENSIONS[0]!, students)).toBe("Dora Matić · novi rok 12. 11. 2026. u 23:59");
-    expect(detailText(FAKE_EXTENSIONS[0]!)).toBe("Stari rok 8. 11. 2026. u 23:59 · razlog: Opravdan razlog · zabilježio Vi, 4. 11. 2026. u 9:20");
-    expect(detailText(FAKE_EXTENSIONS[1]!)).toContain("Vidi ga nastavnik koji je zabilježio produljenje · zabilježio drugi nastavnik");
+    expect(titleText(FAKE_EXTENSIONS[0]!, students)).toBe("Dora Matić, novi rok 12. 11. 2026. u 23:59");
+    expect(detailText(FAKE_EXTENSIONS[0]!)).toBe("Stari rok 8. 11. 2026. u 23:59, razlog: Opravdan razlog, zabilježio Vi, 4. 11. 2026. u 9:20");
+    expect(detailText(FAKE_EXTENSIONS[1]!)).toContain("Vidi ga nastavnik koji je zabilježio produljenje, zabilježio drugi nastavnik");
   });
   it("says success only for a recorded extension, the conflict with the student's name", () => {
     const ext = { ...FAKE_EXTENSIONS[0]!, studentId: "s-1" };

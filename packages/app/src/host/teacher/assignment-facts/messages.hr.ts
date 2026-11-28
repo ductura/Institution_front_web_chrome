@@ -31,7 +31,7 @@ export const assignmentFactsMessages = {
   detailsUnavailable: "pojedinosti predaje trenutačno nisu dostupne",
   writing: "U pisanju",
   extendedTo: (due: string): string => `rok produljen do ${due}`,
-  notSubmitted: (due: string): string => `Nije predano · rok ${due} je prošao`,
+  notSubmitted: (due: string): string => `Nije predano, rok ${due} je prošao`,
   notOpenedLine: "Rad nije otvoren",
   notStarted: "Rad nije započet",
   openWork: "Otvori rad",

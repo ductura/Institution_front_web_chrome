@@ -79,7 +79,7 @@ export const pgMessages = {
   notesUnavailable: "Objašnjenja trenutačno nije moguće dohvatiti. To ne znači da ih nema.",
   notesForbidden: "Objašnjenja studenta vide samo nastavnik zadatka i mentor.",
   notesFindingWhere: "Objašnjenja uz nalaze podudaranja s odgovorom pomoćnika vide se u Karti podrijetla, uz svaki nalaz.",
-  noteBy: (kind: string, when: string): string => `${kind} · ${when}`,
+  noteBy: (kind: string, when: string): string => `${kind}, ${when}`,
 
   // PG-9: what the student has already received, read only.
   givenHeading: "Što je student već dobio",
@@ -98,7 +98,7 @@ export const pgMessages = {
   givenNone: "Studentu još nije objavljena povratna informacija.",
   givenLoading: "Učitavam povratnu informaciju…",
   givenUnavailable: "Povratnu informaciju trenutačno nije moguće dohvatiti. To ne znači da je nema.",
-  seenAt: (when: string): string => `Student je vidio · ${when}`,
+  seenAt: (when: string): string => `Student je vidio, ${when}`,
   seenNot: "Student još nije otvorio",
   givenSeenUnavailable: "Je li student vidio vaše komentare, trenutačno nije moguće dohvatiti. To ne znači da nije.",
   givenSeenScope: "„Student je vidio” prikazuje se samo uz vaše vlastite objavljene komentare.",

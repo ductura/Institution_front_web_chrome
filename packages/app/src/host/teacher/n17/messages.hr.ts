@@ -61,7 +61,7 @@ export const n17Messages = {
   recordContinuous: "cjelovit",
   recordGaps: "ima praznine",
   recordPending: "čeka potvrdu",
-  revisionRequested: (state: string): string => `zatražena · ${state}`,
+  revisionRequested: (state: string): string => `zatražena, ${state}`,
   revisionNone: "nije zatražena",
   revisionUnavailable: "nedostupno",
   revisionStates: { open: "otvorena", reopened: "ponovno otvorena", accepted: "prihvaćena", closed: "zatvorena", responded: "student je odgovorio", withdrawn: "povučena" } as Readonly<Record<string, string>>,

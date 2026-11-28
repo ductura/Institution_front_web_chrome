@@ -24,5 +24,5 @@ export const keyDatesMessages = {
   signedOut: "Sesija je istekla. Prijavite se ponovno.",
   retry: "Pokušaj ponovno",
   forStudent: (name: string): string => `Vremenska crta rada: ${name}`,
-  forMentor: (name: string): string => `Vremenska crta rada · mentor: ${name}`,
+  forMentor: (name: string): string => `Vremenska crta rada, mentor: ${name}`,
 } as const;

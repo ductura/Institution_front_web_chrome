@@ -12,10 +12,10 @@ import { readContext } from "../work/review/read";
 import { WORK_TYPES, type Context } from "../work/review/model";
 import { workFrameMessages as text } from "./messages.hr";
 
-/** "Student A · Seminarski rad „Naslov”", or "Student A · Rad" without the assignment (the N-06 heading so far). */
+/** "Student A, Seminarski rad „Naslov”", or "Student A, Rad" without the assignment (the N-06 heading so far). */
 export function taskHeading(studentName: string | null, context: Context | null): string {
   const student = studentName ?? text.noName;
-  return context === null ? `${student} · ${text.workKind}` : `${student} · ${WORK_TYPES[context.workType]} „${context.title}”`;
+  return context === null ? `${student}, ${text.workKind}` : `${student}, ${WORK_TYPES[context.workType]} „${context.title}”`;
 }
 
 export type WorkContext = { readonly studentName: string | null; readonly context: Context | null };

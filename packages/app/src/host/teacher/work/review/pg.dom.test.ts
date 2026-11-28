@@ -131,7 +131,7 @@ describe("NF-5 sections of Pregled rada", () => {
     expect(rows).toHaveLength(2);
     expect(rows[0]).toContain("objavljeno studentu");
     expect(rows[1]).toContain("nije objavljeno");
-    expect(rows[0]).toContain("Student je vidio ·");
+    expect(rows[0]).toContain("Student je vidio,");
     expect(rows[1]).not.toContain("Student je vidio");
     expect(rows[1]).not.toContain("Student još nije otvorio");
   });

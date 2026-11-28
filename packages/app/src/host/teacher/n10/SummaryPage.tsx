@@ -123,7 +123,7 @@ function Sections({ read, anchors }: { read: Extract<N10Read, { kind: "ready" }>
       <Section title={text.pastesTitle} observed={false}>
         {pastes.listed.length === 0 ? <p className="meta">{text.pastesEmpty}</p> : (
           <ul className="list">{pastes.listed.map((p, i) => (
-            <Entry key={i} line={`${segmentLine(p.at)} · ${characters(p.characters)}`}>
+            <Entry key={i} line={`${segmentLine(p.at)}, ${characters(p.characters)}`}>
               <span className="note">{text.sourceNotObserved}</span>
               <Jump id={pasteAnchor(i)} anchors={anchors} />
             </Entry>

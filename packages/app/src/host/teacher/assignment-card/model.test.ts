@@ -17,7 +17,7 @@ describe("N-01 card model", () => {
   });
   it("counts students with Croatian plurals and lists groups", () => {
     const view = { role: "holder", students: [{}, {}, {}, {}], groups: [{ name: "grupa 2" }, { name: "grupa 4" }] } as never;
-    expect(enrolledText(view)).toBe("4 studenta · grupa 2, grupa 4");
+    expect(enrolledText(view)).toBe("4 studenta, grupa 2, grupa 4");
     expect(enrolledText(null)).toBeNull();
   });
 });

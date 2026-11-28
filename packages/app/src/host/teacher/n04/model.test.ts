@@ -11,9 +11,9 @@ describe("N-04 model", () => {
   });
   it("says the submitted state in words", () => {
     expect(stateLine(sub({ submittedAt: "2026-11-05T20:14:00Z", afterDeadline: false, version: 2, record: "with_gaps" })))
-      .toBe("Predano 5. 11. 2026. u 21:14, prije roka · verzija 2 · zapis ima praznine");
+      .toBe("Predano 5. 11. 2026. u 21:14, prije roka, verzija 2, zapis ima praznine");
     expect(stateLine(sub({ submittedAt: "2026-11-05T20:14:00Z", afterDeadline: true, version: 1, record: "continuous" })))
-      .toBe("Predano 5. 11. 2026. u 21:14, nakon roka · verzija 1 · zapis je cjelovit");
+      .toBe("Predano 5. 11. 2026. u 21:14, nakon roka, verzija 1, zapis je cjelovit");
     expect(stateLine(sub({ status: "writing" }))).toBe("U pisanju");
     expect(stateLine(sub({ status: "not_submitted" }))).toBe("Nije predano");
     expect(stateLine(sub({ status: "unconfirmed" }))).toBe("Obavijest o zadatku još nije potvrđena");
