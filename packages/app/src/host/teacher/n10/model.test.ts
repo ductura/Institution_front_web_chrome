@@ -52,8 +52,8 @@ describe("N-10 text forms", () => {
   });
   it("lists only submitted versions, oldest first, the newest as submitted", () => {
     expect(versionLines(FAKE_VERSIONS)).toEqual([
-      { revision: 1, line: "28. 10. 2026. u 10:50 · poslano na pregled" },
-      { revision: 4, line: "5. 11. 2026. u 21:14 · predano" },
+      { revision: 1, line: "28. 10. 2026. u 10:50, poslano na pregled" },
+      { revision: 4, line: "5. 11. 2026. u 21:14, predano" },
     ]);
     expect(versionLines([])).toEqual([]);
   });

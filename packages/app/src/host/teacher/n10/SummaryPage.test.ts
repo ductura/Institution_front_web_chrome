@@ -64,9 +64,9 @@ describe("N-10 SummaryPage", () => {
     expect(text).toContain("2 sesije");
     expect(text).toContain("Raspon praznine nije uračunat.");
     expect(text).toContain("2 h 55 min");
-    expect(text).toContain("28. 10. 2026. u 10:50 · poslano na pregled");
-    expect(text).toContain("5. 11. 2026. u 21:14 · predano");
-    expect(text).toContain("20. 10. 2026., odsječak oko 18:35 · 640 znakova");
+    expect(text).toContain("28. 10. 2026. u 10:50, poslano na pregled");
+    expect(text).toContain("5. 11. 2026. u 21:14, predano");
+    expect(text).toContain("20. 10. 2026., odsječak oko 18:35, 640 znakova");
     expect(text).toContain("Izvor nije opažen.");
     expect(text).toContain("28. 10. 2026., odsječak oko 10:05");
     expect(text).toContain("Zapis ima praznine (vidi popis).");

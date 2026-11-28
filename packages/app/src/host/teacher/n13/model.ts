@@ -87,11 +87,11 @@ export function whoText(extension: DeadlineExtension, students: readonly Extensi
 export function detailText(extension: DeadlineExtension): string {
   const reason = extension.reasonId === null ? text.reasonHidden : text.reasons[extension.reasonId];
   const by = extension.reasonId === null ? text.byOther : text.byYou;
-  return `${text.oldDue} ${formatDateTimeHr(extension.previousDueAt)} · ${text.reasonLabel}: ${reason} · ${text.recordedBy} ${by}, ${formatDateTimeHr(extension.createdAt)}`;
+  return `${text.oldDue} ${formatDateTimeHr(extension.previousDueAt)}, ${text.reasonLabel}: ${reason}, ${text.recordedBy} ${by}, ${formatDateTimeHr(extension.createdAt)}`;
 }
 
 export function titleText(extension: DeadlineExtension, students: readonly ExtensionStudent[] | null): string {
-  return `${whoText(extension, students)} · ${text.newDue} ${formatDateTimeHr(extension.dueAt)}`;
+  return `${whoText(extension, students)}, ${text.newDue} ${formatDateTimeHr(extension.dueAt)}`;
 }
 
 /** NZ-2: whether the assignment's own deadline has passed; false when the read does not give it. */

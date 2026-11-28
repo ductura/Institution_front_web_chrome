@@ -39,10 +39,10 @@ const OWN = ["overviewText", "myStudentsText", "mentorPlanText", "mentorNotesTex
  * instead; the list may only shrink: a new finding anywhere fails.
  */
 const OPEN_ELSEWHERE = [
-  "mentorCardHr.prep.copy · kopirano",
-  "mentorCardHr.prep.copied · kopirano",
-  "consultHr.records.saved · spremljeno (bez pojašnjenja)",
-  "consultHr.records.failed · spremljeno (bez pojašnjenja)",
+  "mentorCardHr.prep.copy, kopirano",
+  "mentorCardHr.prep.copied, kopirano",
+  "consultHr.records.saved, spremljeno (bez pojašnjenja)",
+  "consultHr.records.failed, spremljeno (bez pojašnjenja)",
 ];
 
 describe("texts of mentoring (MK-17)", () => {
@@ -52,7 +52,7 @@ describe("texts of mentoring (MK-17)", () => {
   });
 
   it("hold no forbidden term (Ductus PRODUCT §5); outside this lane only the listed open findings remain", () => {
-    const hits = ALL.flatMap(([path, text]) => findForbiddenTerms(text, "hr").map((term) => `${path} · ${term.entry}`));
+    const hits = ALL.flatMap(([path, text]) => findForbiddenTerms(text, "hr").map((term) => `${path}, ${term.entry}`));
     expect(hits.filter((hit) => OWN.some((name) => hit.startsWith(`${name}.`)))).toEqual([]);
     expect(hits.filter((hit) => !OPEN_ELSEWHERE.includes(hit))).toEqual([]);
   });

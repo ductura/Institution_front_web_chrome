@@ -69,8 +69,8 @@ async function fakeServer(page: Page) {
 test("PG-1/PG-10: the review names the work, keeps the tab across works and says the grade is in Merlin and Studomat", async ({ page }) => {
   await fakeServer(page);
   await page.goto(`${review}?kartica=sazetak`);
-  await expect(page.getByRole("heading", { level: 1, name: "Student A · Seminarski rad „Lokalni mediji”" })).toBeVisible();
-  await expect(page.getByText("Kolegij A · zadatak „Lokalni mediji”")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Student A, Seminarski rad „Lokalni mediji”" })).toBeVisible();
+  await expect(page.getByText("Kolegij A, zadatak „Lokalni mediji”")).toBeVisible();
   await expect(page.getByText(t.gradeExternal)).toBeVisible();
   await expect(page.getByRole("tab", { name: t.tabSummary })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("link", { name: t.prev })).toHaveAttribute("href", `/aplikacija/nastavnik/rad/${previousId}/pregled?kartica=sazetak`);
@@ -99,7 +99,7 @@ test("PG-4: not given reads apart from an error, and the failed part recovers on
   recover();
   await match.getByRole("button", { name: t.retry }).click();
   await expect(match).toHaveAttribute("data-state", "ready");
-  await expect(match).toContainText("4 % · nije dokaz autorstva");
+  await expect(match).toContainText("4 %, nije dokaz autorstva");
   await expect(match).toContainText(t.matchNote);
 });
 

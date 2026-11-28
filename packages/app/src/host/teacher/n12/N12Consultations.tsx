@@ -258,7 +258,7 @@ function RecordView({ documentId, record, toasts, onList, onAdded }: {
         <span className={styles.heading}>{t.additions}</span>
         {record.additions.length === 0 ? <span className="meta">{t.emptyAdditions}</span> : record.additions.map((addition) => (
           <div className={styles.entry} key={addition.id}>
-            <span className={styles.who}>{t.additionAuthor} · {momentHr(addition.createdAt)}</span>
+            <span className={styles.who}>{t.additionAuthor}, {momentHr(addition.createdAt)}</span>
             <span>{addition.text}</span>
           </div>
         ))}

@@ -84,8 +84,8 @@ describe("WEB-NUZ-PG Pregled rada", () => {
 
   it("PG-1/PG-10: shows the context header, the grade in Merlin and Studomat and the tab from the address", async () => {
     const el = await mount(reads());
-    expect(el.querySelector("[data-review-context]")?.textContent).toBe("Kolegij A · zadatak „Lokalni mediji”");
-    expect(el.querySelector("h1")?.textContent).toBe("Student A · Esej „Lokalni mediji”");
+    expect(el.querySelector("[data-review-context]")?.textContent).toBe("Kolegij A, zadatak „Lokalni mediji”");
+    expect(el.querySelector("h1")?.textContent).toBe("Student A, Esej „Lokalni mediji”");
     expect(el.querySelector("[data-review-state]")?.textContent).toContain("rok 30. studenoga 2026.");
     expect(el.querySelector("[data-review-grade]")?.textContent).toContain(t.gradeExternal);
     const tabs = [...el.querySelectorAll('[role="tab"]')];
@@ -124,7 +124,7 @@ describe("WEB-NUZ-PG Pregled rada", () => {
     await settle();
     const again = el.querySelector('[data-part="pg-match"]')!;
     expect(again.getAttribute("data-state")).toBe("ready");
-    expect(again.textContent).toContain("4 % · nije dokaz autorstva");
+    expect(again.textContent).toContain("4 %, nije dokaz autorstva");
     expect(el.querySelector('[data-part="pg-assistant"]')?.textContent).toContain(`${t.assistantConversations}1`);
   });
 
@@ -143,6 +143,6 @@ describe("WEB-NUZ-PG Pregled rada", () => {
     answer = READY;
     await act(async () => { el.querySelector("button")!.click(); });
     await settle();
-    expect(el.querySelector("h1")?.textContent).toBe("Student A · Esej „Lokalni mediji”");
+    expect(el.querySelector("h1")?.textContent).toBe("Student A, Esej „Lokalni mediji”");
   });
 });

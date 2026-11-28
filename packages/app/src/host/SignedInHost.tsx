@@ -9,7 +9,7 @@ import ErrorScreen from "../../../../src/components/shell/ErrorScreen.ts";
 import { goToSignIn, readSession, type SessionRead } from "../../../../src/client/api.ts";
 
 import type { Base } from "../bases";
-import { browserRoute, resolve, shellRole } from "../routes";
+import { browserRoute, publicPage, resolve, shellRole } from "../routes";
 import { useLocale } from "../i18n";
 import { isNarrow, withoutShell } from "./ljuska-po-ekranu";
 import { HostContext } from "./context";
@@ -30,26 +30,30 @@ import { shellMessagesFor } from "./teacher/shell/messages";
  * role inside the prototypes' shell (VIZ-0: no top bar, so no breadcrumb; the
  * institution's name moves to the side bar's foot).
  */
-export default function SignedInHost({ base, route, navigate, detail, children }: {
+export default function SignedInHost({ base, route, navigate, detail, signedOutPage = null, children }: {
   base: Base;
   route: string;
   detail: string | null;
+  /** A public page that also has the shell: shown bare, with no sign-in forced, to anyone without a session. */
+  signedOutPage?: ReactNode;
   navigate: (to: string, replace?: boolean) => void;
   children: ReactNode;
 }) {
   const [session, setSession] = useState<SessionRead | null>(null);
+  const keepsSignIn = signedOutPage !== null;
   const { t, app: { host: hostText }, ui, syncFromServer } = useLocale();
 
   const load = useCallback(() => {
     setSession(null);
-    void readSession().then((read) => {
-      if (read.kind === "signedOut") goToSignIn(appHref(base, browserRoute(window.location.pathname, base)));
-      setSession(read);
-    });
-  }, [base]);
+    void readSession().then(setSession);
+  }, []);
   useEffect(() => {
     load();
   }, [load]);
+  // Moving between a shelled public page and a signed-in route keeps the session already read; only a route that needs it sends to sign-in.
+  useEffect(() => {
+    if (session?.kind === "signedOut" && !keepsSignIn) goToSignIn(appHref(base, browserRoute(window.location.pathname, base)));
+  }, [session, keepsSignIn, base]);
 
   const signedIn = session?.kind === "signedIn" ? session.session : null;
   const role = signedIn === null ? null : shellRole(signedIn.role);
@@ -65,9 +69,10 @@ export default function SignedInHost({ base, route, navigate, detail, children }
     if (resolved?.kind === "redirect") navigate(resolved.to, true);
   }, [resolved, navigate]);
 
-  useDocumentTitle(resolved?.kind === "page" ? resolved.page : null, role, resolved?.kind === "notFound", detail);
+  useDocumentTitle(resolved?.kind === "page" ? resolved.page : keepsSignIn && signedIn === null ? publicPage(route) : null, role, resolved?.kind === "notFound", detail);
 
   if (session === null) return <RouteLoading label={hostText.loading} />;
+  if (signedOutPage !== null && session.kind !== "signedIn") return <>{signedOutPage}</>;
   if (session.kind === "signedOut") return <RouteLoading label={hostText.signingIn} />;
   if (session.kind === "unavailable" && session.noRole === true) return <NoRoleScreen />;
   if (session.kind === "unavailable") {

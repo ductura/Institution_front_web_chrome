@@ -222,7 +222,7 @@ export function CourseTeachingTeam({ courseId, courseName }: { courseId: string;
   const panelId = useId();
   return (
     <div>
-      <Button type="button" tone="quiet" disabled={busy} aria-label={`${text.title} · ${courseName}`}
+      <Button type="button" tone="quiet" disabled={busy} aria-label={`${text.title}, ${courseName}`}
         aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(!open)}>{text.title}</Button>
       <div id={panelId} hidden={!open}>{open && <Panel courseId={courseId} busy={busy} setBusy={setBusy} />}</div>
     </div>

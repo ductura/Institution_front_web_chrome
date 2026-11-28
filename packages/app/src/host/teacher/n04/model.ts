@@ -81,7 +81,7 @@ export function stateLine(work: RosterWork): string {
       if (typeof work.version === "number" && Number.isInteger(work.version) && work.version > 0) parts.push(text.version(work.version));
       if (work.record === "with_gaps") parts.push(text.recordGaps);
       else if (work.record === "continuous") parts.push(text.recordContinuous);
-      return parts.join(" · ");
+      return parts.join(", ");
     }
     case "writing": return text.writing;
     case "not_submitted": return text.notSubmitted;

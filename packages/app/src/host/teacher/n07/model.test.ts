@@ -76,7 +76,7 @@ describe("N-07 receipt view", () => {
   });
   it("prazno only for a work the server calls not submitted", () => {
     const v = receiptView(ready({ kind: "none" }, "nije_predano"));
-    expect(v).toEqual({ kind: "notSubmitted", body: "Ovaj rad nije predan, pa potvrde nema. U pisanju · prikaz se osvježava dok student piše." });
+    expect(v).toEqual({ kind: "notSubmitted", body: "Ovaj rad nije predan, pa potvrde nema. U pisanju, prikaz se osvježava dok student piše." });
     expect(receiptView(ready({ kind: "none" }, "predano"))).toEqual({ kind: "error" });
   });
   it("the Prije predaje panel and the fallback key follow the read", () => {

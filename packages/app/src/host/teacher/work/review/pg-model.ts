@@ -19,7 +19,7 @@ export type CompositionRow = {
 /** One row per kind with a share, in the closed order of the server rows; the inserted and the matched text are two rows. */
 export function compositionRows(c: OriginComposition): readonly CompositionRow[] {
   return c.shares.filter((s) => s.codePoints > 0).map((s) => ({
-    kind: s.kind, label: kindLabel(s.kind), share: `${percentText(s)} · ${t.notProof}`, means: t.means[s.kind], notMeans: t.notMeans[s.kind],
+    kind: s.kind, label: kindLabel(s.kind), share: `${percentText(s)}, ${t.notProof}`, means: t.means[s.kind], notMeans: t.notMeans[s.kind],
   }));
 }
 
@@ -71,7 +71,7 @@ export function seenComments(items: readonly { readonly kind: string; readonly i
   return new Map(items.filter((i) => i.kind === "comment").map((i) => [i.id, i.firstSeenAt]));
 }
 
-/** „Student je vidio · time”, or „Student još nije otvorio”; null where the line does not apply (drafts, replies, colleagues) or the read is missing. */
+/** „Student je vidio, time”, or „Student još nije otvorio”; null where the line does not apply (drafts, replies, colleagues) or the read is missing. */
 export function seenText(row: GivenRow, seen: ReadonlyMap<string, string> | null): string | null {
   if (!row.seenable || seen === null || row.commentId === null) return null;
   const at = seen.get(row.commentId);

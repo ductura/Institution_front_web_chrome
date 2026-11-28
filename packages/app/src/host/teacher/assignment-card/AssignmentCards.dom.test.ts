@@ -85,7 +85,7 @@ describe("N-01 course card entries (NZ-1, NZ-2)", () => {
     const dialog = host.querySelector("dialog")!;
     expect(dialog.textContent).toContain(t.pickLead.extension);
     const select = dialog.querySelector("select")!;
-    expect([...select.options].map((o) => o.textContent)).toEqual([t.pickPlaceholder, "Kućno kompostiranje · rok 15. 12. 2099. u 23:59", "Prikaz članka · rok je prošao"]);
+    expect([...select.options].map((o) => o.textContent)).toEqual([t.pickPlaceholder, "Kućno kompostiranje, rok 15. 12. 2099. u 23:59", "Prikaz članka, rok je prošao"]);
     await act(async () => button(host, t.pickGo).click());
     expect(dialog.textContent).toContain(t.pickNone);
     await act(async () => {

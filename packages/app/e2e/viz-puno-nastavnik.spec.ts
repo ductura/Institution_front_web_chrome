@@ -53,8 +53,8 @@ for (const width of [390, 1280]) {
       await teacher(page);
       await page.goto(`/aplikacija/nastavnik/rad/${PREDANI_RAD}/pregled`);
       await setTheme(page, theme);
-      await expect(main(page).getByText("Kolegij A · zadatak „Lokalni mediji i izborna kampanja”").first()).toBeVisible();
-      await expect(main(page).getByText(/nije dostupan · Naziv zadatka nije dostupan/)).toHaveCount(0);
+      await expect(main(page).getByText("Kolegij A, zadatak „Lokalni mediji i izborna kampanja”").first()).toBeVisible();
+      await expect(main(page).getByText(/nije dostupan, Naziv zadatka nije dostupan/)).toHaveCount(0);
       await expect(main(page).getByRole("link", { name: "Natrag na zadatak" })).toHaveAttribute("href", `/aplikacija/nastavnik/zadatak/${T1}/predaje`);
       await axe(page, info, `pregled-${width}-${theme}`);
       await page.goto(`/aplikacija/nastavnik/rad/${PREDANI_RAD}/priprema-razgovora`);
@@ -73,7 +73,7 @@ for (const width of [390, 1280]) {
       await axe(page, info, `mentorstva-${width}-${theme}`);
       await follow(page, "Otvori rad");
       await expect(page).toHaveURL(new RegExp(`/nastavnik/rad/${DOKUMENT_T1}$`));
-      await expect(main(page).getByText("Student A · Rad").first()).toBeVisible();
+      await expect(main(page).getByText("Student A, Rad").first()).toBeVisible();
       await expect(main(page).getByText(/^U pisanju/).first()).toBeVisible();
       await axe(page, info, `mentorski-rad-${width}-${theme}`);
     });
@@ -88,7 +88,7 @@ test("NZ-18: the aggregate links each submitted work, and the extension lists th
   await expect(main(page).getByRole("link", { name: "Produljenje" }).first()).toBeVisible();
   await axe(page, info, "zbirni");
   await page.goto(`/aplikacija/nastavnik/zadatak/${T1}/produljenje`);
-  await expect(main(page).getByText(/^Demo Kompost · novi rok 28\. 12\. 2026\./)).toBeVisible();
+  await expect(main(page).getByText(/^Demo Kompost, novi rok 28\. 12\. 2026\./)).toBeVisible();
   await axe(page, info, "produljenje");
 });
 

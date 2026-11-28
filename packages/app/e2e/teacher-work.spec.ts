@@ -137,7 +137,7 @@ test("the work and its pages name the student, the kind of work and the assignme
     }],
   };
   const { seen } = await fakeServer(page, 200, [course]);
-  const line = "Iva Izmišljena · Seminarski rad „Izmišljeni seminar o vrtovima”";
+  const line = "Iva Izmišljena, Seminarski rad „Izmišljeni seminar o vrtovima”";
   await page.goto(work);
   await expect(page.getByRole("heading", { level: 1, name: line })).toBeVisible();
   expect(seen.filter((p) => p === "/api/v1/teacher/courses").length).toBeGreaterThanOrEqual(1);
@@ -152,9 +152,9 @@ test("the work and its pages name the student, the kind of work and the assignme
 test("without the assignment in the course list the work keeps the plain kind and no title", async ({ page }) => {
   await fakeServer(page);
   await page.goto(work);
-  await expect(page.getByRole("heading", { level: 1, name: `Iva Izmišljena · ${frame.workKind}` })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: `Iva Izmišljena, ${frame.workKind}` })).toBeVisible();
   await page.goto(`${work}/reprodukcija`);
-  await expect(page.getByText(`Iva Izmišljena · ${frame.workKind}`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Iva Izmišljena, ${frame.workKind}`, { exact: true })).toBeVisible();
   await expect(page.getByText("„")).toHaveCount(0);
 });
 

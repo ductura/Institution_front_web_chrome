@@ -139,21 +139,21 @@ test("NZ-11: the roster filters by state, orders by surname or by state and coun
   await page.goto(`/aplikacija/nastavnik/kolegiji/${K1}/studenti`);
   await expect(page.getByText(/poredan po prezimenu ili po stanju rada, nikad po brojevima/)).toBeVisible();
   await expect(page.getByTestId("n04-not-started")).toHaveText("Nije započelo: 1");
-  await expect(shown(page)).toHaveText(["Ana Babić · Grupa 2", "Iva Horvat · Grupa 2", "Luka Zorić · Grupa 2"]);
+  await expect(shown(page)).toHaveText(["Ana Babić, Grupa 2", "Iva Horvat, Grupa 2", "Luka Zorić, Grupa 2"]);
   const state = page.getByLabel("Stanje");
   await expect(state.locator("option")).toHaveText(["Sva stanja (3)", "Nije započelo (1)", "Piše (1)", "Predano (1)", "Nakon roka (1)", "Dorada (0)"]);
   // By keyboard: the arrow keys on the focused select choose, nothing else moves.
   await state.focus();
   await page.keyboard.press("ArrowDown");
   await expect(state).toHaveValue("notStarted");
-  await expect(shown(page)).toHaveText(["Luka Zorić · Grupa 2"]);
+  await expect(shown(page)).toHaveText(["Luka Zorić, Grupa 2"]);
   await state.selectOption("late");
-  await expect(shown(page)).toHaveText(["Ana Babić · Grupa 2"]);
+  await expect(shown(page)).toHaveText(["Ana Babić, Grupa 2"]);
   await state.selectOption("revision");
   await expect(page.getByText("Nijedan student ne odgovara odabranom prikazu.")).toBeVisible();
   await state.selectOption("");
   await page.getByLabel("Poredak").selectOption("state");
-  await expect(shown(page)).toHaveText(["Luka Zorić · Grupa 2", "Iva Horvat · Grupa 2", "Ana Babić · Grupa 2"]);
+  await expect(shown(page)).toHaveText(["Luka Zorić, Grupa 2", "Iva Horvat, Grupa 2", "Ana Babić, Grupa 2"]);
   await expect(page.getByTestId("n04-not-started")).toHaveText("Nije započelo: 1");
 });
 
@@ -212,7 +212,7 @@ test("NZ-13: a collaborator is told who issues the code and the state is not rea
 test("NZ-14: the card leads to the roles and the teaching team, and the holder adds an assistant", async ({ page }) => {
   const calls = await teacher(page);
   await page.goto("/aplikacija/nastavnik");
-  const toggle = page.getByRole("button", { name: `Nastavni tim i grupe · ${COURSE_NAME}` });
+  const toggle = page.getByRole("button", { name: `Nastavni tim i grupe, ${COURSE_NAME}` });
   await toggle.focus();
   await page.keyboard.press("Enter");
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -235,7 +235,7 @@ test("NZ-14: the card leads to the roles and the teaching team, and the holder a
 test("NZ-14: a collaborator sees the role and only the students of the own group", async ({ page }) => {
   await teacher(page, { role: "assistant" });
   await page.goto("/aplikacija/nastavnik");
-  await page.getByRole("button", { name: `Nastavni tim i grupe · ${COURSE_NAME}` }).click();
+  await page.getByRole("button", { name: `Nastavni tim i grupe, ${COURSE_NAME}` }).click();
   const roles = page.getByRole("region", { name: "Uloge na kolegiju" });
   await expect(roles).toContainText("Vaša uloga: suradnik.");
   await expect(roles).not.toContainText("dodaje administrator ustanove");
@@ -248,7 +248,7 @@ test("NZ-16: the package is prepared, becomes ready and is downloaded; the list 
   await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/merlin`);
   const chooser = page.getByLabel("Zadatak");
   await expect(chooser.locator("option")).toHaveText([
-    "Izmišljeni seminar · Seminarski rad · rok je prošao", "Izmišljeni završni rad · Završni rad",
+    "Izmišljeni seminar, Seminarski rad, rok je prošao", "Izmišljeni završni rad, Završni rad",
   ]);
   await expect(page.getByTestId("merlin-personal-data")).toHaveText("Datoteka sadrži imena studenata; čuvajte je prema pravilima fakulteta.");
   const table = page.getByRole("region", { name: "CSV popis" });
@@ -306,7 +306,7 @@ for (const width of [390, 1280]) {
       await page.goto(`/aplikacija/nastavnik/kolegiji/${K1}/studenti`);
       await setTheme();
       await page.getByLabel("Stanje").selectOption("late");
-      await expect(shown(page)).toHaveText(["Ana Babić · Grupa 2"]);
+      await expect(shown(page)).toHaveText(["Ana Babić, Grupa 2"]);
       expect(await axe(page)).toEqual([]);
       await noScroll();
 
@@ -314,7 +314,7 @@ for (const width of [390, 1280]) {
       await setTheme();
       const card = page.getByRole("region", { name: COURSE_NAME });
       await expect(card).toContainText("Vrijedi do 1. 12. 2099. u 23:59.");
-      await page.getByRole("button", { name: `Nastavni tim i grupe · ${COURSE_NAME}` }).click();
+      await page.getByRole("button", { name: `Nastavni tim i grupe, ${COURSE_NAME}` }).click();
       await expect(page.getByRole("region", { name: "Uloge na kolegiju" })).toBeVisible();
       expect(await axe(page)).toEqual([]);
       await card.getByRole("button", { name: `Opozovi kod: ${COURSE_NAME}` }).click();

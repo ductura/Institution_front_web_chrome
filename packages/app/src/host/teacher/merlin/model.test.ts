@@ -61,9 +61,9 @@ describe("NZ-16 option title and focus", () => {
   it("says the kind of work and a passed deadline in the option", async () => {
     const { choiceLabel } = await import("./model");
     expect(choiceLabel({ id: "a", title: "Kućno kompostiranje", workType: "essay", dueAt: "2026-11-01T22:59:00Z" }, NOW))
-      .toBe("Kućno kompostiranje · Esej · rok je prošao");
+      .toBe("Kućno kompostiranje, Esej, rok je prošao");
     expect(choiceLabel({ id: "a", title: "Prikaz članka", workType: "seminar_paper", dueAt: "2099-01-01T00:00:00Z" }, NOW))
-      .toBe("Prikaz članka · Seminarski rad");
+      .toBe("Prikaz članka, Seminarski rad");
     expect(choiceLabel({ id: "a", title: null }, NOW)).toBe("Naziv zadatka nije dostupan");
     expect(choiceLabel({ id: "a", title: "X", workType: "nepoznato", dueAt: "sutra" }, NOW)).toBe("X");
   });
@@ -71,8 +71,8 @@ describe("NZ-16 option title and focus", () => {
     const { choiceLabel } = await import("./model");
     const kinds = ["short_paper", "essay", "seminar_paper", "bachelor_thesis", "master_thesis", "specialist_thesis", "doctoral_thesis"];
     const labels = kinds.map((workType) => choiceLabel({ id: "a", title: "X", workType, dueAt: "2099-01-01T00:00:00Z" }, NOW));
-    expect(labels).toEqual(["X · Podnesak", "X · Esej", "X · Seminarski rad", "X · Završni rad", "X · Diplomski rad",
-      "X · Specijalistički rad", "X · Doktorski rad"]);
+    expect(labels).toEqual(["X, Podnesak", "X, Esej", "X, Seminarski rad", "X, Završni rad", "X, Diplomski rad",
+      "X, Specijalistički rad", "X, Doktorski rad"]);
   });
   it("carries the wish for focus only in the address of the chosen page", async () => {
     const { merlinHref, wantsChooserFocus } = await import("./model");
