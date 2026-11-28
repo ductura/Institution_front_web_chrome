@@ -22,10 +22,11 @@ export type NewCourseInput = {
 };
 
 export type FieldError =
-  | "nameRequired" | "nameTooLong" | "holderInvalid"
+  | "nameRequired" | "nameTooLong"
   | "groupsTooMany" | "groupTooLong" | "groupDuplicate";
 
-export type FieldErrors = Partial<Record<"name" | "academicYear" | "aiPolicy" | "holderId" | "groups", FieldError>>;
+/** holderId has no text of its own: the holder field says why no teacher can be chosen. */
+export type FieldErrors = Partial<Record<"name" | "academicYear" | "aiPolicy" | "groups", FieldError>> & { holderId?: "holderInvalid" };
 
 export const NAME_MAX = 160;
 export const GROUP_MAX = 80;
