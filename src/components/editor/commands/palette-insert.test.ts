@@ -70,6 +70,24 @@ describe("palette Umetni, Komentar and Pregled ispisa (ED-92)", () => {
     withdraw(); editor.destroy();
   });
 
+  it("offers Fraza only when the toolbar offers /fraza, and opens it once the palette has closed (ED-122)", () => {
+    vi.useFakeTimers();
+    const editor = editorWith(true);
+    expect(find(editor, "phrase").disabled).toBe(true);
+    const opened: string[] = [];
+    const withdraw = offerSlashCommands(editor, { fraza: () => opened.push("fraza") });
+    const item = find(editor, "phrase");
+    expect(item.disabled).toBe(false);
+    expect(item.hint).toBe("/fraza");
+    item.run!();
+    expect(opened).toEqual([]);
+    vi.runAllTimers();
+    expect(opened).toEqual(["fraza"]);
+    withdraw();
+    expect(find(editor, "phrase").disabled).toBe(true);
+    editor.destroy();
+  });
+
   it("asks for a comment on the selected text only", () => {
     const editor = editorWith(true);
     expect(find(editor, "comment").disabled).toBe(true);

@@ -88,4 +88,14 @@ export const bibliographyStudentHr = {
   copyCiteDone: "Navod: kopirano u međuspremnik.",
   copyCiteBlocked: "Međuspremnik nije dostupan u ovom prikazu.",
   copyCiteNone: "Navod se još ne može složiti: izvor je nepotpun ili još nema broj.",
+  // ED-117 (prototype sources2.js srcPlan): the chapters a source is meant for, kept on this device.
+  planTitle: "Planirano za poglavlja",
+  planNone: "nije planirano",
+  planAdd: "Dodaj poglavlje",
+  planPick: "Odaberite poglavlje",
+  planChip: (number: string) => `${number}. ×`,
+  planRemove: (number: string, label: string) => `Makni ${number}. poglavlje iz plana za ${label}`,
+  planChapter: (number: string, title: string) => `${number}. ${title}`,
+  planGaps: (n: number) => `Planirano za poglavlja, još nije citirano (${n})`,
+  planDevice: "Plan se čuva samo na ovom uređaju.",
 } as const;

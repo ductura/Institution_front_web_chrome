@@ -56,6 +56,7 @@ import { placeFromFlags, type ContextAction, type CursorPlace } from "./context-
 import { useOfferSlashCommands } from "../slash-commands";
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import { toolbarBehaviourHr } from "./messages.hr";
+import { selectionToFootnote, selectionToFootnoteHr } from "../footnote/selection-to-footnote";
 import { insertPhrase } from "../phrases/phrases";
 import { PhrasesDialog } from "../phrases/PhrasesDialog";
 import { listenCommentKey } from "./comment-key";
@@ -325,6 +326,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const convert: Item[] = [
     { id: "toQuote", label: t.toolbar.convertItems.toQuote, disabled: !writeOk || state.quote },
     { id: "fromQuote", label: t.toolbar.convertItems.fromQuote, disabled: !writeOk || !state.quote },
+    { id: "toFootnote", label: selectionToFootnoteHr.label, disabled: !writeOk },
   ];
   const chars = [...recent, ...SPECIAL_CHARS.filter((ch) => !recent.includes(ch))]
     .map((ch): Item => ({ id: `char:${ch}`, label: `${glyphOf(ch)}  ${t.toolbar.specialChars[ch] ?? ""}`, disabled: !writeOk }));
@@ -362,6 +364,11 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       }} />
       <Menu label={t.toolbar.convert} items={convert} onSelect={(id) => {
         if (id === "toQuote" || id === "fromQuote") convertBlock(editor, id === "toQuote" ? "quote" : "paragraph");
+        // ED-95: after the menu has given the focus back, as the prototype's toFn.
+        else if (id === "toFootnote" && writeOk) setTimeout(() => {
+          const done = selectionToFootnote(editor, confirmedWorkSchemaVersion);
+          if (done !== "done") toast(selectionToFootnoteHr[done], "error");
+        }, 0);
       }} />
       <Menu label={t.toolbar.specialChar} items={chars} onSelect={(id) => {
         const ch = id.slice("char:".length);
