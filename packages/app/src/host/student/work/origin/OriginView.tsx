@@ -43,9 +43,10 @@ function Body({ read, onRetry }: { read: OriginRead | null; onRetry: () => void 
         {shareRows(read.composition).map((row) => <li key={row.kind} data-kind={row.kind}>{row.label}</li>)}
       </ul>
       {unknown !== null && (
-        <p data-unknown-notice>
-          <strong>{unknown}</strong> {t.unknownNotice}
-        </p>
+        <div data-unknown-notice>
+          <p><strong>{unknown}</strong></p>
+          <p className="note">{t.unknownNotice}</p>
+        </div>
       )}
     </>
   );
