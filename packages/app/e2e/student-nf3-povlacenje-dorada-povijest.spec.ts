@@ -63,7 +63,7 @@ for (const width of [390, 1280]) {
       const list = main(page).getByTestId("my-submissions");
       await expect(main(page).getByRole("heading", { name: "Moje predaje" })).toBeVisible();
       await expect(list.locator("> li")).toHaveCount(2);
-      await expect(list.locator("> li").first()).toContainText("Predaja 2 · ");
+      await expect(list.locator("> li").first()).toContainText("Predaja 2, ");
       await expect(list.locator("> li").first()).toContainText("Trenutno važeća predaja.");
       await expect(list.locator("> li").nth(1)).toContainText(/Povučena \d{1,2}\. \d{1,2}\. \d{4}\. u \d{2}:\d{2}\./);
       await expect(list.getByRole("button", { name: "Preuzmi potvrdu povlačenja predaje 1" })).toBeVisible();
@@ -207,7 +207,7 @@ test("PRE-R05: withdrawal, the work writable again, a second submission: a new r
   await page.getByRole("dialog", { name: "Povući predaju?" }).getByRole("button", { name: "Povuci predaju" }).click();
   await expect(main(page).getByRole("heading", { name: "Predaja je povučena" })).toBeVisible();
   await expect(list.locator("> li")).toHaveCount(1);
-  await expect(list.locator("> li").first()).toContainText("Predaja 1 · ");
+  await expect(list.locator("> li").first()).toContainText("Predaja 1, ");
   await expect(list.locator("> li").first()).toContainText(/Povučena \d{1,2}\. \d{1,2}\. \d{4}\. u \d{2}:\d{2}\./);
 
   // The editor is open for writing again.
@@ -220,9 +220,9 @@ test("PRE-R05: withdrawal, the work writable again, a second submission: a new r
   await expect(main(page).getByText("Predano 5. 11. 2026. u 23:59", { exact: true })).toBeVisible();
   await expect(main(page).getByRole("button", { name: "Povuci predaju", exact: true })).toBeVisible();
   await expect(list.locator("> li")).toHaveCount(2);
-  await expect(list.locator("> li").first()).toContainText("Predaja 2 · ");
+  await expect(list.locator("> li").first()).toContainText("Predaja 2, ");
   await expect(list.locator("> li").first()).toContainText("Trenutno važeća predaja.");
-  await expect(list.locator("> li").nth(1)).toContainText("Predaja 1 · ");
+  await expect(list.locator("> li").nth(1)).toContainText("Predaja 1, ");
   await expect(list.locator("> li").nth(1)).toContainText(/Povučena /);
   expect(calls.filter((c) => c.endsWith("/submission/withdrawal"))).toHaveLength(1);
   await axe(page, info, "ponovna-predaja");

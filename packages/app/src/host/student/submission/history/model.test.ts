@@ -53,15 +53,15 @@ describe("Moje predaje (E-11c)", () => {
     if (read.kind !== "ready") throw new Error("ready expected");
     const rows = historyRows(read.history.events);
     expect(rows.map((r) => r.attempt)).toEqual([2, 1]);
-    expect(rows[0]).toMatchObject({ line: "Predaja 2 · 20. 12. 2026. u 23:05", state: { kind: "current" } });
-    expect(rows[1]).toMatchObject({ line: "Predaja 1 · 20. 12. 2026. u 22:14", state: { kind: "withdrawn", line: "Povučena 20. 12. 2026. u 22:40." } });
+    expect(rows[0]).toMatchObject({ line: "Predaja 2, 20. 12. 2026. u 23:05", state: { kind: "current" } });
+    expect(rows[1]).toMatchObject({ line: "Predaja 1, 20. 12. 2026. u 22:14", state: { kind: "withdrawn", line: "Povučena 20. 12. 2026. u 22:40." } });
     expect(lastIsWithdrawal(read.history.events)).toBe(false);
   });
 
   it("marks a late submission and says when the newest event is a withdrawal", () => {
     const events = [sub(1, A, "2026-12-21T10:00:00.000Z", true), wd(1, A, "2026-12-21T11:00:00.000Z")];
     expect(historyRows(events)).toEqual([
-      expect.objectContaining({ line: "Predaja 1 · 21. 12. 2026. u 11:00 · nakon roka", state: { kind: "withdrawn", line: "Povučena 21. 12. 2026. u 12:00.", receipt: null } }),
+      expect.objectContaining({ line: "Predaja 1, 21. 12. 2026. u 11:00, nakon roka", state: { kind: "withdrawn", line: "Povučena 21. 12. 2026. u 12:00.", receipt: null } }),
     ]);
     expect(lastIsWithdrawal(events)).toBe(true);
   });
