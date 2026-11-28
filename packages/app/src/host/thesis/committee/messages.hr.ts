@@ -21,8 +21,8 @@ export const committeeHr = {
     saving: "Spremanje…",
     empty: "Popis je prazan.",
   },
-  saved: "Povjerenstvo je spremljeno.",
-  unchanged: "Popis se nije promijenio, ništa nije spremljeno.",
+  saved: "Povjerenstvo je spremljeno na poslužitelju.",
+  unchanged: "Popis se nije promijenio, ništa nije spremljeno na poslužitelju.",
   problems: {
     tooMany: "Povjerenstvo može imati najviše 5 članova.",
     manyChairs: "Povjerenstvo može imati najviše jednog predsjednika.",
@@ -32,7 +32,7 @@ export const committeeHr = {
     invalid: "Poslužitelj nije prihvatio popis. Članovi moraju biti potvrđeni nastavnici ove ustanove.",
     forbidden: "Povjerenstvo može imenovati samo administrator ustanove.",
     notFound: "Ovaj rad nije dostupan.",
-    unknown: "Nije poznato je li popis spremljen. Osvježite prikaz prije ponovnog pokušaja.",
+    unknown: "Nije poznato je li popis spremljen na poslužitelju. Osvježite prikaz prije ponovnog pokušaja.",
     candidates: "Popis nastavnika trenutačno nije dostupan.",
   },
 } as const;

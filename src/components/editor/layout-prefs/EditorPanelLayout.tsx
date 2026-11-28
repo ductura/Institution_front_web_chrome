@@ -17,8 +17,9 @@ import { LeftPanel, type LeftSections } from "./LeftPanel";
 import { PanelSettings } from "./PanelSettings";
 import { FOCUS_MODE_EVENT, togglesFocus } from "./focus-mode";
 import { OPEN_PANEL_EVENT, requestedPanel } from "./open-panel";
-import { DEFAULT_PREFERENCES, effectiveLayout, readPreferences, rowShows, writePreferences, type LayoutPreferences, type Side } from "./preferences";
+import { DEFAULT_PREFERENCES, effectiveLayout, readPreferences, rowShows, visibleGroups, writePreferences, type LayoutPreferences, type Side } from "./preferences";
 import { RightPanel, type PanelGroup, type RightSections } from "./RightPanel";
+import { STRUCTURE_RAIL_EVENT, togglesRail } from "./structure-rail";
 
 const w = messagesHr.workspace;
 const serverSnapshot = () => false;
@@ -105,6 +106,35 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
     };
   }, [focus]);
 
+  // ED-112: Ctrl+\ and the palette's "Struktura rada" show or hide the structure, as its button does.
+  // In focus mode the structure is hidden with everything else, so asking for it leaves focus mode
+  // and shows it, rather than changing something the person cannot see.
+  useEffect(() => {
+    const toggle = () => {
+      const narrow = railQuery.snapshot();
+      if (focus) {
+        setFocus(false);
+        if (narrow) setDrawer("left"); else setRailVisible(true);
+        return;
+      }
+      if (narrow) setDrawer((open) => open === "left" ? null : "left");
+      else setRailVisible((visible) => !visible);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      // The structure's own drawer is a modal dialog too; Ctrl+\ closes it, any other dialog keeps the key.
+      const own = drawer === "left" && railQuery.snapshot() ? 1 : 0;
+      if (!togglesRail(event, document.querySelectorAll("dialog:modal").length > own)) return;
+      event.preventDefault();
+      toggle();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener(STRUCTURE_RAIL_EVENT, toggle);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener(STRUCTURE_RAIL_EVENT, toggle);
+    };
+  }, [focus, drawer]);
+
   // ED-45: a mark's popover or the chapter sheet asks for a group ("Poveži u Literaturi" → Literatura).
   useEffect(() => {
     const onRequest = (event: Event) => {
@@ -138,7 +168,7 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
     settings={<PanelSettings side="left" value={prefs.left} onChange={(value) => setSide("left", value)}
       width={sizes.rail} onWidth={pickWidth("rail")} />} />);
   const sections = renderWork ? { ...rightSections, work: renderWork(close) } : rightSections;
-  const right = withDensity("right", <RightPanel layout={rightLayout} sections={sections} drawer={narrowPanel} footer={rightFooter}
+  const right = withDensity("right", <RightPanel layout={rightLayout} sections={sections} drawer={narrowPanel} groups={visibleGroups(prefs.right)} footer={rightFooter}
     selection={rightLayout === "b" ? contextView : selection} onSelect={rightLayout === "b" ? setContextView : setSelection}
     settings={<PanelSettings side="right" value={prefs.right} onChange={(value) => setSide("right", value)}
       width={sizes.panel} onWidth={pickWidth("panel")} />} />);
@@ -146,6 +176,7 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
   return <EditorShellFrame className={styles.workspace} focus={focus} style={vars}
     header={<>
       <Button tone="quiet" aria-label={w.structureLabel} aria-expanded={narrowRail ? drawer === "left" : railVisible}
+        aria-keyshortcuts="Control+\ Meta+\"
         onClick={() => narrowRail ? setDrawer("left") : setRailVisible(!railVisible)}>
         <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
           <path d="M3 4.5h12M3 9h8M3 13.5h10" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" />

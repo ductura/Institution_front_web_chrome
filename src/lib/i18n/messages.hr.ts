@@ -22,12 +22,17 @@ export const editorPanelLayoutsHr = {
   same: "Kao na računalu",
   density: "Gustoća",
   densities: { airy: "Prozračno", dense: "Zbijeno" },
+  // ED-116: where the comment and review lists of the right panel open.
+  listScope: "Popisi prvo pokazuju",
+  listScopes: { chapter: "Ovo poglavlje", all: "Cijeli rad" },
   // ED-37 (P2-6): the chapter row parts, as in the prototype "Prilagodi panel".
   row: "U retku poglavlja",
   rowParts: { words: "Broj riječi", status: "Točka stanja", flags: "Napomene „za popraviti”" },
   // ED-70: "Potpoglavlja" and "Donji dijelovi", as in the prototype "Prilagodi panel".
   subModes: { open: "Rasklopljena", closed: "Sklopljena", active: "Samo u aktivnom" },
   parts: "Donji dijelovi",
+  // ED-118: the right panel's groups, as in the prototype "Prilagodi desni panel".
+  groupParts: "Dijelovi panela i redoslijed",
   moveUp: (label: string) => `Pomakni gore: ${label}`,
   moveDown: (label: string) => `Pomakni dolje: ${label}`,
   width: "Širina na računalu",

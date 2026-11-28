@@ -69,7 +69,7 @@ describe("Predložak etapa", () => {
     const put = calls.filter((c) => c.method === "PUT");
     expect(put).toHaveLength(1);
     expect(put[0]!.body).toEqual({ expectedVersion: 1, requireFinalStageApproval: false, milestones: [{ title: "Prijedlog teme", relativeDue: 30, submits: "topic_text" }] });
-    expect(text()).toContain("spremljen kao verzija 2");
+    expect(text()).toContain("spremljen na poslužitelju kao verzija 2");
   });
 
   it("ne dopušta 21. etapu i ne šalje nepromijenjen predložak", async () => {

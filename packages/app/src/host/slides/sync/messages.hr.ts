@@ -11,7 +11,7 @@ export const slidesSyncText = {
   signedOutBody: "Prijavite se ponovno kako biste nastavili s radom.",
   stoppedNote: "Zapis promjena je prekinut. Slajdovi se i dalje spremaju na ovom uređaju, ali poslužitelj ih više ne preuzima.",
   refusedNote: "Poslužitelj nije preuzeo zadnju promjenu. Ponovno učitajte stranicu da se pošalje ponovno.",
-  recoveryTitle: "Potrebna je odluka o spremljenoj verziji",
+  recoveryTitle: "Potrebna je odluka o verziji na poslužitelju",
   recoveryBody: "Verzija na ovom uređaju i verzija na poslužitelju se razlikuju. Prikazana je verzija s ovog uređaja i ne mijenja se.",
   adopt: "Preuzmi verziju s poslužitelja",
   adoptNote: "Verzija s ovog uređaja ostaje sačuvana na uređaju kao kopija.",

@@ -5,11 +5,17 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { citationRange, insertCitation } from "../citations/citation-document";
 import { requestFocusMode } from "../layout-prefs/focus-mode";
+import { requestStructureRail } from "../layout-prefs/structure-rail";
 import { documentSources } from "../sources/proofs/proof-sources";
 import { requestWorkHistory, workHistoryOffered } from "./work-history-event";
 import { BLOCK_STYLES, stateOf, TOOLS } from "../EditorToolbarFor";
 import { convertBlock, copyText, insertHole } from "../toolbar-menu";
 import { editorCommandsHr as text } from "./messages.hr";
+import { requestPanel } from "../layout-prefs/open-panel";
+import { askPrintPreview } from "../print-export/print-event";
+import { askComment } from "../../../../packages/app/src/host/editor/comments/ask-comment";
+import { slashCommandsOf } from "../../../../packages/app/src/host/editor/slash-commands";
+import { insertSourceAction } from "../../../../packages/app/src/host/editor/sources-mention/new-source-request";
 
 type Action = Command & { run?: () => void };
 
@@ -27,6 +33,10 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
   const edit = (fn: () => void) => () => {
     if (!editor.isDestroyed && editor.isEditable) fn();
   };
+  // ED-92: what Umetni offers runs from here too, through the same doors; the palette closes first (later()).
+  const offered = slashCommandsOf(editor);
+  const later = (fn?: () => void) => fn && (() => { setTimeout(fn, 0); });
+  const selected = !editor.state.selection.empty;
   const commands = [
     action("shortcuts", text.shortcuts, showShortcuts, "Ctrl+/"),
     action("find", text.findAndReplace, openFind, "Ctrl+F"),
@@ -41,13 +51,19 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
       !state.editable || editor.state.selection.empty),
     action("hole", t.toolbar.insertItems.hole, edit(() => insertHole(editor)), undefined, !state.editable),
     action("copy", text.copyWork, () => { void copyText(editor); }),
-    ...(["cite", "newSource", "table", "image", "footnote", "xref", "phrase"] as const)
-      .map((key) => action(key, t.toolbar.insertItems[key])),
-    action("comment", text.comment),
+    action("cite", t.toolbar.insertItems.cite, edit(() => insertSourceAction(editor, "cite")), "@", !state.editable),
+    action("newSource", t.toolbar.insertItems.newSource, edit(() => insertSourceAction(editor, "newSource")), undefined, !state.editable),
+    ...(["table", "image"] as const).map((key) => action(key, t.toolbar.insertItems[key])),
+    action("footnote", t.toolbar.insertItems.footnote, later(offered.fusnota), "/fusnota", !state.editable || !offered.fusnota),
+    action("xref", t.toolbar.insertItems.xref, later(offered.ref), "/ref", !state.editable || !offered.ref),
+    action("phrase", t.toolbar.insertItems.phrase),
+    // A comment stands on the selected text, as the selection bubble's Komentar.
+    action("comment", text.comment, edit(() => { requestPanel("comments"); askComment(""); }), text.selectedText,
+      !state.editable || !selected),
     action("focus", text.focus, () => requestFocusMode(), "Ctrl+."),
-    action("outline", text.outline, undefined, "Ctrl+\\"),
+    action("outline", text.outline, () => requestStructureRail(), "Ctrl+\\"),
     action("docx", t.toolbar.exportItems.docx),
-    action("print", t.toolbar.exportItems.print),
+    action("print", t.toolbar.exportItems.print, () => { askPrintPreview(); }),
   ];
   return [
     // ED-46 (P2-18): a submitted work lists only what it still allows, not a page of disabled writing tools.

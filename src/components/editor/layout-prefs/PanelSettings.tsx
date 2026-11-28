@@ -7,7 +7,8 @@ import { editorPanelLayoutsHr as t } from "@/lib/i18n/messages.hr";
 
 import { DEFAULT_SETTINGS, type PanelSize } from "../layout/layout-settings";
 import {
-  DEFAULT_PREFERENCES, LAYOUTS, partOrder, ROW_PARTS, rowShows, SUB_MODES, withPartMoved, withPartShown, withRowPart, withSubs,
+  DEFAULT_PREFERENCES, groupOrder, LAYOUTS, LIST_SCOPES, partOrder, ROW_PARTS, rowShows, SUB_MODES, visibleGroups, withGroupMoved,
+  withGroupShown, withPartMoved, withPartShown, withRowPart, withScope, withSubs,
   type LayoutPreferences, type Side,
 } from "./preferences";
 import styles from "../SidePanels.module.css";
@@ -58,6 +59,28 @@ export function PanelSettings({ side, value, onChange, width, onWidth }: {
             {mobile === "same" ? t.same : labels[mobile]}
           </Button>)}
         </fieldset>
+        {side === "right" && <fieldset className={styles.mobileChoices}>
+          <legend>{t.listScope}</legend>
+          {LIST_SCOPES.map((scope) => <Button key={scope} tone="quiet" aria-pressed={scope === (value.scope ?? "chapter")}
+            onClick={() => onChange(withScope(value, scope))}>
+            {t.listScopes[scope]}
+          </Button>)}
+        </fieldset>}
+        {side === "right" && <fieldset className={styles.mobileChoices}>
+          <legend>{t.groupParts}</legend>
+          {groupOrder(value).map((group, index, order) => {
+            const shown = !(value.hideGroups?.includes(group) ?? false);
+            const label = t.groups[group];
+            return <div key={group} className={styles.partRow}>
+              <Checkbox label={label} checked={shown} disabled={shown && visibleGroups(value).length === 1}
+                onChange={(event) => onChange(withGroupShown(value, group, event.currentTarget.checked))} />
+              <Button tone="quiet" aria-label={t.moveUp(label)} disabled={index === 0}
+                onClick={() => onChange(withGroupMoved(value, group, -1))}><span aria-hidden="true">↑</span></Button>
+              <Button tone="quiet" aria-label={t.moveDown(label)} disabled={index === order.length - 1}
+                onClick={() => onChange(withGroupMoved(value, group, 1))}><span aria-hidden="true">↓</span></Button>
+            </div>;
+          })}
+        </fieldset>}
         <fieldset className={styles.mobileChoices}>
           <legend>{t.density}</legend>
           {([false, true] as const).map((dense) => <Button key={String(dense)} tone="quiet"

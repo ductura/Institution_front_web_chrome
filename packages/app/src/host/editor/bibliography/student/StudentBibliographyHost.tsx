@@ -6,12 +6,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { useLocalEditor } from "@/components/editor/LocalDocument";
 import { scanBarcode, type ScanResult } from "./barcode";
 import {
-  bibSources, citePlaces, missingFields, overviewRows, possibleDuplicates, relianceNotes, sourceStats,
+  bibSources, citePlaces, missingFields, overviewRows, possibleDuplicates, relianceNotes, sourcesByChapter, sourceStats,
   type BibSource, type CitePlace,
 } from "./bibliography-model";
 import styles from "./StudentBibliography.module.css";
 import { planImport } from "./import-refs";
-import { defaultEffectiveStyle, effectiveStyle, styledLiterature, type EffectiveStyle } from "./styled-entries";
+import { citationToCopy, defaultEffectiveStyle, effectiveStyle, styledLiterature, type EffectiveStyle } from "./styled-entries";
 import { RecommendedSources } from "../../proof-requests/ProofRequests";
 import { RequiredLiterature } from "../../sources-mention/RequiredLiterature";
 import { useInstitutionStyle } from "../../citation-styles/use-institution-style";
@@ -35,11 +35,30 @@ const MAX_FILE = 1_000_000;
 export function StudentBibliographyHost(props: Props) {
   const [open, setOpen] = useState(false);
   return <Details summary={t.heading} onToggle={(event) => setOpen(event.currentTarget.open)}>
-    {open && <Bibliography {...props} />}
+    {open && (props.assignmentId === undefined
+      ? <Bibliography {...props} shown={defaultEffectiveStyle()} />
+      : <BibliographyLive {...props} assignmentId={props.assignmentId} />)}
   </Details>;
 }
 
-function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId }: Props) {
+/** Reads the institution's style once, for both the styled list and "Kopiraj navod". */
+function BibliographyLive(props: Props & { assignmentId: string }) {
+  const read = useInstitutionStyle(props.assignmentId);
+  return <Bibliography {...props} shown={effectiveStyle(read)} />;
+}
+
+/** ED-106 (prototype copyCite): copies the in-text citation; a blocked clipboard says so, as the prototype. */
+async function copyCite(text: string | null, say: (m: string) => void) {
+  if (text === null) return say(t.copyCiteNone);
+  try {
+    await navigator.clipboard.writeText(text);
+    say(t.copyCiteDone);
+  } catch {
+    say(t.copyCiteBlocked);
+  }
+}
+
+function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId, shown: style }: Props & { shown: EffectiveStyle }) {
   const [doc, setDoc] = useState(() => (editor.isDestroyed ? null : editor.state.doc));
   useEffect(() => {
     const sync = () => setDoc(editor.isDestroyed ? null : editor.state.doc);
@@ -54,6 +73,7 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId 
   const reliance = useMemo(() => relianceNotes(sources, places), [sources, places]);
   const incomplete = useMemo(() => sources.map((s) => ({ s, missing: missingFields(s.raw) })).filter((x) => x.missing.length > 0), [sources]);
   const doubles = useMemo(() => possibleDuplicates(sources), [sources]);
+  const chapters = useMemo(() => sourcesByChapter(json), [json]);
 
   const [states, setStates] = useState<SourceStates>(() => readStates(documentId));
   const [filter, setFilter] = useState<"all" | "get" | "unread">("all");
@@ -129,10 +149,21 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId 
           {([["get", t.stateGet], ["have", t.stateHave], ["read", t.stateRead]] as const).map(([v, label]) =>
             <Button key={v} tone="quiet" aria-pressed={states[s.id] === v} disabled={!editable}
               onClick={() => setState(s.id, v)}>{label}</Button>)}
+          <Button tone="quiet" onClick={() => void copyCite(citationToCopy(json, style.style, s.id), setMessage)}>{t.copyCite}</Button>
         </div>
         {s.places.length > 0 && <Where places={s.places} onJump={jump} onNext={() => next(s.id, s.places)} />}
       </li>)}
     </ul>
+
+    {chapters.length > 0 && <Details summary={t.byChapter}>
+      <ul className={styles.list} data-sources-by-chapter>
+        {chapters.map((c) => <li key={c.id} className={styles.item}>
+          <strong>{c.number ? `${c.number} ${c.title}` : c.title}</strong>
+          <small>{c.labels.length ? c.labels.join(", ") : t.byChapterNone}</small>
+        </li>)}
+      </ul>
+      <p><small>{t.byChapterNote}</small></p>
+    </Details>}
 
     {(incomplete.length > 0 || doubles.length > 0) && <Details summary={t.incomplete(incomplete.length + doubles.length)}>
       <ul className={styles.list}>
@@ -146,7 +177,7 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId 
     <Button tone="quiet" onClick={() => setOverviewOpen(true)}>{t.overview}</Button>
     <Overview open={overviewOpen} onClose={() => setOverviewOpen(false)} stats={stats} showProofs={Boolean(proofCounts)} />
     <ImportRefs editor={editor} sources={sources} editable={editable} />
-    <StyledList json={json} sources={sources} assignmentId={assignmentId} />
+    <StyledView json={json} sources={sources} shown={style} />
     <Unavailable assignmentId={assignmentId} courseId={courseId} />
     <p role="status">{message}</p>
   </div>;
@@ -182,16 +213,7 @@ function Overview({ open, onClose, stats, showProofs }: { open: boolean; onClose
 
 type StyledProps = { json: Parameters<typeof styledLiterature>[0]; sources: readonly BibSource[] };
 
-/** Without an assignment there is no institution style to read: the default FPZG style, no request. */
-function StyledList({ assignmentId, ...rest }: StyledProps & { assignmentId: string | undefined }) {
-  return assignmentId === undefined ? <StyledView {...rest} shown={defaultEffectiveStyle()} /> : <StyledLive {...rest} assignmentId={assignmentId} />;
-}
-
-function StyledLive({ assignmentId, ...rest }: StyledProps & { assignmentId: string }) {
-  const read = useInstitutionStyle(assignmentId);
-  return <StyledView {...rest} shown={effectiveStyle(read)} />;
-}
-
+/** Without an assignment there is no institution style to read: the default FPZG style, no request (see StudentBibliographyHost). */
 function StyledView({ json, sources, shown }: StyledProps & { shown: EffectiveStyle }) {
   const out = useMemo(() => styledLiterature(json, shown.style), [json, shown.style]);
   const label = (id: string) => sources.find((s) => s.id === id)?.label ?? id;

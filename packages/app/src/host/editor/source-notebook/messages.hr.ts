@@ -32,10 +32,10 @@ export const sourceNotebookHr = {
   formNote: "Bilješka",
   needSource: "Odaberite izvor.",
   needText: "Upišite citat, stranicu ili bilješku.",
-  saved: "Bilješka je spremljena.",
+  saved: "Bilješka je spremljena na poslužitelju.",
   removed: "Bilješka je obrisana.",
-  invalid: "Bilješka nije spremljena. Provjerite duljinu i znakove u poljima.",
+  invalid: "Bilješka nije spremljena na poslužitelju. Provjerite duljinu i znakove u poljima.",
   notFound: "Bilješka više ne postoji. Popis je ponovno učitan.",
-  saveFailed: "Bilješka trenutačno nije spremljena. Pokušajte ponovno.",
+  saveFailed: "Bilješka trenutačno nije spremljena na poslužitelju. Pokušajte ponovno.",
   removeFailed: "Bilješka trenutačno nije obrisana. Pokušajte ponovno.",
 } as const;

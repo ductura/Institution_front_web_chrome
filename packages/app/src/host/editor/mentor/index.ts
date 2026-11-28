@@ -1,3 +1,4 @@
+export { DefensePanel } from "./DefensePanel";
 export { MentorCard, type MentorCardProps } from "./MentorCard";
 export type { Role, WorkState } from "./mentor-model";
 export { OwnPanel, type ReadingPlace, type ReadingPort, type ReadingWrite } from "./OwnPanel";

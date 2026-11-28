@@ -18,7 +18,7 @@ export const mentorWorkHr = {
   older: "Učitaj starije verzije",
   close: "Zatvori",
   event: {
-    checkpoint: "Spremljena verzija",
+    checkpoint: "Verzija na poslužitelju",
     submission: "Rad predan",
     request: "Zatražene konzultacije",
     requested: "Zatraženi termin konzultacija",

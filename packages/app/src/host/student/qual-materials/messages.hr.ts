@@ -40,7 +40,7 @@ export const qualMaterialsText = {
   fieldTitle: "Naslov",
   fieldKind: "Vrsta",
   fieldText: "Tekst",
-  fieldTextHint: "Upišite ili zalijepite tekst, do 100 000 znakova. Zvuk se ne prenosi i ne prepisuje se automatski.",
+  fieldTextHint: "Upišite ili zalijepite tekst, do 100 000 znakova. Zvuk se ne prenosi i ne pretvara se automatski u tekst.",
   save: "Dodaj gradivo",
   saving: "Sprema se…",
   saved: "Gradivo je dodano.",
