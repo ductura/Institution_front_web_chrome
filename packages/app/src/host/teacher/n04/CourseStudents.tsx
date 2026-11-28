@@ -147,7 +147,7 @@ export default function CourseStudents({ courseId, port = unavailablePort, assis
           <ul className="list" role="list">
             {shown.map((student) => (
               <li key={student.studentId} className="item" data-testid="n04-student">
-                <span className="title">{student.name ?? text.noName}{student.group ? ` · ${student.group}` : ""}</span>
+                <span className="title">{student.name ?? text.noName}{student.group ? `, ${student.group}` : ""}</span>
                 {student.works.length === 0 && <span className="note">{text.noWorks}</span>}
                 {student.works.map((work) => {
                   const waits = revisionLine(work);

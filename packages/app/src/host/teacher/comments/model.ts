@@ -18,8 +18,8 @@ export function revisionLabel(revision: number | null): string | null {
   return revision === null ? null : t.revision.replace("{n}", String(revision));
 }
 
-/** Entry author line: „Vi · 3. 11. 2026. u 9:15” (own entries are „Vi”, never a name). */
+/** Entry author line: „Vi, 3. 11. 2026. u 9:15” (own entries are „Vi”, never a name). */
 export function entryWho(comment: Pick<ThreadComment, "isOwn" | "role" | "createdWindow">): string {
   const who = comment.isOwn ? t.own : comment.role === "teacher" ? t.teacher : t.student;
-  return `${who} · ${formatDateTimeHr(comment.createdWindow)}`;
+  return `${who}, ${formatDateTimeHr(comment.createdWindow)}`;
 }

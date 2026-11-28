@@ -33,7 +33,7 @@ describe("student's Podrijetlo teksta with the assistant match", () => {
   it("composition ready, match found: the share once and the attached conversation, under an h2", async () => {
     const { host, calls, section } = await mount(readOfParts(parts(4)), { kind: "ready", percent: 4, findings: [FAKE_FINDING] });
     expect(calls).toEqual([DOCUMENT]);
-    expect(host.textContent?.split(`${LABEL} · 4 %`)).toHaveLength(2);
+    expect(host.textContent?.split(`${LABEL}, 4 %`)).toHaveLength(2);
     expect(section?.querySelector("[data-assistant-match-share]")).toBeNull();
     expect(section?.querySelectorAll("tbody tr")).toHaveLength(1);
     expect(section?.querySelector("h2")).not.toBeNull();

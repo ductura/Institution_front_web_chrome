@@ -18,7 +18,7 @@ export const n11Messages = {
   wordsNote: "Broj riječi je opis, bez boje i bez praga.",
   addedLabel: "Dodano",
   removedLabel: "Uklonjeno",
-  current: (when: string, revision: number): string => `Predana verzija · ${when} · verzija ${revision}`,
-  option: (when: string, revision: number): string => `Poslano na pregled · ${when} · verzija ${revision}`,
+  current: (when: string, revision: number): string => `Predana verzija, ${when}, verzija ${revision}`,
+  option: (when: string, revision: number): string => `Poslano na pregled, ${when}, verzija ${revision}`,
   words: (n: number): string => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "riječ" : "riječi"}`,
 } as const;

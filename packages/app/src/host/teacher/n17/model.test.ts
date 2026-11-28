@@ -21,7 +21,7 @@ describe("N-17 model", () => {
     expect(recordText(rows[1]!)).toBe("nema");
   });
   it("shows the revision as text and unavailable when the read omits it", () => {
-    expect(revisionText(rows[0]!)).toBe("zatražena · otvorena");
+    expect(revisionText(rows[0]!)).toBe("zatražena, otvorena");
     expect(revisionText(rows[1]!)).toBe("nije zatražena");
     expect(revisionText(rows[2]!)).toBe("nedostupno");
   });

@@ -89,4 +89,20 @@ describe("useFormulaHost", () => {
     expect(api().availability).toMatchObject({ enabled: false });
     expect(api().open("inline")).toBe(false);
   });
+  it("ED-128: opens the inline dialog with \\ce{H2SO4} in a field with chemistry and saves it", async () => {
+    const { api } = await render(4, ["chem"]);
+    expect(api().availability.enabled).toBe(false);
+    expect(api().chem.enabled).toBe(true);
+    await act(async () => { api().openChem(); });
+    expect(document.querySelector("textarea")!.value).toBe("\\ce{H2SO4}");
+    await act(async () => { button("Spremi")!.click(); });
+    const found: string[] = [];
+    editor!.state.doc.descendants((n) => { if (n.type.name === "inlineFormula") found.push(String(n.attrs.tex)); });
+    expect(found).toEqual(["\\ce{H2SO4}"]);
+  });
+  it("ED-128: no chemistry in a field without the chem tool", async () => {
+    const { api } = await render(4, ["formula"]);
+    expect(api().chem).toMatchObject({ enabled: false, reason: "Područje ovog rada ne nudi kemijske formule." });
+    expect(api().openChem()).toBe(false);
+  });
 });

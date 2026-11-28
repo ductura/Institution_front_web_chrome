@@ -49,11 +49,11 @@ export function assignmentOf(query: string | null): string | null {
 }
 
 /**
- * NZ-1: the assignments of the teacher's courses for the chooser "Zadatak" ("Kolegij · Naslov · rok …"), in the
+ * NZ-1: the assignments of the teacher's courses for the chooser "Zadatak" ("Kolegij, Naslov, rok …"), in the
  * order of teacher.courses.get. Without `?zadatak=` the page shows the first one of them.
  */
 export function fastPathTasks(courses: readonly Pick<TeacherCourse, "name" | "assignments">[], now: number): readonly { value: string; label: string }[] {
-  return courses.flatMap((course) => course.assignments.map((a) => ({ value: a.id, label: `${course.name} · ${taskOptionLabel(a, now)}` })));
+  return courses.flatMap((course) => course.assignments.map((a) => ({ value: a.id, label: `${course.name}, ${taskOptionLabel(a, now)}` })));
 }
 
 /** The page of one assignment's works. */

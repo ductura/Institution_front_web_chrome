@@ -54,7 +54,7 @@ export const roundText = {
   requestsTitle: "Vaši zahtjevi uz tekst",
   noRequests: "Nema zahtjeva uz tekst.",
   requests: (open: number, answered: number, accepted: number) =>
-    `otvoreno ${open} · student je odgovorio ${answered} · prihvaćeno ${accepted}`,
+    `otvoreno ${open}, student je odgovorio ${answered}, prihvaćeno ${accepted}`,
   requestsUnavailable: "Zahtjevi uz tekst trenutačno nisu dostupni.",
   seen: (seen: number, all: number) => `Student je vidio ${seen} od ${all} zahtjeva uz tekst.`,
   seenUnavailable: "Je li student vidio zahtjeve uz tekst, trenutačno nije dostupno.",
@@ -93,7 +93,7 @@ export const mentorPlanText = {
     unknown: "Nije poznato je li mentorstvo otvoreno. Osvježite stranicu prije novog pokušaja.",
   },
   work: "Etape i dogovoreno: {name}",
-  workLabel: "Etape i dogovoreno: {name} · „{title}”",
+  workLabel: "Etape i dogovoreno: {name}, „{title}”",
   plan: {
     template: "Primijeni predložak fakulteta",
     templateTitle: "Primijeniti predložak fakulteta?",
@@ -125,7 +125,7 @@ export const mentorPlanText = {
     unavailable: "Zapisnik trenutačno nije dostupan.",
     retry: "Pokušaj ponovno",
     empty: "Nema zapisa s konzultacija.",
-    last: "Zadnje konzultacije: {date} · {topic}",
+    last: "Zadnje konzultacije: {date}, {topic}",
     nothing: "Dogovor nije upisan.",
     additions: "Dopune",
     taskList: {

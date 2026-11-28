@@ -11,7 +11,7 @@ describe("N-13 messages", () => {
     expect(m.reasonHint(false)).toBe("Razlog se bira s popisa, bez slobodnog teksta. Vidite ga samo Vi i ovaj student.");
     expect(m.recorded + " " + m.recordedRest).toBe("Produljenje je zabilježeno. Student vidi novi rok uz zadatak. Razlog vidite samo Vi i taj student.");
     expect(m.conflict("Ana Horvat") + " " + m.conflictRest).toContain("Produljenje ne mijenja tu predaju; bilježi se kao dopuna uz nju.");
-    expect(m.lead("Esej", "Kolegij A", "8. 11. 2026. u 23:59")).toBe("Zadatak „Esej”, Kolegij A · rok 8. 11. 2026. u 23:59. Produljenje pokrećete samo Vi; student ga ne traži kroz Ducturu.");
+    expect(m.lead("Esej", "Kolegij A", "8. 11. 2026. u 23:59")).toBe("Zadatak „Esej”, Kolegij A, rok 8. 11. 2026. u 23:59. Produljenje pokrećete samo Vi; student ga ne traži kroz Ducturu.");
     expect(m.lead(null, null, null)).toBe("Produljenje pokrećete samo Vi; student ga ne traži kroz Ducturu.");
   });
   it("holds no forbidden term", () => {

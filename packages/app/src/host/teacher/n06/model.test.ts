@@ -7,11 +7,11 @@ const base: Facts = { studentName: "Student A", assignmentId: "a1", state: "pred
 
 describe("N-06 frame model", () => {
   it("heading uses the name or says it is missing", () => {
-    expect(heading(base)).toBe("Student A · Rad");
-    expect(heading({ studentName: null })).toBe(`${text.noName} · Rad`);
+    expect(heading(base)).toBe("Student A, Rad");
+    expect(heading({ studentName: null })).toBe(`${text.noName}, Rad`);
   });
   it("submitted line names time, due, version and the record", () => {
-    expect(stateLine(base)).toBe("Predano 2. studenoga 2026. u 09:50 · rok 2. studenoga 2026. u 23:59 · verzija 2 · zapis je cjelovit");
+    expect(stateLine(base)).toBe("Predano 2. studenoga 2026. u 09:50, rok 2. studenoga 2026. u 23:59, verzija 2, zapis je cjelovit");
     expect(stateLine({ ...base, state: "nakon_roka", receipt: { ...receipt, afterDeadline: true, record: "with_gaps" } })).toContain(", nakon roka (rok");
     expect(stateLine({ ...base, receipt: null })).toBe(text.submittedBare(false));
   });
@@ -19,7 +19,7 @@ describe("N-06 frame model", () => {
     expect(stateLine({ ...base, state: "nije_predano", receipt: null })).toBe(text.live);
   });
   it("sequence only lists what the server states", () => {
-    expect(sequence(base)).toEqual(["Predano 2. studenoga 2026. u 09:50 · verzija 2"]);
+    expect(sequence(base)).toEqual(["Predano 2. studenoga 2026. u 09:50, verzija 2"]);
     expect(sequence({ ...base, state: "nije_predano", receipt: null })).toEqual([]);
   });
   it("submission and compare links only for a submitted work", () => {

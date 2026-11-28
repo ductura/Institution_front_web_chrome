@@ -157,7 +157,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
 
   if (phase === "published") {
     return (
-      <section aria-label={`${course.name} · ${course.academicYear}`} className="card">
+      <section aria-label={`${course.name}, ${course.academicYear}`} className="card">
         <PublishDone />
         {rubricOutcome !== "saved" && rubricOutcome !== "none" && <p className="note" role="alert">{rubricFormHr.failed[rubricOutcome]}</p>}
         {questionOutcome !== "saved" && questionOutcome !== "none" && <p className="note" role="alert">{questionHr.failed[questionOutcome]}</p>}
@@ -168,7 +168,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
   }
 
   if (phase === "publishing") {
-    return <section className="card" aria-busy="true" aria-label={`${course.name} · ${course.academicYear}`}><p role="status" className="note">{publishHr.pending}</p></section>;
+    return <section className="card" aria-busy="true" aria-label={`${course.name}, ${course.academicYear}`}><p role="status" className="note">{publishHr.pending}</p></section>;
   }
 
   if (phase === "review") {
@@ -237,10 +237,10 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
   return (
     <>
       {heading}
-      <div className="card" role="group" aria-label={`${course.name} · ${course.academicYear}`}>
+      <div className="card" role="group" aria-label={`${course.name}, ${course.academicYear}`}>
         {summaryText && <p id="wz-err" className="err" role="alert" tabIndex={-1} ref={summary}>{f.errorsPrefix} {summaryText}</p>}
         {failure && <p className="err" role="alert">{failure}</p>}
-        <SummaryList rows={[{ id: "course", label: f.course, value: `${course.name} · ${course.academicYear}` }]} />
+        <SummaryList rows={[{ id: "course", label: f.course, value: `${course.name}, ${course.academicYear}` }]} />
 
         <Section id="zs-1" title={f.sections.basics}>
           <TextField label={f.fields.title} value={draft.title} maxLength={160} autoComplete="off" hint={f.fields.titleHint}

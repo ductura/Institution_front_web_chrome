@@ -86,7 +86,7 @@ describe("Moje predaje (PR-15)", () => {
     const server = fakeWithdrawServer({ open: false });
     await render({ withdrawCall: () => server.call, historyCall: () => history(HISTORY) });
     const items = [...host!.querySelectorAll("[data-testid=my-submissions] > li")];
-    expect(items.map((li) => li.querySelector("p")?.textContent)).toEqual(["Predaja 2 · 20. 12. 2026. u 23:05", "Predaja 1 · 20. 12. 2026. u 22:14"]);
+    expect(items.map((li) => li.querySelector("p")?.textContent)).toEqual(["Predaja 2, 20. 12. 2026. u 23:05", "Predaja 1, 20. 12. 2026. u 22:14"]);
     expect(items[0]!.textContent).toContain("Trenutno važeća predaja.");
     expect(items[0]!.querySelector("a")?.getAttribute("href")).toBe("/aplikacija/rad/a1/predaja/potvrda");
     expect(items[1]!.textContent).toContain("Povučena 20. 12. 2026. u 22:40.");

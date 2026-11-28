@@ -100,7 +100,7 @@ describe("PG-9 seenText", () => {
   const rows = givenRows(th, [{ id: "d1", body: "Nacrt.", state: "draft", savedAt: "2026-11-12T13:00:00.000Z" }]);
   const seen = seenComments([{ kind: "comment", id: "c1", firstSeenAt: "2026-11-12T11:30:00.000Z" }, { kind: "message", id: "c2", firstSeenAt: "2026-11-12T11:31:00.000Z" }]);
   it("only own published comments get a line; others and drafts get none", () => {
-    expect(seenText(rows[0]!, seen)).toContain("Student je vidio ·");
+    expect(seenText(rows[0]!, seen)).toContain("Student je vidio,");
     expect(seenText(rows[1]!, seen)).toBeNull();
     expect(seenText(rows[2]!, seen)).toBeNull();
     expect(seenText(rows[3]!, seen)).toBeNull();

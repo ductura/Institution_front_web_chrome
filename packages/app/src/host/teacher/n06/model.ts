@@ -22,7 +22,7 @@ export type Facts = {
 export type ProcessGap = { readonly previousEndedAt: string; readonly nextStartedAt: string };
 
 export const heading = (facts: Pick<Facts, "studentName">): string =>
-  `${facts.studentName ?? text.noName} · ${text.workKind}`;
+  `${facts.studentName ?? text.noName}, ${text.workKind}`;
 
 export const isSubmitted = (facts: Pick<Facts, "state">): boolean => facts.state === "predano" || facts.state === "nakon_roka";
 

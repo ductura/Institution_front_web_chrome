@@ -17,9 +17,9 @@ describe("teacher comments model", () => {
   });
   it("names the author by role, own entries as Vi", () => {
     const base = { createdWindow: "2026-11-03T08:15:00.000Z" };
-    expect(entryWho({ ...base, isOwn: true, role: "teacher" })).toMatch(/^Vi · /);
-    expect(entryWho({ ...base, isOwn: false, role: "student" })).toMatch(/^Student · /);
-    expect(entryWho({ ...base, isOwn: false, role: "teacher" })).toMatch(/^Nastavnik · /);
+    expect(entryWho({ ...base, isOwn: true, role: "teacher" })).toMatch(/^Vi, /);
+    expect(entryWho({ ...base, isOwn: false, role: "student" })).toMatch(/^Student, /);
+    expect(entryWho({ ...base, isOwn: false, role: "teacher" })).toMatch(/^Nastavnik, /);
   });
   it("holds no forbidden term (Ductus PRODUCT §5)", () => {
     for (const value of Object.values(teacherCommentsMessages)) {

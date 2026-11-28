@@ -24,6 +24,12 @@ export const marksHr = {
   open: "otvori",
   close: "Zatvori",
   gutter: "Rub lista s oznakama",
+  // ED-126 (prototype text2.js t2Pg).
+  pages: {
+    toggle: "Procjena stranica u rubu",
+    title: "Brojevi stranica su procjena prema broju riječi. Točan broj daje Word pri izvozu.",
+    mark: (page: number) => `≈ str. ${page}`,
+  },
   legend: {
     open: "Što znače oznake",
     title: "Što znače oznake u tekstu",

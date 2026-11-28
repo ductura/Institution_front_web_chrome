@@ -61,7 +61,7 @@ export function RequestsCard({ read, here, call, onDecided }: { read: RequestsRe
         return (
           <div key={request.requestId} className="item">
             <span className="title">{name}</span>
-            <span className="note">{type === "" ? sent : `${type} · ${sent}`}</span>
+            <span className="note">{type === "" ? sent : `${type}, ${sent}`}</span>
             <div className="acts">
               <Button size="small" busy={mine && busy?.decision === "approve"} disabled={busy !== null && !mine}
                 aria-label={`${t.approve}: ${name}`} onClick={() => void decide(request, "approve")}>
@@ -85,7 +85,7 @@ export function RequestsCard({ read, here, call, onDecided }: { read: RequestsRe
             </Button>
           </>
         )}>
-        <p className="note">{declining ? [declining.studentName ?? t.unnamed, workTypes[declining.workType]].filter(Boolean).join(" · ") : ""}</p>
+        <p className="note">{declining ? [declining.studentName ?? t.unnamed, workTypes[declining.workType]].filter(Boolean).join(", ") : ""}</p>
         <TextArea label={t.reason} hint={t.reasonHint} maxLength={REASON_MAX} value={reason} busy={busy !== null}
           onChange={(event) => setReason(event.target.value)} />
       </Dialog>

@@ -73,8 +73,20 @@
   padding-top: var(--space-1);
 }
 
+/*
+ * Narrow (Figma Dialog, Prikaz=Uski, 327:101460): the actions stack, each the
+ * full width and 44 px high, the main action (last in the DOM) on top. The
+ * DOM order stays as it is, so the reading order and the Tab order do not move.
+ */
 @media (max-width: 640px) {
+  .actions {
+    flex-direction: column-reverse;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
   .actions > * {
-    flex: 1 1 auto;
+    width: 100%;
+    min-height: 44px;
   }
 }

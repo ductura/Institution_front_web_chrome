@@ -11,6 +11,8 @@
  */
 
 import katex from "katex";
+// ED-128: \ce{...} and \pu{...} of mhchem (prototype acad.js "Kemijske formule"); a macro set of the same package.
+import "katex/contrib/mhchem";
 import { checkFormulaLimit, type FormulaKind } from "./limits.ts";
 
 export type RenderedTex = { html: string; ok: boolean };

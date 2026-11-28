@@ -17,22 +17,22 @@ const header = (over: Partial<Header> = {}): Header => ({ facts: FACTS, context:
 
 describe("WEB-NUZ-PG PG-1: header with the context of the work", () => {
   it("names course, assignment, kind of work and deadline", () => {
-    expect(contextLine(header())).toBe("Kolegij A · zadatak „Lokalni mediji”");
-    expect(headingOf(header())).toBe("Student A · Seminarski rad „Lokalni mediji”");
-    expect(stateOf(header())).toBe("U pisanju · prikaz se osvježava dok student piše · rok 30. studenoga 2026. u 23:59");
+    expect(contextLine(header())).toBe("Kolegij A, zadatak „Lokalni mediji”");
+    expect(headingOf(header())).toBe("Student A, Seminarski rad „Lokalni mediji”");
+    expect(stateOf(header())).toBe("U pisanju, prikaz se osvježava dok student piše, rok 30. studenoga 2026. u 23:59");
   });
 
   it("says what the server did not give instead of guessing", () => {
-    expect(contextLine(header({ context: null }))).toBe(`${t.courseUnavailable} · ${t.titleUnavailable}`);
-    expect(headingOf(header({ context: null, facts: { ...FACTS, studentName: null } }))).toBe(`${t.noName} · Rad`);
+    expect(contextLine(header({ context: null }))).toBe(`${t.courseUnavailable}, ${t.titleUnavailable}`);
+    expect(headingOf(header({ context: null, facts: { ...FACTS, studentName: null } }))).toBe(`${t.noName}, Rad`);
     expect(stateOf(header({ context: null }))).toContain(t.dueUnavailable);
   });
 
   it("marks a practice assignment and keeps the receipt line of a submitted work", () => {
-    expect(contextLine(header({ grade: "practice" }))).toBe("Kolegij A · zadatak „Lokalni mediji” · probni zadatak");
+    expect(contextLine(header({ grade: "practice" }))).toBe("Kolegij A, zadatak „Lokalni mediji”, probni zadatak");
     const receipt = { submittedAt: "2026-11-20T10:00:00.000Z", dueAt: "2026-11-30T22:59:00.000Z", afterDeadline: false, version: 2, record: "continuous" } as const;
     const line = stateOf(header({ facts: { ...FACTS, state: "predano", receipt } }));
-    expect(line).toBe("Predano 20. studenoga 2026. u 11:00 · rok 30. studenoga 2026. u 23:59 · verzija 2 · zapis je cjelovit");
+    expect(line).toBe("Predano 20. studenoga 2026. u 11:00, rok 30. studenoga 2026. u 23:59, verzija 2, zapis je cjelovit");
   });
 
   it("keeps the open tab in the address for the previous and next work", () => {
@@ -76,7 +76,7 @@ describe("WEB-NUZ-PG PG-4: not available apart from an error", () => {
   });
 
   it("puts „nije dokaz autorstva” next to every share", () => {
-    expect(matchShareLine(4)).toBe("Udio teksta koji se podudara: 4 % · nije dokaz autorstva");
+    expect(matchShareLine(4)).toBe("Udio teksta koji se podudara: 4 %, nije dokaz autorstva");
     expect(matchShareLine(0)).toBeNull();
   });
 

@@ -123,7 +123,7 @@ test("PG-9: published comments and drafts marked „nije objavljeno”, read onl
   await expect(section.locator("tbody tr")).toHaveCount(2);
   await expect(section.getByText(p.givenDraft)).toBeVisible();
   await expect(section.getByText(p.givenPublished)).toBeVisible();
-  await expect(section.locator('[data-seen="yes"]')).toHaveText(/Student je vidio ·/);
+  await expect(section.locator('[data-seen="yes"]')).toHaveText(/Student je vidio,/);
   await expect(section.locator("textarea, input")).toHaveCount(0);
 });
 
