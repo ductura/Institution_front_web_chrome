@@ -110,6 +110,17 @@ export function termCount(text: string, term: string): number {
   return (text.match(re) ?? []).length;
 }
 
+/**
+ * ED-124 "Gdje se koristi" (prototype glossNext): the paragraph of the next use of a term in scope after
+ * `from`, and from the first use again after the last; null when the term is not used in scope.
+ */
+export function nextTermPlace(doc: ReviewDoc, scope: PregledScope, term: string, from: number): number | null {
+  const { first, end } = scopeRange(doc, scope);
+  const places = doc.blocks.slice(first, end)
+    .filter((b) => b.kind !== "heading" && termCount(b.text.replaceAll(CITATION_MARK, " "), term) > 0).map((b) => b.pos);
+  return places.find((pos) => pos > from) ?? places[0] ?? null;
+}
+
 export function termCounts(doc: ReviewDoc, scope: PregledScope, terms: readonly string[]): Record<string, number> {
   const text = textInScope(doc, scope);
   return Object.fromEntries(terms.map((t) => [t, termCount(text, t)]));
