@@ -85,7 +85,7 @@ describe("Predložak rada", () => {
     expect(put).toHaveLength(1);
     expect(put[0]!.url).toContain("/short_paper");
     expect(put[0]!.body).toEqual({ expectedVersion: 1, titlePage: ["title", "author"], sections: [{ title: "Uvod", hint: "Cilj rada" }, { title: "Zaključak", hint: "" }], citationStyle: "fpzg" });
-    expect(text()).toContain("spremljen kao verzija 2");
+    expect(text()).toContain("spremljen na poslužitelju kao verzija 2");
   });
 
   it("ne dopušta 31. odjeljak i ne šalje nepromijenjen predložak", async () => {

@@ -68,9 +68,9 @@ test("NZ-1: every assignment of the card leads to its own screens", async ({ pag
   await teacher(page);
   await page.goto("/aplikacija/nastavnik");
   const entries = page.getByRole("group", { name: "Radnje zadatka: Izmišljeni esej" });
-  await expect(entries.getByRole("link")).toHaveText(["Predaje", "Uredi (nova verzija)", "Kopiraj zadatak", "Produljenje", "Izvoz", "Brz put kroz radove"]);
+  await expect(entries.getByRole("link")).toHaveText(["Predaje", "Uredi (nova verzija)", "Dupliciraj zadatak", "Produljenje", "Izvoz", "Brz put kroz radove"]);
   await expect(entries.getByRole("link", { name: /Brz put kroz radove/ })).toHaveAttribute("href", `/aplikacija/nastavnik/brz-put?zadatak=${A2}`);
-  await expect(entries.getByRole("link", { name: /Kopiraj zadatak/ })).toHaveAttribute("href", `/aplikacija/nastavnik/zadatak/${A2}/uredi?kopiraj=1`);
+  await expect(entries.getByRole("link", { name: /Dupliciraj zadatak/ })).toHaveAttribute("href", `/aplikacija/nastavnik/zadatak/${A2}/uredi?kopiraj=1`);
   await expect(page.getByRole("link", { name: "Zbirni pregled", exact: true })).toHaveAttribute("href", `/aplikacija/nastavnik/zbirni?kolegij=${K1}`);
 });
 

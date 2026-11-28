@@ -74,8 +74,8 @@ export const bibliographyStudentHr = {
   scanNone: "Na slici nije pronađen crtični kod. Slikajte poleđinu knjige izbliza.",
   scanFailed: "Crtični kod se ne može pročitati. Upišite ISBN ručno.",
   scanFound: (isbn: string) => `Pročitan ISBN ${isbn}. Upišite ga u brzi unos izvora.`,
-  scanCopy: "Kopiraj ISBN",
-  scanCopied: "ISBN je kopiran.",
+  scanCopy: "Stavi ISBN u međuspremnik",
+  scanCopied: "ISBN: kopirano u međuspremnik.",
   // WEB-V20-STIL-POPIS: the list and in-text citations in the style of the institution (read only).
   styledTitle: "Popis literature u stilu ustanove",
   styledNone: "Nijedan izvor još nije citiran, pa popis literature ostaje prazan.",
@@ -85,7 +85,7 @@ export const bibliographyStudentHr = {
   styledUnformatted: (labels: string) => `Nepotpuni izvori izostavljeni iz popisa: ${labels}.`,
   // ED-106 (prototype copyCite): the source's in-text citation to the clipboard.
   copyCite: "Kopiraj navod",
-  copyCiteDone: "Navod je kopiran.",
-  copyCiteBlocked: "Kopiranje nije dopušteno u ovom prikazu.",
-  copyCiteNone: "Navod se još ne može složiti: izvoru nedostaju podaci ili još nema broj.",
+  copyCiteDone: "Navod: kopirano u međuspremnik.",
+  copyCiteBlocked: "Međuspremnik nije dostupan u ovom prikazu.",
+  copyCiteNone: "Navod se još ne može složiti: izvor je nepotpun ili još nema broj.",
 } as const;

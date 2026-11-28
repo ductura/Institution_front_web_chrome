@@ -11,6 +11,7 @@ import { useReportOpenComments } from "@/components/editor/layout-prefs/panel-co
 import { listsStartWholeWork } from "@/components/editor/layout-prefs/preferences";
 
 import { ASK_COMMENT_EVENT, askedComment, takeAskedComment } from "./ask-comment";
+import { COMMENT_FOCUS_EVENT, cardPosition, commentAt, takeCommentFocus } from "./comment-card";
 import styles from "./comments.module.css";
 import { MyChanges, type ReadMyChanges } from "./my-changes";
 import { commentsHr as t } from "./messages.hr";
@@ -105,6 +106,31 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
     setForm({ text: asked, kind: "must", save: false, place });
     setDlg("new");
   }, [asked, load.kind, selection, now, docSize]);
+  // ED-119 (prototype app.js `.cmt` click): a click on a comment in the text brings it into focus here,
+  // past the filters and the chapter scope, and scrolls its card into view.
+  const [focusAt, setFocusAt] = useState<number | null>(null);
+  const [pinned, setPinned] = useState<string | null>(null);
+  useEffect(() => {
+    const early = takeCommentFocus();
+    if (early !== null) setFocusAt(early);
+    const onFocus = (event: Event) => { if (cardPosition(event) === null) return; const pos = takeCommentFocus(); if (pos !== null) setFocusAt(pos); };
+    document.addEventListener(COMMENT_FOCUS_EVENT, onFocus);
+    return () => document.removeEventListener(COMMENT_FOCUS_EVENT, onFocus);
+  }, []);
+  useEffect(() => {
+    if (focusAt === null || load.kind !== "ready") return;
+    setFocusAt(null);
+    const hit = commentAt(load.comments, focusAt);
+    if (!hit) return;
+    setWalk(null);
+    setPinned(hit.id);
+    setCursor(hit.id);
+  }, [focusAt, load]);
+  useEffect(() => {
+    if (pinned === null) return;
+    const card = [...document.querySelectorAll("[data-cid]")].find((el) => el.getAttribute("data-cid") === pinned);
+    if (card && typeof card.scrollIntoView === "function") card.scrollIntoView({ block: "nearest" });
+  }, [pinned]);
   useEffect(() => () => { onSeen?.(); }, [onSeen]);
   // ED-38 (P2-7): the count beside the card's tab, the same open comments the print lists.
   useReportOpenComments(load.kind === "ready" ? openForPrint(load.comments).length : 0);
@@ -122,12 +148,12 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
   const { comments, templates, round } = load;
   const live = comments;
   const counts = countsFor(live, role, seen);
-  const filtered = applyFilters(live, role, seen, turn, kindFilter, activeId ?? replyFor);
+  const filtered = applyFilters(live, role, seen, turn, kindFilter, activeId ?? replyFor ?? pinned);
   // ED-97: in "Ovo poglavlje" the comments placed elsewhere (or whose text is gone) step aside,
   // except the one in focus and the one being answered; a link brings the whole work back.
   const byChapter = chapter !== undefined && chapter !== null && !wholeWork;
   const shown = byChapter
-    ? filtered.filter((c) => c.id === activeId || c.id === replyFor || (!c.place.lost && c.place.from >= chapter.from && c.place.from < chapter.to))
+    ? filtered.filter((c) => c.id === activeId || c.id === replyFor || c.id === pinned || (!c.place.lost && c.place.from >= chapter.from && c.place.from < chapter.to))
     : filtered;
   const elsewhere = filtered.length - shown.length;
   const at = shown.findIndex((c) => c.id === cursor);

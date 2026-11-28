@@ -34,7 +34,7 @@ export const teacherPeerReviewText = {
     removeRubric: "Ukloni kriterij {n}",
     save: "Spremi postavku",
     saving: "Sprema se…",
-    saved: "Postavka je spremljena.",
+    saved: "Postavka je spremljena na poslužitelju.",
     locked: "Recenzije su dodijeljene pa se postavka više ne može mijenjati.",
     errors: {
       date: "Unesite ispravan datum i vrijeme.",
@@ -47,7 +47,7 @@ export const teacherPeerReviewText = {
     already: "Recenzije su već dodijeljene pa postavka nije promijenjena. Stanje je osvježeno.",
     notFound: "Zadatak više nije dostupan. Stanje je osvježeno.",
     invalid: "Postavka nije ispravna. Provjerite polja.",
-    unknown: "Nije poznato je li postavka spremljena. Osvježite stranicu prije novog pokušaja.",
+    unknown: "Nije poznato je li postavka spremljena na poslužitelju. Osvježite stranicu prije novog pokušaja.",
   },
   allocate: {
     button: "Dodijeli recenzije",
@@ -62,7 +62,7 @@ export const teacherPeerReviewText = {
     notFound: "Zadatak više nije dostupan. Stanje je osvježeno.",
     unknown: "Nije poznato je li dodjela izvršena. Osvježite stranicu prije novog pokušaja.",
     needRound: "Prvo spremite postavku kruga.",
-    unsaved: "Spremite izmjene postavke prije dodjele: dodjela koristi spremljenu postavku.",
+    unsaved: "Spremite izmjene postavke prije dodjele: dodjela koristi postavku s poslužitelja.",
   },
   overview: {
     title: "Dodjele",

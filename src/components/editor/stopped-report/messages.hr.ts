@@ -13,7 +13,7 @@ export const stoppedReportHr = {
   send: "Pošalji prijavu",
   sending: "Šaljem prijavu…",
   sent: "Prijava je poslana. U nju je ušla samo oznaka stanja, ne tekst rada.",
-  noteRefused: "Opis ne može ovako u prijavu. Skratite ga ili uklonite neobične znakove.",
+  noteRefused: "Opis ne može ovako u prijavu. Skratite ga ili uklonite posebne znakove.",
   // What goes as the description when the student writes nothing (the route wants one).
   defaultNote: "Slanje na poslužitelj je zaustavljeno.",
 } as const;

@@ -38,6 +38,6 @@ export const courseGroupMessages = {
   invalid: "Unos nije prihvaćen. Naziv grupe mora imati 1 do 80 znakova, bez razmaka na početku i na kraju.",
   ended: "Prijava je istekla. Prijavite se ponovno.",
   forbidden: "Nemate pravo na ovu radnju.",
-  unknown: "Nije potvrđeno je li promjena spremljena. Provjerite stanje popisa.",
+  unknown: "Nije potvrđeno je li promjena spremljena na poslužitelju. Provjerite stanje popisa.",
   check: "Provjeri stanje",
 } as const;

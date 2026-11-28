@@ -45,7 +45,7 @@ export const tableImageMessages = {
     send: "Slika se nije mogla učitati. Pokušajte ponovno.",
   },
   cropTitle: "Izreži sliku",
-  cropNote: "Pomaknite klizače da odrežete rubove. Zatamnjeni dio se ne prikazuje. Izvorna slika ostaje spremljena.",
+  cropNote: "Pomaknite klizače da odrežete rubove. Zatamnjeni dio se ne prikazuje. Izvorna slika ostaje spremljena na poslužitelju.",
   cropLeft: "Lijevo",
   cropRight: "Desno",
   cropTop: "Gore",

@@ -102,7 +102,7 @@ describe("N-07 fingerprint, check and QR sample", () => {
     expect(qrCells("abc")).toBe("");
   });
   it("texts as in the prototype", () => {
-    expect(text.copy).toBe("Kopiraj otisak");
+    expect(text.copy).toBe("Stavi otisak u međuspremnik");
     expect(text.copied).toBe("Otisak je u međuspremniku (64 znaka, bez razmaka).");
   });
 });

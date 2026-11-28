@@ -27,6 +27,7 @@ describe("UI text modules", () => {
       "**/labels.ts",
       "**/messages.ts",
       "**/copy.ts",
+      "**/messages.hr.ts",
       "packages/editor-core/src/editor/schema.ts",
     ]);
     for (const file of [
@@ -118,6 +119,20 @@ describe("repository scan of UI text modules", () => {
     expect(findings.map((f) => [f.file, f.line, f.text, f.terms.map((t) => t.entry)])).toEqual([
       ["packages/editor-core/src/sync/labels.ts", 1, "Spremljeno", ["spremljeno (bez pojašnjenja)"]],
       ["src/lib/i18n/messages.hr.ts", 1, "Sumnjivo kretanje", ["sumnjivo"]],
+    ]);
+  });
+
+  it("lets through only the negation \"nije dokaz autorstva\" (Ustav C-6)", () => {
+    root = mkdtempSync(path.join(tmpdir(), "ductura-terms-"));
+    write(
+      "src/lib/i18n/messages.hr.ts",
+      'export const t = { a: "Ovaj prikaz nije dokaz autorstva.", b: "Ovo je dokaz autorstva.", c: "Nije dokaz autorstva, ali je dokaz autorstva." };\n',
+    );
+    write("packages/x/src/other.ts", "export {};\n");
+    const { findings } = scanUiTextModules(root);
+    expect(findings.map((f) => [f.text, f.terms.map((t) => t.entry)])).toEqual([
+      ["Ovo je dokaz autorstva.", ["dokaz autorstva"]],
+      ["Nije dokaz autorstva, ali je dokaz autorstva.", ["dokaz autorstva"]],
     ]);
   });
 
