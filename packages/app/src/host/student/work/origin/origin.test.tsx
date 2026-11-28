@@ -45,6 +45,12 @@ describe("PIL-P1-SASTAV-STUDENT Podrijetlo teksta", () => {
     expect(out).toContain(originText.unknownNotice);
   });
 
+  it("keeps the unknown-origin figure and its explanation in separate paragraphs", () => {
+    const out = html(readOfParts(PARTS));
+    expect(out).toContain("<p><strong>3 % nepoznato podrijetlo</strong></p>");
+    expect(out).toContain(`<p class="note">${originText.unknownNotice}</p>`);
+  });
+
   it("shows no unknown-origin notice when there is none, and keeps the limits caption", () => {
     const out = html(readOfParts(PARTS.map((p) => ({ ...p, percent: p.kind === "typed" ? 100 : 0 }))));
     expect(out).not.toContain("data-unknown-notice");
