@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { findForbiddenTerms } from "../../../../scripts/forbidden-terms/terms";
@@ -22,6 +24,17 @@ describe("writing help preferences", () => {
     const stored = { ...defaultHelp, level: "custom" };
     expect(readHelp(() => JSON.stringify(stored))).toEqual(stored);
     expect(readHelp(() => '{"enabled":["cmt","cmt"]}')).toEqual({ enabled: ["cmt"], level: "calm" });
+  });
+
+  it("ED-125: says the level in the Rad group and offers the settings dialog", () => {
+    const line = (level: keyof typeof editorHelpHr.levels) => editorHelpHr.panelLine.replace("{level}", editorHelpHr.levels[level]);
+    expect(line("basic")).toBe("Što se podcrtava u tekstu: Osnovno");
+    expect(line("custom")).toBe("Što se podcrtava u tekstu: Vlastito");
+    expect(editorHelpHr.panelChange).toBe("Promijeni pomoć u tekstu");
+    const help = readFileSync(join(__dirname, "EditorHelp.tsx"), "utf8");
+    expect(help).toContain('t.panelLine.replace("{level}", t.levels[level])');
+    const page = readFileSync(join(__dirname, "..", "EditorPageWork.tsx"), "utf8");
+    expect(page).toMatch(/<HelpLevelRow level=\{help\.level\} onChange=\{\(\) => \{ closeDrawer\(\); setView\("writing"\); \}\} \/>/);
   });
 
   it("uses the basic preset with corrupt or blocked storage", () => {

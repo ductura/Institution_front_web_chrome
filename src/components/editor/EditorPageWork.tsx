@@ -32,7 +32,7 @@ import type { FootnoteDialogComponent } from "./footnotes/useV3EditorDialogs";
 import EditorCommands from "./commands/EditorCommands";
 import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalPending, useLocalSaveRead, useLocalSavingOnDevice, useLocalSignedOut, useLocalSubmitted } from "./LocalDocument";
 import { offlineWaitingText, reconnectShown, reconnectText } from "./save-level";
-import { EditorHelpDialogs, useEditorHelp, type EditorHelpView } from "./help/EditorHelp";
+import { EditorHelpDialogs, HelpLevelRow, useEditorHelp, type EditorHelpView } from "./help/EditorHelp";
 import { EditorHelpMenu } from "./help/EditorHelpMenu";
 import { EditorNotices } from "./help/EditorNotices";
 import helpStyles from "./help/EditorHelp.module.css";
@@ -304,6 +304,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
           sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer}
           supplements={supplements} onPrintPreview={() => setPrintOpen(true)} />}
         <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} />
+        <HelpLevelRow level={help.level} onChange={() => { closeDrawer(); setView("writing"); }} />
         {hostSections?.work?.(ctx)}
       </>}>
       <EditorNotices notices={!online
