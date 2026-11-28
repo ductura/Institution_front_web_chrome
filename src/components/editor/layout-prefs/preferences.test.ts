@@ -1,8 +1,8 @@
 import { afterEach, expect, it, vi } from "vitest";
 
 import {
-  DEFAULT_PREFERENCES, effectiveLayout, LEFT_PARTS, partOrder, PREFERENCES_KEY, readPreferences, rowShows, withPartMoved, withPartShown,
-  withRowPart, withSubs, writePreferences,
+  DEFAULT_PREFERENCES, effectiveLayout, LEFT_PARTS, listsStartWholeWork, partOrder, PREFERENCES_KEY, readPreferences, rowShows,
+  withPartMoved, withPartShown, withRowPart, withScope, withSubs, writePreferences,
 } from "./preferences";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -70,6 +70,22 @@ it("moves and hides the left parts and keeps no key for the defaults", () => {
   const hidden = withPartShown(withPartShown(start, "thread", false), "stash", false);
   expect(hidden.hideParts).toEqual(["stash", "thread"]);
   expect(withPartShown(withPartShown(hidden, "stash", true), "thread", true)).toEqual(start);
+});
+
+// ED-116 "Popisi prvo pokazuju": "Ovo poglavlje" is the default (no key); only the right side keeps "Cijeli rad".
+it("keeps the list scope on the right only and reads anything else as this chapter", () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal("window", { localStorage: { getItem: values.get.bind(values), setItem: values.set.bind(values) } });
+  expect(listsStartWholeWork()).toBe(false);
+  const all = withScope(DEFAULT_PREFERENCES.right, "all");
+  expect(all).toEqual({ layout: "a", mobile: "same", scope: "all" });
+  expect(withScope(all, "chapter")).toEqual(DEFAULT_PREFERENCES.right);
+  writePreferences({ left: DEFAULT_PREFERENCES.left, right: all });
+  expect(readPreferences().right).toEqual(all);
+  expect(listsStartWholeWork()).toBe(true);
+  values.set(PREFERENCES_KEY, JSON.stringify({ left: { layout: "a", mobile: "c", scope: "all" }, right: { layout: "a", mobile: "same", scope: "chapter" } }));
+  expect(readPreferences()).toEqual(DEFAULT_PREFERENCES);
+  expect(listsStartWholeWork()).toBe(false);
 });
 
 // ED-70 "Potpoglavlja": "Rasklopljena" is the default (no key); only the left side keeps the parts.

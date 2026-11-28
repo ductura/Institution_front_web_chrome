@@ -5,6 +5,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { citationRange, insertCitation } from "../citations/citation-document";
 import { requestFocusMode } from "../layout-prefs/focus-mode";
+import { requestStructureRail } from "../layout-prefs/structure-rail";
 import { documentSources } from "../sources/proofs/proof-sources";
 import { requestWorkHistory, workHistoryOffered } from "./work-history-event";
 import { BLOCK_STYLES, stateOf, TOOLS } from "../EditorToolbarFor";
@@ -60,7 +61,7 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
     action("comment", text.comment, edit(() => { requestPanel("comments"); askComment(""); }), text.selectedText,
       !state.editable || !selected),
     action("focus", text.focus, () => requestFocusMode(), "Ctrl+."),
-    action("outline", text.outline, undefined, "Ctrl+\\"),
+    action("outline", text.outline, () => requestStructureRail(), "Ctrl+\\"),
     action("docx", t.toolbar.exportItems.docx),
     action("print", t.toolbar.exportItems.print, () => { askPrintPreview(); }),
   ];

@@ -6,6 +6,7 @@ import { act, createElement as h } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { PREFERENCES_KEY } from "@/components/editor/layout-prefs/preferences";
 import { createEditorExtensionsV3, NODE_ID_ATTRIBUTE } from "../../../../../editor-core/src/editor/schema";
 import { chapterAt } from "./chapter-scope";
 import { CommentsPanel, type ChapterScope } from "./CommentsPanel";
@@ -40,6 +41,18 @@ describe("comments in this chapter (ED-97)", () => {
     expect(host.textContent).not.toContain("2. Metoda");
     await press(t.scopeChapter);
     expect(ids(host)).toEqual(["c2"]);
+  });
+
+  it("opens on the whole work when the right panel's settings say so (ED-116)", async () => {
+    window.localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ left: { layout: "a", mobile: "c" }, right: { layout: "a", mobile: "same", scope: "all" } }));
+    try {
+      const host = await mount({ title: "2. Metoda", from: 50, to: 100 });
+      expect(ids(host)).toEqual(["c1", "c2", "c3"]);
+      await press(t.scopeChapter);
+      expect(ids(host)).toEqual(["c2"]);
+    } finally {
+      window.localStorage.removeItem(PREFERENCES_KEY);
+    }
   });
 
   it("says when the chapter has no comments", async () => {

@@ -57,10 +57,13 @@ import { useOfferSlashCommands } from "../slash-commands";
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import { toolbarBehaviourHr } from "./messages.hr";
 import { selectionToFootnote, selectionToFootnoteHr } from "../footnote/selection-to-footnote";
+import { insertPhrase } from "../phrases/phrases";
+import { PhrasesDialog } from "../phrases/PhrasesDialog";
 import { listenCommentKey } from "./comment-key";
 import { MOBILE_MORE, type QuickTool } from "./quick-tools";
 import { canStep, DEFAULT_ZOOM, loadZoom, saveZoom, snapZoom, stepZoom, zoomPercent, zoomToast } from "./text-size";
 import { MobileQuickBar } from "./ToolbarBehaviour";
+import { ToolbarBookmarks } from "./ToolbarBookmarks";
 import { ToolbarCounters } from "./ToolbarCounters";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 import { DEFAULT_PREFS, loadPrefs, savePrefs, type ToolbarPrefs } from "./toolbar-prefs";
@@ -262,7 +265,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const code = useCodeBlockHost(editor, confirmedWorkSchemaVersion);
   const skeletonState = useSkeletonAvailability(editor, workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null);
   const latexStyle = useLatexStyle(typeof window === "undefined" ? null : assignmentIdFromPath(window.location.pathname));
-  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | "structure" | "pageFormat" | null>(null);
+  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | "structure" | "pageFormat" | "phrases" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
   const toast = useStudentToast();
@@ -295,8 +298,11 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const [quickMore, setQuickMore] = useState<MenuPoint | null>(null);
   const openCrossReference = v3.openInsert ? () => v3.openInsert?.("crossReference") : undefined;
   // ED-46 (P2-18): "/fusnota" and "/ref" open the same dialogs as Umetni, and only when Umetni would.
-  useOfferSlashCommands(editor, writeOk && v3.openInsert
-    ? { fusnota: () => v3.openInsert?.("footnote"), ref: () => v3.openInsert?.("crossReference") } : {});
+  // ED-94: "/fraza" opens Fraze, as Umetni › Fraza does.
+  useOfferSlashCommands(editor, {
+    ...(writeOk && v3.openInsert ? { fusnota: () => v3.openInsert?.("footnote"), ref: () => v3.openInsert?.("crossReference") } : {}),
+    ...(writeOk ? { fraza: () => setDialog("phrases") } : {}),
+  });
   // ED-93: Ctrl+Alt+M, the comment on the selection the tool tip and the right-click menu name.
   useEffect(() => {
     if (!writeOk || !editor) return;
@@ -313,6 +319,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "inlineFormula", label: formulaHostHr.insertInline, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
     { id: "codeBlock", label: code.inBlock ? codeBlockHr.edit : codeBlockHr.insert, disabled: !writeOk || !code.availability.enabled, hint: code.availability.enabled ? undefined : code.availability.reason },
     { id: "hole", label: t.toolbar.insertItems.hole, disabled: !writeOk },
+    { id: "phrase", label: t.toolbar.insertItems.phrase, disabled: !writeOk },
     { id: "workParts", label: workPartsMessages.title, disabled: !writeOk },
     { id: "skeleton", label: skeletonMessages.menu, disabled: !writeOk || !skeletonState.enabled, hint: skeletonState.enabled ? undefined : skeletonState.reason },
   ]);
@@ -353,6 +360,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         else if (id === "codeBlock" && writeOk) code.open(code.inBlock);
         else if (id === "skeleton" && writeOk) setDialog("skeleton");
         else if (id === "hole") insertHole(editor);
+        else if (id === "phrase" && writeOk) setDialog("phrases");
       }} />
       <Menu label={t.toolbar.convert} items={convert} onSelect={(id) => {
         if (id === "toQuote" || id === "fromQuote") convertBlock(editor, id === "toQuote" ? "quote" : "paragraph");
@@ -391,6 +399,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
           else if (id === "latex") toast(downloadLatex(editor, confirmedWorkSchemaVersion, latexStyle) ? stemHr.latex.done : stemHr.latex.failed);
           else if (id === "copy") void copyWorkText(editor).then((ok) => toast(copyToastText(ok)));
         }} />
+      {/* ED-102: "Oznake", paragraphs marked to come back to, only in this browser. */}
+      <ToolbarBookmarks editor={editor} work={workPartsKey} toast={toast} />
       {/* ED-101: what still waits in the text, and "Pošalji mentoru" with the list before sending. */}
       <ToolbarCounters editor={editor} />
       <ReadAloudControls editor={editor} />
@@ -419,6 +429,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
           <DraftPanelHost editor={editor as unknown as TocEditor | null} workId={workPartsKey} />
         </Dialog>
       )}
+      {dialog === "phrases" && editor && <PhrasesDialog onClose={() => setDialog(null)}
+        onPick={(phrase) => { setDialog(null); setTimeout(() => { insertPhrase(editor, phrase); }, 0); }} />}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
       {dialog === "pageFormat" && <PageFormatDialog format={pageFormatOf(workProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null)} onClose={() => setDialog(null)} />}
       {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
