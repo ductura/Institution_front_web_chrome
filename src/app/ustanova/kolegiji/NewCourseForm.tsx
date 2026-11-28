@@ -1,9 +1,10 @@
 "use client";
 
 import { Button, Card, Select, TextArea, TextField } from "@ductura/ui";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createApi, goToSignIn } from "@/client/api";
+import { readCourseHolders, type CourseHoldersRead } from "@/client/course-holders";
 // Design alignment 27. 11. 2026. (U-01): shown as "2026./2027.", still sent as "2026/2027".
 import { yearHr } from "@/components/teacher/TeacherCourses";
 import { messagesHr } from "@/lib/i18n/messages.hr";
@@ -12,6 +13,8 @@ import { AI_POLICIES, createOutcome, newCourseInput, type CreateOutcome, type Fi
 import styles from "./page.module.css";
 
 const t = messagesHr.institutionCourses.newCourse;
+const courses = messagesHr.institutionCourses;
+const roles = messagesHr.teacherRoles;
 const policies = messagesHr.facultyRuleVersions.policies;
 const POLICY_OPTIONS = AI_POLICIES.map((value) => ({ value, label: policies[value] }));
 
@@ -30,6 +33,17 @@ export default function NewCourseForm({ here, years }: { here: string; years: re
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<Exclude<CreateOutcome, "created"> | null>(null);
   const [created, setCreated] = useState<Created | null>(null);
+  // U-01: the holder is chosen by name among the confirmed teachers; the first one is offered.
+  const [holders, setHolders] = useState<CourseHoldersRead | "loading">("loading");
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let live = true;
+    setHolders("loading");
+    void readCourseHolders().then((read) => { if (live) setHolders(read); });
+    return () => { live = false; };
+  }, [attempt]);
+  const choices = holders === "loading" || holders.kind !== "ready" ? [] : holders.holders;
+  const holderId = fields.holderId || choices[0]?.personId || "";
   // After "another" the button is gone; focus returns to the first field.
   const formRef = useRef<HTMLDivElement>(null);
   // An edited field drops its old error; the next submit checks it again.
@@ -40,7 +54,7 @@ export default function NewCourseForm({ here, years }: { here: string; years: re
 
   async function submit() {
     if (busy) return;
-    const read = newCourseInput(fields);
+    const read = newCourseInput({ ...fields, holderId });
     setOutcome(null);
     if (!read.ok) {
       setErrors(read.errors);
@@ -74,7 +88,9 @@ export default function NewCourseForm({ here, years }: { here: string; years: re
     );
   }
 
-  const error = (key: keyof FieldErrors) => (errors[key] === undefined ? undefined : t[errors[key]]);
+  const error = (key: Exclude<keyof FieldErrors, "holderId">) => (errors[key] === undefined ? undefined : t[errors[key]]);
+  // No holder can be chosen: the read failed or the institution has no confirmed teacher yet.
+  const holderNote = holders === "loading" ? undefined : holders.kind !== "ready" ? courses.unavailable : choices.length === 0 ? roles.confirmed.empty : undefined;
   return (
     <div ref={formRef} className={styles.form} aria-busy={busy || undefined}
       onKeyDown={(event) => { if (event.key === "Enter" && event.target instanceof HTMLInputElement) void submit(); }}>
@@ -83,8 +99,14 @@ export default function NewCourseForm({ here, years }: { here: string; years: re
       <Select label={t.academicYear} value={fields.academicYear} onChange={set("academicYear")} busy={busy}
         options={years.map((year) => ({ value: year, label: yearHr(year) }))} />
       <Select label={t.aiPolicy} value={fields.aiPolicy} onChange={set("aiPolicy")} busy={busy} options={POLICY_OPTIONS} />
-      <TextField label={t.holder} hint={t.holderHint} value={fields.holderId} onChange={set("holderId")} busy={busy}
-        spellCheck={false} autoComplete="off" error={error("holderId")} />
+      <Select label={courses.holder} value={holderId} onChange={set("holderId")} busy={busy || holders === "loading"}
+        error={holderNote} options={choices.map(({ personId, name }) => ({
+          value: personId,
+          label: name === null ? roles.unnamed : `${name.givenName} ${name.familyName}`,
+        }))} />
+      {holders !== "loading" && holders.kind === "unavailable" && (
+        <div><Button tone="quiet" onClick={() => setAttempt((now) => now + 1)}>{courses.retry}</Button></div>
+      )}
       <TextArea label={t.groups} hint={t.groupsHint} value={fields.groups} onChange={set("groups")} busy={busy}
         error={error("groups")} />
       {outcome !== null && <p role="alert" className={styles.alert}>{t[outcome]}</p>}

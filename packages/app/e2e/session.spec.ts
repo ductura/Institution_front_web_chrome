@@ -399,9 +399,17 @@ const HOLDER_ID = "00000000-0000-4000-8000-000000000001";
 
 async function openNewCourse(page: Page, base: "/aplikacija") {
   await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
+  await page.route("**/api/v1/institution/teachers", (route) => route.fulfill({ json: {
+    pending: [],
+    confirmed: [
+      { personId: "00000000-0000-4000-8000-000000000009", name: { givenName: "Ana", familyName: "Izmišljena" }, confirmedAt: "2026-10-02T08:00:00.000Z", forReview: false },
+      { personId: HOLDER_ID, name: { givenName: "Ivo", familyName: "Primjer" }, confirmedAt: "2026-10-02T08:00:00.000Z", forReview: false },
+    ],
+  } }));
   await page.goto(`${base}/ustanova/kolegiji`);
   await page.getByLabel("Naziv kolegija").fill(COURSE_NAME);
-  await page.getByLabel("Identifikator nositelja").fill(HOLDER_ID);
+  // U-01: the holder is picked by name among the confirmed teachers; the second one is sent as holderId.
+  await page.getByLabel("Nositelj").selectOption({ label: "Ivo Primjer" });
 }
 
 test("course creation reports a failed write and confirms only after the API responds", async ({ page }) => {
