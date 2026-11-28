@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { readConsultations, type ConsultationRecord } from "../../../client/consultation-records";
-import { messagesHr } from "../../../lib/i18n/messages.hr";
+import { goToSignIn } from "../../../client/api";
+import { readConsultationList, type ConsultationRecord } from "../../../client/consultation-records";
+import LoadAlert, { DeniedState, NotFoundState } from "../../shell/LoadAlert";
 import { ConsultationDetail } from "./ConsultationDetail";
 import { NewConsultation } from "./NewConsultation";
 import { consultationDate, revisionLabel } from "./format";
@@ -20,27 +21,32 @@ export function ConsultationRecords({ documentId, workHref }: { documentId: stri
   const path = `${workHref}/konzultacije`;
   const recordHref = (id: string) => `${path}?zapis=${encodeURIComponent(id)}`;
   const [records, setRecords] = useState<ConsultationRecord[] | null>();
+  const [blocked, setBlocked] = useState<"forbidden" | "not-found" | null>(null);
   const [retry, setRetry] = useState(0);
   const [createdId, setCreatedId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    void readConsultations(documentId).then((list) => {
-      if (active) setRecords(list);
+    void readConsultationList(documentId).then((answer) => {
+      if (!active) return;
+      // Design alignment 27. 11. 2026. (N-11): 401, 403 and 404 are not a read error.
+      if (answer.kind === "unauthorized") return goToSignIn(path);
+      if (answer.kind === "forbidden" || answer.kind === "not-found") return setBlocked(answer.kind);
+      setRecords(answer.kind === "ready" ? [...answer.records] : null);
     });
     return () => { active = false; };
-  }, [documentId, retry]);
+  }, [documentId, retry, path]);
 
+  if (blocked === "forbidden") return <div className="page"><DeniedState /></div>;
+  if (blocked === "not-found") return <div className="page"><NotFoundState /></div>;
   const record = records?.find(({ id }) => recordId === id);
   return (
     <div className={`page ${styles.page}`}>
       <Link href={workHref}>{t.backToWork}</Link>
       <h1>{t.title}</h1>
       {records === undefined ? <Skeleton label={t.loading} /> : records === null ? (
-        <>
-          <p role="alert" className={styles.error}>{t.readError}</p>
-          <div><Button onClick={() => { setRecords(undefined); setRetry((count) => count + 1); }}>{t.retry}</Button></div>
-        </>
+        // Design alignment 27. 11. 2026. (K6): the alert box with the link under it, not a button.
+        <LoadAlert retry={{ label: t.retry, onRetry: () => { setRecords(undefined); setRetry((count) => count + 1); } }}>{t.readError}</LoadAlert>
       ) : search.has("novi") ? (
         <NewConsultation documentId={documentId} cancelHref={path} onSaved={(saved) => {
           setRecords((current) => [...(current ?? []), saved]);

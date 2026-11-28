@@ -22,9 +22,19 @@ export const editorPanelLayoutsHr = {
   same: "Kao na računalu",
   density: "Gustoća",
   densities: { airy: "Prozračno", dense: "Zbijeno" },
+  // ED-116: where the comment and review lists of the right panel open.
+  listScope: "Popisi prvo pokazuju",
+  listScopes: { chapter: "Ovo poglavlje", all: "Cijeli rad" },
   // ED-37 (P2-6): the chapter row parts, as in the prototype "Prilagodi panel".
   row: "U retku poglavlja",
   rowParts: { words: "Broj riječi", status: "Točka stanja", flags: "Napomene „za popraviti”" },
+  // ED-70: "Potpoglavlja" and "Donji dijelovi", as in the prototype "Prilagodi panel".
+  subModes: { open: "Rasklopljena", closed: "Sklopljena", active: "Samo u aktivnom" },
+  parts: "Donji dijelovi",
+  // ED-118: the right panel's groups, as in the prototype "Prilagodi desni panel".
+  groupParts: "Dijelovi panela i redoslijed",
+  moveUp: (label: string) => `Pomakni gore: ${label}`,
+  moveDown: (label: string) => `Pomakni dolje: ${label}`,
   width: "Širina na računalu",
   widths: { narrow: "Uska", medium: "Srednja", wide: "Široka" },
   settingsNote: "Postavke vrijede samo za Vas i pamte se u ovom pregledniku.",
@@ -88,7 +98,7 @@ export const hr = {
   },
   shell: {
     skipToContent: "Preskoči na sadržaj",
-    demoBadge: "Demo · izmišljeni podaci",
+    demoBadge: "Demo, izmišljeni podaci",
     // Design v3 shell (#476 6314969336): only static labels and the role the
     // server read; no names or counts the app does not have.
     sideNav: "Bočna navigacija",
@@ -889,6 +899,7 @@ export const hr = {
       link: "Novi zadatak u kolegiju",
       missing: "Kolegij nije dostupan ovom računu.",
       unavailable: "Kolegij trenutačno nije moguće učitati. Pokušajte ponovno.",
+      retry: "Pokušaj ponovno",
       codeKept: "Upisni kod kolegija ostaje isti.",
       studentsNotified: "Studenti upisani u kolegij vide zadatak među svojim zadacima.",
     },
@@ -1212,7 +1223,8 @@ export const hr = {
     lead: "Kolegiji u kojima predajete i njihovi zadaci. Poredak: akademska godina, pa naziv; zadaci po roku.",
     newCourse: "Novi kolegij i zadatak",
     empty: "Nemate kolegija u kojima predajete.",
-    emptyLead: "Stvorite kolegij i objavite prvi zadatak.",
+    emptyBody: "Kolegij izrađuje administrator fakulteta i dodjeljuje ga nositelju. Kad Vas doda u kolegij, on se pojavljuje ovdje.",
+    emptyNext: "Treba li Vam novi kolegij, javite se administratoru svojeg fakulteta.",
     noAssignments: "Još nema zadataka.",
     unavailable: "Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.",
     retry: "Pokušaj ponovno",
@@ -1235,23 +1247,13 @@ export const hr = {
     accommodation: "Odobrena prilagodba",
     accommodationsUnavailable: "Oznake odobrene prilagodbe trenutačno nisu dostupne. Pokušajte ponovno.",
   },
-  // DAN-492 (M2.6-P02, N-16), design pregled-radova-v2: only what the read gives (D-202).
+  // DAN-492 (M2.6-P02, N-16): only what the page /nastavnik/mentorstva says itself. The list
+  // (MentoredWorks) reads locales/hr.ts, so its keys are not repeated here (27. 11. 2026.).
   mentoredWorks: {
     title: "Radovi uz mentora",
     lead: "Završni, diplomski i drugi radovi kojima ste mentor. Ovdje odobravate ili odbijate i zahtjeve studenata za mentorstvo.",
-    listTitle: "Radovi · abecedno",
-    orderNote: "Popis se ne može poredati po brojevima.",
-    empty: "Nemate otvorenih mentorstava.",
     unavailable: "Radovi trenutačno nisu dostupni. Pokušajte ponovno.",
     retry: "Pokušaj ponovno",
-    unnamed: "Ime nije dostupno",
-    open: "Otvori rad",
-    // The state as text only, never a colour (D-128).
-    state: {
-      not_started: "Rad nije započet.",
-      in_progress: "U pisanju",
-      submitted: "Predano",
-    },
   },
   // WEB-32 (N-16): the card of mentorship requests; a note only after the server's answer (B-6).
   mentorshipRequests: {
@@ -1265,7 +1267,6 @@ export const hr = {
     approving: "Odobrava se…",
     decline: "Odbij",
     dialogTitle: "Odbiti zahtjev za mentorstvo?",
-    dialogLead: "{name}",
     reason: "Razlog odbijanja (neobavezno)",
     reasonHint: "Razlog nije obavezan. Preporučujemo da ga upišete zbog studenta. Student će vidjeti razlog.",
     cancel: "Odustani",
@@ -1301,7 +1302,6 @@ export const hr = {
     },
     save: "Zabilježi produljenje",
     saving: "Bilježi se…",
-    cancel: "Odustani",
     listTitle: "Produljeni rokovi",
     empty: "Nijedan rok nije produljen.",
     unavailable: "Produljenja trenutačno nisu dostupna. Pokušajte ponovno.",
@@ -1312,6 +1312,8 @@ export const hr = {
     recorded: "Produljenje je zabilježeno. Razlog vidite samo Vi i taj student.",
     earlierSubmission: "Predaja je zatražena prije ovog produljenja. Produljenje ne mijenja tu predaju; bilježi se kao dopuna uz nju.",
     missing: "Odaberite studenta, novi rok i razlog.",
+    // Design alignment 27. 11. 2026. (N-07, text approved): the same check for all students names no student.
+    missingAll: "Odaberite novi rok i razlog.",
     invalid: "Produljenje nije zabilježeno. Provjerite da je novi rok kasniji od roka koji sada vrijedi i da razlog odgovara izboru.",
     notFound: "Zadatak ili student više nisu dostupni.",
     unknown: "Nije poznato je li produljenje zabilježeno. Osvježite stranicu prije novog pokušaja.",
@@ -1329,9 +1331,7 @@ export const hr = {
       submittedMinute: "Vrijeme predaje",
       afterDeadline: "Nakon roka",
       pdfName: "Datoteka PDF",
-      pdfSha256: "Otisak PDF (SHA-256)",
       docxName: "Datoteka DOCX",
-      docxSha256: "Otisak DOCX (SHA-256)",
     },
     yes: "da",
     no: "ne",
@@ -1341,6 +1341,7 @@ export const hr = {
     noSubmissionsTitle: "Nema predanih radova",
     noSubmissions: "Paket se može pripremiti kad bude barem jedan predani rad.",
     unavailable: "Predaje trenutačno nije moguće učitati. Pokušajte ponovno.",
+    retry: "Pokušaj ponovno",
     fingerprintsTitle: "Otisci",
     fingerprintsNote: "Otisci pojedinih datoteka nalaze se u CSV popisu i u zasebnoj datoteci u paketu. Na ovom ekranu prikazuje se otisak paketa kad je paket spreman.",
     fingerprintsMeaning: "Otisak pokazuje da datoteka nije mijenjana od predaje; ne govori ništa o autorstvu.",
@@ -1377,7 +1378,7 @@ export const hr = {
     // #757 D1, za potvrdu: a student whose account has no name; never a number or an address.
     unnamed: "Ime nije dostupno",
     studentsLabel: "Studenti",
-    studentsTitle: "Studenti · po prezimenu",
+    studentsTitle: "Studenti, po prezimenu",
     // #732 item 18, design pregled-radova-v2 (D-80): the list has no order by numbers.
     orderNote: "Popis se ne može poredati po brojevima.",
     work: {
@@ -1404,6 +1405,8 @@ export const hr = {
     viewModes: "Prikaz",
     // #711 F1, za potvrdu: the name of the top bar region (course, assignment, view, submission).
     barLabel: "Zadatak i prikaz",
+    // Design alignment 27. 11. 2026. (text 2): the line under the title, "{kolegij}, {vrsta}, rok {rok}".
+    subtitleDue: "rok {time}",
     modeWriting: "Pisanje",
     modeTeacherView: "Kako vidi nastavnik",
     // #732 item 7 (owner 6397193676): the line above the teacher's view, and why the switch is off.
@@ -1969,6 +1972,8 @@ export const hr = {
     works: {
       title: "Moji radovi",
       lede: "Vaši radovi na svim kolegijima i njihovo stanje.",
+      // Design alignment 27. 11. 2026. (R5): the works' own expired sign-in.
+      signedOut: "Prijavite se da vidite svoje radove.",
       search: "Traži po naslovu ili kolegiju",
       year: "Akademska godina",
       allYears: "Sve godine",
@@ -2338,7 +2343,7 @@ export const hr = {
     emptyBody: "Zbirni pregled prikazuje predaje jednog zadatka. Kad u kolegiju objavite zadatak, ovdje ga možete odabrati.",
     pickLabel: "Zadatak",
     pickSubmit: "Prikaži",
-    assignmentOption: "{course} · {assignment}",
+    assignmentOption: "{course}, {assignment}",
     caption: "Predaje zadatka {assignment}",
     noStudents: "U ovom zadatku još nema studenata.",
     unavailable: "Zbirni pregled trenutačno nije dostupan. Pokušajte ponovno.",
@@ -2362,6 +2367,8 @@ export const hr = {
   // work. No "Zatraži doradu" (wave 8) and no deadline extension (wave 11).
   teacherLiveWork: {
     untitled: "Rad uživo",
+    // Design alignment 27. 11. 2026. (N-04, text 57): the way back from the receipt names the student.
+    untitledFor: "Rad uživo: {name}",
     sidePanel: "Sažetak procesa i granice zapisa",
     neighbours: "Drugi radovi",
     previous: "Prethodni rad",
@@ -2986,7 +2993,7 @@ export const hr = {
     dueAt: "Rok",
     assignmentVersion: "Verzija zadatka",
     revision: "Verzija teksta",
-    utc: "Točne vrijednosti iz potvrde (UTC)",
+    utc: "Točne vrijednosti iz potvrde",
     late: "Rad je predan nakon roka.",
     record: "Stanje zapisa",
     records: {
@@ -3145,4 +3152,28 @@ export const inputRhythmHr = {
     failed: "Poslužitelj nije potvrdio brisanje. Pokušaj ponovno.",
     signedOut: "Sesija je istekla. Prijavi se ponovno pa pokušaj opet.",
   },
+} as const;
+
+/** The new-assignment wizard in the Croatian teacher shell (design alignment 27. 11. 2026.). */
+export const assignmentSetupHr = {
+  choose: "Odaberi kolegij",
+  steps: ["Osnovno", "Rok i opseg", "Pomoć", "Što se bilježi", "Pregled i objava"],
+  next: "Nastavi",
+  back: "Natrag",
+  description: "Opis zadatka",
+  invalidTitle: "Upišite naslov zadatka do 160 znakova.",
+  help: "Uporaba AI alata",
+  courseHelp: "Prema pravilima kolegija",
+  noHelp: "Bez AI pomoći",
+  recorded: [
+    "Tekst rada i svaka promjena, s vremenom primitka na poslužitelj.",
+    "Sesije se sastoje od niza promjena bez prekida duljeg od 30 minuta. Prag P-01 postavlja fakultet.",
+    "Lijepljenja dulja od 200 znakova (P-02). Izvor se prikazuje kad je opažen.",
+    "Uvoz datoteke i prijenos teksta iz AI pomoćnika.",
+    "Poslane verzije, predaja i potvrda s otiskom teksta.",
+  ],
+  recordingScope: "Ductura ne bilježi ništa izvan rada, uključujući druge prozore, zaslon i kameru. Ne zna tko je tipkao.",
+  recordingNotice: "Bilježenje je jednako za sve radove. Student ga vidi u obavijesti prije početka rada.",
+  noNotifications: "Objavom se obavijesti ne šalju.",
+  publishedNotice: "Zadatak je objavljen. Upisani studenti vide ga u „Mojim zadacima”.",
 } as const;

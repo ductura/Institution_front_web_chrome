@@ -1,5 +1,6 @@
 // N-07 "Što je student predao" (WEB-2155, PARITET N-07 br. 15): interface text exactly as in the prototype
 // (Ductura_nastavnik.html, screen "predaja", receiptPanel and workState) and INVENTAR-nastavnik §3.8.
+import { oneDot } from "../../../i18n/date-dot";
 export const n07Messages = {
   title: "Što je student predao",
   intro: "Ovo je prikaz koji je student dobio pri predaji: sažetak procesa prije predaje i potvrda.",
@@ -11,7 +12,7 @@ export const n07Messages = {
   notSubmitted: (line: string): string => `Ovaj rad nije predan, pa potvrde nema. ${line}.`,
   pendingTitle: "Predaja u obradi",
   pendingBody: (when: string): string =>
-    `Predaja je zabilježena ${when}. Potpis potvrde još se izdaje; vrijeme predaje se time ne mijenja.`,
+    oneDot(`Predaja je zabilježena ${when}. Potpis potvrde još se izdaje; vrijeme predaje se time ne mijenja.`),
   check: "Provjeri stanje predaje",
   submittedTitle: (when: string, late: boolean): string => `Predano ${when}${late ? ", nakon roka" : ""}`,
   submittedAt: "Vrijeme predaje",
@@ -23,7 +24,7 @@ export const n07Messages = {
   utc: "Točne vrijednosti iz potvrde (UTC)",
   fingerprintTitle: "Otisak predanog teksta",
   fingerprintNote: "Niz znakova izračunan iz točnog predanog teksta. Ako se tekst promijeni i za jedan znak, otisak više nije isti.",
-  copy: "Kopiraj otisak",
+  copy: "Stavi otisak u međuspremnik",
   copied: "Otisak je u međuspremniku (64 znaka, bez razmaka).",
   copyFailed: "Prijenos otiska u međuspremnik nije uspio.",
   record: "Stanje zapisa",

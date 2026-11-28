@@ -92,7 +92,7 @@ export const assistHr = {
     mentionedIn: "spominje se u poglavlju",
     hypothesis: "Hipoteza",
     jump: "Idi tamo",
-    saved: "Pitanje rada je spremljeno uz rad.",
+    saved: "Pitanje rada je spremljeno na poslužitelju uz rad.",
   },
   review: {
     open: "Pregledaj poglavlje",

@@ -7,7 +7,7 @@
  * `renderToStaticMarkup`. "Predano" only with the signed receipt the client
  * checked against the contract (B-6); `ceka` (recorded, not signed yet)
  * never says it. Times are in Europe/Zagreb; below them one details block
- * gives the exact UTC values from the receipt (E-11). The browser does not check the Ed25519 signature (P-4) and the
+ * repeats the receipt's instants in the same form (E-11). The browser does not check the Ed25519 signature (P-4) and the
  * panel says so. Not built here: /provjera, QR and PDF (wave 9).
  */
 
@@ -16,6 +16,7 @@ import { Details, Fingerprint, KeyValueList, StateTag, type KeyValueItem } from 
 import type { SubmissionRead, SubmissionReceipt } from "../../client/submission";
 import { messagesHr } from "../../lib/i18n/messages.hr";
 
+import LoadAlert from "../shell/LoadAlert";
 import { zagrebParts } from "../summary/zagreb-time";
 import styles from "./ReceiptPanel.module.css";
 
@@ -48,11 +49,15 @@ function zagreb(iso: string): string {
   return parts === null ? iso : `${parts.date} ${messagesHr.summary.at} ${parts.time}`;
 }
 
-/** E-11: one block under the rows with the receipt's instants as given (ISO, UTC). */
+/**
+ * E-11: one block under the rows with the receipt's instants. Owner decision
+ * 27. 11. 2026.: people see times as "19. listopada 2026. u 14:05" (Zagreb),
+ * never raw ISO or UTC; the exact instant stays in `dateTime`.
+ */
 function UtcDetails({ rows }: { rows: readonly (readonly [string, string])[] }) {
   return (
     <Details summary={t.utc}>
-      <KeyValueList items={rows.map(([label, iso]) => ({ id: label, label, value: <code>{iso}</code> }))} />
+      <KeyValueList items={rows.map(([label, iso]) => ({ id: label, label, value: <time dateTime={iso}>{zagreb(iso)}</time> }))} />
     </Details>
   );
 }
@@ -71,10 +76,7 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
   if (read.kind === "loading") return <p role="status">{t.loading}</p>;
   if (read.kind === "error") {
     return (
-      <div className="receipt">
-        <p role="alert">{t.error}</p>
-        <p><a className={styles.link} href={retryHref}>{t.retry}</a></p>
-      </div>
+      <LoadAlert className="receipt" retry={{ label: t.retry, href: retryHref }}>{t.error}</LoadAlert>
     );
   }
   if (read.kind === "none") {
@@ -111,7 +113,8 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
     { id: "record", label: t.record, value: t.records[p.evidenceRecord] },
     {
       id: "fingerprint", label: t.fingerprint,
-      value: <><Fingerprint value={p.artifactSha256} /><span className="receipt__note">{t.fingerprintNote}</span></>,
+      // Design alignment 27. 11. 2026. (A5): no digest for people; the copy button, the note and the notices stay.
+      value: <><Fingerprint value={p.artifactSha256} showDigest={false} /><span className="receipt__note">{t.fingerprintNote}</span></>,
     },
   ];
   return (

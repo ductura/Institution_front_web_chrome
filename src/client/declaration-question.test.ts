@@ -25,7 +25,7 @@ const STATE = {
   declarationRequired: true, teacherQuestion: QUESTION as typeof QUESTION | null, questionAnswer: null as typeof ANSWER | null,
 };
 type State = typeof STATE;
-const PUT_SCHEMA = contracts["student.declaration.put"].body as Schema;
+const PUT_SCHEMA = contracts["student.declaration-second.put"].body as Schema;
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const error = (status: number, code: string) => json(status, { error: code, code, messageKey: "errors.x", status, requestId: "00000000-0000-4000-8000-000000000000" });
 

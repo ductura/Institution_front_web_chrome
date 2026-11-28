@@ -13,6 +13,8 @@
 
 import { Extension, InputRule } from "@tiptap/core";
 
+import { typingTypographyOn } from "./typing-switch";
+
 export const EN_DASH = "–";
 export const ELLIPSIS = "…";
 
@@ -31,6 +33,8 @@ export const DashEllipsis = Extension.create({
     const rule = (find: RegExp) => new InputRule({
       find,
       handler: ({ state, range, match }) => {
+        // ED-99: "Tipografija dok tipkam" switched off leaves the typed characters.
+        if (!typingTypographyOn()) return null;
         const swap = dashOrEllipsis(match[0]);
         if (swap === null) return null;
         state.tr.insertText(swap.text, range.to - swap.length, range.to);

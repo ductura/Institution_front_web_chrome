@@ -1,22 +1,23 @@
 "use client";
 
-import { Button, Details, Dialog, TextArea } from "@ductura/ui";
+import { Button, Details, Dialog, Select, TextArea } from "@ductura/ui";
 import { TextSelection } from "@tiptap/pm/state";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { useLocalEditor } from "@/components/editor/LocalDocument";
 import { scanBarcode, type ScanResult } from "./barcode";
 import {
-  bibSources, citePlaces, missingFields, overviewRows, possibleDuplicates, relianceNotes, sourceStats,
+  bibSources, citePlaces, missingFields, overviewRows, possibleDuplicates, relianceNotes, sourcesByChapter, sourceStats,
   type BibSource, type CitePlace,
 } from "./bibliography-model";
 import styles from "./StudentBibliography.module.css";
 import { planImport } from "./import-refs";
-import { defaultEffectiveStyle, effectiveStyle, styledLiterature, type EffectiveStyle } from "./styled-entries";
+import { citationToCopy, defaultEffectiveStyle, effectiveStyle, styledLiterature, type EffectiveStyle } from "./styled-entries";
 import { RecommendedSources } from "../../proof-requests/ProofRequests";
 import { RequiredLiterature } from "../../sources-mention/RequiredLiterature";
 import { useInstitutionStyle } from "../../citation-styles/use-institution-style";
 import { bibliographyStudentHr as t } from "./messages.hr";
 import { readStates, stateCounts, toggleState, writeStates, type SourceState, type SourceStates } from "./source-state";
+import { planChapters, planGaps, plannedChapters, readPlan, togglePlan, writePlan, type PlanChapter, type SourcePlan } from "./source-plan";
 
 type Editor = NonNullable<ReturnType<typeof useLocalEditor>>;
 type Props = {
@@ -35,11 +36,30 @@ const MAX_FILE = 1_000_000;
 export function StudentBibliographyHost(props: Props) {
   const [open, setOpen] = useState(false);
   return <Details summary={t.heading} onToggle={(event) => setOpen(event.currentTarget.open)}>
-    {open && <Bibliography {...props} />}
+    {open && (props.assignmentId === undefined
+      ? <Bibliography {...props} shown={defaultEffectiveStyle()} />
+      : <BibliographyLive {...props} assignmentId={props.assignmentId} />)}
   </Details>;
 }
 
-function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId }: Props) {
+/** Reads the institution's style once, for both the styled list and "Kopiraj navod". */
+function BibliographyLive(props: Props & { assignmentId: string }) {
+  const read = useInstitutionStyle(props.assignmentId);
+  return <Bibliography {...props} shown={effectiveStyle(read)} />;
+}
+
+/** ED-106 (prototype copyCite): copies the in-text citation; a blocked clipboard says so, as the prototype. */
+async function copyCite(text: string | null, say: (m: string) => void) {
+  if (text === null) return say(t.copyCiteNone);
+  try {
+    await navigator.clipboard.writeText(text);
+    say(t.copyCiteDone);
+  } catch {
+    say(t.copyCiteBlocked);
+  }
+}
+
+function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId, shown: style }: Props & { shown: EffectiveStyle }) {
   const [doc, setDoc] = useState(() => (editor.isDestroyed ? null : editor.state.doc));
   useEffect(() => {
     const sync = () => setDoc(editor.isDestroyed ? null : editor.state.doc);
@@ -54,6 +74,7 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId 
   const reliance = useMemo(() => relianceNotes(sources, places), [sources, places]);
   const incomplete = useMemo(() => sources.map((s) => ({ s, missing: missingFields(s.raw) })).filter((x) => x.missing.length > 0), [sources]);
   const doubles = useMemo(() => possibleDuplicates(sources), [sources]);
+  const chapters = useMemo(() => sourcesByChapter(json), [json]);
 
   const [states, setStates] = useState<SourceStates>(() => readStates(documentId));
   const [filter, setFilter] = useState<"all" | "get" | "unread">("all");
@@ -63,6 +84,16 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId 
   const editable = editor.isEditable && !editor.isDestroyed;
 
   useEffect(() => setStates(readStates(documentId)), [documentId]);
+
+  const planHeads = useMemo(() => planChapters(json), [json]);
+  const [plan, setPlan] = useState<SourcePlan>(() => readPlan(documentId));
+  useEffect(() => setPlan(readPlan(documentId)), [documentId]);
+  const gaps = useMemo(() => planGaps(plan, planHeads, sources), [plan, planHeads, sources]);
+  const flipPlan = (sourceId: string, chapterId: string) => {
+    const result = togglePlan(plan, sourceId, chapterId);
+    setPlan(result);
+    writePlan(documentId, result);
+  };
 
   const counts = stateCounts(sources.map((s) => s.id), states);
   const shown = stats.filter((s) => filter === "all" || (filter === "get" ? states[s.id] === "get"
@@ -120,6 +151,15 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId 
       </Button>
     </section>)}
 
+    {gaps.length > 0 && <Details summary={t.planGaps(gaps.reduce((n, g) => n + g.sources.length, 0))}>
+      <ul className={styles.list} data-plan-gaps="">
+        {gaps.map((g) => <li key={g.chapter.id} className={styles.item}>
+          <strong>{t.planChapter(g.chapter.number, g.chapter.title)}</strong>
+          <small>{g.sources.map((s) => s.label).join("; ")}</small>
+        </li>)}
+      </ul>
+    </Details>}
+
     <ul className={styles.list}>
       {shown.map((s) => <li key={s.id} className={styles.item}>
         <strong>{s.label}</strong>
@@ -129,10 +169,23 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId 
           {([["get", t.stateGet], ["have", t.stateHave], ["read", t.stateRead]] as const).map(([v, label]) =>
             <Button key={v} tone="quiet" aria-pressed={states[s.id] === v} disabled={!editable}
               onClick={() => setState(s.id, v)}>{label}</Button>)}
+          <Button tone="quiet" onClick={() => void copyCite(citationToCopy(json, style.style, s.id), setMessage)}>{t.copyCite}</Button>
         </div>
         {s.places.length > 0 && <Where places={s.places} onJump={jump} onNext={() => next(s.id, s.places)} />}
+        {planHeads.length > 0 && <PlanRow source={s} plan={plan} chapters={planHeads} editable={editable} onFlip={flipPlan} />}
       </li>)}
     </ul>
+    {planHeads.length > 0 && <p><small>{t.planDevice}</small></p>}
+
+    {chapters.length > 0 && <Details summary={t.byChapter}>
+      <ul className={styles.list} data-sources-by-chapter>
+        {chapters.map((c) => <li key={c.id} className={styles.item}>
+          <strong>{c.number ? `${c.number} ${c.title}` : c.title}</strong>
+          <small>{c.labels.length ? c.labels.join(", ") : t.byChapterNone}</small>
+        </li>)}
+      </ul>
+      <p><small>{t.byChapterNote}</small></p>
+    </Details>}
 
     {(incomplete.length > 0 || doubles.length > 0) && <Details summary={t.incomplete(incomplete.length + doubles.length)}>
       <ul className={styles.list}>
@@ -146,7 +199,7 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId 
     <Button tone="quiet" onClick={() => setOverviewOpen(true)}>{t.overview}</Button>
     <Overview open={overviewOpen} onClose={() => setOverviewOpen(false)} stats={stats} showProofs={Boolean(proofCounts)} />
     <ImportRefs editor={editor} sources={sources} editable={editable} />
-    <StyledList json={json} sources={sources} assignmentId={assignmentId} />
+    <StyledView json={json} sources={sources} shown={style} />
     <Unavailable assignmentId={assignmentId} courseId={courseId} />
     <p role="status">{message}</p>
   </div>;
@@ -166,6 +219,23 @@ function Where({ places, onJump, onNext }: { places: readonly CitePlace[]; onJum
   </div>;
 }
 
+/** ED-117: the chapters a source is planned for, each removed with its chip, and the other chapters to add. */
+export function PlanRow({ source, plan, chapters, editable, onFlip }: {
+  source: BibSource; plan: SourcePlan; chapters: readonly PlanChapter[]; editable: boolean; onFlip: (sourceId: string, chapterId: string) => void;
+}) {
+  const planned = plannedChapters(plan, source.id, chapters);
+  const free = chapters.filter((c) => !planned.includes(c));
+  return <div className={styles.row} role="group" aria-label={`${t.planTitle}: ${source.label}`} data-plan={source.id}>
+    <small>{t.planTitle}</small>
+    {planned.map((c) => <Button key={c.id} tone="quiet" aria-pressed="true" disabled={!editable}
+      aria-label={t.planRemove(c.number, source.label)} onClick={() => onFlip(source.id, c.id)}>{t.planChip(c.number)}</Button>)}
+    {planned.length === 0 && (!editable || free.length === 0) && <small>{t.planNone}</small>}
+    {editable && free.length > 0 && <Select label={t.planAdd} placeholder={t.planPick} value=""
+      options={free.map((c) => ({ value: c.id, label: t.planChapter(c.number, c.title) }))}
+      onChange={(event) => { const id = event.currentTarget.value; if (id) onFlip(source.id, id); }} />}
+  </div>;
+}
+
 function Overview({ open, onClose, stats, showProofs }: { open: boolean; onClose: () => void; stats: ReturnType<typeof sourceStats>; showProofs: boolean }) {
   const rows = overviewRows(stats);
   return <Dialog open={open} title={t.overview} onClose={onClose} actions={<Button onClick={onClose}>{t.overviewClose}</Button>}>
@@ -182,16 +252,7 @@ function Overview({ open, onClose, stats, showProofs }: { open: boolean; onClose
 
 type StyledProps = { json: Parameters<typeof styledLiterature>[0]; sources: readonly BibSource[] };
 
-/** Without an assignment there is no institution style to read: the default FPZG style, no request. */
-function StyledList({ assignmentId, ...rest }: StyledProps & { assignmentId: string | undefined }) {
-  return assignmentId === undefined ? <StyledView {...rest} shown={defaultEffectiveStyle()} /> : <StyledLive {...rest} assignmentId={assignmentId} />;
-}
-
-function StyledLive({ assignmentId, ...rest }: StyledProps & { assignmentId: string }) {
-  const read = useInstitutionStyle(assignmentId);
-  return <StyledView {...rest} shown={effectiveStyle(read)} />;
-}
-
+/** Without an assignment there is no institution style to read: the default FPZG style, no request (see StudentBibliographyHost). */
 function StyledView({ json, sources, shown }: StyledProps & { shown: EffectiveStyle }) {
   const out = useMemo(() => styledLiterature(json, shown.style), [json, shown.style]);
   const label = (id: string) => sources.find((s) => s.id === id)?.label ?? id;

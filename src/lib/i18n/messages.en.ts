@@ -25,7 +25,7 @@ const en = {
   },
   shell: {
     skipToContent: "Skip to content",
-    demoBadge: "Demo · invented data",
+    demoBadge: "Demo, invented data",
     // Design v3 shell (#476 6314969336): only static labels and the role the
     // server read; no names or counts the app does not have.
     sideNav: "Side navigation",
@@ -813,6 +813,7 @@ const en = {
       link: "New assignment in the course",
       missing: "The course is not available to this account.",
       unavailable: "The course cannot be loaded right now. Please try again.",
+      retry: "Try again",
       codeKept: "The course enrolment code stays the same.",
       studentsNotified: "Students enrolled in the course see the assignment among their assignments.",
     },
@@ -1136,7 +1137,8 @@ const en = {
     lead: "Courses you teach and their assignments. Order: academic year, then name; assignments by deadline.",
     newCourse: "New course and assignment",
     empty: "You have no courses that you teach.",
-    emptyLead: "Create a course and publish the first assignment.",
+    emptyBody: "A course is created by the faculty administrator, who assigns it to its holder. Once you are added to a course, it appears here.",
+    emptyNext: "If you need a new course, contact your faculty administrator.",
     noAssignments: "No assignments yet.",
     unavailable: "Courses are not available right now. Please try again.",
     retry: "Try again",
@@ -1158,23 +1160,12 @@ const en = {
     accommodation: "Approved accommodation",
     accommodationsUnavailable: "Approved accommodation marks are not available right now. Please try again.",
   },
-  // DAN-492 (M2.6-P02, N-16), design pregled-radova-v2: only what the read gives (D-202).
+  // DAN-492 (M2.6-P02, N-16): only what the page /nastavnik/mentorstva says itself.
   mentoredWorks: {
     title: "Works you mentor",
     lead: "Bachelor's, master's and other theses you mentor. Here you also approve or decline students' mentorship requests.",
-    listTitle: "Works · alphabetical",
-    orderNote: "The list cannot be ordered by numbers.",
-    empty: "You have no open mentorships.",
     unavailable: "Works are not available right now. Please try again.",
     retry: "Try again",
-    unnamed: "Name not available",
-    open: "Open work",
-    // The state as text only, never a colour (D-128).
-    state: {
-      not_started: "The student has not started the work yet.",
-      in_progress: "Being written",
-      submitted: "Submitted",
-    },
   },
   // WEB-32 (N-16): the card of mentorship requests; a note only after the server's answer (B-6).
   mentorshipRequests: {
@@ -1188,7 +1179,6 @@ const en = {
     approving: "Approving…",
     decline: "Decline",
     dialogTitle: "Decline the mentorship request?",
-    dialogLead: "{name}",
     reason: "Reason for declining (optional)",
     reasonHint: "The reason is optional. We recommend giving one, for the student. The student will see the reason.",
     cancel: "Cancel",
@@ -1224,7 +1214,6 @@ const en = {
     },
     save: "Record the extension",
     saving: "Recording…",
-    cancel: "Cancel",
     listTitle: "Extended deadlines",
     empty: "No deadline has been extended.",
     unavailable: "Extensions are not available right now. Please try again.",
@@ -1235,6 +1224,7 @@ const en = {
     recorded: "The extension is recorded. Only you and that student see the reason.",
     earlierSubmission: "A submission was requested before this extension. The extension does not change that submission; it is recorded next to it.",
     missing: "Choose a student, a new deadline and a reason.",
+    missingAll: "Choose a new deadline and a reason.",
     invalid: "The extension was not recorded. Check that the new deadline is later than the one in force and that the reason fits the choice.",
     notFound: "The assignment or the student is no longer available.",
     unknown: "It is not known whether the extension was recorded. Refresh the page before trying again.",
@@ -1252,9 +1242,7 @@ const en = {
       submittedMinute: "Submission time",
       afterDeadline: "After the deadline",
       pdfName: "PDF file",
-      pdfSha256: "PDF fingerprint (SHA-256)",
       docxName: "DOCX file",
-      docxSha256: "DOCX fingerprint (SHA-256)",
     },
     yes: "yes",
     no: "no",
@@ -1264,6 +1252,7 @@ const en = {
     noSubmissionsTitle: "No submitted works",
     noSubmissions: "The package can be prepared once there is at least one submitted work.",
     unavailable: "Submissions cannot be loaded right now. Try again.",
+    retry: "Try again",
     fingerprintsTitle: "Fingerprints",
     fingerprintsNote: "The fingerprints of the files are in the CSV roster and in a separate file in the package. This screen shows the fingerprint of the package once it is ready.",
     fingerprintsMeaning: "A fingerprint shows that a file has not changed since submission; it says nothing about authorship.",
@@ -1300,7 +1289,7 @@ const en = {
     // #757 D1, za potvrdu: a student whose account has no name; never a number or an address.
     unnamed: "Name not available",
     studentsLabel: "Students",
-    studentsTitle: "Students · by surname",
+    studentsTitle: "Students, by surname",
     // #732 item 18, design pregled-radova-v2 (D-80): the list has no order by numbers.
     orderNote: "The list cannot be ordered by numbers.",
     work: {
@@ -1327,6 +1316,7 @@ const en = {
     viewModes: "View",
     // #711 F1, za potvrdu: the name of the top bar region (course, assignment, view, submission).
     barLabel: "Assignment and view",
+    subtitleDue: "due {time}",
     modeWriting: "Writing",
     modeTeacherView: "As the teacher sees it",
     // #732 item 7 (owner 6397193676): the line above the teacher's view, and why the switch is off.
@@ -1876,6 +1866,7 @@ const en = {
     works: {
       title: "My works",
       lede: "Your works in all courses and their status.",
+      signedOut: "Sign in to see your works.",
       search: "Search by title or course",
       year: "Academic year",
       allYears: "All years",
@@ -2234,7 +2225,7 @@ const en = {
     emptyBody: "The summary shows the submissions of one assignment. Once you publish an assignment in a course, you can choose it here.",
     pickLabel: "Assignment",
     pickSubmit: "Show",
-    assignmentOption: "{course} · {assignment}",
+    assignmentOption: "{course}, {assignment}",
     caption: "Submissions for {assignment}",
     noStudents: "This assignment has no students yet.",
     unavailable: "The summary is not available right now. Please try again.",
@@ -2256,6 +2247,7 @@ const en = {
   },
   teacherLiveWork: {
     untitled: "Live work",
+    untitledFor: "Live work: {name}",
     sidePanel: "Process summary and record limits",
     neighbours: "Other works",
     previous: "Previous work",
@@ -2863,7 +2855,7 @@ const en = {
     dueAt: "Deadline",
     assignmentVersion: "Assignment version",
     revision: "Text version",
-    utc: "Exact values from the receipt (UTC)",
+    utc: "Exact values from the receipt",
     late: "The work was submitted after the deadline.",
     record: "Record state",
     records: {

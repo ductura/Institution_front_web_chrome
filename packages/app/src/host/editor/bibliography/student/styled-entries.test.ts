@@ -4,7 +4,7 @@ import { citationStyleOf } from "../../citation-styles/catalog";
 import { citationStyleText } from "../../citation-styles/messages.hr";
 import { deriveBibliography, formatCitation } from "../../../../../../editor-core/src/document/citation/index.ts";
 import type { CanonicalDocumentV3, CitationNode, DocumentSource } from "../../../../../../editor-core/src/document/document/schema";
-import { effectiveStyle, styledLiterature, toSource } from "./styled-entries";
+import { citationToCopy, effectiveStyle, styledLiterature, toSource } from "./styled-entries";
 
 // Synthetic data only: invented authors, titles and publishers.
 const book = (family: string, title: string, year = 2020, extra: Record<string, unknown> = {}) =>
@@ -102,6 +102,31 @@ describe("styledLiterature", () => {
   it("finds citations nested inside other inline nodes", () => {
     const nested: Node = { type: "doc", attrs: { sources }, content: [{ type: "paragraph", content: [{ type: "text" }, { type: "emphasis", content: [cite("s-Prvi")] }] }] };
     expect(styledLiterature(nested, style("fpzg")).citations.map((c) => c.text)).toEqual(["(Babić, 2020)"]);
+  });
+});
+
+describe("citationToCopy (ED-106 Kopiraj navod)", () => {
+  it("author-date: the citation without a page, with the year letter of the list", () => {
+    expect(citationToCopy(doc, style("fpzg"), "s-Prvi")).toBe("(Babić, 2020)");
+    expect(citationToCopy(doc, style("fpzg"), "s-Treći")).toBe("(Anić, 2020b)");
+  });
+
+  it("a source not yet cited can still be copied", () => {
+    const withUnused = docOf([...sources, book("Kovač", "Nenavedeni", 2018)], cite("s-Prvi"));
+    expect(citationToCopy(withUnused, style("fpzg"), "s-Nenavedeni")).toBe("(Kovač, 2018)");
+  });
+
+  it("numeric: the number of a cited source, nothing for one without a number", () => {
+    expect(citationToCopy(doc, style("ieee"), "s-Treći")).toBe("[2]");
+    const withUnused = docOf([...sources, book("Kovač", "Nenavedeni")], cite("s-Prvi"));
+    expect(citationToCopy(withUnused, style("ieee"), "s-Nenavedeni")).toBeNull();
+  });
+
+  it("nothing for an unknown or incomplete source", () => {
+    expect(citationToCopy(doc, style("fpzg"), "s-nema")).toBeNull();
+    const broken = docOf([{ ...book("Horvat", "Pokvaren"), publisher: "" }]);
+    expect(citationToCopy(broken, style("fpzg"), "s-Pokvaren")).toBeNull();
+    expect(citationToCopy(null, style("fpzg"), "s-Prvi")).toBeNull();
   });
 });
 

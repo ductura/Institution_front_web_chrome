@@ -226,20 +226,27 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     return body.receipt;
   });
 
-  await test.step('Potvrda predaje prikazuje isti otisak i nakon osvježavanja', async () => {
+  await test.step('Potvrda predaje ne prikazuje otisak, ali ga nudi za kopiranje, i nakon osvježavanja', async () => {
     await expect(page).toHaveURL((url) => url.pathname === `${submissionPath}/potvrda`);
-    // S-08 K1/K2: the receipt no longer shows the fingerprint; the copy button hands it over as 64
-    // characters without spaces, so the check reads what the button copies (still the receipt's own).
+    // S-08 K1, K2 (Ductus#2059): the SHA-256 string is no longer shown, in groups or whole; the note and the
+    // button stay, and the button hands over the receipt's own fingerprint as 64 characters without spaces.
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: webOrigin });
-    await expect(page.getByRole('heading', { name: /^Predano / })).toBeVisible();
-    const copiedFingerprint = async () => {
-      await page.getByRole('button', { name: 'Otisak u međuspremnik' }).click();
-      return page.evaluate(() => navigator.clipboard.readText());
+    const sha = receipt.payload.artifactSha256;
+    const grouped = sha.match(/.{4}/g).join(' ');
+    const copy = page.getByRole('button', { name: 'Otisak u međuspremnik' });
+    const note = page.getByText('Niz znakova izračunan iz točnog predanog teksta.', { exact: false });
+    const hidden = async (when: string) => {
+      await expect(page.getByRole('heading', { name: /^Predano / }), when).toBeVisible();
+      await expect(copy, `Gumb za kopiranje: ${when}`).toBeVisible();
+      await expect(note, `Napomena o otisku: ${when}`).toBeVisible();
+      await expect(page.getByText(grouped, { exact: true }), `Otisak u skupinama: ${when}`).toHaveCount(0);
+      await expect(page.getByText(sha, { exact: true }), `Otisak u cijelosti: ${when}`).toHaveCount(0);
+      await copy.click();
+      expect(await page.evaluate(() => navigator.clipboard.readText()), `Kopirani otisak: ${when}`).toBe(sha);
     };
-    expect(await copiedFingerprint(), 'Otisak nakon predaje').toBe(receipt.payload.artifactSha256);
+    await hidden('nakon predaje');
     await page.reload();
-    await expect(page.getByRole('heading', { name: /^Predano / })).toBeVisible();
-    expect(await copiedFingerprint(), 'Isti otisak nakon osvježavanja').toBe(receipt.payload.artifactSha256);
+    await hidden('nakon osvježavanja');
   });
 
   await test.step('Ponovno otvaranje rada dopušta samo čitanje', async () => {

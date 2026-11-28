@@ -19,8 +19,20 @@ import { marksHr as t } from "./messages.hr";
 import styles from "./Marks.module.css";
 import { reportAlert } from "../../../../../../src/components/editor/layout-prefs/context-alerts.ts";
 import { GHOST_KEY, ghostPlugin } from "./ghost";
+import { cardFits, requestCommentCard, requestCommentFocus } from "../comments/comment-card";
+import { askSourceInstead, holeNeedsSource, linkHoleToSource, sourcesOf } from "./hole-source";
 
 const NEED_ALERT = "marks-need-proof";
+
+/**
+ * A click on a comment alone in the text: up to 1050 px its card (ED-98), wider the Komentari group of
+ * the right panel with that comment in focus (ED-119, prototype app.js `.cmt`).
+ */
+export function openComment(pos: number, width = typeof window === "undefined" ? 0 : window.innerWidth): void {
+  if (cardFits(width)) { requestCommentCard(pos); return; }
+  requestPanel("comments");
+  requestCommentFocus(pos);
+}
 
 const KEY = new PluginKey("ductusMarks");
 const CLASS: Partial<Record<MarkKind, string>> = { hole: styles.hole, plain: styles.plain, need: styles.need };
@@ -50,17 +62,38 @@ function marksPlugin() {
  * when there is another mark of the kind, and for "Za provjeru" "Provjereno, ukloni" (only when the
  * text can be written; a submitted work only explains).
  */
-export function MarkActions({ place, more, editable, onNext, onRemove, onLink }: {
+export function MarkActions({ place, more, editable, onNext, onRemove, onLink, sources, onSource, onAskSource }: {
   place: Place; more: boolean; editable: boolean; onNext: () => void; onRemove: () => void; onLink: () => void;
+  /** ED-104: set when the hole asks for a source; the work's sources to choose from. */
+  sources?: readonly { id: string; label: string }[];
+  onSource?: (id: string) => void;
+  onAskSource?: () => void;
 }) {
   const hole = place.kind === "hole";
   const plain = place.kind === "plain";
+  if (hole && sources && editable && onSource) {
+    return (
+      <>
+        <p><b>{t.actions.sourceTitle}</b></p>
+        <p>{t.actions.sourceIntro}</p>
+        {sources.length > 0 && <p>{t.actions.allSources(sources.length)}</p>}
+        {sources.length > 0 && <ul>{sources.map((s) => (
+          <li key={s.id}><Button tone="quiet" onClick={() => onSource(s.id)}>{s.label}</Button></li>))}
+        </ul>}
+        <div className={styles.actions}>
+          <Button tone="quiet" onClick={onLink}>{t.actions.newSource}</Button>
+          {more && <Button tone="quiet" onClick={onNext}>{t.actions.next}</Button>}
+        </div>
+      </>
+    );
+  }
   return (
     <>
       <p>{t.explain[place.kind]}</p>
       {(more || ((hole || plain) && editable)) && (
         <div className={styles.actions}>
           {hole && editable && <Button onClick={onRemove}>{t.actions.checked}</Button>}
+          {hole && editable && onAskSource && <Button tone="quiet" onClick={onAskSource}>{t.actions.askSource}</Button>}
           {plain && editable && <Button onClick={onLink}>{t.actions.link}</Button>}
           {more && <Button tone="quiet" onClick={onNext}>{t.actions.next}</Button>}
         </div>
@@ -113,6 +146,13 @@ export function MarksHost() {
     const onClick = (event: MouseEvent) => {
       const hit = editor.view.posAtCoords({ left: event.clientX, "top": event.clientY });
       const at = hit ? placesAt(places, hit.pos) : [];
+      // ED-98: on a phone a comment alone opens its card, not a popover (prototype text2.js).
+      // ED-119: wider, it opens Komentari with that comment in focus (prototype app.js `.cmt`).
+      if (hit && at.length > 0 && at.every((p) => p.kind === "cmt")) {
+        setPick(null);
+        openComment(hit.pos);
+        return;
+      }
       setPick(at.length ? { x: event.clientX, y: event.clientY + 12, at } : null);
     };
     dom.addEventListener("click", onClick);
@@ -130,6 +170,10 @@ export function MarksHost() {
   if (!editor || editor.isDestroyed) return null;
   const go = (p: Place) => {
     setPick(null);
+    // ED-98: on a phone a comment chosen in the list „Na ovom mjestu” opens its card.
+    if (p.kind === "cmt" && cardFits(window.innerWidth)) { requestCommentCard(p.from); return; }
+    // ED-119: wider, the comment is also brought into focus in Komentari.
+    if (p.kind === "cmt") { requestPanel("comments"); requestCommentFocus(p.from); }
     editor.chain().setTextSelection({ from: p.from, to: p.to }).scrollIntoView().focus().run();
   };
   const jump = (kind: MarkKind) => {
@@ -171,7 +215,10 @@ export function MarksHost() {
             </ul>
           ) : <MarkActions place={pick.at[0]!} more={hasNext(places, pick.at[0]!.kind)}
                 editable={editor.isEditable} onNext={() => jump(pick.at[0]!.kind)} onRemove={() => remove(pick.at[0]!)}
-                onLink={() => { setPick(null); requestPanel("sources"); }} />}
+                onLink={() => { setPick(null); requestPanel("sources"); }}
+                sources={holeNeedsSource(editor.state.doc, pick.at[0]!) ? sourcesOf(editor.state.doc) : undefined}
+                onSource={(id) => { const p = pick.at[0]!; setPick(null); linkHoleToSource(editor, p, id); }}
+                onAskSource={() => { const p = pick.at[0]!; setPick(null); askSourceInstead(editor, p); }} />}
           <Button tone="quiet" onClick={() => setPick(null)}>{t.close}</Button>
         </div>
       ) : null}

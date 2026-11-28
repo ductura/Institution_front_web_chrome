@@ -18,7 +18,7 @@ const t = messagesHr.teacherSummary;
 const HREF = "/nastavnik/zbirni";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
+export const metadata = { title: `${t.title}, ${messagesHr.app.name}` };
 
 /**
  * TODO(ugovor): teacher.assignment-overview.get comes with

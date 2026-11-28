@@ -31,6 +31,11 @@
   margin: 0;
 }
 
+/* Design alignment 27. 11. 2026. (S-08): a value that cannot be read, in the error colour. */
+.rows dd.error {
+  color: var(--error);
+}
+
 @media (max-width: 860px) {
   :global(.page) > .layout {
     grid-template-columns: minmax(0, 1fr);

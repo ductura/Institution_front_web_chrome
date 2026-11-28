@@ -27,7 +27,7 @@ export const workingCriteriaHr = {
   clearNote: "Obriši napomenu",
   cancel: "Odustani",
   saving: "Sprema se…",
-  saved: "Spremljeno.",
+  saved: "Spremljeno na poslužitelju.",
   errors: {
     signedOut: "Prijava je istekla. Prijavite se ponovno.",
     notFound: "Kriterij više nije dostupan. Osvježite prikaz.",

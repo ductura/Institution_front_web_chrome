@@ -1,4 +1,5 @@
 // N-04 "Popis studenata" (WEB-2143): interface text, as in the prototype and INVENTAR-nastavnik 3.3.
+import { oneDot } from "../../../i18n/date-dot";
 export const courseStudentsMessages = {
   title: "Popis studenata",
   courseTitle: (course: string): string => `${course}: studenti`,
@@ -41,9 +42,9 @@ export const courseStudentsMessages = {
   notSubmitted: "Nije predano",
   unconfirmed: "Obavijest o zadatku još nije potvrđena",
   unknownState: "Stanje rada nije poznato",
-  awaitsRevision: (deadline: string): string => `Čeka doradu, rok za doradu ${deadline}.`,
+  awaitsRevision: (deadline: string): string => oneDot(`Čeka doradu, rok za doradu ${deadline}.`),
   awaitsRevisionNoDeadline: "Čeka doradu.",
-  extendedTo: (due: string): string => `Rok produljen do ${due}.`,
+  extendedTo: (due: string): string => oneDot(`Rok produljen do ${due}.`),
   at: "u",
   // F4-PM1-R09: removal of a student from the course and permission to return.
   remove: "Ukloni iz kolegija",

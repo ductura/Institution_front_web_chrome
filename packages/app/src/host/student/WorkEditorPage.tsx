@@ -19,11 +19,11 @@ import { ReadOnlyMentor } from "../../../../../src/components/editor/mentor/work
 import { readSubmittedWork } from "../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
 import StatusBar from "../../../../../src/components/editor/StatusBar.tsx";
 import WorkspaceTopBar from "../../../../../src/components/editor/WorkspaceTopBar.tsx";
+import { workspaceSubtitle } from "../../../../../src/components/editor/workspace-subtitle.ts";
 import { workspaceFrame, type WorkspaceVariant } from "../../../../../src/components/editor/workspace-variant.ts";
 import { browserTransport, createApi, goToSignIn } from "../../../../../src/client/api.ts";
 import { withMentoredAssignments } from "../../../../../src/components/student/mentored-assignments.ts";
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
-import { studentHostHr } from "./i18n/messages.hr.ts";
 
 import { SaveState } from "@ductura/ui";
 import { nextPath } from "../../bases";
@@ -32,6 +32,8 @@ import { useLocale } from "../../i18n";
 import { usePageTitle, workTitle } from "../page-title";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { AssistantMatchNoticeHost } from "../editor/assistant-match-notice/AssistantMatchNoticeHost";
+import { PasteSourceHost } from "../editor/paste-source/PasteSourceHost";
+import { PasteWhatHost } from "../editor/paste-what/PasteWhatHost";
 import { ImportHost } from "../editor/import/ImportHost";
 import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
@@ -48,19 +50,26 @@ import { StudentBibliographyHost } from "../editor/bibliography/student/StudentB
 import { useLocalEditor } from "../../../../../src/components/editor/LocalDocument.tsx";
 import { courseIdOf } from "../editor/sources-mention/required-literature";
 import { MarksHost } from "../editor/marks/MarksHost";
+import { HintsHost } from "../editor/hints/HintsHost";
 import { ReadAloudHost } from "../editor/read-aloud/ReadAloudHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
 import { WritingSessionHost } from "../editor/writing-session/WritingSessionHost";
+import { CommentCardHost } from "../editor/comments/CommentCard";
 import { ChapterMarks } from "../editor/left/ChapterMarks";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
 import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
+import { SelectionBubbleHost } from "../editor/selection-bubble/SelectionBubbleHost";
 import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { SheetToc } from "../editor/toc/SheetToc";
+import { SheetAbbreviations, type AbbreviationsEditor } from "../editor/abbreviations/SheetAbbreviations";
 import type { TocEditor } from "../../../../editor-core/src/outline/index.ts";
 import { leftSectionsFor, RailFooter, StartWorkHost } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
+import { startWorkText } from "./start-work/messages.hr";
+import { readTemplate } from "./start-work/template-port";
+import { startContentFor } from "./start-work/template";
 import { SlidesWork } from "../slides/editor/SlidesWork";
 import { workKindOf } from "../slides/editor/work-kind";
 import { SheetPage } from "../editor/sheet/SheetPage";
@@ -70,7 +79,8 @@ import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
 import { WorkHistoryHost } from "../editor/work-history/WorkHistoryHost";
 import { readWordRange } from "./work/requirements";
 import { workText } from "./work/messages.hr";
-import { ErrorCard, FrameStatus, LoadingCard, OfflineBanner, SubmittedBanner, courseLine, momentHr } from "./work/frame";
+import { DeniedState } from "../states/States";
+import { ErrorCard, FrameStatus, LoadingCard, OfflineBanner, SubmittedBanner, momentHr } from "./work/frame";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
@@ -126,14 +136,19 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
         readWordRange(assignmentId),
       ]);
       if (!live) return;
-      const read = editorWorkRead(assignmentId, assignments as never, work as never);
+      const read = editorWorkRead(assignmentId, assignments as never, work as never, { refusals: true });
       if (read.kind === "signedOut") return goToSignIn(here);
       if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
+      // Design alignment 27. 11. 2026. (A3): a 403 is not a read error; the heading and the way back to one's own space.
+      if (read.kind === "denied") {
+        return setShown({ kind: "page", node: <div className="page"><DeniedState title={t.access.deniedTitle} backLabel={t.access.backToOwn} backHref={appHref(base, "/")} /></div> });
+      }
       const frame = workspaceFrame(read, undefined, { kind: "ready", wordRange });
       const title = read.kind === "ready" ? read.title : null;
       setName(title);
-      const subtitle = read.kind === "ready" ? courseLine(read.course, read.dueAt, read.workType === undefined ? undefined : (studentHostHr.teacher.assignment.workTypes as Record<string, string>)[read.workType]) : null;
+      // Design alignment 27. 11. 2026. (S-07): "{kolegij}, {vrsta}, rok {rok}", the extended deadline when there is one.
+      const subtitle = read.kind === "ready" ? workspaceSubtitle(read) : null;
       // WEB-NUZ-PREDAJA-1 (P-17): only the full editor has the text the count reads, so only it counts.
       const bar = <WorkspaceTopBar assignmentId={assignmentId} base={base} title={title} subtitle={subtitle}
         readOnly={frame.variant === "predano"} inert={frame.variant === "greska"}
@@ -157,8 +172,10 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} base={base} course={read.course} title={read.title} topBar={topBar} length={length}
+            startContent={startContentFor(readTemplate, startWorkText.titleFields)}
             statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost}
-            toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
+            toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} />
+              <SelectionBubbleHost workId={assignmentId} confirmedWorkSchemaVersion={ctx.confirmedWorkSchemaVersion} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
             triggers={({ documentId }) => <SourcesMention documentId={documentId}
               openOrigin={() => router.push(nextPath(base, `/rad/${encodeURIComponent(assignmentId)}/podrijetlo`))} />}
             literature={({ documentId }) => <><LiteratureList courseId={courseIdOf(assignments, assignmentId)} /><BibliographyMount documentId={documentId} assignmentId={assignmentId} courseId={courseIdOf(assignments, assignmentId)} /></>}
@@ -184,7 +201,11 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
               footer: ({ editor, scope, submitted, signedOut }) => submitted || signedOut ? null
                 : <WritingSessionHost editor={editor} scope={scope} workId={assignmentId} readOnly={false} />,
               // ED-71: "Prikaz › Sadržaj na listu" puts the table of contents on the sheet above the text.
-              sheetTop: ({ editor, scope, documentId }) => <SheetToc editor={editor as unknown as TocEditor | null} scope={scope} documentId={documentId} />,
+              // ED-79: "Dijelovi rada › Popis kratica" puts the list of abbreviations under it.
+              sheetTop: ({ editor, scope, documentId }) => <>
+                <SheetToc editor={editor as unknown as TocEditor | null} scope={scope} documentId={documentId} />
+                <SheetAbbreviations editor={editor as unknown as AbbreviationsEditor | null} scope={scope} documentId={documentId} />
+              </>,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId, read.dueAt), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></>,
               footer: <RailFooter range={frame.range} dueAt={read.dueAt} />,
@@ -193,11 +214,18 @@ export function WorkEditorPage({ assignmentId }: { assignmentId: string }) {
             sessionControls={({ scope, session, documentId }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />
               <AssistantMatchNoticeHost documentId={documentId} />
+              {/* ED-76: a paste that holds a quote from the source notebook offers its citation. */}
+              <PasteSourceHost documentId={documentId} />
+              {/* ED-108: after a paste, "Zalijepljeno. Što je ovo?": a quote, a source note, the stash or the text as it is. */}
+              <PasteWhatHost documentId={documentId} workId={assignmentId} />
               {/* ED-16 (NF2-P14): the one "Povijest i usporedba" dialog, asked by the header, Prikaz, Ctrl+K and the left panel. */}
               <WorkHistoryHost documentId={documentId} replayHref={appHref(base, `/rad/${assignmentId}/reprodukcija`)} />
               <ImportHost documentId={documentId} />
               <RulesHost role="student" />
               <MarksHost />
+              {/* ED-98: the comments lit in the text and, up to 1050 px, the card of a tapped comment. */}
+              <CommentCardHost documentId={documentId} session={session} />
+              <HintsHost scope={scope} workId={documentId} />
               <ReadAloudHost />
               {/* EDI-R16: the "Započnite rad" wizard lives here, outside the closable Napredak section, so its dialog is never hidden. */}
               <StartWorkHost workId={assignmentId} />

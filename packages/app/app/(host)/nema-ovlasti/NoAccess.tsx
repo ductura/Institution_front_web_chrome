@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AccessDenied } from "@ductura/ui";
 
-import { appHref } from "../../../../../src/components/index.ts";
+import { appHref } from "../../../../../src/components/shell/nav.ts";
 import { signInHref } from "../../../../../src/client/api.ts";
 import { accessKindOf, holdsUnsentInput, routeWithTail } from "../../../../../src/client/session.ts";
 

@@ -17,14 +17,17 @@ const home = messagesHr.student.home;
 // WEB-09: the text of the fields A-3 added; the server's locales/ copy has none yet.
 const added = webHr.student.home;
 
-/** `Rok: 30. studenoga 2026. u 23:59`, always in Europe/Zagreb, as on the teacher's list. */
-function dueHr(iso: string, label: string = home.due): string {
+/**
+ * `Rok: 30. studenoga 2026. u 23:59`, always in Europe/Zagreb, as on the teacher's list.
+ * Design alignment 27. 11. 2026. (A6): a time that cannot be read is left out, never shown raw.
+ */
+function dueHr(iso: string, label: string = home.due): string | null {
   const parts = zagrebParts(iso);
-  return label.replace("{time}", parts === null ? iso : `${parts.date} ${messagesHr.teacherCourses.at} ${parts.time}`);
+  return parts === null ? null : label.replace("{time}", `${parts.date} ${messagesHr.teacherCourses.at} ${parts.time}`);
 }
 
 /** WEB-09 (A-3): an extended deadline, when there is one, replaces the deadline shown; the original is not repeated. */
-function deadline(assignment: MyAssignment): string {
+function deadline(assignment: MyAssignment): string | null {
   const extended = assignment.extendedDueAt;
   return typeof extended === "string" && extended !== "" ? dueHr(extended, added.extendedDue) : dueHr(assignment.dueAt);
 }
@@ -95,7 +98,10 @@ function list({ courses, level = 3, assignmentHref = legacyAssignmentHref, assig
     courses.map((course) =>
       h("section", { key: course.id, className: styles.course, "aria-labelledby": `kolegij-${course.id}` },
         h("header", { className: styles.head, "data-motif": courseMotif(course.id) },
-          h("p", { className: styles.eyebrow }, course.academicYear ? `${home.courseLabel} · ${academicYearHr(course.academicYear)}` : home.courseLabel),
+          // Design alignment 27. 11. 2026. (A4): label and year are separate parts, 12 px apart, no dot.
+          h("p", { className: styles.eyebrow },
+            h("span", null, home.courseLabel),
+            course.academicYear ? h("span", null, academicYearHr(course.academicYear)) : null),
           h(`h${level}`, { id: `kolegij-${course.id}`, className: styles.courseName }, course.name)),
         // Under the header, clear of the motif, so the names stay legible.
         course.teachers && course.teachers.length > 0
@@ -109,7 +115,7 @@ function list({ courses, level = 3, assignmentHref = legacyAssignmentHref, assig
                 h("a", { className: styles.assignment, href: assignmentHref(assignment.id) },
                   h("span", { className: styles.title }, assignment.title),
                   h("span", { className: styles.bottom },
-                    h("span", { className: styles.due }, deadline(assignment)),
+                    deadline(assignment) === null ? null : h("span", { className: styles.due }, deadline(assignment)),
                     h("span", { className: styles.action },
                       assignment.noticeFirst ? home.readNotice : home.open,
                       h("span", { "aria-hidden": "true", className: styles.arrow }, "→")))),

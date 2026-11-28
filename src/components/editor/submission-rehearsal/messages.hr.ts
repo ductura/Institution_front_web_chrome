@@ -19,7 +19,7 @@ export const rehearsalMessagesHr = {
   keywords: "Ključne riječi",
   unwritten: "Nije napisano.",
   declaration: "Izjava o korištenju AI-ja",
-  // WEB-NUZ-PREDAJA-1 (PR-2): the five states of student.declaration.get in words, the same in the steps (INVENTAR-student E-8).
+  // WEB-NUZ-PREDAJA-1 (PR-2): the five states of student.declaration-second.get in words, the same in the steps (INVENTAR-student E-8).
   declarationChecking: "Provjeravam izjavu na poslužitelju…",
   declarationUnavailable: "Stanje izjave trenutačno nije moguće provjeriti, pa predaja još nije moguća.",
   declarationNotRequired: "Ovaj zadatak ne traži izjavu.",

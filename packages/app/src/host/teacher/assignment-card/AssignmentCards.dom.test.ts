@@ -70,7 +70,7 @@ describe("N-01 course card entries (NZ-1, NZ-2)", () => {
     expect(links(host, "Prikaz članka")).toEqual([
       ["Predaje", `/aplikacija/nastavnik/zadatak/${A2}/predaje`],
       ["Uredi (nova verzija)", `/aplikacija/nastavnik/zadatak/${A2}/uredi`],
-      ["Kopiraj zadatak", `/aplikacija/nastavnik/zadatak/${A2}/uredi?kopiraj=1`],
+      ["Dupliciraj zadatak", `/aplikacija/nastavnik/zadatak/${A2}/uredi?kopiraj=1`],
       ["Produljenje", `/aplikacija/nastavnik/zadatak/${A2}/produljenje`],
       ["Izvoz", `/aplikacija/nastavnik/zadatak/${A2}/merlin`],
       ["Brz put kroz radove", `/aplikacija/nastavnik/brz-put?zadatak=${A2}`],

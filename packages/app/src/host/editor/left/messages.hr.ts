@@ -35,7 +35,7 @@ export const leftHr = {
     removeConfirm: "Obrisati poglavlje i sve u njemu? Radnju možete poništiti s Ctrl+Z.",
     removeYes: "Da, obriši",
     removeNo: "Odustani",
-    saved: "Spremljeno na ovom uređaju.",
+    saved: "Spremljeno na uređaju.",
   },
   thesis: {
     label: "Teza ili istraživačko pitanje",

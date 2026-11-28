@@ -2,7 +2,7 @@
 
 import { Button, Details, PanelTabs } from "@ductura/ui";
 import { useEditorState } from "@tiptap/react";
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import { blockPosition, currentHeading, numberedHeadings, type NumberedHeading } from "@/editor";
 import { editorPanelLayoutsHr as t, messagesHr } from "@/lib/i18n/messages.hr";
@@ -12,7 +12,7 @@ import { editorChapterWordCounts } from "../../../../packages/app/src/host/edito
 import { useChapterTargets } from "../../../../packages/app/src/host/editor/chapter-length/use-chapter-targets";
 import { useLocalEditor } from "../LocalDocument";
 import styles from "../SidePanels.module.css";
-import type { PanelLayout, RowPart } from "./preferences";
+import { partOrder, type LayoutPreferences, type LeftPart, type PanelLayout, type RowPart } from "./preferences";
 
 const w = messagesHr.workspace;
 const headingKey = (heading: NumberedHeading) => heading.id ?? `pos-${heading.pos}`;
@@ -39,6 +39,24 @@ export function foldable<H extends { level: number }>(headings: readonly H[]): S
 }
 
 const ALL_ROW: Record<RowPart, boolean> = { words: true, status: true, flags: true };
+
+/** ED-70: what the left panel takes from "Potpoglavlja" and "Donji dijelovi". */
+export type LeftParts = Pick<LayoutPreferences["left"], "order" | "hideParts" | "subs">;
+
+/** ED-70: the parts between Zahtjevi and Povijest dokumenta, in the person's order, hidden ones left out. */
+export function visibleParts(parts: LeftParts): LeftPart[] {
+  return partOrder(parts).filter((part) => !(parts.hideParts?.includes(part) ?? false));
+}
+
+/** ED-70: the chapter (level 2) the cursor is in: the last one at or before the current heading. */
+export function activeChapterOf<H extends { level: number; pos: number }>(headings: readonly H[], current: H | undefined): H | undefined {
+  return current && headings.findLast(({ level, pos }) => level === 2 && pos <= current.pos);
+}
+
+/** ED-70 "Potpoglavlja": whether the mode alone folds a chapter; "Samo u aktivnom" leaves the active one open. */
+export function foldedBySubs<H>(subs: LeftParts["subs"], chapter: H, active: H | undefined): boolean {
+  return subs === "closed" || (subs === "active" && chapter !== active);
+}
 
 type Outline = { headings: NumberedHeading[]; current: NumberedHeading | undefined; words?: readonly number[] };
 
@@ -92,8 +110,10 @@ function ChapterCards({ outline, go, label }: {
   </div>;
 }
 
-export function LeftPanel({ layout, sections = {}, settings, onJump, row = ALL_ROW }: {
+export function LeftPanel({ layout, sections = {}, settings, onJump, row = ALL_ROW, parts = {} }: {
   layout: PanelLayout;
+  /** ED-70: the "Potpoglavlja" mode and the order and hiding of "Donji dijelovi"; defaults show all, open. */
+  parts?: LeftParts;
   /** ED-37: the row parts the person chose in "U retku poglavlja"; all by default. */
   row?: Record<RowPart, boolean>;
   sections?: LeftSections;
@@ -115,14 +135,22 @@ export function LeftPanel({ layout, sections = {}, settings, onJump, row = ALL_R
     return <span>{headingLabel(heading)}{row.words && words !== undefined && <ChapterLength words={words} target={target} />}
       {heading.id && (row.status || row.flags) && sections.chapterMarks?.(heading.id, words ?? 0, { status: row.status, flags: row.flags })}</span>;
   };
-  const [folded, setFolded] = useState<ReadonlySet<string>>(() => new Set());
+  // ED-70 "Potpoglavlja": a chapter is folded by the chosen mode, flipped by its own button. Choosing a
+  // mode again starts over, as the prototype's "Rasklopljena"/"Sklopljena" set every chapter at once.
+  const [toggled, setToggled] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => { setToggled(new Set()); }, [parts.subs]);
+  const activeChapter = activeChapterOf(data.headings, data.current);
+  const foldedByMode = (heading: NumberedHeading) => foldedBySubs(parts.subs, heading, activeChapter);
+  const isFolded = (heading: NumberedHeading) => foldedByMode(heading) !== toggled.has(headingKey(heading));
   const withKids = foldable(data.headings);
-  const allFolded = withKids.size > 0 && [...withKids].every((heading) => folded.has(headingKey(heading)));
-  const fold = (heading: NumberedHeading) => setFolded((old) => {
+  const allFolded = withKids.size > 0 && [...withKids].every(isFolded);
+  const fold = (heading: NumberedHeading) => setToggled((old) => {
     const next = new Set(old);
     if (!next.delete(headingKey(heading))) next.add(headingKey(heading));
     return next;
   });
+  const foldAll = (shut: boolean) =>
+    setToggled(new Set([...withKids].filter((heading) => foldedByMode(heading) !== shut).map(headingKey)));
   const go = (heading: NumberedHeading) => {
     if (!editor || editor.isDestroyed) return;
     const pos = heading.id ? blockPosition(editor.state.doc, heading.id) : heading.pos;
@@ -131,19 +159,21 @@ export function LeftPanel({ layout, sections = {}, settings, onJump, row = ALL_R
     onJump();
     requestAnimationFrame(() => { if (!editor.isDestroyed) editor.view.focus(); });
   };
-  // "Povijest dokumenta" is a group only for a caller that gives it; others get no empty group.
-  const content = Object.entries(t.leftSections).filter(([key]) => key !== "history" || sections.history !== undefined).map(([key, label]) => ({
-    id: key, label, content: sections[key as Exclude<keyof LeftSections, "chapterMarks">] ?? <p className="rail-empty">{t.emptyGroup}</p>,
+  // ED-70 "Donji dijelovi": Zahtjevi stay first and Povijest dokumenta last; the parts between follow
+  // the person's order, hidden ones left out. "Povijest dokumenta" is a group only for a caller that gives it.
+  const keys: (keyof typeof t.leftSections)[] = ["requirements", ...visibleParts(parts), ...(sections.history !== undefined ? ["history" as const] : [])];
+  const content = keys.map((key) => ({
+    id: key, label: t.leftSections[key], content: sections[key] ?? <p className="rail-empty">{t.emptyGroup}</p>,
   }));
   const outline = data.headings.length ? <nav aria-label={messagesHr.outline.label}>
-    {withKids.size > 0 && <Button tone="quiet" onClick={() => setFolded(allFolded ? new Set() : new Set([...withKids].map(headingKey)))}>
+    {withKids.size > 0 && <Button tone="quiet" onClick={() => foldAll(!allFolded)}>
       {allFolded ? t.expandAll : t.collapseAll}
     </Button>}
     <ol className="outline">
-      {visibleHeadings(data.headings, (heading) => folded.has(headingKey(heading))).map((heading) => <li key={headingKey(heading)} data-level={heading.level} className="outline__item">
-        {withKids.has(heading) && <Button tone="quiet" aria-expanded={!folded.has(headingKey(heading))}
+      {visibleHeadings(data.headings, isFolded).map((heading) => <li key={headingKey(heading)} data-level={heading.level} className="outline__item">
+        {withKids.has(heading) && <Button tone="quiet" aria-expanded={!isFolded(heading)}
           aria-label={t.foldChapter(heading.title || messagesHr.outline.untitledHeading)} onClick={() => fold(heading)}>
-          <span aria-hidden="true">{folded.has(headingKey(heading)) ? "▸" : "▾"}</span>
+          <span aria-hidden="true">{isFolded(heading) ? "▸" : "▾"}</span>
         </Button>}
         <Button tone="quiet" className="outline__link" aria-current={heading === data.current ? "location" : undefined}
           onClick={() => go(heading)}>{label(heading)}</Button>

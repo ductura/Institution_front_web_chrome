@@ -32,12 +32,12 @@ describe("LiteratureView", () => {
     expect(unavailable).toContain("Literatura rada se zasad ne može učitati.");
     expect(unavailable).toContain("Pokušaj ponovno");
     const none = draw({ state: { kind: "noVersion" } });
-    expect(none).toContain("Student još nema spremljenu verziju rada.");
+    expect(none).toContain("Student još nema verziju rada na poslužitelju.");
     expect(none).toMatch(/<button[^>]*disabled[^>]*>Pregled literature<\/button>/);
   });
   it("keeps the write buttons off until the guidance says the teacher may write", () => {
     const html = draw({});
-    expect(html).toContain("Prema zadnjoj spremljenoj verziji rada (22. 11. 2026.).");
+    expect(html).toContain("Prema zadnjoj verziji rada na poslužitelju (22. 11. 2026.).");
     expect(html).toMatch(/<button[^>]*disabled[^>]*>\+ Preporuči izvor<\/button>/);
     expect(html).toMatch(/<button[^>]*disabled[^>]*>\+ Obvezni izvor<\/button>/);
     expect(html).toContain("1 navod čeka potvrdu.");

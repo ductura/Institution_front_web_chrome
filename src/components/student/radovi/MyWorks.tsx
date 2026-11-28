@@ -3,6 +3,7 @@ import { createElement as h } from "react";
 
 import { messagesHr } from "../../../lib/i18n/messages.hr";
 import { zagrebParts } from "../../summary/zagreb-time.ts";
+import LoadAlert, { DeniedState } from "../../shell/LoadAlert";
 import styles from "../StudentWorkspace.module.css";
 
 import type { WorksRead } from "./works-read";
@@ -11,9 +12,10 @@ import { filterWorks, rowState, worksOf, yearsOf, type WorkItem, type WorksFilte
 const t = messagesHr.student.works;
 const home = messagesHr.student.home;
 
-function whenHr(iso: string): string {
+/** Design alignment 27. 11. 2026. (A6): a time that cannot be read is left out, never shown raw. */
+function whenHr(iso: string): string | null {
   const parts = zagrebParts(iso);
-  return parts === null ? iso : `${parts.date} ${messagesHr.teacherCourses.at} ${parts.time}`;
+  return parts === null ? null : `${parts.date} ${messagesHr.teacherCourses.at} ${parts.time}`;
 }
 
 /** The contract's `2026/2027` as written in Croatian, `2026./2027.`. */
@@ -67,16 +69,19 @@ export default function MyWorks(props: MyWorksProps) {
 function body({ read, filter, here, signIn, workHref }: MyWorksProps) {
   if (read.kind === "signedOut") {
     return h("div", { className: styles.state },
-      h("p", { role: "status" }, messagesHr.student.assignments.signedOut),
+      // Design alignment 27. 11. 2026. (R5): the works' own sentence, not the assignments' one.
+      h("p", { role: "status" }, t.signedOut),
       // An OIDC login (D-09): a real navigation, not a prefetchable Link.
       h("p", null, h("a", { className: "btn", href: signIn(here) }, messagesHr.student.signIn)));
   }
+  // Design alignment 27. 11. 2026. (R8): 403 is not a read error; the heading and the way back only.
+  if (read.kind === "denied") return h(DeniedState, null);
   if (read.kind !== "ready") {
-    return h("section", { className: styles.state, role: "alert", "aria-labelledby": "radovi-nedostupno" },
-      h("h2", { id: "radovi-nedostupno", className: styles.stateTitle }, home.unavailableHeading),
-      h("p", { className: styles.stateBody }, home.unavailableBody),
-      // A plain reload: the reads run again on the server.
-      h("p", null, h("a", { className: styles.secondary, href: here }, messagesHr.auth.retry)));
+    // Design alignment 27. 11. 2026. (R6): heading and text in the one role=alert frame;
+    // "Pokušaj ponovno" is the link under it, a plain reload, so the reads run again on the server.
+    return h(LoadAlert, { className: styles.state, retry: { label: messagesHr.auth.retry, href: here } },
+      h("span", { className: styles.alertTitle }, home.unavailableHeading),
+      h("span", { className: styles.alertBody }, home.unavailableBody));
   }
   const items = worksOf(read.courses, read.states);
   if (items.length === 0) {
@@ -108,17 +113,18 @@ function body({ read, filter, here, signIn, workHref }: MyWorksProps) {
 function row(item: WorkItem, workHref: (assignmentId: string) => string) {
   const { text, tone, action } = stateOf(item);
   const id = `rad-${item.assignmentId}`;
-  const course = item.academicYear === "" ? item.courseName : `${item.courseName} · ${yearHr(item.academicYear)}`;
-  const due = item.extendedDueAt === null
-    ? t.due.replace("{time}", whenHr(item.dueAt))
-    : home.extendedDue.replace("{time}", whenHr(item.extendedDueAt));
+  const when = whenHr(item.extendedDueAt ?? item.dueAt);
+  const due = when === null ? null : (item.extendedDueAt === null ? t.due : home.extendedDue).replace("{time}", when);
   return h("li", { key: item.assignmentId },
     h("article", { className: styles.item, "aria-labelledby": id },
       h("div", { className: styles.meta },
-        h("p", { className: styles.eyebrow }, course),
+        // Design alignment 27. 11. 2026. (A4): course and year are separate parts, 12 px apart, no dot.
+        h("p", { className: styles.eyebrow },
+          h("span", null, item.courseName),
+          item.academicYear === "" ? null : h("span", null, yearHr(item.academicYear))),
         h("h2", { id, className: styles.itemTitle }, item.title),
         h("p", { className: styles.facts },
           text === null ? null : h("span", { className: styles.stateText, "data-tone": tone }, text),
-          h("span", { className: styles.due }, due))),
+          due === null ? null : h("span", { className: styles.due }, due))),
       h("a", { className: styles.action, href: workHref(item.assignmentId), "aria-describedby": id }, action)));
 }

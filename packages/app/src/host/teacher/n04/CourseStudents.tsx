@@ -16,6 +16,8 @@ import { courseStudentsMessages as text } from "./messages.hr";
 import { aggregatePath } from "../course-aggregate/model";
 import { issueCodePath } from "../assignment-card/model";
 import { signInWhenSignedOut } from "./port";
+import CourseAssistantCard from "../course-assistant/CourseAssistantCard";
+import type { CourseAssistantPort } from "../course-assistant/port";
 
 /**
  * N-04 "Popis studenata" (WEB-2143): every student across the assignments of the course, alphabetical,
@@ -23,7 +25,11 @@ import { signInWhenSignedOut } from "./port";
  * return (F4-PM1-R09), each after a confirmation; the server decides who may (403 is said, not hidden).
  * A failed read says "unavailable" with a button, never an empty list.
  */
-export default function CourseStudents({ courseId, port = unavailablePort }: { courseId: string; port?: CourseStudentsPort }) {
+export default function CourseStudents({ courseId, port = unavailablePort, assistant }: {
+  courseId: string; port?: CourseStudentsPort;
+  /** F4-PM1-R07: the course's switch of the Asistent; without a port the card is not shown. */
+  assistant?: CourseAssistantPort;
+}) {
   const { base } = useHost();
   const [read, setRead] = useState<RosterRead | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -76,6 +82,8 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
   const shown = data === null ? [] : listedStudents(data.students, options.some((o) => o.value === group) ? group : "", state, order);
   const teacherRead: TeacherRead<RosterData> | null = read === null ? null : read.kind === "ready" ? { kind: "ready", value: read.data } : { kind: read.kind };
 
+  const assistantCard = assistant === undefined ? null : <CourseAssistantCard courseId={courseId} port={assistant} onSignedOut={() => signInWhenSignedOut({ kind: "signedOut" }, base, courseId)} />;
+
   const dialog = (
     <Dialog open={ask !== null} dismissible={!working} onClose={() => setAsk(null)} initialFocus={safe}
       title={ask === null ? "" : ask?.op === "return" ? text.returnTitle(ask.name) : text.removeTitle(ask.name)}
@@ -116,6 +124,7 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
           <a className="btn" href={appHref(base, issueCodePath(courseId))}>{text.emptyAction}</a>
         </section>
         {removedSection}
+        {assistantCard}
         {dialog}
         </>
       ) : (
@@ -163,6 +172,7 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
             ))}
           </ul>
           {removedSection}
+          {assistantCard}
           {dialog}
         </>
       )} />

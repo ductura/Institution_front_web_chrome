@@ -172,6 +172,23 @@ export function byRound(list: readonly Comment[], current: number): readonly { r
 
 export const openForPrint = (list: readonly Comment[]): readonly Comment[] =>
   list.filter((c) => !c.resolved && !c.place.lost && !isPraise(c)).slice().sort((a, b) => a.place.from - b.place.from);
+/**
+ * ED-78 "Riješi redom" (prototype tools.js `openC`, `walkStart`): the student's open comments one by one,
+ * in the order of the text. Only a student, before submission, and only comments that ask for something.
+ */
+export const walkList = (list: readonly Comment[], viewer: Role, submitted: boolean): readonly string[] =>
+  viewer !== "student" || submitted ? [] : openForPrint(list).map((c) => c.id);
+
+/** The list at the end of the walk, one line per comment, as the student may send it to the mentor. */
+export function walkSummary(list: readonly Comment[], ids: readonly string[], fixes: Readonly<Record<string, string>>): string {
+  return ids.map((id, i) => {
+    const c = list.find((x) => x.id === id);
+    if (!c) return null;
+    const what = c.resolved ? (fixes[id] || text.walk.resolvedNoFix) : text.walk.notResolved;
+    return `${i + 1}. „${c.place.quote}”: ${what}`;
+  }).filter((row) => row !== null).join("\n");
+}
+
 export function printText(list: readonly Comment[]): string {
   const rows = openForPrint(list).map((c, i) => `${i + 1}. „${c.place.quote}”${c.kind ? ` (${text.kinds[c.kind]})` : ""}\n   ${c.text}`);
   return `${text.printTitle}\n\n${rows.join("\n\n")}`;

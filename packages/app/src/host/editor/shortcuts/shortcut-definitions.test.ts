@@ -29,12 +29,18 @@ describe("editor shortcut definitions (WEB-1908)", () => {
     expect(ariaKeyShortcuts("shortcuts")).toBe("Control+/");
     expect(ariaKeyShortcuts("nope")).toBeUndefined();
   });
-  it("lists no key the editor does not answer yet: comment and outline wait for their actions, the numbered list for the v4 document (ED-03)", () => {
+  it("lists no key the editor does not answer yet: comment waits for its action, the numbered list for the v4 document (ED-03)", () => {
     // The keys of the prototype stay in toolbar-keys.ts; the list names them again once a handler is mounted.
     const all = [...shortcutListGroups(true), ...shortcutListGroups(false)].flatMap((g) => g.items);
-    for (const id of ["comment", "outline", "numberedList"]) expect(all.find((i) => i.id === id)).toBeUndefined();
+    for (const id of ["comment", "numberedList"]) expect(all.find((i) => i.id === id)).toBeUndefined();
     expect(all.map((i) => i.keys)).not.toEqual(expect.arrayContaining(["Ctrl+Alt+M"]));
-    expect(all.map((i) => i.keys)).not.toContain("Ctrl+\\");
+  });
+  it("lists the outline key once the structure rail answers it, also for a locked work (ED-112)", () => {
+    const outline = (editable: boolean) => shortcutListGroups(editable).flatMap((g) => g.items).find((i) => i.id === "outline");
+    expect(outline(true)?.keys).toBe("Ctrl+\\");
+    expect(outline(false)?.keys).toBe("Ctrl+\\");
+    expect(shortcutListGroups(true, true).flatMap((g) => g.items).find((i) => i.id === "outline")?.keys).toBe("Cmd+\\");
+    expect(ariaKeyShortcuts("outline")).toBe("Control+\\");
   });
   it("lists the sentence and chapter moves (ED-33) only while the work can be written", () => {
     const keysOf = (editable: boolean) => shortcutListGroups(editable).flatMap((g) => g.items).map((i) => i.keys);

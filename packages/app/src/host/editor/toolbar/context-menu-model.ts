@@ -6,7 +6,11 @@ import type { MenuEntry } from "@ductura/ui";
 import { toolbarBehaviourHr as t } from "./messages.hr";
 
 export type MenuRole = "student" | "teacher" | "collaborator";
-export type MenuContext = { role: MenuRole; editable: boolean; hasSelection: boolean; canComment: boolean };
+export type MenuContext = {
+  role: MenuRole; editable: boolean; hasSelection: boolean; canComment: boolean;
+  /** ED-91: false greys out "U fusnotu" (no footnote can stand there) and "U blok-citat" (already a quote). */
+  footnote?: boolean; inQuote?: boolean;
+};
 
 const item = (id: string, label: string, hint?: string, disabled = false): MenuEntry => ({ kind: "item", id, label, hint, disabled });
 const heading = (label: string): MenuEntry => ({ kind: "heading", label });
@@ -26,7 +30,7 @@ export function textMenuEntries(c: MenuContext): MenuEntry[] | null {
   return [
     heading(t.menuSelected), comment, item("citeAfter", t.menuCiteAfter),
     heading(t.menuShape), item("bold", t.menuBold, "Ctrl+B"), item("italic", t.menuItalic, "Ctrl+I"),
-    heading(t.menuMove), item("toQuote", t.menuToQuote), item("toFootnote", t.menuToFootnote), item("stash", t.menuStash),
+    heading(t.menuMove), item("toQuote", t.menuToQuote, undefined, c.inQuote === true), item("toFootnote", t.menuToFootnote, undefined, c.footnote === false), item("stash", t.menuStash),
     item("cut", t.menuCut, "Ctrl+X"), item("copy", t.menuCopy, "Ctrl+C"),
   ];
 }

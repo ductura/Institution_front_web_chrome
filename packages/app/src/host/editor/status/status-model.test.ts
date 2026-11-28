@@ -47,7 +47,7 @@ describe("uncited sources", () => {
 describe("rehearsal rows from the server", () => {
   const doc = docOf([], []);
   const FORM = { formId: "test-izjava", formVersion: 1 };
-  it("names the faculty's form from student.declaration.get, or why it cannot", () => {
+  it("names the faculty's form from student.declaration-second.get, or why it cannot", () => {
     const forms = (gate: SupplementReads["gate"]) => rehearsalSupplements(doc, { gate }).forms?.detail;
     expect(forms({ kind: "missing", detail: "draft", form: FORM })).toBe("Obrazac izjave: test-izjava, verzija 1.");
     expect(forms({ kind: "confirmed", detail: "bound", confirmedAt: null, form: FORM })).toBe("Obrazac izjave: test-izjava, verzija 1.");

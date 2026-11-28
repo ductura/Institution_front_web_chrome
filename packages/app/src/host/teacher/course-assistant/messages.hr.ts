@@ -1,0 +1,17 @@
+export const courseAssistantMessages = {
+  heading: "Pomoćnik u kolegiju",
+  lead: "Određujete mogu li studenti ovog kolegija koristiti pomoćnika u svojim radovima. Uključen pomoćnik radi samo ako ga je uključila i ustanova.",
+  stateOn: "Pomoćnik je uključen za ovaj kolegij.",
+  stateOff: "Pomoćnik je isključen za ovaj kolegij.",
+  turnOn: "Uključi pomoćnika",
+  turnOff: "Isključi pomoćnika",
+  loading: "Učitavam postavku pomoćnika…",
+  unavailable: "Postavka pomoćnika trenutačno nije dostupna.",
+  notFound: "Ovaj kolegij nije dostupan.",
+  retry: "Pokušaj ponovno",
+  savedOn: "Pomoćnik je uključen.",
+  savedOff: "Pomoćnik je isključen.",
+  saveFailed: "Postavka nije spremljena na poslužitelju. Pokušajte ponovno.",
+  saveUnknown: "Nije potvrđeno je li postavka spremljena na poslužitelju. Pročitajte stanje ponovno.",
+  signedOut: "Sesija je istekla. Prijavite se ponovno.",
+} as const;

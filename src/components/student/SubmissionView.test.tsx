@@ -86,6 +86,22 @@ describe("SubmissionView (WEB-26, S: E-10)", () => {
     expect(button(markup, t.submit)).toContain("disabled");
     expect(render({ next: nextOf({ kind: "nepoznato" }) as Extract<Next, { go: null }>, checking: true })).toContain(t.checking);
   });
+
+  // Design alignment 27. 11. 2026. (S-08): load alerts framed; a failure line red, a state line plain.
+  it("frames the work and deadline load failures as alerts", () => {
+    expect(render({ work: { kind: "unavailable" } })).toMatch(new RegExp(`role="alert"[^>]*>${t.unavailable}</p>`));
+    expect(render({ stage: { kind: "unavailable" } })).toMatch(new RegExp(`role="alert"[^>]*>${t.stageUnavailable.replace(/\./g, "\\.")}</p>`));
+  });
+
+  it("colours the outcome line only when it reports a failure", () => {
+    const failed = (next: Next) => render({ next: next as Extract<Next, { go: null }> }).includes("submission__outcome--error");
+    expect(failed(nextOf({ kind: "nepoznato" }))).toBe(true);
+    expect(failed(nextOf({ kind: "nedovrseno" }))).toBe(true);
+    expect(failed(nextOf({ kind: "odbijeno", reason: "no_evidence" }))).toBe(true);
+    expect(failed(nextOf({ kind: "greska", code: "not_open" }))).toBe(true);
+    expect(failed(nextOf({ kind: "check", state: { kind: "ceka", revision: 7, requestedAt: "2026-11-15T21:00:00.000000Z" } }))).toBe(false);
+    expect(failed(nextOf({ kind: "check", state: { kind: "none" } }))).toBe(false);
+  });
 });
 
 describe("nextOf: the closed outcome table (S: PO-17, P-10)", () => {

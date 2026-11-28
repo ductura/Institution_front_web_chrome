@@ -1,6 +1,10 @@
 import { afterEach, expect, it, vi } from "vitest";
 
-import { DEFAULT_PREFERENCES, effectiveLayout, PREFERENCES_KEY, readPreferences, rowShows, withRowPart, writePreferences } from "./preferences";
+import {
+  DEFAULT_PREFERENCES, effectiveLayout, LEFT_PARTS, listsStartWholeWork, partOrder, PREFERENCES_KEY, readPreferences, rowShows,
+  withPartMoved, withPartShown, withRowPart, withScope, withSubs, writePreferences,
+  groupOrder, RIGHT_GROUPS, visibleGroups, withGroupMoved, withGroupShown,
+} from "./preferences";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -52,4 +56,80 @@ it("keeps the chapter row parts switched off and nothing when all are on", () =>
   expect(withRowPart(withRowPart(off, "words", true), "flags", true)).toEqual({ layout: "a", mobile: "c", dense: true });
   values.set(PREFERENCES_KEY, '{"left":{"layout":"a","mobile":"c","hideRow":["status","bogus","status"]},"right":{"layout":"a","mobile":"same","hideRow":"words"}}');
   expect(readPreferences()).toEqual({ left: { layout: "a", mobile: "c", hideRow: ["status"] }, right: { layout: "a", mobile: "same" } });
+});
+
+// ED-70 "Donji dijelovi": the parts move one place at a time and stay in range; the default order and
+// "all shown" leave no key, so a reset and an untouched panel read the same.
+it("moves and hides the left parts and keeps no key for the defaults", () => {
+  const start = DEFAULT_PREFERENCES.left;
+  expect(partOrder(start)).toEqual([...LEFT_PARTS]);
+  const moved = withPartMoved(start, "thread", -1);
+  expect(moved.order).toEqual(["figures", "stash", "progress", "thread", "deadlines"]);
+  expect(withPartMoved(moved, "thread", 1)).toEqual(start);
+  expect(withPartMoved(start, "figures", -1)).toBe(start);
+  expect(withPartMoved(start, "thread", 1)).toBe(start);
+  const hidden = withPartShown(withPartShown(start, "thread", false), "stash", false);
+  expect(hidden.hideParts).toEqual(["stash", "thread"]);
+  expect(withPartShown(withPartShown(hidden, "stash", true), "thread", true)).toEqual(start);
+});
+
+// ED-116 "Popisi prvo pokazuju": "Ovo poglavlje" is the default (no key); only the right side keeps "Cijeli rad".
+it("keeps the list scope on the right only and reads anything else as this chapter", () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal("window", { localStorage: { getItem: values.get.bind(values), setItem: values.set.bind(values) } });
+  expect(listsStartWholeWork()).toBe(false);
+  const all = withScope(DEFAULT_PREFERENCES.right, "all");
+  expect(all).toEqual({ layout: "a", mobile: "same", scope: "all" });
+  expect(withScope(all, "chapter")).toEqual(DEFAULT_PREFERENCES.right);
+  writePreferences({ left: DEFAULT_PREFERENCES.left, right: all });
+  expect(readPreferences().right).toEqual(all);
+  expect(listsStartWholeWork()).toBe(true);
+  values.set(PREFERENCES_KEY, JSON.stringify({ left: { layout: "a", mobile: "c", scope: "all" }, right: { layout: "a", mobile: "same", scope: "chapter" } }));
+  expect(readPreferences()).toEqual(DEFAULT_PREFERENCES);
+  expect(listsStartWholeWork()).toBe(false);
+});
+
+// ED-118 "Dijelovi panela i redoslijed": right groups move and hide like the left parts; the last shown
+// group stays, the defaults leave no key, and the left side keeps neither.
+it("moves and hides the right groups, keeps one shown and stores nothing for the defaults", () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal("window", { localStorage: { getItem: values.get.bind(values), setItem: values.set.bind(values) } });
+  const start = DEFAULT_PREFERENCES.right;
+  expect(groupOrder(start)).toEqual([...RIGHT_GROUPS]);
+  const moved = withGroupMoved(start, "comments", -1);
+  expect(moved.groups).toEqual(["comments", "sources", "review", "work", "assistant"]);
+  expect(withGroupMoved(moved, "comments", 1)).toEqual(start);
+  expect(withGroupMoved(start, "sources", -1)).toBe(start);
+  let hidden = withGroupShown(moved, "work", false);
+  expect(visibleGroups(hidden)).toEqual(["comments", "sources", "review", "assistant"]);
+  for (const group of ["comments", "sources", "review"] as const) hidden = withGroupShown(hidden, group, false);
+  expect(visibleGroups(hidden)).toEqual(["assistant"]);
+  expect(withGroupShown(hidden, "assistant", false)).toBe(hidden);
+  writePreferences({ left: DEFAULT_PREFERENCES.left, right: hidden });
+  expect(readPreferences().right).toEqual(hidden);
+  values.set(PREFERENCES_KEY, JSON.stringify({
+    left: { layout: "a", mobile: "c", groups: ["work"], hideGroups: ["work"] },
+    right: { layout: "a", mobile: "same", groups: ["bogus", "sources"], hideGroups: [...RIGHT_GROUPS] },
+  }));
+  expect(readPreferences()).toEqual(DEFAULT_PREFERENCES);
+});
+
+// ED-70 "Potpoglavlja": "Rasklopljena" is the default (no key); only the left side keeps the parts.
+it("keeps the subchapter mode and reads only valid parts on the left", () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal("window", { localStorage: { getItem: values.get.bind(values), setItem: values.set.bind(values) } });
+  const closed = withSubs(DEFAULT_PREFERENCES.left, "closed");
+  expect(closed).toEqual({ layout: "a", mobile: "c", subs: "closed" });
+  expect(withSubs(closed, "open")).toEqual(DEFAULT_PREFERENCES.left);
+  const left = { ...withPartMoved(withSubs(DEFAULT_PREFERENCES.left, "active"), "stash", -1), hideParts: ["progress" as const] };
+  writePreferences({ left, right: DEFAULT_PREFERENCES.right });
+  expect(readPreferences().left).toEqual(left);
+  values.set(PREFERENCES_KEY, JSON.stringify({
+    left: { layout: "a", mobile: "c", order: ["thread", "bogus", "thread", 4], hideParts: ["deadlines", "x"], subs: "half" },
+    right: { layout: "a", mobile: "same", order: ["thread"], hideParts: ["stash"], subs: "closed" },
+  }));
+  expect(readPreferences()).toEqual({
+    left: { layout: "a", mobile: "c", order: ["thread", "figures", "stash", "progress", "deadlines"], hideParts: ["deadlines"] },
+    right: { layout: "a", mobile: "same" },
+  });
 });

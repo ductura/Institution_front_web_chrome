@@ -31,10 +31,10 @@ export const questionnaireText = {
   optionalNote: "Na pitanja možete odgovoriti po izboru, ali je potreban barem jedan odgovor.",
   submit: "Pošalji odgovore",
   submitting: "Šaljem odgovore…",
-  saved: "Odgovori su spremljeni. Hvala na sudjelovanju.",
+  saved: "Odgovori su spremljeni na poslužitelju. Hvala na sudjelovanju.",
   conflict: "Ovaj upitnik je već ispunjen. Popis je osvježen.",
   invalid: "Poslužitelj nije prihvatio odgovore. Provjerite ih i pokušajte ponovno.",
-  unknown: "Nije poznato je li odgovor spremljen. Popis je ponovno učitan; ako upitnik još nije označen kao ispunjen, pošaljite ponovno.",
+  unknown: "Nije poznato je li odgovor spremljen na poslužitelju. Popis je ponovno učitan; ako upitnik još nije označen kao ispunjen, pošaljite ponovno.",
   errors: {
     none: "Odgovorite na barem jedno pitanje.",
     singleInvalid: "Odaberite jedan od ponuđenih odgovora.",

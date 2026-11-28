@@ -133,12 +133,16 @@
   overflow-wrap: anywhere;
 }
 
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+}
+
+/* Design alignment 27. 11. 2026. (A1, A2): a form error is red text, without a box. */
 .notice {
   margin: 16px 0 0;
-  padding: 12px 14px;
-  border-left: 3px solid var(--accent);
-  background: var(--chrome);
-  color: var(--ink);
+  color: var(--error);
 }
 
 .fields:disabled .control {

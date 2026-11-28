@@ -28,8 +28,8 @@ describe("WEB-9C public verification page", () => {
     }} />);
     expect(html).toContain('role="status"');
     expect(html).toContain(t.matched);
-    expect(html).toContain("20. studenoga 2026. 13:05");
-    expect(html).toContain("20. studenoga 2026. 13:06");
+    expect(html).toContain('<time dateTime="2026-11-20T12:05:00Z">20. studenoga 2026. u 13:05</time>');
+    expect(html).toContain('<time dateTime="2026-11-20T12:06:00Z">20. studenoga 2026. u 13:06</time>');
     expect(html).toContain("izmisljeni-kljuc");
   });
 
@@ -43,6 +43,12 @@ describe("WEB-9C public verification page", () => {
       expect(html).not.toContain(t.keyId);
     },
   );
+
+  it("says an unanswered check in the alert box, the other outcomes in the status line", () => {
+    expect(renderToStaticMarkup(<VerificationFeedback state={{ kind: "unavailable" }} />))
+      .toMatch(new RegExp(`role="alert"[^>]*>${t.unavailable}`));
+    expect(renderToStaticMarkup(<VerificationFeedback state={{ kind: "notMatched" }} />)).not.toContain('role="alert"');
+  });
 
   it("keeps the Croatian copy within PRODUCT §5", () => {
     for (const message of Object.values(t)) expect(findForbiddenTerms(message, "hr")).toEqual([]);

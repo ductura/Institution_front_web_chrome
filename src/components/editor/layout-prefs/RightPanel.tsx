@@ -11,9 +11,8 @@ import { useLocalEditor } from "../LocalDocument";
 import styles from "../SidePanels.module.css";
 import { useContextAlerts } from "./context-alerts";
 import { OpenCommentsReport, openCommentsLabel } from "./panel-counts";
-import type { PanelLayout } from "./preferences";
+import { RIGHT_GROUPS, type PanelGroup, type PanelLayout } from "./preferences";
 
-const groups = ["sources", "comments", "review", "work", "assistant"] as const;
 const icons = {
   sources: "M5 4h9a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h9",
   comments: "M4 5h16v11H10l-4 4v-4H4z",
@@ -21,7 +20,7 @@ const icons = {
   work: "M4 12l16-7-6 16-3-6z",
   assistant: "M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8zM18.5 15.5v3M17 17h3",
 };
-export type PanelGroup = (typeof groups)[number];
+export type { PanelGroup };
 /** `footer` (ED-77): the host's row at the foot of the panel, as the prototype's `#pfoot`; not in the icon strip (c). */
 export type RightSections = Partial<Record<PanelGroup, ReactNode>> & { footer?: ReactNode };
 
@@ -66,8 +65,10 @@ function ChapterContext({ openGroup }: { openGroup: (group: PanelGroup) => void 
   </>;
 }
 
-export function RightPanel({ layout, sections = {}, settings, selection, onSelect, drawer }: {
+export function RightPanel({ layout, sections = {}, settings, selection: asked, onSelect, drawer, groups = RIGHT_GROUPS }: {
   layout: PanelLayout;
+  /** ED-118: the groups shown, in the person's order (never empty). A hidden group asked for opens the first shown one. */
+  groups?: readonly PanelGroup[];
   sections?: RightSections;
   settings: ReactNode;
   selection: PanelGroup | null;
@@ -76,6 +77,7 @@ export function RightPanel({ layout, sections = {}, settings, selection, onSelec
 }) {
   // Reported by the comments card below (useReportOpenComments).
   const [openComments, setOpenComments] = useState(0);
+  const selection = asked === null || groups.includes(asked) ? asked : groups[0] ?? null;
   const count = (group: PanelGroup) =>
     group === "comments" && openComments > 0 ? { value: openComments, label: openCommentsLabel(openComments) } : undefined;
   const badge = (group: PanelGroup) => { const c = count(group); return c ? <TabCount {...c} /> : null; };
