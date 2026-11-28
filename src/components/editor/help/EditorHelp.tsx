@@ -26,6 +26,17 @@ export function useEditorHelp() {
   } as const;
 }
 
+/** ED-125: the help level in words, for the row in the Rad group. */
+export const helpLevelLine = (level: Level) => t.panelLine.replace("{level}", t.levels[level]);
+
+/** ED-125 (prototype panels.upute): what is underlined now, and a way to the settings dialog. */
+export function HelpLevelRow({ level, onChange }: { level: Level; onChange: () => void }) {
+  return <p data-help-level="">
+    {helpLevelLine(level)}{" "}
+    <Button tone="quiet" aria-haspopup="dialog" onClick={onChange}>{t.panelChange}</Button>
+  </p>;
+}
+
 export type EditorHelpView = "writing" | "firstSentence" | "recorded";
 type Notice = {
   course: string;
