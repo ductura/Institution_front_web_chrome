@@ -391,6 +391,23 @@ describe("F-8 3c: the open route", () => {
     expect(openedWorkFrom(openBody({ schemaVersion: 3 }))).not.toHaveProperty("revisionZeroHash");
   });
 
+  // F4-V13-R04: the kind is `workKind ?? documentKind ?? "text"` (SRV-V14-KIND-ENUM); the server sends workKind alone for slides.
+  it.each([
+    ["slides by workKind alone", { workKind: "slides", slidesSchemaVersion: 1 }, "slides"],
+    ["slides by both fields", { workKind: "slides", documentKind: "slides" }, "slides"],
+    ["slides by documentKind alone (an older server)", { documentKind: "slides" }, "slides"],
+    ["text by workKind", { workKind: "text" }, undefined],
+    ["text by documentKind alone", { documentKind: "text" }, undefined],
+    ["text when neither is sent", {}, undefined],
+    ["workKind first: text over a documentKind of slides", { workKind: "text", documentKind: "slides" }, undefined],
+    ["spreadsheet stays as the contract says", { workKind: "spreadsheet", documentKind: "text", sheetSchemaVersion: 1 }, undefined],
+  ] as const)("reads the kind of the work: %s", (_name, over, kind) => {
+    const work = openedWorkFrom(openBody(over));
+    expect(work).not.toBeNull();
+    expect(work?.documentKind).toBe(kind);
+    if (kind === undefined) expect(work).not.toHaveProperty("documentKind");
+  });
+
   it.each([true, false])("reads submitted as the server says it (%s)", (submitted) => {
     expect(openedWorkFrom(openBody({ submitted }))?.submitted).toBe(submitted);
   });
