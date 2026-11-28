@@ -43,6 +43,15 @@ describe("N13Extensions filter (NZ-6)", () => {
     expect(host.textContent).not.toContain(t.filterEmpty);
   });
 
+  it("shows the old deadline in its own column between the new deadline and the reason", async () => {
+    const host = await mount();
+    const heads = [...host.querySelectorAll("table thead th")].map((th) => th.textContent);
+    expect(heads).toEqual([t.student, t.due, t.oldDue, t.reason]);
+    const cells = [...host.querySelectorAll("table tbody tr")[0]!.querySelectorAll("td")].map((td) => td.textContent);
+    expect(cells[1]).toBe("8. 11. 2026. u 23:59");
+    expect(cells[2]).not.toContain(t.oldDue);
+  });
+
   it("says what the student reads, with the reason or that it is hidden from this teacher", async () => {
     const host = await mount();
     const [own, other] = rows(host);

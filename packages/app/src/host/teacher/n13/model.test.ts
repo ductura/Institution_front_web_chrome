@@ -19,7 +19,7 @@ describe("N-13 model", () => {
     expect(whoText(FAKE_EXTENSIONS[1]!, students)).toBe("Svi studenti zadatka");
     expect(whoText({ ...FAKE_EXTENSIONS[0]!, studentId: "x" }, students)).toBe("Ime nije dostupno");
     expect(titleText(FAKE_EXTENSIONS[0]!, students)).toBe("Dora Matić, novi rok 12. 11. 2026. u 23:59");
-    expect(detailText(FAKE_EXTENSIONS[0]!)).toBe("Stari rok 8. 11. 2026. u 23:59, razlog: Opravdan razlog, zabilježio Vi, 4. 11. 2026. u 9:20");
+    expect(detailText(FAKE_EXTENSIONS[0]!)).toBe("razlog: Opravdan razlog, zabilježio Vi, 4. 11. 2026. u 9:20");
     expect(detailText(FAKE_EXTENSIONS[1]!)).toContain("Vidi ga nastavnik koji je zabilježio produljenje, zabilježio drugi nastavnik");
   });
   it("says success only for a recorded extension, the conflict with the student's name", () => {
