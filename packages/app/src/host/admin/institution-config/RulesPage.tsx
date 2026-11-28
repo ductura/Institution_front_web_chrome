@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox, DataTable, Select, type DataTableColumn } from "@ductura/ui";
+import { Button, Checkbox, DataTable, Select, Tag, type DataTableColumn } from "@ductura/ui";
 import { useCallback, useEffect, useId, useState } from "react";
 
 import { messagesHr } from "@/lib/i18n/messages.hr";
@@ -93,8 +93,8 @@ function WorkTypeRules({ row, onPublished, onStale, onDenied }: {
         {current === null ? <p>{t.noVersion}</p> : (
           <>
             <p className={styles.meta}>
-              {copy.versionOf.replace("{n}", String(current.versionNo)).replace("{date}", date.format(new Date(current.publishedAt)))}
-              {" · "}{t.readOnlyVersion}
+              <span>{copy.versionOf.replace("{n}", String(current.versionNo)).replace("{date}", date.format(new Date(current.publishedAt)))}</span>
+              <Tag>{t.readOnlyVersion}</Tag>
             </p>
             <dl className={styles.kv}>
               <dt>{copy.aiPolicy}</dt><dd>{copy.policies[current.aiPolicy]}</dd>
