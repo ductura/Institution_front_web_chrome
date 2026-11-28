@@ -3056,6 +3056,9 @@ export const editorHelpHr = {
   due: "Rok {date}",
   length: "opseg {min} do {max} riječi",
   recorded: "Što Ductura bilježi dok pišeš",
+  // ED-125: the row in the Rad group (prototype panels.upute, "Promijeni pomoć u tekstu").
+  panelLine: "Što se podcrtava u tekstu: {level}",
+  panelChange: "Promijeni pomoć u tekstu",
   close: "Zatvori",
 } as const;
 
