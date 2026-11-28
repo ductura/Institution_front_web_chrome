@@ -29,13 +29,13 @@ describe("N13Extensions filter (NZ-6)", () => {
     const select = document.getElementById(field.getAttribute("for")!) as HTMLSelectElement;
     await act(async () => { select.value = value; select.dispatchEvent(new Event("change", { bubbles: true })); });
   };
-  const rows = (host: HTMLElement) => [...host.querySelectorAll("ul.list > li")].map((li) => [...li.querySelectorAll("span")].map((s) => s.textContent));
+  const rows = (host: HTMLElement) => [...host.querySelectorAll("table tbody tr")].map((tr) => [tr.querySelector("th")!.textContent, tr.querySelectorAll("td")[0]!.textContent, ...[...tr.querySelectorAll("p")].map((p) => p.textContent)]);
 
   it("narrows to one student plus the extensions for all, and back", async () => {
     const host = await mount();
     expect(rows(host)).toHaveLength(2);
     await choose(host, t.filter, "s-1");
-    expect(rows(host).map((r) => r[0])).toEqual([`${t.allStudents}, ${t.newDue} 14. 11. 2026. u 23:59`]);
+    expect(rows(host).map((r) => r.slice(0, 2))).toEqual([[t.allStudents, "14. 11. 2026. u 23:59"]]);
     await choose(host, t.filter, "s-4");
     expect(rows(host)).toHaveLength(2);
     await choose(host, t.filter, "");
