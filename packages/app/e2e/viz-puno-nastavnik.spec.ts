@@ -88,7 +88,8 @@ test("NZ-18: the aggregate links each submitted work, and the extension lists th
   await expect(main(page).getByRole("link", { name: "Produljenje" }).first()).toBeVisible();
   await axe(page, info, "zbirni");
   await page.goto(`/aplikacija/nastavnik/zadatak/${T1}/produljenje`);
-  await expect(main(page).getByText(/^Demo Kompost, novi rok 28\. 12\. 2026\./)).toBeVisible();
+  const extended = main(page).getByRole("table", { name: "Produljeni rokovi" }).getByRole("row", { name: /^Demo Kompost 28\. 12\. 2026\./ });
+  await expect(extended).toBeVisible();
   await axe(page, info, "produljenje");
 });
 
