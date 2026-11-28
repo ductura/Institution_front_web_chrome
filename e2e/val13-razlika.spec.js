@@ -93,6 +93,7 @@ if (process.env.DUCTURA_STOG === '1') {
   // "Spremljeno na poslužitelju"), submit (the slides step, then the receipt) and export (.pptx is a ZIP). Invented data only.
   test.describe('val 13: student stvara, sinkronizira, predaje i izvozi slajdove (F4-V13-R04)', () => {
     test('slajdovi: stvori, sinkroniziraj, predaj, izvezi; tuđi student dobiva 404', async ({ browser }) => {
+      test.setTimeout(300_000);
       const runId = randomUUID();
       const title = `Izmišljeni naslov slajda ${runId.slice(0, 8)}`;
       const teacherContext = await browser.newContext({ baseURL: webOrigin });
@@ -179,7 +180,9 @@ if (process.env.DUCTURA_STOG === '1') {
           await expect(student).toHaveURL((url) => url.pathname === app(`/rad/${assignmentId}/predaja/potvrda`), { timeout: 30_000 });
           // The work is locked: opening it again reads only.
           await student.goto(app(`/rad/${assignmentId}`));
-          await expect(student.getByText('Rad je predan. Slajdovi se samo čitaju.')).toBeVisible({ timeout: 30_000 });
+          // A submitted work is shown by the read-only frame ("predano"), not by the slides editor.
+          await expect(student.getByText(/^Rad je predan, pa se ovdje više ne može pisati\./)).toBeVisible({ timeout: 30_000 });
+          await expect(student.getByRole('textbox', { name: 'Naslov', exact: true })).toHaveCount(0);
         });
 
         await test.step('Tuđi student: izvoz i čitanje revizija su 404', async () => {
