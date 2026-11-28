@@ -85,8 +85,9 @@ for (const purpose of AI_PURPOSES) {
 test("NZ-6: the filter, by keyboard, keeps one student's extensions and those for all; the hidden reason is said", async ({ page }) => {
   await teacher(page);
   await page.goto(`/aplikacija/nastavnik/zadatak/${A1}/produljenje`);
-  const list = page.getByRole("region", { name: "Produljeni rokovi" });
-  const rows = list.getByRole("listitem");
+  const list = page.locator("section.card", { has: page.getByRole("heading", { name: "Produljeni rokovi" }) });
+  await expect(list.getByRole("table", { name: "Produljeni rokovi" })).toBeVisible();
+  const rows = list.locator("tbody tr");
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0)).toContainText("Student vidi: Bio 15. 12. 2099. u 23:59, razlog: Tehnička poteškoća");
   await expect(rows.nth(1)).toContainText("Student vidi: Bio 20. 12. 2099. u 23:59, razlog: (nije prikazano Vama)");

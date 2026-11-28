@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Select, TextField } from "@ductura/ui";
+import { Button, DataTable, Select, TextField, type DataTableColumn } from "@ductura/ui";
 
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
@@ -10,7 +10,9 @@ import { useHost } from "../../context";
 import { readLateExceptions, type LateExceptionRecord } from "../assignment-facts/late-exception";
 import { whenHr } from "../assignment-facts/model";
 import { assignmentFactsMessages as lateText } from "../assignment-facts/messages.hr";
-import { deadlinePassed, detailText, filterByStudent, studentSeesText, leadText, loadN13, noteOf, reasonOptions, recordN13, submissionWarning, titleText, unavailablePort, type N13Port, type N13Read, type Note } from "./model";
+import { momentHr } from "../n12/model";
+import type { DeadlineExtension } from "../../../../../../src/client/deadline-extensions";
+import { deadlinePassed, detailText, filterByStudent, studentSeesText, leadText, loadN13, noteOf, reasonOptions, recordN13, submissionWarning, unavailablePort, whoText, type N13Port, type N13Read, type Note } from "./model";
 import { n13Messages as text } from "./messages.hr";
 
 /**
@@ -72,6 +74,20 @@ export default function N13Extensions({ assignmentId, port = unavailablePort, re
       setAttempt((n) => n + 1);
     }
   }
+
+  const extensionColumns: DataTableColumn<DeadlineExtension>[] = [
+    { id: "student", header: text.student, rowHeader: true, cell: (e) => whoText(e, students) },
+    { id: "due", header: text.due, cell: (e) => momentHr(e.dueAt) },
+    {
+      id: "reason", header: text.reason, cell: (e) => (
+        <>
+          <p className="meta">{detailText(e)}</p>
+          <p className="meta">{studentSeesText(e)}</p>
+          {e.reasonId === null && <p className="meta">{text.studentSeesHidden}</p>}
+        </>
+      ),
+    },
+  ];
 
   const warning = data === null ? null : submissionWarning(effective, studentId, students, data.submissions);
 
@@ -139,8 +155,8 @@ export default function N13Extensions({ assignmentId, port = unavailablePort, re
               <a className="btn secondary" href={appHref(base, "/nastavnik")}>{text.cancel}</a>
             </div>
           </div>
-          <section className="card" aria-labelledby="pl-h">
-            <h2 id="pl-h">{text.listTitle}</h2>
+          <section className="card">
+            <h2>{text.listTitle}</h2>
             {data.extensions === null ? (
               <>
                 <p className="note" role="alert">{text.listUnavailable}</p>
@@ -157,17 +173,13 @@ export default function N13Extensions({ assignmentId, port = unavailablePort, re
                     onChange={(e) => setFilter(e.target.value)}
                   />
                 )}
-                {filterByStudent(data.extensions, filter).length === 0 && <p className="note">{text.filterEmpty}</p>}
-                <ul className="list">
-                  {filterByStudent(data.extensions, filter).map((e) => (
-                    <li key={e.id} className="item">
-                      <span className="title">{titleText(e, students)}</span>
-                      <span className="meta">{detailText(e)}</span>
-                      <span className="meta">{studentSeesText(e)}</span>
-                      {e.reasonId === null && <span className="meta">{text.studentSeesHidden}</span>}
-                    </li>
-                  ))}
-                </ul>
+                <DataTable
+                  caption={<span className="visually-hidden">{text.listTitle}</span>}
+                  columns={extensionColumns}
+                  rows={filterByStudent(data.extensions, filter)}
+                  rowKey={(e) => e.id}
+                  empty={text.filterEmpty}
+                />
                 <p className="meta">{text.keptNote}</p>
               </>
             )}
