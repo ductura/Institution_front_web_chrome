@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@ductura/ui";
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { createApi } from "@/client/api";
 import { routerPath } from "../../../bases";
@@ -55,6 +55,7 @@ import { commentBankPort, draftCommentsPort } from "../comment-bank/port";
 import TeacherDirectEdit from "../direct-edit/TeacherDirectEdit";
 import { TEACHER_EDIT_WRITABLE, teacherEditPort } from "../direct-edit/port";
 import { RubricMarks } from "./rubric/RubricMarks";
+import TextChecksCard from "./text-checks/TextChecksCard";
 import { teacherWorkMessages as workText } from "./messages.hr";
 import { useShownRevision } from "./shown-revision";
 import ReviewPage from "./review/ReviewPage";
@@ -177,6 +178,14 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   const [draft, setDraft] = useState<TextAnchor | null>(null);
   // WEB-V17-BANK-INSERT: a bank text on its way into the new comment.
   const [insertion, setInsertion] = useState<BankInsertion | null>(null);
+  // ED-130: the text of a check waits until its new comment is open; an insertion already there
+  // when the form opens is not applied, so it goes in only after the draft is on screen.
+  const [checked, setChecked] = useState<BankInsertion | null>(null);
+  useEffect(() => {
+    if (checked === null) return;
+    setInsertion((now) => ({ n: (now?.n ?? 0) + 1, text: checked.text }));
+    setChecked(null);
+  }, [checked]);
   // INT-15: a new comment names the revision of the text on screen.
   const revision = useShownRevision(documentId, view.hash, view.submitted, current, !stopped && view.document !== null);
   const placed = stopped || comments.outcome?.kind !== "ok" ? [] : placeThreads(view.document, comments.outcome.threads);
@@ -223,6 +232,9 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
               onReload={() => void comments.load()} onShow={({ nodeId, start, end }) => {
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
+            {/* ED-130: the text checks; a finding becomes a new comment on its words. */}
+            {view.document !== null && <TextChecksCard document={view.document} ready={comments.outcome?.kind === "ok"}
+              onComment={(anchor, text) => { setDraft(anchor); setChecked((now) => ({ n: (now?.n ?? 0) + 1, text })); }} />}
             {/* WEB-1704 (M6.7): deferred comments and the bank; a draft is anchored to the text selected in the work. */}
             <CommentBank key={`bank:${documentId}`} assignmentId={documentId} drafts={draftCommentsPort} bank={commentBankPort}
               anchor={placeAnchor(view.document, draft) ? draft : null}
