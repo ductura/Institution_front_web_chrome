@@ -160,7 +160,7 @@ export function versionLines(versions: readonly N10Version[]): readonly VersionL
   const sorted = [...byRevision.values()].sort((a, b) => a.revision - b.revision);
   return sorted.map((v, i) => ({
     revision: v.revision,
-    line: `${at(v.savedMinute)} · ${i === sorted.length - 1 ? text.versionSubmitted : text.versionSent}`,
+    line: `${at(v.savedMinute)}, ${i === sorted.length - 1 ? text.versionSubmitted : text.versionSent}`,
   }));
 }
 

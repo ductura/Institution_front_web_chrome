@@ -12,8 +12,8 @@ describe("Brz put chooser (NZ-1)", () => {
       { name: "Kolegij B", assignments: [{ id: "a2", title: "Seminar", dueAt: "2026-12-15T22:59:00.000Z" }] },
     ] as unknown as Parameters<typeof fastPathTasks>[0];
     expect(fastPathTasks(courses, NOW)).toEqual([
-      { value: "a1", label: "Kolegij A · Esej · rok je prošao" },
-      { value: "a2", label: "Kolegij B · Seminar · rok 15. 12. 2026. u 23:59" },
+      { value: "a1", label: "Kolegij A, Esej, rok je prošao" },
+      { value: "a2", label: "Kolegij B, Seminar, rok 15. 12. 2026. u 23:59" },
     ]);
     expect(fastPathTasks([], NOW)).toEqual([]);
   });

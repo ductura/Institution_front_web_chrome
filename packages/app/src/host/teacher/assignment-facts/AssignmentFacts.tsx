@@ -89,7 +89,7 @@ export function CourseTasks({ course }: { course: TeacherCourse }) {
       {course.assignments.map((assignment) => (
         <div key={assignment.id} className={cardStyles.task}>
           <h3>{assignment.title}</h3>
-          <p className="meta">{card.due} {dueText(assignment.dueAt)}{Date.parse(assignment.dueAt) < Date.now() ? ` · ${text.deadlinePassed}` : ""}{" "}
+          <p className="meta">{card.due} {dueText(assignment.dueAt)}{Date.parse(assignment.dueAt) < Date.now() ? `, ${text.deadlinePassed}` : ""}{" "}
             <PracticeBadge practice={practice.get(assignment.id)} /></p>
           {read === null || read.kind === "signedOut" ? (
             <div><p className="meta">{text.loading}</p><Skeleton label={text.loading} lines={2} /></div>

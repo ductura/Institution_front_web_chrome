@@ -86,7 +86,7 @@ export function deadlineOf(studentId: string, dueAt: string, extensions: readonl
 const safeId = (id: string | null): string | null => (id !== null && /^[\w-]+$/.test(id) ? id : null);
 
 function submittedLine(detail: SubmissionDetail | undefined, known: boolean): string {
-  if (!known) return `${text.submitted} · ${text.detailsUnavailable}`;
+  if (!known) return `${text.submitted}, ${text.detailsUnavailable}`;
   if (detail === undefined) return text.submitted;
   const when = whenHr(detail.requestedMinute);
   let head = when === null ? text.submitted : text.submittedAt(when);
@@ -94,7 +94,7 @@ function submittedLine(detail: SubmissionDetail | undefined, known: boolean): st
   const parts = [head];
   if (detail.revision !== null) parts.push(text.version(detail.revision));
   if (detail.record !== null) parts.push(detail.record === "with_gaps" ? text.recordGaps : text.recordContinuous);
-  return parts.join(" · ");
+  return parts.join(", ");
 }
 
 /** One row per student: state in words; "u pisanju" turns into "nije predano" only once that student's deadline passed. */
@@ -108,7 +108,7 @@ export function rowOf(work: StudentWork, reads: AssignmentReads, now: number): F
   const dueMs = Date.parse(deadline.dueAt);
   const due = whenHr(deadline.dueAt) ?? deadline.dueAt;
   if (Number.isFinite(dueMs) && now >= dueMs) return { ...base, kind: "notSubmitted", line: text.notSubmitted(due) };
-  return { ...base, kind: "writing", line: deadline.extended ? `${text.writing} · ${text.extendedTo(due)}` : text.writing };
+  return { ...base, kind: "writing", line: deadline.extended ? `${text.writing}, ${text.extendedTo(due)}` : text.writing };
 }
 
 /** The facts of one assignment; the order of rows is by name only, never by any figure. */

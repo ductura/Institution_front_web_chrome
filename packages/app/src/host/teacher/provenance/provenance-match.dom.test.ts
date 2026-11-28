@@ -30,7 +30,7 @@ describe("Karta podrijetla with the assistant match", () => {
     const { host, calls } = await mount({ kind: "ready", percent: 4, findings: [FAKE_FINDING] });
     expect(calls).toEqual([DOCUMENT]);
     const section = host.querySelector('[data-assistant-match="ready"]');
-    expect(section?.textContent).toContain("Podudara se s odgovorom pomoćnika · 4 %");
+    expect(section?.textContent).toContain("Podudara se s odgovorom pomoćnika, 4 %");
     expect(section?.querySelectorAll("tbody tr")).toHaveLength(1);
   });
 

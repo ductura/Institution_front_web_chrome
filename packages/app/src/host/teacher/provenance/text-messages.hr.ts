@@ -8,8 +8,8 @@ const KIND: Record<OriginKind, string> = {
   assistant_inserted: "umetnuto iz Asistenta",
   assistant_match: "podudara se s odgovorom Asistenta",
   imported_file: "uvezeno iz datoteke",
-  pasted_known: "zalijepljeno · izvor poznat",
-  pasted_unknown: "zalijepljeno · izvor nije opažen",
+  pasted_known: "zalijepljeno, izvor poznat",
+  pasted_unknown: "zalijepljeno, izvor nije opažen",
 };
 
 export const markedTextMessages = {
@@ -20,7 +20,7 @@ export const markedTextMessages = {
   whoTyped: "Ductura ne zna tko je tipkao.",
   notProof: "Nije dokaz autorstva.",
   kind: (kind: OriginKind) => KIND[kind],
-  markLabel: (kind: OriginKind, mark: number) => `${KIND[kind]} · oznaka ${mark}`,
+  markLabel: (kind: OriginKind, mark: number) => `${KIND[kind]}, oznaka ${mark}`,
   markStatus: (mark: number, count: number, kind: OriginKind) => `Oznaka ${mark} od ${count}: ${KIND[kind]}.`,
   noMarksInText: "U tekstu ove verzije nema lijepljenja, uvoza ni prijenosa iz Asistenta.",
   tableCaption: "Odsječci teksta (isti podaci kao oznake, bez boje i crte)",

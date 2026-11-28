@@ -15,7 +15,7 @@ describe("N-07 Prije predaje model", () => {
       { at: { from: "2026-10-20T08:10:00.000Z", to: "2026-10-20T08:11:00.000Z" }, characters: 201 },
     ])).pasted;
     expect(p.none).toBeNull();
-    expect(p.rows).toEqual(["19. listopada 2026. u 10:10 · 412 znakova", "20. listopada 2026. u 10:10 · 201 znak"]);
+    expect(p.rows).toEqual(["19. listopada 2026. u 10:10, 412 znakova", "20. listopada 2026. u 10:10, 201 znak"]);
   });
   it("form rules are not run", () => {
     expect(preSubmit(pastes([])).form).toBe("Provjera oblika još nije pokrenuta.");

@@ -31,7 +31,7 @@ function commentsPanel(page: Page) {
 }
 
 /**
- * The comment's own paragraph: the panel writes "Vi · <when> <body>" in one
+ * The comment's own paragraph: the panel writes "Vi, <when> <body>" in one
  * paragraph, so the body alone is no element of its own to find by exact text.
  */
 function commentBody(thread: ReturnType<Page['getByRole']>, body: string) {
@@ -187,7 +187,7 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       await expect(panel.getByRole('status').filter({ hasText: commentText.added })).toBeVisible();
       const thread = panel.getByRole('article').filter({ hasText: uiComment });
       await expect(thread).toHaveCount(1);
-      await expect(commentBody(thread, uiComment)).toHaveText(new RegExp(`^${commentText.own} · `));
+      await expect(commentBody(thread, uiComment)).toHaveText(new RegExp(`^${commentText.own}, `));
       await expect(commentBody(thread, uiComment)).toBeVisible();
       commentedInUi = { workPath, comment: uiComment, revision: submittedRevision };
     });

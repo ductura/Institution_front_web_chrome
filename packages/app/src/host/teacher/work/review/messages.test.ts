@@ -44,7 +44,7 @@ describe("PG-14: messages and forbidden terms of the work review", () => {
   it("still finds „dokaz autorstva” outside the negation, and every other term", () => {
     expect(forbiddenInReview("Ovo je dokaz autorstva.")).toEqual(["dokaz autorstva"]);
     expect(forbiddenInReview("Sumnjivo lijepljenje")).toEqual(["sumnjivo"]);
-    expect(forbiddenInReview("12 % · nije dokaz autorstva")).toEqual([]);
+    expect(forbiddenInReview("12 %, nije dokaz autorstva")).toEqual([]);
     expect(NEVER.test("Moguće varanje")).toBe(true);
     expect(NEVER.test("Plagijat")).toBe(true);
     expect(NEVER.test("Provjera AI-ja")).toBe(true);

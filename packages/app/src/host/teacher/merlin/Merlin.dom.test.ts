@@ -62,7 +62,7 @@ describe("Merlin focus and personal-data note (NZ-16)", () => {
     const host = await mount({ onChoose: (id) => chosen.push(id) });
     const select = host.querySelector("select")!;
     expect([...select.options].map((o) => o.textContent)).toEqual([
-      "Izmišljeni esej · Esej · rok je prošao", "Izmišljeni završni · Završni rad",
+      "Izmišljeni esej, Esej, rok je prošao", "Izmišljeni završni, Završni rad",
     ]);
     await act(async () => { select.value = "a2"; select.dispatchEvent(new Event("change", { bubbles: true })); });
     expect(chosen).toEqual(["a2"]);

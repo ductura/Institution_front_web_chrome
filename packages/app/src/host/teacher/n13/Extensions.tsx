@@ -184,7 +184,7 @@ export default function N13Extensions({ assignmentId, port = unavailablePort, re
                 {late.map((e) => (
                   <li key={e.id} className="item">
                     <span className="title">{(students ?? []).find((s) => s.studentId === e.studentId)?.name ?? text.unnamed} <span className="badge">{text.lateMark}</span></span>
-                    <span className="meta">{`${text.lateUntil} ${whenHr(e.untilAt) ?? e.untilAt} · ${text.reasonLabel}: ${e.reasonId === null ? text.reasonHidden : lateText.late.reasons[e.reasonId]} · ${text.recordedBy} ${e.reasonId === null ? text.byOther : text.byYou}, ${whenHr(e.createdAt) ?? e.createdAt}`}</span>
+                    <span className="meta">{`${text.lateUntil} ${whenHr(e.untilAt) ?? e.untilAt}, ${text.reasonLabel}: ${e.reasonId === null ? text.reasonHidden : lateText.late.reasons[e.reasonId]}, ${text.recordedBy} ${e.reasonId === null ? text.byOther : text.byYou}, ${whenHr(e.createdAt) ?? e.createdAt}`}</span>
                   </li>
                 ))}
               </ul>

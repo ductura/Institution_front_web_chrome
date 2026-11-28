@@ -31,14 +31,14 @@ export function nextDeadline(course: Pick<TeacherCourse, "assignments">, now: nu
   return best;
 }
 
-/** "4 studenta · grupe 2 i 4", from the team view; null when the view is not there. */
+/** "4 studenta, grupe 2 i 4", from the team view; null when the view is not there. */
 export function enrolledText(view: TeachingTeamView | null): string | null {
   if (view === null) return null;
   const students = view.role === "holder" ? view.students.length : view.groups.reduce((sum, g) => sum + g.students.length, 0);
   const noun = students % 10 === 1 && students % 100 !== 11 ? t.students.one
     : students % 10 >= 2 && students % 10 <= 4 && (students % 100 < 12 || students % 100 > 14) ? t.students.few : t.students.many;
   const groups = view.groups.map((g) => g.name);
-  return `${students} ${noun}${groups.length > 0 ? ` · ${groups.join(", ")}` : ""}`;
+  return `${students} ${noun}${groups.length > 0 ? `, ${groups.join(", ")}` : ""}`;
 }
 
 // P-D1: teacher.courses.get has no practice flag; institution.assignment.get has `isPractice`.
@@ -79,10 +79,10 @@ export function courseOverviewPath(courseId: string): string {
 
 export type TaskPick = "extension" | "merlin";
 
-/** The chooser's option: "Naslov · rok 8. 11. 2026. u 23:59", or "· rok je prošao" (NZ-2: a passed deadline is offered too). */
+/** The chooser's option: "Naslov, rok 8. 11. 2026. u 23:59", or ", rok je prošao" (NZ-2: a passed deadline is offered too). */
 export function taskOptionLabel(assignment: Pick<TeacherCourse["assignments"][number], "title" | "dueAt">, now: number): string {
   const ms = Date.parse(assignment.dueAt);
-  return `${assignment.title} · ${!Number.isNaN(ms) && ms < now ? t.deadlinePassed : `${t.due.toLowerCase()} ${dueText(assignment.dueAt)}`}`;
+  return `${assignment.title}, ${!Number.isNaN(ms) && ms < now ? t.deadlinePassed : `${t.due.toLowerCase()} ${dueText(assignment.dueAt)}`}`;
 }
 
 /** Every assignment of the course, in the order of the read; none is left out for a passed deadline. */

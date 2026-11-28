@@ -13,8 +13,8 @@ describe("N-11 model", () => {
   });
   it("labels the versions as in the prototype", () => {
     const [a, b] = submittedVersions(FAKE_VERSIONS);
-    expect(currentLine(a!)).toMatch(/^Predana verzija · .+ · verzija 2$/);
-    expect(optionLabel(b!)).toMatch(/^Poslano na pregled · .+ · verzija 1$/);
+    expect(currentLine(a!)).toMatch(/^Predana verzija, .+, verzija 2$/);
+    expect(optionLabel(b!)).toMatch(/^Poslano na pregled, .+, verzija 1$/);
   });
   it("counts added and removed words from the blocks", () => {
     expect(countWords(FAKE_BLOCKS)).toEqual({ added: 4, removed: 1 });

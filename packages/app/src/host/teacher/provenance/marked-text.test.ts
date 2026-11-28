@@ -166,7 +166,7 @@ describe("PG-2 marked text: view", () => {
     expect(paragraph).not.toMatch(/class="[^"]*pvTyped/);
     expect(paragraph).toMatch(/<span data-kind="typed">Prva rečenica\. <\/span><span[^>]*data-typed-label[^>]*>napisano u Ducturi<\/span>/);
     expect(paragraph.match(/data-typed-label/g)).toHaveLength(1);
-    expect(paragraph).toMatch(/data-kind="pasted_unknown"[^>]*>Druga rečenica čćž\.<\/span><span[^>]*>zalijepljeno · izvor nije opažen · oznaka 1</);
+    expect(paragraph).toMatch(/data-kind="pasted_unknown"[^>]*>Druga rečenica čćž\.<\/span><span[^>]*>zalijepljeno, izvor nije opažen, oznaka 1</);
     const whole = renderToStaticMarkup(createElement(MarkedText, { state: { kind: "text", text: placeRanges(4, [{ id: "t", heading: false, text: "Sve tipkano." }], [range("t", 0, 12, "typed")]) },
       origin: true, typed: true, onRetry: () => {} }));
     expect(whole).toMatch(/<p data-block="t" class="[^"]*pvTyped[^"]*">Sve tipkano\.<span[^>]*data-typed-label/);
