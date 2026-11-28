@@ -52,10 +52,11 @@ function HostInner({ base, detail, children }: { base: Base; detail: string | nu
     return () => document.removeEventListener("click", onClick);
   }, [base, navigate]);
 
-  if (open !== null) return <PublicPage base={base} page={open} detail={detail}>{children}</PublicPage>;
+  const bare = open === null ? null : <PublicPage base={base} page={open} detail={detail}>{children}</PublicPage>;
+  if (bare !== null && open?.shellWhenSignedIn !== true) return bare;
   return (
     <Suspense fallback={<RouteLoading label={hostText.loading} />}>
-      <SignedInHost base={base} route={route} navigate={navigate} detail={detail}>{children}</SignedInHost>
+      <SignedInHost base={base} route={route} navigate={navigate} detail={detail} signedOutPage={bare}>{children}</SignedInHost>
     </Suspense>
   );
 }

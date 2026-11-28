@@ -258,7 +258,9 @@ describe("publicPage", () => {
     expect(publicPage("/izvoz-podataka")).toBeNull();
     expect(publicPage("/ustanova/izvoz-podataka")).toBeNull();
     expect(publicPage("/zadaci")).toBeNull();
-    expect(publicPage("/kako-radi")).toBeNull();
+    // J-03: Kako Ductura radi is public (state A, no shell) and keeps the shell for the signed-in (state B).
+    expect(publicPage("/kako-radi")).toMatchObject({ public: true, shellWhenSignedIn: true, roles: [] });
+    expect(publicPage("/stanje")?.shellWhenSignedIn).toBeUndefined();
     expect(publicPage("/")).toBeNull();
   });
 });

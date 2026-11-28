@@ -109,6 +109,11 @@ export type Page = {
   /** Opened without reading the session and outside the shell, as Ductus /stanje and /prijava. */
   readonly public?: boolean;
   /**
+   * With `public`: a signed-in person still gets the shell (the host reads the session), a signed-out
+   * one gets the page bare; no sign-in is forced. Only "/kako-radi" (J-03, the owner's decision of 28 Nov).
+   */
+  readonly shellWhenSignedIn?: boolean;
+  /**
    * Account kinds that alone may open it, whatever their shell role (NF-7 OA-1: the operator has
    * none); `roles` is then not read. Every other account is refused (NO_ACCESS), not led home.
    */
@@ -215,7 +220,7 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/predaje", label: submissionsMessages.pageTitle, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // WEB-V15-STRANICA: "Statistička analiza", not in the navigation (hidden until the server switches the function on).
   { path: "/analiza", label: analysisPageMessages.title, kind: "pending", roles: ["teacher", "student"] },
-  { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
+  { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF, public: true, shellWhenSignedIn: true },
   // WEB-1804 (M11.5): interface language, name and notifications, for everyone signed in.
   { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },
   // WEB-1302: the registry office requests a student's data export, the administrator starts it;
