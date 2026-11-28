@@ -462,11 +462,12 @@ test("Kako Ductura radi opens the explanation inside the signed-in shell", async
   expect(seen.me).toBe(1);
 });
 
-test("Kako Ductura radi preserves the current base when sign-in is needed", async ({ page }) => {
+test("Kako Ductura radi opens bare for a signed-out visitor, with no forced sign-in", async ({ page }) => {
   const seen = await fakeServer(page, { status: 401 });
   await page.goto("/aplikacija/kako-radi");
-  await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
-  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/aplikacija/kako-radi");
+  await expect(page.getByRole("heading", { name: "Kako Ductura radi", level: 1 })).toBeVisible();
+  await expect(page).toHaveURL(/\/aplikacija\/kako-radi$/);
+  expect(seen.login).toHaveLength(0);
 });
 
 const STATUS_PATH = "**/api/v1/status";
