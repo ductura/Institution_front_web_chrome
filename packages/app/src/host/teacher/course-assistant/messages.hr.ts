@@ -11,7 +11,7 @@ export const courseAssistantMessages = {
   retry: "Pokušaj ponovno",
   savedOn: "Pomoćnik je uključen.",
   savedOff: "Pomoćnik je isključen.",
-  saveFailed: "Postavka nije spremljena. Pokušajte ponovno.",
-  saveUnknown: "Nije potvrđeno je li postavka spremljena. Pročitajte stanje ponovno.",
+  saveFailed: "Postavka nije spremljena na poslužitelju. Pokušajte ponovno.",
+  saveUnknown: "Nije potvrđeno je li postavka spremljena na poslužitelju. Pročitajte stanje ponovno.",
   signedOut: "Sesija je istekla. Prijavite se ponovno.",
 } as const;

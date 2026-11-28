@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { useLocalEditor } from "@/components/editor/LocalDocument";
 import { scanBarcode, type ScanResult } from "./barcode";
 import {
-  bibSources, citePlaces, missingFields, overviewRows, possibleDuplicates, relianceNotes, sourceStats,
+  bibSources, citePlaces, missingFields, overviewRows, possibleDuplicates, relianceNotes, sourcesByChapter, sourceStats,
   type BibSource, type CitePlace,
 } from "./bibliography-model";
 import styles from "./StudentBibliography.module.css";
@@ -74,6 +74,7 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId,
   const reliance = useMemo(() => relianceNotes(sources, places), [sources, places]);
   const incomplete = useMemo(() => sources.map((s) => ({ s, missing: missingFields(s.raw) })).filter((x) => x.missing.length > 0), [sources]);
   const doubles = useMemo(() => possibleDuplicates(sources), [sources]);
+  const chapters = useMemo(() => sourcesByChapter(json), [json]);
 
   const [states, setStates] = useState<SourceStates>(() => readStates(documentId));
   const [filter, setFilter] = useState<"all" | "get" | "unread">("all");
@@ -84,10 +85,10 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId,
 
   useEffect(() => setStates(readStates(documentId)), [documentId]);
 
-  const chapters = useMemo(() => planChapters(json), [json]);
+  const planHeads = useMemo(() => planChapters(json), [json]);
   const [plan, setPlan] = useState<SourcePlan>(() => readPlan(documentId));
   useEffect(() => setPlan(readPlan(documentId)), [documentId]);
-  const gaps = useMemo(() => planGaps(plan, chapters, sources), [plan, chapters, sources]);
+  const gaps = useMemo(() => planGaps(plan, planHeads, sources), [plan, planHeads, sources]);
   const flipPlan = (sourceId: string, chapterId: string) => {
     const result = togglePlan(plan, sourceId, chapterId);
     setPlan(result);
@@ -171,10 +172,20 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId,
           <Button tone="quiet" onClick={() => void copyCite(citationToCopy(json, style.style, s.id), setMessage)}>{t.copyCite}</Button>
         </div>
         {s.places.length > 0 && <Where places={s.places} onJump={jump} onNext={() => next(s.id, s.places)} />}
-        {chapters.length > 0 && <PlanRow source={s} plan={plan} chapters={chapters} editable={editable} onFlip={flipPlan} />}
+        {planHeads.length > 0 && <PlanRow source={s} plan={plan} chapters={planHeads} editable={editable} onFlip={flipPlan} />}
       </li>)}
     </ul>
-    {chapters.length > 0 && <p><small>{t.planDevice}</small></p>}
+    {planHeads.length > 0 && <p><small>{t.planDevice}</small></p>}
+
+    {chapters.length > 0 && <Details summary={t.byChapter}>
+      <ul className={styles.list} data-sources-by-chapter>
+        {chapters.map((c) => <li key={c.id} className={styles.item}>
+          <strong>{c.number ? `${c.number} ${c.title}` : c.title}</strong>
+          <small>{c.labels.length ? c.labels.join(", ") : t.byChapterNone}</small>
+        </li>)}
+      </ul>
+      <p><small>{t.byChapterNote}</small></p>
+    </Details>}
 
     {(incomplete.length > 0 || doubles.length > 0) && <Details summary={t.incomplete(incomplete.length + doubles.length)}>
       <ul className={styles.list}>

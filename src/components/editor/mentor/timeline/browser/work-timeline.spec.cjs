@@ -33,7 +33,7 @@ test("sorts projected events chronologically and shows the confirmed submission"
   await page.getByRole("button", { name: "Vremenska crta" }).click();
   const timeline = page.getByRole("dialog", { name: "Vremenska crta rada" });
   await expect(timeline.getByRole("listitem")).toHaveText([
-    /Rok etape · Izmišljeni nacrt/, /Zatražene konzultacije/, /Spremljena verzija · 42/,
+    /Rok etape · Izmišljeni nacrt/, /Zatražene konzultacije/, /Verzija na poslužitelju · 42/,
     /Rad predan · 42/, /Potvrđeni termin konzultacija/,
   ]);
   await page.keyboard.press("Escape");

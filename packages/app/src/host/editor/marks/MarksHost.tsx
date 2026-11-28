@@ -19,10 +19,20 @@ import { marksHr as t } from "./messages.hr";
 import styles from "./Marks.module.css";
 import { reportAlert } from "../../../../../../src/components/editor/layout-prefs/context-alerts.ts";
 import { GHOST_KEY, ghostPlugin } from "./ghost";
-import { cardFits, requestCommentCard } from "../comments/comment-card";
+import { cardFits, requestCommentCard, requestCommentFocus } from "../comments/comment-card";
 import { askSourceInstead, holeNeedsSource, linkHoleToSource, sourcesOf } from "./hole-source";
 
 const NEED_ALERT = "marks-need-proof";
+
+/**
+ * A click on a comment alone in the text: up to 1050 px its card (ED-98), wider the Komentari group of
+ * the right panel with that comment in focus (ED-119, prototype app.js `.cmt`).
+ */
+export function openComment(pos: number, width = typeof window === "undefined" ? 0 : window.innerWidth): void {
+  if (cardFits(width)) { requestCommentCard(pos); return; }
+  requestPanel("comments");
+  requestCommentFocus(pos);
+}
 
 const KEY = new PluginKey("ductusMarks");
 const CLASS: Partial<Record<MarkKind, string>> = { hole: styles.hole, plain: styles.plain, need: styles.need };
@@ -137,9 +147,10 @@ export function MarksHost() {
       const hit = editor.view.posAtCoords({ left: event.clientX, "top": event.clientY });
       const at = hit ? placesAt(places, hit.pos) : [];
       // ED-98: on a phone a comment alone opens its card, not a popover (prototype text2.js).
-      if (hit && cardFits(window.innerWidth) && at.length > 0 && at.every((p) => p.kind === "cmt")) {
+      // ED-119: wider, it opens Komentari with that comment in focus (prototype app.js `.cmt`).
+      if (hit && at.length > 0 && at.every((p) => p.kind === "cmt")) {
         setPick(null);
-        requestCommentCard(hit.pos);
+        openComment(hit.pos);
         return;
       }
       setPick(at.length ? { x: event.clientX, y: event.clientY + 12, at } : null);
@@ -161,6 +172,8 @@ export function MarksHost() {
     setPick(null);
     // ED-98: on a phone a comment chosen in the list „Na ovom mjestu” opens its card.
     if (p.kind === "cmt" && cardFits(window.innerWidth)) { requestCommentCard(p.from); return; }
+    // ED-119: wider, the comment is also brought into focus in Komentari.
+    if (p.kind === "cmt") { requestPanel("comments"); requestCommentFocus(p.from); }
     editor.chain().setTextSelection({ from: p.from, to: p.to }).scrollIntoView().focus().run();
   };
   const jump = (kind: MarkKind) => {

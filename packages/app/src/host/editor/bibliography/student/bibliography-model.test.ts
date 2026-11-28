@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { bibSources, citePlaces, missingFields, possibleDuplicates, relianceNotes, sourceStats } from "./bibliography-model";
+import { bibSources, citePlaces, missingFields, possibleDuplicates, relianceNotes, sourcesByChapter, sourceStats } from "./bibliography-model";
 
 const A = "11111111-1111-4111-8111-111111111111";
 const B = "22222222-2222-4222-8222-222222222222";
@@ -25,6 +25,23 @@ it("counts citations per source and flags a chapter leaning on one source", () =
   expect(sourceStats(sources, places, new Map([[A, 2]])).map((s) => [s.places.length, s.proofs])).toEqual([[4, 2], [1, 0]]);
   expect(relianceNotes(sources, places)).toMatchObject([{ chapter: "1", count: 4, total: 5 }]);
   expect(relianceNotes(sources, places.slice(0, 4))).toEqual([]);
+});
+
+it("lists the sources of every chapter, subchapters included, and keeps chapters without citations", () => {
+  const titled = (level: number, text: string) => ({ type: "heading", attrs: { level }, content: [{ type: "text", text }] });
+  const d = doc([
+    titled(1, "Naslov rada"), par(cite(B)),
+    titled(2, "Uvod"), par(cite(A), cite(B), cite(A)),
+    titled(2, "Metoda"), par({ type: "text", text: "Bez navoda." }),
+    titled(2, "Rezultati"), titled(3, "Mjerenja"), par(cite(B)),
+  ]);
+  expect(sourcesByChapter(d).map((c) => [c.title, c.labels])).toEqual([
+    ["Uvod", ["Kovač (2019)", "Horvat (2019)"]],
+    ["Metoda", []],
+    ["Rezultati", ["Horvat (2019)"]],
+  ]);
+  expect(sourcesByChapter(doc([titled(1, "Samo naslov")]))).toEqual([]);
+  expect(sourcesByChapter(null)).toEqual([]);
 });
 
 it("names missing fields and finds doubled titles", () => {

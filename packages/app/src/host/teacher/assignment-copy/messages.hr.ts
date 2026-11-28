@@ -1,5 +1,5 @@
 export const assignmentCopyMessages = {
-  title: "Kopiraj zadatak",
+  title: "Dupliciraj zadatak",
   course: "Odredišni kolegij",
   choose: "Odaberite kolegij",
   close: "Zatvori",

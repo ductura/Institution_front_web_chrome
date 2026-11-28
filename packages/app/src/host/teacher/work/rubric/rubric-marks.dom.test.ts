@@ -63,7 +63,7 @@ describe("RubricMarks", () => {
     await settle();
     const put = call.mock.calls.find((c) => c[0] === "teacher.work-rubric-mark.put")!;
     expect(put[1]).toMatchObject({ params: { documentId: "d1", criterionId: "k1" }, body: { level: 1, note: null } });
-    expect(host.textContent).toContain("Spremljeno.");
+    expect(host.textContent).toContain("Spremljeno na poslužitelju.");
     expect(host.textContent).not.toMatch(/\d+\s*\/\s*\d+|zbroj ukupno/i);
   });
 
@@ -88,7 +88,7 @@ describe("RubricMarks", () => {
     await act(async () => { [...host.querySelectorAll("button")].find((b) => b.textContent === "Spremi")!.click(); });
     await settle();
     expect(host.textContent).toContain("Oznaka nije spremljena");
-    expect(host.textContent).not.toContain("Spremljeno.");
+    expect(host.textContent).not.toContain("Spremljeno na poslužitelju.");
   });
 
   it("handles a criterion whose id is an Object.prototype name", async () => {
