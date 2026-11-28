@@ -7,7 +7,7 @@ import { historyText as t } from "./messages.hr";
 export type HistoryRow = {
   readonly key: string;
   readonly attempt: number;
-  /** "Predaja 2 · 20. 12. 2026. u 23:05" (+ " · nakon roka"). */
+  /** "Predaja 2, 20. 12. 2026. u 23:05" (+ ", nakon roka"). */
   readonly line: string;
   readonly state:
     | { readonly kind: "current" }
