@@ -84,7 +84,7 @@ test("NZ-2: the extension chooser offers a passed deadline and N-13 says it has 
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Nastavi" }).click();
   await expect(dialog.getByText("Odaberite zadatak da biste nastavili.")).toBeVisible();
-  await dialog.getByLabel("Zadatak").selectOption({ label: "Izmišljeni esej · rok je prošao" });
+  await dialog.getByLabel("Zadatak").selectOption({ label: "Izmišljeni esej, rok je prošao" });
   await dialog.getByRole("link", { name: "Nastavi" }).click();
   await expect(page).toHaveURL(`/aplikacija/nastavnik/zadatak/${A2}/produljenje`);
   await expect(page.getByText("Rok ovog zadatka je prošao.")).toBeVisible();
@@ -96,7 +96,7 @@ test("NZ-2: the Merlin chooser goes to the export of the chosen assignment", asy
   await page.goto("/aplikacija/nastavnik");
   await page.getByRole("button", { name: "Izvoz za Merlin…" }).click();
   const dialog = page.getByRole("dialog", { name: "Izvoz za Merlin" });
-  await dialog.getByLabel("Zadatak").selectOption({ label: "Izmišljeni seminar · rok 15. 12. 2099. u 23:59" });
+  await dialog.getByLabel("Zadatak").selectOption({ label: "Izmišljeni seminar, rok 15. 12. 2099. u 23:59" });
   await expect(dialog.getByRole("link", { name: "Nastavi" })).toHaveAttribute("href", `/aplikacija/nastavnik/zadatak/${A1}/merlin`);
 });
 
@@ -114,7 +114,7 @@ test("NZ-10: the overview of one course joins version, state, deadline and the l
   const card = page.getByRole("region", { name: /Izmišljeni seminar/ }).first();
   const table = page.getByRole("region", { name: "Tablica predaja" }).first();
   await expect(table.getByRole("columnheader")).toHaveText(["Student", "Stanje", "Predaja", "Nakon roka", "Rok", "Stanje zapisa", "Dorada"]);
-  await expect(table.getByRole("row", { name: /Ana Izmišljenić/ })).toContainText("5. 11. 2026. u 21:14 · verzija 3");
+  await expect(table.getByRole("row", { name: /Ana Izmišljenić/ })).toContainText("5. 11. 2026. u 21:14, verzija 3");
   await expect(table.getByRole("link", { name: "Ana Izmišljenić" })).toHaveAttribute("href", "/aplikacija/nastavnik/rad/izmisljeni-rad-1");
   await expect(table.getByRole("row", { name: /Iva Izmišljenić/ })).toContainText("u pisanju, rok produljen");
   await expect(table.getByRole("row", { name: /Iva Izmišljenić/ })).toContainText("Rok produljen do 20. 12. 2099. u 23:59");
@@ -149,7 +149,7 @@ test("NZ-10: the roster says time, version and the extended deadline", async ({ 
   await teacher(page);
   await page.goto(`/aplikacija/nastavnik/kolegiji/${K1}/studenti`);
   const ana = page.getByTestId("n04-student").filter({ hasText: "Ana Izmišljenić" });
-  await expect(ana).toContainText("Predano 5. 11. 2026. u 21:14, prije roka · verzija 3 · zapis je cjelovit");
+  await expect(ana).toContainText("Predano 5. 11. 2026. u 21:14, prije roka, verzija 3, zapis je cjelovit");
   await expect(page.getByTestId("n04-student").filter({ hasText: "Iva Izmišljenić" })).toContainText("Rok produljen do 20. 12. 2099. u 23:59.");
 });
 
