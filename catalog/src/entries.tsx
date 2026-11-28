@@ -1,7 +1,7 @@
 import {
   AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, Chip, CodeField, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
   EditorOnboarding, EditorOutline, ActionRow, EntryList, FieldGrid, FormSection, Notice, OptionGroup, SummaryList, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, TabCount, Popover, PreviewDialog, RouteLoading, SaveState, SegmentedControl, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
-  PillTag, SideShell, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
+  PillTag, SideShell, Skeleton, SourceForm, StateTag, Steps, STATE_TAG_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup, type ShortcutListGroup,
 } from "@ductura/ui";
 import { useRef, useState } from "react";
@@ -417,7 +417,7 @@ export const ENTRIES = {
     prazno: () => <StateTag state="not_submitted" />,
     učitavanje: () => <StateTag state="pending" />,
     greška: () => <StateTag state="gap" />,
-    puno: () => <>{SUBMISSION_STATES.map((state) => <StateTag key={state} state={state} />)}</>,
+    puno: () => <>{STATE_TAG_STATES.map((state) => <StateTag key={state} state={state} />)}</>,
     onemogućeno: () => <p>Stanje predaje trenutačno nije dostupno.</p>,
   },
   Steps: {

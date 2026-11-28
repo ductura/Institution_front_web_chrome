@@ -77,6 +77,8 @@ export const uiMessagesEn = {
     late: "After the deadline",
     pending: "Awaiting confirmation",
     gap: "Gap in the record",
+    writing: "Being written",
+    notice_pending: "Notice not yet confirmed",
   },
   steps: ["Text", "Declaration", "Before submitting", "Submission", "Confirmation"],
   table: {
