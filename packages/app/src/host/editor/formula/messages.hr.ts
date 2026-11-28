@@ -33,4 +33,7 @@ export const formulaHostHr = {
   disabledSchema: "Formule i kod traže rad u novom obliku dokumenta.",
   disabledTool: "Područje ovog rada ne nudi formule.",
   disabledReadOnly: "Rad se ne može uređivati.",
+  // ED-128 (prototip acad.js, acChem).
+  insertChem: "Kemijska formula…",
+  disabledChem: "Područje ovog rada ne nudi kemijske formule.",
 } as const;

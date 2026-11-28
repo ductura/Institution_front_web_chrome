@@ -15,6 +15,12 @@ describe("renderTex", () => {
     expect(r.ok).toBe(true);
     expect(r.html).not.toContain("katex-display");
   });
+  it("ED-128: renders a chemistry formula through mhchem", () => {
+    const r = renderTex("\\ce{H2SO4}", false);
+    expect(r.ok).toBe(true);
+    expect(r.html).toContain("SO");
+    expect(r.html).not.toContain("katex-error");
+  });
   it("empty and blank input is not ok", () => {
     expect(renderTex("", true)).toEqual({ html: "", ok: false });
     expect(renderTex("   ", false)).toEqual({ html: "", ok: false });

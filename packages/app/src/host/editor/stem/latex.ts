@@ -151,6 +151,8 @@ export function buildTex(doc: CanonicalDocumentV4, opts: TexOptions): string {
     "\\usepackage[margin=2.5cm]{geometry}",
     "\\usepackage{setspace}",
     "\\usepackage{amsmath,amssymb,amsthm}",
+    // ED-128: chemistry formulas (\ce, \pu) need mhchem; only when the work has one.
+    ...(body.some((line) => /\\(?:ce|pu)\{/.test(line)) ? ["\\usepackage[version=4]{mhchem}"] : []),
     "\\usepackage{graphicx}",
     "\\usepackage{listings}",
     "\\usepackage[hidelinks]{hyperref}",

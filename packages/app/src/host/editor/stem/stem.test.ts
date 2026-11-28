@@ -125,4 +125,12 @@ describe("buildTex", () => {
     const lost: CanonicalDocumentV4 = { ...doc, nodes: [{ type: "paragraph", id: id(2), children: [{ type: "crossReference", targetId: id(99) }] }] };
     expect(buildTex(lost, { title: "", citations })).toContain("[referenca?]");
   });
+  it("ED-128: loads mhchem only for a work with a chemistry formula", () => {
+    expect(tex).not.toContain("mhchem");
+    const chem: CanonicalDocumentV4 = { ...doc, nodes: [{ type: "paragraph", id: id(2), children: [t("Kiselina "), { type: "inlineFormula", tex: "\\ce{H2SO4}" }] }] };
+    const out = buildTex(chem, { title: "", citations });
+    expect(out).toContain("\\usepackage[version=4]{mhchem}");
+    expect(out).toContain("$\\ce{H2SO4}$");
+    expect(out.indexOf("mhchem")).toBeLessThan(out.indexOf("\\begin{document}"));
+  });
 });
