@@ -28,7 +28,7 @@ import { pregledHr as t, thousands } from "./messages.hr";
 import { consistency, nextUse, numbersWithoutSource, quotations, repeatedWords, seams, sentenceStarts } from "./pregled-tools";
 import nacrt from "./Nacrt.module.css";
 import {
-  abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, outlineRows, removeTerm, saveTerms, termCounts,
+  abbreviations, addTerm, chapterAt, frequentWords, listenText, loadTerms, nextTermPlace, outlineRows, removeTerm, saveTerms, termCounts,
   WHOLE, MAX_DEFINITION_LENGTH, MAX_TERM_LENGTH, type PregledScope, type Term, type TermStorage,
 } from "./pregled-model";
 import { blockTextAt, sentenceShape } from "./sentence-shape";
@@ -71,7 +71,7 @@ export function PregledGroup({ editor, documentId, assignmentId, enabledCheckIds
         {here < 0 && !wholeWork && <p role="status">{t.noChapter}</p>}
       </>}
       {view === "nacrt" && <Nacrt editor={editor} doc={doc} scope={scope} />}
-      {view === "pojmovnik" && <Pojmovnik doc={doc} scope={scope} workId={documentId} />}
+      {view === "pojmovnik" && <Pojmovnik editor={editor} doc={doc} scope={scope} workId={documentId} />}
       {view === "savovi" && <Savovi editor={editor} doc={doc} scope={scope} />}
       {view === "ponavljanja" && <Ponavljanja editor={editor} doc={doc} scope={scope} />}
       {view === "dosljednost" && <Dosljednost editor={editor} doc={doc} scope={scope} />}
@@ -223,8 +223,12 @@ function Nacrt({ editor, doc, scope }: { editor: Editor; doc: NonNullable<Return
   );
 }
 
-function Pojmovnik({ doc, scope, workId }: { doc: NonNullable<ReturnType<typeof readReviewDoc>>; scope: PregledScope; workId: string }) {
+function Pojmovnik({ editor, doc, scope, workId }: { editor: Editor; doc: NonNullable<ReturnType<typeof readReviewDoc>>; scope: PregledScope; workId: string }) {
   const [storage] = useState(browserStorage);
+  const where = (name: string) => {
+    const pos = nextTermPlace(doc, scope, name, editor.state.selection.from);
+    if (pos !== null) jumpToBlock(editor, pos);
+  };
   const [terms, setTerms] = useState<Term[]>([]);
   const [term, setTerm] = useState("");
   const [definition, setDefinition] = useState("");
@@ -258,6 +262,7 @@ function Pojmovnik({ doc, scope, workId }: { doc: NonNullable<ReturnType<typeof 
             <li key={x.term}>
               <strong>{x.term}</strong>{x.definition && <> — {x.definition}</>}
               <br /><small>{counts[x.term] ? t.termCount(counts[x.term]!) : t.termAbsent}</small>{" "}
+              {counts[x.term] ? <Button tone="quiet" aria-label={t.termWhereLabel(x.term)} onClick={() => where(x.term)}>{t.termWhere}</Button> : null}{" "}
               <Button tone="quiet" aria-label={`${t.remove}: ${x.term}`} onClick={() => commit(removeTerm(terms, x.term))}>{t.remove}</Button>
             </li>
           ))}

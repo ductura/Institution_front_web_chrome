@@ -38,6 +38,9 @@ export const pregledHr = {
   termsTitle: "Vaši pojmovi",
   termCount: (n: number) => `Pojam se pojavljuje u tekstu: ${n}`,
   termAbsent: "Pojam se još ne pojavljuje u tekstu.",
+  // ED-124: prototype glossNext, each press goes to the next paragraph with the term.
+  termWhere: "Gdje se koristi",
+  termWhereLabel: (term: string) => `Gdje se koristi: ${term}, sljedeće mjesto u tekstu`,
   frequent: "Često u tekstu",
   frequentEmpty: "Nema dovoljno teksta za popis čestih riječi.",
   abbreviations: "Kratice u tekstu",
