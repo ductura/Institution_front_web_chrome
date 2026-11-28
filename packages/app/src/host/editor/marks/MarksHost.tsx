@@ -199,12 +199,13 @@ export function MarksHost() {
   };
   const host = editor.view.dom.parentElement;
   const base = host?.getBoundingClientRect();
-  const top = (pos: number) => {
+  // Not "top": the no-direct-api guard reads a bare `top` as the window alias.
+  const topOf = (pos: number) => {
     try { return editor.view.coordsAtPos(pos).top - base!.top; } catch { return null; }
   };
-  const dots = !host || !base || !showGutter(width) ? [] : gutterDots(places, top);
+  const dots = !host || !base || !showGutter(width) ? [] : gutterDots(places, topOf);
   const pageMarks = !pagesOn || !host || !base || !showGutter(width) ? []
-    : pageStarts(editor.state.doc).map((p) => ({ ...p, y: top(p.pos) })).filter((p) => p.y !== null);
+    : pageStarts(editor.state.doc).map((p) => ({ ...p, y: topOf(p.pos) })).filter((p) => p.y !== null);
 
   // ED-60 (Ductus#2058 c.7187555639): no counter bar under the editor, as in the prototype, whose
   // counts are in the review; the jump to the next mark of a kind is the popover's "Sljedeće mjesto ›".
