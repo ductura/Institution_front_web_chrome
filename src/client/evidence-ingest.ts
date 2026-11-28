@@ -69,7 +69,7 @@ export type OpenedWork = {
   schemaVersion?: 1 | 2 | 3;
   /** The server's hash of the work's revision zero; a v3 work at a later revision is verified with it (PIL-K-SPREMANJE-V3). */
   revisionZeroHash?: string;
-  /** WEB-V13-DNEVNIK-SINKRONIZACIJA: "slides" when the server says the work is a slides work; absent for text (the contract's field is optional). */
+  /** WEB-V13-DNEVNIK-SINKRONIZACIJA: "slides" when the work is a slides work by `workKind ?? documentKind ?? "text"`; absent otherwise. */
   documentKind?: "slides";
   /** ED-22 (NF2-P26): the minute of the work's last signed save on the server; absent when there is none yet or the server did not state it. */
   lastSignedAt?: string;
@@ -247,6 +247,15 @@ function receiptDomainOf(keys: unknown): { domain: string; keys: EvidenceDomainK
  * the editor's limit, a profile the journal and segment v2 take, and receipt
  * keys of exactly one evidence domain.
  */
+/**
+ * The kind of an opened work by the contract's client rule (SRV-V14-KIND-ENUM):
+ * `workKind ?? documentKind ?? "text"`. The server always sends workKind; an
+ * older server sent only documentKind, and an answer with neither is text.
+ */
+function kindOfOpened(value: { workKind?: unknown; documentKind?: unknown }): unknown {
+  return value.workKind ?? value.documentKind ?? "text";
+}
+
 export function openedWorkFrom(value: unknown): OpenedWork | null {
   if (OPENED === undefined || !isObject(value) || !matchesSchema(OPENED, value)) return null;
   const {
@@ -274,7 +283,7 @@ export function openedWorkFrom(value: unknown): OpenedWork | null {
     document, evidenceDomainId: keys.domain, receiptKeys: keys.keys, submitted,
     ...(schemaVersion === 1 || schemaVersion === 2 || schemaVersion === 3 ? { schemaVersion } : {}),
     ...(typeof revisionZeroHash === "string" ? { revisionZeroHash } : {}),
-    ...(value.documentKind === "slides" ? { documentKind: "slides" as const } : {}),
+    ...(kindOfOpened(value) === "slides" ? { documentKind: "slides" as const } : {}),
     ...(typeof lastSignedAt === "string" ? { lastSignedAt } : {}),
   };
 }
