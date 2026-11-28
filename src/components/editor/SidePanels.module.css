@@ -136,6 +136,9 @@
 .contextHeading { min-height: 42px; padding-inline: 12px 42px; border-bottom: 1px solid var(--rule-2); }
 .rightContent { flex: 1; min-width: 0; padding: 12px; }
 .rightContent h2 { font-size: 13px; }
+/* ED-77: the panel's foot row (prototype editor.css .pfoot). */
+.rightFooter { position: sticky; bottom: 0; display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 14px; border-top: 1px solid var(--rule-2); background: var(--chrome); font-size: 12.5px; }
+@media (max-width: 640px) { .rightFooter { padding: 8px 12px; } }
 .chapterContext { display: grid; gap: 4px; padding: 10px 12px; background: var(--well); border-radius: var(--radius); }
 .chapterContext span { font-size: 12px; color: var(--ink-2); }
 .chapterContext strong { font: 500 16px var(--ff-display); }

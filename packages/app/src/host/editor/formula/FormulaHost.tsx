@@ -11,7 +11,10 @@ import { setupOf } from "../rules/rules-model.ts";
 import { DEFAULT_PROFILE_ID, profileById, type RuleProfile, type ToolKey } from "../rules/profiles.ts";
 import { FormulaDialog, type FormulaDialogResult } from "./FormulaDialog.tsx";
 import { insertFormula, updateFormula } from "./formula-commands.ts";
-import { formulaAvailability, formulaViewPlugin, formulaViewKey, supportsFormulas, type FormulaAvailability, type FormulaTarget } from "./formula-view.ts";
+import {
+  CHEM_EXAMPLE, chemAvailability, formulaAvailability, formulaViewPlugin, formulaViewKey, supportsFormulas,
+  type FormulaAvailability, type FormulaTarget,
+} from "./formula-view.ts";
 import type { FormulaKind } from "./limits.ts";
 
 /** The tools of the field the work is written for; the general academic profile (no tools) until the assignment names one. */
@@ -31,6 +34,10 @@ export type FormulaHostApi = {
   availability: FormulaAvailability;
   /** Opens the dialog for a new formula; false when the menu item is off. */
   open: (kind: FormulaKind) => boolean;
+  /** ED-128: "Kemijska formula", the field's `chem` tool. */
+  chem: FormulaAvailability;
+  /** Opens the inline formula dialog with \ce{H2SO4}; false when the item is off. */
+  openChem: () => boolean;
   dialog: ReactNode;
 };
 
@@ -41,16 +48,22 @@ export function useFormulaHost(
   const availability: FormulaAvailability = live
     ? formulaAvailability(editor.schema, schemaVersion, tools, editor.isEditable)
     : { enabled: false, reason: "" };
+  const chem: FormulaAvailability = live
+    ? chemAvailability(editor.schema, schemaVersion, tools, editor.isEditable)
+    : { enabled: false, reason: "" };
   const [session, setSession] = useState<Session | null>(null);
   const available = useRef(availability.enabled);
   available.current = availability.enabled;
+  const chemOn = useRef(chem.enabled);
+  chemOn.current = chem.enabled;
   const supported = live && supportsFormulas(editor.schema, schemaVersion);
 
   useEffect(() => {
     if (!editor || editor.isDestroyed || !supported) return;
     editor.registerPlugin(formulaViewPlugin(
       (target: FormulaTarget) => setSession({ kind: target.kind, pos: target.pos, tex: target.tex }),
-      () => available.current,
+      // A chemistry formula opens again in a field that has only the chem tool.
+      () => available.current || chemOn.current,
     ));
     return () => { if (!editor.isDestroyed) editor.unregisterPlugin(formulaViewKey); };
   }, [editor, supported]);
@@ -58,6 +71,11 @@ export function useFormulaHost(
   const open = useCallback((kind: FormulaKind) => {
     if (!available.current) return false;
     setSession({ kind, pos: null, tex: "" });
+    return true;
+  }, []);
+  const openChem = useCallback(() => {
+    if (!chemOn.current) return false;
+    setSession({ kind: "inline", pos: null, tex: CHEM_EXAMPLE });
     return true;
   }, []);
 
@@ -74,5 +92,5 @@ export function useFormulaHost(
     ? <FormulaDialog open kind={session.kind} initialTex={session.tex} onConfirm={confirm}
         onClose={() => { setSession(null); editor?.commands.focus(); }} />
     : null;
-  return { availability, open, dialog };
+  return { availability, open, chem, openChem, dialog };
 }

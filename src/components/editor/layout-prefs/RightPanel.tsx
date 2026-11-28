@@ -21,7 +21,8 @@ const icons = {
   assistant: "M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8zM18.5 15.5v3M17 17h3",
 };
 export type { PanelGroup };
-export type RightSections = Partial<Record<PanelGroup, ReactNode>>;
+/** `footer` (ED-77): the host's row at the foot of the panel, as the prototype's `#pfoot`; not in the icon strip (c). */
+export type RightSections = Partial<Record<PanelGroup, ReactNode>> & { footer?: ReactNode };
 
 function ChapterContext({ openGroup }: { openGroup: (group: PanelGroup) => void }) {
   const editor = useLocalEditor();
@@ -111,5 +112,6 @@ export function RightPanel({ layout, sections = {}, settings, selection: asked, 
       </div>
       {shown && view(shown)}
     </>}
+    {layout !== "c" && sections.footer ? <div className={styles.rightFooter} data-panel-footer="">{sections.footer}</div> : null}
   </div></OpenCommentsReport.Provider>;
 }

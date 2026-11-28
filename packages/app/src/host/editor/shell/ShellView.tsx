@@ -13,6 +13,7 @@ import { dialogOffered, EDITOR_DIALOGS, requestDialog, type EditorDialog } from 
 import { workHistoryHr } from "../work-history/messages.hr";
 import { importHostHr } from "../import/messages.hr";
 import { marksHr } from "../marks/messages.hr";
+import { keepPageEstimate, readPageEstimate, watchPageEstimate } from "../marks/page-estimate";
 import { rulesHr } from "../rules/messages.hr";
 import { EditorShortcutListHost } from "../shortcuts/EditorShortcutListHost";
 import { shellHr as t } from "./messages.hr";
@@ -40,6 +41,8 @@ export function ShellView({ children, teacherHref, mode = "write", editable = tr
   useEffect(() => setView((v) => ({ ...v, widths: readWidths() })), []);
   // ED-39: the dialog "Prilagodi panel" chooses the same widths; the menu follows it.
   useEffect(() => watchWidths((widths) => setView((v) => ({ ...v, widths }))), []);
+  const [pagesOn, setPagesOn] = useState(false);
+  useEffect(() => { setPagesOn(readPageEstimate()); return watchPageEstimate(setPagesOn); }, []);
   // Typing is off while only the headings are shown: the editor is inert for that time.
   useEffect(() => {
     if (!view.outlineOnly) return;
@@ -84,6 +87,9 @@ export function ShellView({ children, teacherHref, mode = "write", editable = tr
             <Button tone="quiet" size="small" aria-pressed={view.outlineOnly} title={t.outlineOnlyTitle}
               onClick={() => setView(withOutline(view, !view.outlineOnly))}>{t.outlineOnly}</Button>
             <Button tone="quiet" size="small" aria-haspopup="dialog" onClick={() => requestWorkHistory()}>{workHistoryHr.title}</Button>
+            {/* ED-126: estimated page starts in the gutter, kept in this browser. */}
+            <Button tone="quiet" size="small" aria-pressed={pagesOn} title={marksHr.pages.title}
+              onClick={() => keepPageEstimate(!pagesOn)}>{marksHr.pages.toggle}</Button>
             {/* ED-60: the dialogs the prototype opens from a menu; under the shell nothing is drawn. */}
             {menuOpen ? EDITOR_DIALOGS.filter(dialogOffered).map((name) => (
               <Button key={name} tone="quiet" size="small" aria-haspopup="dialog"

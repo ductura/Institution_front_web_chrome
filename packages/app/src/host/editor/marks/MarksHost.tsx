@@ -19,6 +19,7 @@ import { marksHr as t } from "./messages.hr";
 import styles from "./Marks.module.css";
 import { reportAlert } from "../../../../../../src/components/editor/layout-prefs/context-alerts.ts";
 import { GHOST_KEY, ghostPlugin } from "./ghost";
+import { pageStarts, readPageEstimate, watchPageEstimate } from "./page-estimate";
 import { cardFits, requestCommentCard, requestCommentFocus } from "../comments/comment-card";
 import { askSourceInstead, holeNeedsSource, linkHoleToSource, sourcesOf } from "./hole-source";
 
@@ -107,6 +108,16 @@ export function MarksHost() {
   const [legend, setLegend] = useState(false);
   const [pick, setPick] = useState<{ x: number; y: number; at: Place[] } | null>(null);
   const [width, setWidth] = useState(() => (typeof window === "undefined" ? 0 : window.innerWidth));
+  // ED-126: "Procjena stranica u rubu" from the view menu.
+  const [pagesOn, setPagesOn] = useState(false);
+  useEffect(() => { setPagesOn(readPageEstimate()); return watchPageEstimate(setPagesOn); }, []);
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !pagesOn) return;
+    const bump = (p: { transaction: { docChanged: boolean } }) => { if (p.transaction.docChanged) setTick((n) => n + 1); };
+    editor.on("transaction", bump);
+    return () => { editor.off("transaction", bump); };
+  }, [editor, pagesOn]);
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
@@ -188,16 +199,24 @@ export function MarksHost() {
   };
   const host = editor.view.dom.parentElement;
   const base = host?.getBoundingClientRect();
-  const dots = !host || !base || !showGutter(width) ? [] : gutterDots(places, (pos) => {
-    try { return editor.view.coordsAtPos(pos).top - base.top; } catch { return null; }
-  });
+  // Not "top": the no-direct-api guard reads a bare `top` as the window alias.
+  const topOf = (pos: number) => {
+    try { return editor.view.coordsAtPos(pos).top - base!.top; } catch { return null; }
+  };
+  const dots = !host || !base || !showGutter(width) ? [] : gutterDots(places, topOf);
+  const pageMarks = !pagesOn || !host || !base || !showGutter(width) ? []
+    : pageStarts(editor.state.doc).map((p) => ({ ...p, y: topOf(p.pos) })).filter((p) => p.y !== null);
 
   // ED-60 (Ductus#2058 c.7187555639): no counter bar under the editor, as in the prototype, whose
   // counts are in the review; the jump to the next mark of a kind is the popover's "Sljedeće mjesto ›".
   return (
     <>
-      {host && dots.length > 0 ? createPortal(
+      {host && dots.length + pageMarks.length > 0 ? createPortal(
         <div className={styles.gutter} aria-hidden="true" data-gutter="" aria-label={t.gutter}>
+          {pageMarks.map((p) => (
+            <span key={`page:${p.page}`} className={styles.page} data-page-estimate={p.page} title={t.pages.title}
+              style={{ top: p.y! }}>{t.pages.mark(p.page)}</span>
+          ))}
           {dots.map((d) => (
             <button key={`${d.place.kind}:${d.place.from}`} type="button" tabIndex={-1}
               className={`${styles.dot} ${d.kind === "cmt" ? styles.dotCmt : styles.dotHole}`}
