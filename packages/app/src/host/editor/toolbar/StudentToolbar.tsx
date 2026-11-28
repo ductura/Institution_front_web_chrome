@@ -57,6 +57,7 @@ import { useOfferSlashCommands } from "../slash-commands";
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import { toolbarBehaviourHr } from "./messages.hr";
 import { selectionToFootnote, selectionToFootnoteHr } from "../footnote/selection-to-footnote";
+import { moveSentenceFromMenu, sentenceMenuHr } from "../sentence/sentence-menu";
 import { insertPhrase } from "../phrases/phrases";
 import { PhrasesDialog } from "../phrases/PhrasesDialog";
 import { listenCommentKey } from "./comment-key";
@@ -341,6 +342,9 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "toQuote", label: t.toolbar.convertItems.toQuote, disabled: !writeOk || state.quote },
     { id: "fromQuote", label: t.toolbar.convertItems.fromQuote, disabled: !writeOk || !state.quote },
     { id: "toFootnote", label: selectionToFootnoteHr.label, disabled: !writeOk },
+    // ED-129: the prototype's sentUp and sentDown (Alt+↑ and Alt+↓).
+    { id: "sentenceUp", label: sentenceMenuHr.up, disabled: !writeOk },
+    { id: "sentenceDown", label: sentenceMenuHr.down, disabled: !writeOk },
   ];
   const chars = [...recent, ...SPECIAL_CHARS.filter((ch) => !recent.includes(ch))]
     .map((ch): Item => ({ id: `char:${ch}`, label: `${glyphOf(ch)}  ${t.toolbar.specialChars[ch] ?? ""}`, disabled: !writeOk }));
@@ -390,6 +394,11 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         else if (id === "toFootnote" && writeOk) setTimeout(() => {
           const done = selectionToFootnote(editor, confirmedWorkSchemaVersion);
           if (done !== "done") toast(selectionToFootnoteHr[done], "error");
+        }, 0);
+        // ED-129: after the menu has given the focus back, so the caret is the one in the text.
+        else if ((id === "sentenceUp" || id === "sentenceDown") && writeOk) setTimeout(() => {
+          const moved = moveSentenceFromMenu(editor, id === "sentenceUp" ? "up" : "down");
+          if (moved !== "done") toast(sentenceMenuHr[moved]);
         }, 0);
       }} />
       <Menu label={t.toolbar.specialChar} items={chars} onSelect={(id) => {
